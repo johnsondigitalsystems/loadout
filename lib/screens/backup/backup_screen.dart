@@ -85,6 +85,7 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -97,6 +98,7 @@ import '../../services/drive_backup_service.dart';
 import '../../services/entitlement_notifier.dart';
 import '../../services/export_service.dart';
 import '../../services/icloud_backup_service.dart';
+import '../auth/login_screen.dart';
 import '../paywall/paywall_screen.dart';
 
 /// Top-level "Backup & Export" destination reachable from the home drawer.
@@ -130,6 +132,15 @@ class _BackupScreenState extends State<BackupScreen> {
   bool _busy = false;
   String? _statusMessage;
 
+  /// Per-session dismissal of the sign-in nudge for anonymous /
+  /// signed-out users. Resets next time the screen is opened.
+  bool _signInPromptDismissed = false;
+
+  /// Auth-state subscription so the soft prompt rebuilds away after the
+  /// user signs in (or back to anonymous after sign-out) without the
+  /// user having to leave and re-open this screen.
+  StreamSubscription<User?>? _authSub;
+
   @override
   void initState() {
     super.initState();
@@ -137,11 +148,24 @@ class _BackupScreenState extends State<BackupScreen> {
     _export = ExportService(db);
     _icloud = ICloudBackupService();
     _drive = DriveBackupService();
+    _authSub = FirebaseAuth.instance.authStateChanges().listen((_) {
+      if (!mounted) return;
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final isPro = context.watch<EntitlementNotifier>().isPro;
+    final user = FirebaseAuth.instance.currentUser;
+    final needsSignInPrompt =
+        (user == null || user.isAnonymous) && !_signInPromptDismissed;
     return Scaffold(
       appBar: AppBar(title: const Text('Backup & Export')),
       body: AbsorbPointer(
@@ -149,6 +173,14 @@ class _BackupScreenState extends State<BackupScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            if (needsSignInPrompt) ...[
+              _SignInPromptCard(
+                onSignIn: _openSignIn,
+                onDismiss: () =>
+                    setState(() => _signInPromptDismissed = true),
+              ),
+              const SizedBox(height: 16),
+            ],
             _PrivacyBlurb(),
             const SizedBox(height: 16),
             _LocalExportCard(
@@ -192,6 +224,12 @@ class _BackupScreenState extends State<BackupScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  void _openSignIn() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
     );
   }
 
@@ -445,6 +483,75 @@ class _BackupScreenState extends State<BackupScreen> {
 }
 
 // ─────────────────────── Sub-widgets ───────────────────────
+
+/// Soft, dismissible prompt shown to anonymous / signed-out users on the
+/// Backups screen. Sign-in is optional everywhere else in the app —
+/// cloud backup is the one feature that legitimately needs an account so
+/// the encrypted blob has a stable place to live across devices. The
+/// prompt is intentionally non-blocking: local JSON export still works
+/// for guests (privacy posture, CLAUDE.md §13).
+class _SignInPromptCard extends StatelessWidget {
+  const _SignInPromptCard({
+    required this.onSignIn,
+    required this.onDismiss,
+  });
+
+  final VoidCallback onSignIn;
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.cloud_outlined,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Sign in for cloud backup',
+                    style: theme.textTheme.titleMedium,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Sign in to enable cloud backup of your loads, firearms, "
+              'and brass. Your data is encrypted with a passphrase only '
+              'you know — we never see your reloading data.',
+              style: theme.textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton.icon(
+                  onPressed: onSignIn,
+                  icon: const Icon(Icons.login),
+                  label: const Text('Sign in'),
+                ),
+                TextButton(
+                  onPressed: onDismiss,
+                  child: const Text('Continue without backup'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _PrivacyBlurb extends StatelessWidget {
   @override

@@ -111,6 +111,9 @@ import '../../database/database.dart';
 import '../../repositories/component_repository.dart';
 import '../../repositories/firearm_repository.dart';
 import '../../repositories/optics_repository.dart';
+import '../../services/auto_save_service.dart';
+import '../../widgets/auto_save_banner.dart';
+import '../../widgets/auto_save_first_time_hint.dart';
 import '../../widgets/component_field.dart';
 
 typedef _RefEntry = ({
@@ -146,7 +149,11 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
   late final TextEditingController _defaultZeroRangeYd;
   late final TextEditingController _sightHeightIn;
 
-  bool _useCatalog = false;
+  // New firearms default to "Pick from Catalog" because most users own
+  // a catalog-listed production rifle/pistol. The Custom path is a
+  // power-user fallback. For edits we honor whatever the row was
+  // saved as (catalog if `referenceFirearmId` was set, custom otherwise).
+  bool _useCatalog = true;
   bool _busy = false;
 
   Future<List<_RefEntry>>? _refsFuture;
@@ -159,6 +166,8 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
   Future<List<OpticEntry>>? _opticsFuture;
   OpticEntry? _selectedOptic;
   int? _opticsId;
+
+  late final AutoSaveController _autoSave;
 
   @override
   void initState() {
@@ -179,21 +188,99 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
       text: e?.defaultMuzzleVelocityFps?.toString() ?? '',
     );
     _defaultZeroRangeYd = TextEditingController(
-      text: e?.defaultZeroRangeYd?.toString() ?? '',
+      // 100 yd is the de-facto reloader default zero range. Pre-fill
+      // it so users don't have to think about it; they can still
+      // change it (200 / 25 / etc.) before saving.
+      text: (e?.defaultZeroRangeYd ?? 100).toString(),
     );
     _sightHeightIn = TextEditingController(
       text: e?.sightHeightIn?.toString() ?? '',
     );
     _referenceFirearmId = e?.referenceFirearmId;
-    _useCatalog = _referenceFirearmId != null;
+    // For new firearms (e == null) keep the catalog default. For edits,
+    // mirror whatever the row was saved as.
+    _useCatalog = e == null ? true : (_referenceFirearmId != null);
     _refsFuture =
         context.read<ComponentRepository>().allReferenceFirearms();
     _opticsId = e?.opticsId;
     _opticsFuture = context.read<OpticsRepository>().allOptics();
+
+    _autoSave = AutoSaveController(
+      service: context.read<AutoSaveService>(),
+      onSave: _runAutoSave,
+      initialSavedRowId: widget.existing?.id,
+    );
+
+    // Wire every text controller to autosave so any keystroke marks
+    // the form dirty and restarts the debounce timer.
+    for (final c in [
+      _name,
+      _manufacturer,
+      _model,
+      _type,
+      _action,
+      _caliber,
+      _barrelLength,
+      _twistRate,
+      _shotsFired,
+      _notes,
+      _defaultMuzzleVelocityFps,
+      _defaultZeroRangeYd,
+      _sightHeightIn,
+    ]) {
+      c.addListener(_autoSave.notifyDirty);
+    }
+  }
+
+  /// Builds a `UserFirearmsCompanion` from the current form state and
+  /// inserts (first save) or updates (subsequent saves) via
+  /// [FirearmRepository]. Returns the row id for the controller to
+  /// remember, or null if the form is invalid (e.g. blank name).
+  Future<int?> _runAutoSave() async {
+    final name = _name.text.trim();
+    if (name.isEmpty) return null;
+    final repo = context.read<FirearmRepository>();
+    final entry = _buildCompanion();
+    final existingId = _autoSave.currentRowId;
+    if (existingId == null) {
+      return repo.insert(entry);
+    }
+    await repo.update(existingId, entry);
+    return existingId;
+  }
+
+  String? _nullIfEmpty(TextEditingController c) {
+    final t = c.text.trim();
+    return t.isEmpty ? null : t;
+  }
+
+  /// Common path used by both autosave and the manual Save button so
+  /// they emit the same row shape.
+  UserFirearmsCompanion _buildCompanion() {
+    return UserFirearmsCompanion(
+      name: drift.Value(_name.text.trim()),
+      manufacturer: drift.Value(_nullIfEmpty(_manufacturer)),
+      model: drift.Value(_nullIfEmpty(_model)),
+      type: drift.Value(_nullIfEmpty(_type)),
+      action: drift.Value(_nullIfEmpty(_action)),
+      caliber: drift.Value(_nullIfEmpty(_caliber)),
+      barrelLengthIn: drift.Value(_parseDouble(_barrelLength)),
+      twistRate: drift.Value(_nullIfEmpty(_twistRate)),
+      shotsFired: drift.Value(_parseShots()),
+      referenceFirearmId:
+          drift.Value(_useCatalog ? _referenceFirearmId : null),
+      notes: drift.Value(_nullIfEmpty(_notes)),
+      defaultMuzzleVelocityFps:
+          drift.Value(_parseDouble(_defaultMuzzleVelocityFps)),
+      defaultZeroRangeYd: drift.Value(_parseInt(_defaultZeroRangeYd)),
+      sightHeightIn: drift.Value(_parseDouble(_sightHeightIn)),
+      opticsId: drift.Value(_opticsId),
+    );
   }
 
   @override
   void dispose() {
+    _autoSave.dispose();
     for (final c in [
       _name,
       _manufacturer,
@@ -234,6 +321,7 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
   void _bumpShots(int delta) {
     final next = (_parseShots() + delta).clamp(0, 1 << 31);
     setState(() => _shotsFired.text = next.toString());
+    _autoSave.notifyDirty();
   }
 
   void _applyReferenceSelection(_RefEntry ref) {
@@ -244,13 +332,36 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
       _model.text = ref.firearm.model;
       _type.text = ref.firearm.type;
       _action.text = ref.firearm.action ?? '';
-      // If the current caliber isn't part of this reference, reset it so the
-      // user must explicitly pick from the chooser.
-      if (!ref.calibers.contains(_caliber.text)) {
-        _caliber.text =
-            ref.calibers.length == 1 ? ref.calibers.first : '';
+      // Auto-fill the main Caliber field if the user hasn't typed one
+      // that's already in this firearm's caliber list. Use the first
+      // catalog caliber as the sensible default — the user can edit
+      // the main Caliber field freely. (Multi-caliber rifles like
+      // a Tikka T3x with several factory chamberings still resolve
+      // cleanly: first caliber wins, user re-types if they own a
+      // different one.)
+      if (_caliber.text.trim().isEmpty ||
+          !ref.calibers.contains(_caliber.text.trim())) {
+        if (ref.calibers.isNotEmpty) {
+          _caliber.text = ref.calibers.first;
+        }
+      }
+      // Auto-fill barrel length and twist rate from the catalog row, but
+      // ONLY when the user hasn't already typed something. This way a
+      // re-selection of the same model can't clobber a custom value
+      // (a 16" SBR variant of a 20" catalog spec, a re-barreled rifle
+      // with a non-standard twist, etc.).
+      final refBarrel = ref.firearm.barrelLengthIn;
+      if (_barrelLength.text.trim().isEmpty && refBarrel != null) {
+        _barrelLength.text = refBarrel.toString();
+      }
+      final refTwist = ref.firearm.twistRate;
+      if (_twistRate.text.trim().isEmpty &&
+          refTwist != null &&
+          refTwist.isNotEmpty) {
+        _twistRate.text = refTwist;
       }
     });
+    _autoSave.notifyDirty();
   }
 
   Future<void> _save() async {
@@ -272,36 +383,14 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
       }
     }
 
-    String? nullIfEmpty(TextEditingController c) {
-      final t = c.text.trim();
-      return t.isEmpty ? null : t;
-    }
+    final entry = _buildCompanion();
+    final existingId = _autoSave.currentRowId;
 
-    final entry = UserFirearmsCompanion(
-      name: drift.Value(_name.text.trim()),
-      manufacturer: drift.Value(nullIfEmpty(_manufacturer)),
-      model: drift.Value(nullIfEmpty(_model)),
-      type: drift.Value(nullIfEmpty(_type)),
-      action: drift.Value(nullIfEmpty(_action)),
-      caliber: drift.Value(nullIfEmpty(_caliber)),
-      barrelLengthIn: drift.Value(_parseDouble(_barrelLength)),
-      twistRate: drift.Value(nullIfEmpty(_twistRate)),
-      shotsFired: drift.Value(_parseShots()),
-      referenceFirearmId:
-          drift.Value(_useCatalog ? _referenceFirearmId : null),
-      notes: drift.Value(nullIfEmpty(_notes)),
-      defaultMuzzleVelocityFps:
-          drift.Value(_parseDouble(_defaultMuzzleVelocityFps)),
-      defaultZeroRangeYd: drift.Value(_parseInt(_defaultZeroRangeYd)),
-      sightHeightIn: drift.Value(_parseDouble(_sightHeightIn)),
-      opticsId: drift.Value(_opticsId),
-    );
-
-    if (widget.existing == null) {
+    if (existingId == null) {
       await repo.insert(entry);
       messenger.showSnackBar(const SnackBar(content: Text('Firearm saved.')));
     } else {
-      await repo.update(widget.existing!.id, entry);
+      await repo.update(existingId, entry);
       messenger
           .showSnackBar(const SnackBar(content: Text('Firearm updated.')));
     }
@@ -312,84 +401,115 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.existing != null;
-    return Scaffold(
-      appBar: AppBar(title: Text(isEdit ? 'Edit Firearm' : 'New Firearm')),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            TextFormField(
-              controller: _name,
-              decoration: const InputDecoration(labelText: 'Name *'),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Required' : null,
-            ),
-            const SizedBox(height: 16),
-            SegmentedButton<bool>(
-              segments: const [
-                ButtonSegment(value: true, label: Text('Pick from Catalog')),
-                ButtonSegment(value: false, label: Text('Custom')),
-              ],
-              selected: {_useCatalog},
-              onSelectionChanged: (s) {
-                setState(() {
-                  _useCatalog = s.first;
-                  if (!_useCatalog) {
-                    _selectedRef = null;
-                    _referenceFirearmId = null;
-                  }
-                });
-              },
-            ),
-            const SizedBox(height: 16),
-            if (_useCatalog) ..._catalogFields() else ..._customFields(),
-            const SizedBox(height: 12),
-            ComponentField(
-              kind: 'cartridge',
-              label: 'Caliber',
-              controller: _caliber,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _barrelLength,
-              decoration: const InputDecoration(
-                labelText: 'Barrel Length (in)',
-                suffixText: 'in',
+    final autoSaveOn = context.watch<AutoSaveService>().isEnabled;
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, _) async {
+        // Make sure any in-flight edits are committed before the
+        // screen is gone. flush() is a no-op when autosave is off.
+        await _autoSave.flush();
+      },
+      child: Scaffold(
+        appBar: AppBar(title: Text(isEdit ? 'Edit Firearm' : 'New Firearm')),
+        body: AutoSaveFirstTimeHint(
+          child: Column(
+            children: [
+              AutoSaveBanner(controller: _autoSave),
+              Expanded(
+                child: Form(
+                  key: _formKey,
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      TextFormField(
+                        controller: _name,
+                        decoration: const InputDecoration(labelText: 'Name *'),
+                        validator: (v) =>
+                            (v == null || v.trim().isEmpty) ? 'Required' : null,
+                      ),
+                      const SizedBox(height: 16),
+                      SegmentedButton<bool>(
+                        segments: const [
+                          ButtonSegment(
+                              value: true, label: Text('Pick from Catalog')),
+                          ButtonSegment(value: false, label: Text('Custom')),
+                        ],
+                        selected: {_useCatalog},
+                        onSelectionChanged: (s) {
+                          setState(() {
+                            _useCatalog = s.first;
+                            if (!_useCatalog) {
+                              _selectedRef = null;
+                              _referenceFirearmId = null;
+                            }
+                          });
+                          _autoSave.notifyDirty();
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      if (_useCatalog)
+                        ..._catalogFields()
+                      else
+                        ..._customFields(),
+                      const SizedBox(height: 12),
+                      ComponentField(
+                        kind: 'cartridge',
+                        label: 'Caliber',
+                        controller: _caliber,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _barrelLength,
+                        decoration: const InputDecoration(
+                          labelText: 'Barrel Length (in)',
+                          suffixText: 'in',
+                        ),
+                        keyboardType:
+                            const TextInputType.numberWithOptions(decimal: true),
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _twistRate,
+                        decoration: const InputDecoration(
+                          labelText: 'Twist Rate',
+                          hintText: 'e.g. 1:8',
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _shotsFiredField(context),
+                      const SizedBox(height: 16),
+                      _opticsSection(context),
+                      const SizedBox(height: 16),
+                      _ballisticsDefaultsSection(context),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _notes,
+                        decoration: const InputDecoration(labelText: 'Notes'),
+                        maxLines: 4,
+                      ),
+                      const SizedBox(height: 24),
+                      FilledButton(
+                        onPressed: _busy ? null : _save,
+                        child: Text(_finalButtonLabel(autoSaveOn, isEdit)),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                ),
               ),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _twistRate,
-              decoration: const InputDecoration(
-                labelText: 'Twist Rate',
-                hintText: 'e.g. 1:8',
-              ),
-            ),
-            const SizedBox(height: 16),
-            _shotsFiredField(context),
-            const SizedBox(height: 16),
-            _opticsSection(context),
-            const SizedBox(height: 16),
-            _ballisticsDefaultsSection(context),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _notes,
-              decoration: const InputDecoration(labelText: 'Notes'),
-              maxLines: 4,
-            ),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: _busy ? null : _save,
-              child: Text(isEdit ? 'Save Changes' : 'Create Firearm'),
-            ),
-            const SizedBox(height: 24),
-          ],
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  /// When autosave is on, the trailing button is just a "Done" — the
+  /// data has already saved as the user typed. Off, it stays the
+  /// traditional "Save Changes" / "Create Firearm" CTA.
+  String _finalButtonLabel(bool autoSaveOn, bool isEdit) {
+    if (autoSaveOn) return 'Done';
+    return isEdit ? 'Save Changes' : 'Create Firearm';
   }
 
   List<Widget> _catalogFields() {
@@ -448,27 +568,11 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
                 _readOnlyTile('Type', _selectedRef!.firearm.type),
                 if ((_selectedRef!.firearm.action ?? '').isNotEmpty)
                   _readOnlyTile('Action', _selectedRef!.firearm.action!),
-                const SizedBox(height: 8),
-                if (_selectedRef!.calibers.isNotEmpty)
-                  DropdownButtonFormField<String>(
-                    initialValue: _selectedRef!.calibers
-                            .contains(_caliber.text)
-                        ? _caliber.text
-                        : null,
-                    isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Caliber for This Firearm',
-                    ),
-                    items: [
-                      for (final c in _selectedRef!.calibers)
-                        DropdownMenuItem(value: c, child: Text(c)),
-                    ],
-                    onChanged: (v) {
-                      if (v != null) {
-                        setState(() => _caliber.text = v);
-                      }
-                    },
-                  ),
+                // No inline "Caliber for This Firearm" dropdown — the
+                // catalog selection auto-fills the main Caliber field
+                // below (`_applyReferenceSelection`), and that field is
+                // freely editable so multi-chambering owners can swap
+                // to whatever they actually shoot.
               ],
             ],
           );
@@ -652,6 +756,7 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
                       _selectedOptic = o;
                       _opticsId = o?.optic.id;
                     });
+                    _autoSave.notifyDirty();
                   },
                 );
               },

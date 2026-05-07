@@ -285,6 +285,14 @@ class FirearmsRef extends Table {
   TextColumn get action => text().nullable()();
   TextColumn get calibersJson => text().withDefault(const Constant('[]'))();
   TextColumn get notes => text().nullable()();
+
+  // ── Factory-spec fields used to auto-fill the firearm form (added v9) ──
+  /// Most-common factory barrel length in inches for the documented model
+  /// variant. Nullable for entries where we don't have reliable spec data.
+  RealColumn get barrelLengthIn => real().nullable()();
+  /// Standard factory twist rate, e.g. "1:8" or "1:9.84". Nullable for
+  /// entries where the spec varies by sub-variant or isn't documented.
+  TextColumn get twistRate => text().nullable()();
 }
 
 @DataClassName('FirearmPartRow')
@@ -295,6 +303,55 @@ class FirearmParts extends Table {
   TextColumn get category => text()();
   TextColumn get compatibleWithJson => text().withDefault(const Constant('[]'))();
   TextColumn get notes => text().nullable()();
+}
+
+/// User-saved ballistic profile (added schema v8). A "profile" is a
+/// named, reusable bundle of inputs to the ballistics calculator
+/// (projectile, MV/zero, environment defaults, range output prefs) so
+/// the user can switch between configurations like "6.5 CM 140gr ELD-M
+/// Tikka" or "300 PRC 225gr Hornady" without retyping every field.
+///
+/// Environment fields are nullable because the ballistics screen falls
+/// back to its `SharedPreferences`-stored defaults when a profile field
+/// is null. `firearmId` and `bulletId` are optional links back to the
+/// rows that originally provided the values; they let the UI re-resolve
+/// the source rifle / bullet for display, but the stored numeric values
+/// remain the source of truth.
+@DataClassName('BallisticProfileRow')
+class BallisticProfiles extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+  // Projectile.
+  RealColumn get bulletWeightGr => real()();
+  RealColumn get bulletDiameterIn => real()();
+  RealColumn get ballisticCoefficient => real()();
+  /// 'g1' | 'g7'
+  TextColumn get dragModel => text()();
+  RealColumn get bulletLengthIn => real().nullable()();
+  // Muzzle / zero.
+  RealColumn get muzzleVelocityFps => real()();
+  IntColumn get zeroRangeYd => integer()();
+  RealColumn get sightHeightIn => real()();
+  TextColumn get twistRate => text().nullable()();
+  // Optional source links.
+  IntColumn get firearmId => integer().nullable()();
+  IntColumn get bulletId => integer().nullable()();
+  // Environment defaults — nullable; calculator falls back to global prefs.
+  RealColumn get temperatureF => real().nullable()();
+  RealColumn get pressureInHg => real().nullable()();
+  RealColumn get humidityPct => real().nullable()();
+  RealColumn get elevationFt => real().nullable()();
+  RealColumn get windSpeedMph => real().nullable()();
+  RealColumn get windDirectionDeg => real().nullable()();
+  RealColumn get latitudeDeg => real().nullable()();
+  RealColumn get firingAzimuthDeg => real().nullable()();
+  // Output prefs.
+  IntColumn get rangeIncrementYd => integer()();
+  IntColumn get rangeMinYd => integer()();
+  IntColumn get rangeMaxYd => integer()();
+  TextColumn get notes => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 }
 
 /// Reference catalog of rifle scopes / optics. Seeded from
@@ -744,6 +801,8 @@ class UserCustomFieldValues extends Table {
     LoadDevelopmentSessions,
     // Schema v7 additions.
     Optics,
+    // Schema v8 additions.
+    BallisticProfiles,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -752,7 +811,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -897,6 +956,27 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(optics);
             await m.addColumn(userFirearms, userFirearms.opticsId);
           }
+          if (from < 8) {
+            // v8 — BallisticProfiles. A purely additive table that lets
+            // the user save named bundles of ballistics-calculator
+            // inputs (projectile, MV/zero, environment, output prefs)
+            // and switch between them. No existing column changes.
+            await m.createTable(ballisticProfiles);
+          }
+          if (from < 9) {
+            // v9 — `barrelLengthIn` and `twistRate` columns on FirearmsRef
+            // so the firearm form can auto-fill those fields when the user
+            // picks a model from the catalog. Wipe the firearms reference
+            // catalog (and its manufacturer rows) so next launch's
+            // `seedIfNeeded` re-runs the firearm seed and populates the
+            // new columns from JSON. UserFirearms (the user's saved guns)
+            // is untouched.
+            await m.addColumn(firearmsRef, firearmsRef.barrelLengthIn);
+            await m.addColumn(firearmsRef, firearmsRef.twistRate);
+            await delete(firearmsRef).go();
+            await (delete(manufacturers)..where((m) => m.kind.equals('firearm')))
+                .go();
+          }
         },
       );
 
@@ -978,6 +1058,39 @@ class AppDatabase extends _$AppDatabase {
       ),
     ];
     await batch((b) => b.insertAll(userProcessSteps, defaults));
+  }
+
+  /// Drop every row in every user-data table. The reference catalog
+  /// (Cartridges, Powders, Bullets, Primers, BrassProducts, FirearmsRef,
+  /// FirearmParts, Optics, Manufacturers) is left untouched — the user
+  /// keeps the seeded dropdown content. The standard reloading process
+  /// steps are re-inserted at the end so the batch checklist UI still
+  /// has something to render after the wipe.
+  ///
+  /// Used by Settings → "Delete my data". Caller is expected to also
+  /// sign the user out of Firebase Auth and pop back to the home shell;
+  /// this method only handles SQLite.
+  Future<void> wipeUserData() async {
+    await transaction(() async {
+      // Children first (foreign-key safety even though we don't enforce
+      // FK constraints in drift). Order chosen to mirror typical
+      // dependency direction.
+      await delete(userCustomFieldValues).go();
+      await delete(userCustomFields).go();
+      await delete(loadDevelopmentSessions).go();
+      await delete(testSessions).go();
+      await delete(batches).go();
+      await delete(brassLots).go();
+      await delete(primerLots).go();
+      await delete(bulletLots).go();
+      await delete(powderLots).go();
+      await delete(userFirearms).go();
+      await delete(userLoads).go();
+      await delete(customComponents).go();
+      await delete(ballisticProfiles).go();
+      await delete(userProcessSteps).go();
+      await _seedStandardProcessSteps();
+    });
   }
 
   static QueryExecutor _open() {

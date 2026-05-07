@@ -538,6 +538,15 @@ class SeedLoader {
           action: Value(prod['action'] as String?),
           calibersJson: Value(json.encode(prod['calibers'] ?? const [])),
           notes: Value(prod['notes'] as String?),
+          // Factory-spec fields added in seed-data v2; entries that omit
+          // these keys (or set them to null) leave the columns null, so
+          // the form falls back to user input as it did before.
+          barrelLengthIn: prod.containsKey('barrelLengthIn')
+              ? Value((prod['barrelLengthIn'] as num?)?.toDouble())
+              : const Value.absent(),
+          twistRate: prod.containsKey('twistRate')
+              ? Value(prod['twistRate'] as String?)
+              : const Value.absent(),
         );
       }).toList();
       await db.batch((b) => b.insertAll(db.firearmsRef, batch));

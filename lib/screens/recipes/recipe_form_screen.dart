@@ -161,6 +161,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../database/database.dart';
 import '../../repositories/component_repository.dart';
 import '../../repositories/recipe_repository.dart';
+import '../../services/auto_save_service.dart';
+import '../../widgets/auto_save_banner.dart';
+import '../../widgets/auto_save_first_time_hint.dart';
 import '../../widgets/component_field.dart';
 import '../../widgets/primer_cascade_field.dart';
 
@@ -525,6 +528,8 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
 
   bool _busy = false;
 
+  late final AutoSaveController _autoSave;
+
   @override
   void initState() {
     super.initState();
@@ -650,10 +655,155 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
       // ignore: discarded_futures
       _loadCustomValues(repo, e.id);
     }
+
+    _autoSave = AutoSaveController(
+      service: context.read<AutoSaveService>(),
+      onSave: _runAutoSave,
+      initialSavedRowId: widget.existing?.id,
+    );
+    // Wire every text controller (including custom fields, see
+    // _buildCustomFieldEditor's `putIfAbsent` calls) to autosave.
+    for (final c in <TextEditingController>[
+      _name,
+      _caliber,
+      _powder,
+      _powderCharge,
+      _bullet,
+      _bulletWeight,
+      _primer,
+      _brass,
+      _coal,
+      _cbto,
+      _seatingDepth,
+      _primerDepth,
+      _shoulderBump,
+      _mandrelSize,
+      _notes,
+      _chargeTolerance,
+      _primerSeatingForce,
+      _bulletLength,
+      _bulletBaseToOgive,
+      _bulletBearingSurface,
+      _bulletWeightTolerance,
+      _bulletBtoTolerance,
+      _bushingSize,
+      _distanceToLands,
+      _jumpToLands,
+      _loadedNeckDiameter,
+      _bulletRunout,
+      _pressureNotes,
+      _webExpansion,
+      _roundsLoadedInBatch,
+      _pressUsed,
+      _sizingDieUsed,
+      _seatingDieUsed,
+      _scaleUsed,
+      _comparatorInsertUsed,
+      _chronographUsed,
+      _loadedBy,
+    ]) {
+      c.addListener(_autoSave.notifyDirty);
+    }
+  }
+
+  /// Build a `UserLoadsCompanion` from the current state.
+  UserLoadsCompanion _buildCompanion() {
+    return UserLoadsCompanion(
+      name: drift.Value(_name.text.trim()),
+      caliber: drift.Value(_trimToNull(_caliber)),
+      powder: drift.Value(_trimToNull(_powder)),
+      powderChargeGr: drift.Value(_parseDouble(_powderCharge)),
+      bullet: drift.Value(_trimToNull(_bullet)),
+      bulletWeightGr: drift.Value(_parseDouble(_bulletWeight)),
+      primer: drift.Value(_trimToNull(_primer)),
+      brass: drift.Value(_trimToNull(_brass)),
+      coalIn: drift.Value(_parseDouble(_coal)),
+      cbtoIn: drift.Value(_parseDouble(_cbto)),
+      seatingDepthIn: drift.Value(_parseDouble(_seatingDepth)),
+      primerDepthCps: drift.Value(_parseDouble(_primerDepth)),
+      shoulderBumpIn: drift.Value(_parseDouble(_shoulderBump)),
+      mandrelSizeIn: drift.Value(_parseDouble(_mandrelSize)),
+      notes: drift.Value(_trimToNull(_notes)),
+      status: drift.Value(_status),
+      useCase: drift.Value(_useCase),
+      powderLotId: drift.Value(_powderLotId),
+      chargeToleranceGr: drift.Value(_parseDouble(_chargeTolerance)),
+      primerLotId: drift.Value(_primerLotId),
+      primerSeatingForceLbs: drift.Value(_parseDouble(_primerSeatingForce)),
+      bulletLotId: drift.Value(_bulletLotId),
+      bulletLengthIn: drift.Value(_parseDouble(_bulletLength)),
+      bulletBaseToOgiveIn: drift.Value(_parseDouble(_bulletBaseToOgive)),
+      bulletBearingSurfaceIn: drift.Value(_parseDouble(_bulletBearingSurface)),
+      bulletMeplatTrimmed: drift.Value(_bulletMeplatTrimmed),
+      bulletPointed: drift.Value(_bulletPointed),
+      bulletWeightSorted: drift.Value(_bulletWeightSorted),
+      bulletWeightToleranceGr:
+          drift.Value(_parseDouble(_bulletWeightTolerance)),
+      bulletBtoSorted: drift.Value(_bulletBtoSorted),
+      bulletBtoToleranceIn: drift.Value(_parseDouble(_bulletBtoTolerance)),
+      bulletDiameterSorted: drift.Value(_bulletDiameterSorted),
+      brassLotId: drift.Value(_brassLotId),
+      distanceToLandsIn: drift.Value(_parseDouble(_distanceToLands)),
+      jumpToLandsIn: drift.Value(_parseDouble(_jumpToLands)),
+      loadedNeckDiameterIn: drift.Value(_parseDouble(_loadedNeckDiameter)),
+      bulletRunoutTirIn: drift.Value(_parseDouble(_bulletRunout)),
+      bushingSizeIn: drift.Value(_parseDouble(_bushingSize)),
+      pressureNotes: drift.Value(_trimToNull(_pressureNotes)),
+      boltLift: drift.Value(_boltLift),
+      ejectorMarks: drift.Value(_ejectorMarks),
+      crateredPrimers: drift.Value(_crateredPrimers),
+      webExpansion200In: drift.Value(_parseDouble(_webExpansion)),
+      primerFlatness: drift.Value(_primerFlatness),
+      loadingDate: drift.Value(_loadingDate),
+      roundsLoadedInBatch: drift.Value(_parseInt(_roundsLoadedInBatch)),
+      pressUsed: drift.Value(_trimToNull(_pressUsed)),
+      sizingDieUsed: drift.Value(_trimToNull(_sizingDieUsed)),
+      seatingDieUsed: drift.Value(_trimToNull(_seatingDieUsed)),
+      scaleUsed: drift.Value(_trimToNull(_scaleUsed)),
+      scaleCalibrationDate: drift.Value(_scaleCalibrationDate),
+      comparatorInsertUsed: drift.Value(_trimToNull(_comparatorInsertUsed)),
+      chronographUsed: drift.Value(_trimToNull(_chronographUsed)),
+      boreState: drift.Value(_boreState),
+      loadedBy: drift.Value(_trimToNull(_loadedBy)),
+    );
+  }
+
+  /// Autosave entry point. Skips the save if the recipe has no name
+  /// (it's not a complete enough record to persist yet). Insert on
+  /// first save, update on subsequent.
+  Future<int?> _runAutoSave() async {
+    final name = _name.text.trim();
+    if (name.isEmpty) return null;
+    final repo = context.read<RecipeRepository>();
+    final entry = _buildCompanion();
+    int recipeId;
+    final existingId = _autoSave.currentRowId;
+    if (existingId == null) {
+      recipeId = await repo.insert(entry);
+    } else {
+      recipeId = existingId;
+      await repo.update(recipeId, entry);
+    }
+    // Sync custom field values too — for partial-save flows we want
+    // the user's typed numbers / text to land alongside the recipe.
+    for (final entry in _customControllers.entries) {
+      final fieldId = entry.key;
+      final text = entry.value.text.trim();
+      _customValues[fieldId] = text.isEmpty ? null : text;
+    }
+    for (final entry in _customValues.entries) {
+      await repo.setCustomFieldValue(
+        fieldId: entry.key,
+        entityId: recipeId,
+        value: entry.value,
+      );
+    }
+    return recipeId;
   }
 
   @override
   void dispose() {
+    _autoSave.dispose();
     _searchController.dispose();
     for (final c in [
       _name,
@@ -791,7 +941,7 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
       ensureCustom('brass', _brass),
     ]);
 
-    final entry = UserLoadsCompanion(
+    final entryLegacy = UserLoadsCompanion(
       name: drift.Value(_name.text.trim()),
       caliber: drift.Value(_trimToNull(_caliber)),
       powder: drift.Value(_trimToNull(_powder)),
@@ -852,12 +1002,13 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     );
 
     int recipeId;
-    if (widget.existing == null) {
-      recipeId = await repo.insert(entry);
+    final existingId = _autoSave.currentRowId;
+    if (existingId == null) {
+      recipeId = await repo.insert(entryLegacy);
       messenger.showSnackBar(const SnackBar(content: Text('Recipe Saved.')));
     } else {
-      recipeId = widget.existing!.id;
-      await repo.update(recipeId, entry);
+      recipeId = existingId;
+      await repo.update(recipeId, entryLegacy);
       messenger.showSnackBar(const SnackBar(content: Text('Recipe Updated.')));
     }
 
@@ -926,7 +1077,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
             for (final s in _statusOptions)
               DropdownMenuItem(value: s.value, child: Text(s.label)),
           ],
-          onChanged: (v) => setState(() => _status = v),
+          onChanged: (v) {
+            setState(() => _status = v);
+            _autoSave.notifyDirty();
+          },
         ),
       ),
       _FieldId.useCase: _FieldDef(
@@ -942,7 +1096,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
             for (final s in _useCaseOptions)
               DropdownMenuItem(value: s.value, child: Text(s.label)),
           ],
-          onChanged: (v) => setState(() => _useCase = v),
+          onChanged: (v) {
+            setState(() => _useCase = v);
+            _autoSave.notifyDirty();
+          },
         ),
       ),
 
@@ -987,7 +1144,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
             row.lotNumber,
           ),
           itemId: (row) => row.id,
-          onChanged: (v) => setState(() => _powderLotId = v),
+          onChanged: (v) {
+            setState(() => _powderLotId = v);
+            _autoSave.notifyDirty();
+          },
           onCreate: () => _showCreateLotDialog(
             type: 'powder',
             parentLabel: _powder.text,
@@ -1059,7 +1219,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
             for (final s in _primerSizeOptions)
               DropdownMenuItem(value: s, child: Text(s)),
           ],
-          onChanged: (v) => setState(() => _primerSize = v),
+          onChanged: (v) {
+            setState(() => _primerSize = v);
+            _autoSave.notifyDirty();
+          },
         ),
       ),
       _FieldId.primerDepth: _FieldDef(
@@ -1092,7 +1255,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
             row.lotNumber,
           ),
           itemId: (row) => row.id,
-          onChanged: (v) => setState(() => _primerLotId = v),
+          onChanged: (v) {
+            setState(() => _primerLotId = v);
+            _autoSave.notifyDirty();
+          },
           onCreate: () => _showCreateLotDialog(
             type: 'primer',
             parentLabel: _primer.text,
@@ -1169,7 +1335,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
             row.lotNumber,
           ),
           itemId: (row) => row.id,
-          onChanged: (v) => setState(() => _bulletLotId = v),
+          onChanged: (v) {
+            setState(() => _bulletLotId = v);
+            _autoSave.notifyDirty();
+          },
           onCreate: () => _showCreateLotDialog(
             type: 'bullet',
             parentLabel: _bullet.text,
@@ -1240,7 +1409,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           contentPadding: EdgeInsets.zero,
           title: const Text('Meplat Trimmed'),
           value: _bulletMeplatTrimmed,
-          onChanged: (v) => setState(() => _bulletMeplatTrimmed = v),
+          onChanged: (v) {
+            setState(() => _bulletMeplatTrimmed = v);
+            _autoSave.notifyDirty();
+          },
         ),
       ),
       _FieldId.bulletPointed: _FieldDef(
@@ -1252,7 +1424,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           contentPadding: EdgeInsets.zero,
           title: const Text('Pointed'),
           value: _bulletPointed,
-          onChanged: (v) => setState(() => _bulletPointed = v),
+          onChanged: (v) {
+            setState(() => _bulletPointed = v);
+            _autoSave.notifyDirty();
+          },
         ),
       ),
       _FieldId.bulletWeightSorted: _FieldDef(
@@ -1264,7 +1439,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           contentPadding: EdgeInsets.zero,
           title: const Text('Weight Sorted'),
           value: _bulletWeightSorted,
-          onChanged: (v) => setState(() => _bulletWeightSorted = v),
+          onChanged: (v) {
+            setState(() => _bulletWeightSorted = v);
+            _autoSave.notifyDirty();
+          },
         ),
       ),
       _FieldId.bulletWeightTolerance: _FieldDef(
@@ -1291,7 +1469,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           contentPadding: EdgeInsets.zero,
           title: const Text('BTO Sorted'),
           value: _bulletBtoSorted,
-          onChanged: (v) => setState(() => _bulletBtoSorted = v),
+          onChanged: (v) {
+            setState(() => _bulletBtoSorted = v);
+            _autoSave.notifyDirty();
+          },
         ),
       ),
       _FieldId.bulletBtoTolerance: _FieldDef(
@@ -1318,7 +1499,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           contentPadding: EdgeInsets.zero,
           title: const Text('Diameter Sorted'),
           value: _bulletDiameterSorted,
-          onChanged: (v) => setState(() => _bulletDiameterSorted = v),
+          onChanged: (v) {
+            setState(() => _bulletDiameterSorted = v);
+            _autoSave.notifyDirty();
+          },
         ),
       ),
       _FieldId.seatingDepth: _FieldDef(
@@ -1380,7 +1564,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           selectedId: _brassLotId,
           itemLabel: (row) => _composeBrassLotLabel(row),
           itemId: (row) => row.id,
-          onChanged: (v) => setState(() => _brassLotId = v),
+          onChanged: (v) {
+            setState(() => _brassLotId = v);
+            _autoSave.notifyDirty();
+          },
           onCreate: () => _showCreateBrassLotDialog(parentLabel: _brass.text),
         ),
       ),
@@ -1397,7 +1584,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
             for (final s in _primerPocketOptions)
               DropdownMenuItem(value: s, child: Text(s)),
           ],
-          onChanged: (v) => setState(() => _primerPocketSize = v),
+          onChanged: (v) {
+            setState(() => _primerPocketSize = v);
+            _autoSave.notifyDirty();
+          },
         ),
       ),
       _FieldId.shoulderBump: _FieldDef(
@@ -1543,7 +1733,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
             for (final s in _boltLiftOptions)
               DropdownMenuItem(value: s.value, child: Text(s.label)),
           ],
-          onChanged: (v) => setState(() => _boltLift = v),
+          onChanged: (v) {
+            setState(() => _boltLift = v);
+            _autoSave.notifyDirty();
+          },
         ),
       ),
       _FieldId.ejectorMarks: _FieldDef(
@@ -1555,7 +1748,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           contentPadding: EdgeInsets.zero,
           title: const Text('Ejector Marks'),
           value: _ejectorMarks,
-          onChanged: (v) => setState(() => _ejectorMarks = v),
+          onChanged: (v) {
+            setState(() => _ejectorMarks = v);
+            _autoSave.notifyDirty();
+          },
         ),
       ),
       _FieldId.crateredPrimers: _FieldDef(
@@ -1573,7 +1769,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           contentPadding: EdgeInsets.zero,
           title: const Text('Cratered Primers'),
           value: _crateredPrimers,
-          onChanged: (v) => setState(() => _crateredPrimers = v),
+          onChanged: (v) {
+            setState(() => _crateredPrimers = v);
+            _autoSave.notifyDirty();
+          },
         ),
       ),
       _FieldId.webExpansion: _FieldDef(
@@ -1597,7 +1796,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         aliases: const ['primer', 'flatness', 'pressure', 'flat'],
         builder: (ctx) => _PrimerFlatnessField(
           value: _primerFlatness,
-          onChanged: (v) => setState(() => _primerFlatness = v),
+          onChanged: (v) {
+            setState(() => _primerFlatness = v);
+            _autoSave.notifyDirty();
+          },
         ),
       ),
 
@@ -1610,7 +1812,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         builder: (ctx) => _DateField(
           label: 'Loading Date',
           value: _loadingDate,
-          onChanged: (v) => setState(() => _loadingDate = v),
+          onChanged: (v) {
+            setState(() => _loadingDate = v);
+            _autoSave.notifyDirty();
+          },
         ),
       ),
       _FieldId.roundsLoadedInBatch: _FieldDef(
@@ -1674,7 +1879,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         builder: (ctx) => _DateField(
           label: 'Scale Calibration Date',
           value: _scaleCalibrationDate,
-          onChanged: (v) => setState(() => _scaleCalibrationDate = v),
+          onChanged: (v) {
+            setState(() => _scaleCalibrationDate = v);
+            _autoSave.notifyDirty();
+          },
         ),
       ),
       _FieldId.comparatorInsertUsed: _FieldDef(
@@ -1711,7 +1919,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
             for (final s in _boreStateOptions)
               DropdownMenuItem(value: s.value, child: Text(s.label)),
           ],
-          onChanged: (v) => setState(() => _boreState = v),
+          onChanged: (v) {
+            setState(() => _boreState = v);
+            _autoSave.notifyDirty();
+          },
         ),
       ),
       _FieldId.loadedBy: _FieldDef(
@@ -1907,15 +2118,26 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     final defs = _buildFieldDefs();
     final tokens = _queryTokens;
     final isSearching = tokens.isNotEmpty;
+    final autoSaveOn = context.watch<AutoSaveService>().isEnabled;
 
-    return Scaffold(
-      appBar: AppBar(title: Text(isEdit ? 'Edit Recipe' : 'New Recipe')),
-      body: Form(
-        key: _formKey,
-        child: Column(
-          children: [
-            // Sticky controls: filter input + detail-level toggle. Stays put
-            // while the form scrolls underneath.
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, _) async {
+        await _autoSave.flush();
+      },
+      child: Scaffold(
+        appBar: AppBar(title: Text(isEdit ? 'Edit Recipe' : 'New Recipe')),
+        body: AutoSaveFirstTimeHint(
+          child: Column(
+            children: [
+              AutoSaveBanner(controller: _autoSave),
+              Expanded(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      // Sticky controls: filter input + detail-level toggle. Stays put
+                      // while the form scrolls underneath.
             Material(
               color: theme.colorScheme.surface,
               elevation: 0,
@@ -2005,16 +2227,27 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
                   const SizedBox(height: 16),
                   FilledButton(
                     onPressed: _busy ? null : _save,
-                    child: Text(isEdit ? 'Save Changes' : 'Create Recipe'),
+                    child: Text(_finalButtonLabel(autoSaveOn, isEdit)),
                   ),
                   const SizedBox(height: 16),
                 ],
               ),
             ),
           ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  /// When autosave is on, the trailing button is just "Done".
+  String _finalButtonLabel(bool autoSaveOn, bool isEdit) {
+    if (autoSaveOn) return 'Done';
+    return isEdit ? 'Save Changes' : 'Create Recipe';
   }
 
   bool _noVisibleFields(
@@ -2222,10 +2455,11 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
   Widget _buildCustomFieldEditor(UserCustomFieldRow field) {
     switch (field.fieldType) {
       case 'text':
-        final ctrl = _customControllers.putIfAbsent(
-          field.id,
-          () => TextEditingController(text: _customValues[field.id] ?? ''),
-        );
+        final ctrl = _customControllers.putIfAbsent(field.id, () {
+          final c = TextEditingController(text: _customValues[field.id] ?? '');
+          c.addListener(_autoSave.notifyDirty);
+          return c;
+        });
         return TextFormField(
           controller: ctrl,
           decoration: InputDecoration(
@@ -2234,10 +2468,11 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           ),
         );
       case 'number':
-        final ctrl = _customControllers.putIfAbsent(
-          field.id,
-          () => TextEditingController(text: _customValues[field.id] ?? ''),
-        );
+        final ctrl = _customControllers.putIfAbsent(field.id, () {
+          final c = TextEditingController(text: _customValues[field.id] ?? '');
+          c.addListener(_autoSave.notifyDirty);
+          return c;
+        });
         return TextFormField(
           controller: ctrl,
           decoration: InputDecoration(
@@ -2252,9 +2487,12 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           contentPadding: EdgeInsets.zero,
           title: Text(field.fieldName),
           value: v,
-          onChanged: (newV) => setState(() {
-            _customValues[field.id] = newV ? 'true' : 'false';
-          }),
+          onChanged: (newV) {
+            setState(() {
+              _customValues[field.id] = newV ? 'true' : 'false';
+            });
+            _autoSave.notifyDirty();
+          },
         );
       case 'date':
         DateTime? parsed;
@@ -2265,9 +2503,12 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         return _DateField(
           label: field.fieldName,
           value: parsed,
-          onChanged: (newDate) => setState(() {
-            _customValues[field.id] = newDate?.toIso8601String();
-          }),
+          onChanged: (newDate) {
+            setState(() {
+              _customValues[field.id] = newDate?.toIso8601String();
+            });
+            _autoSave.notifyDirty();
+          },
         );
       default:
         return const SizedBox.shrink();

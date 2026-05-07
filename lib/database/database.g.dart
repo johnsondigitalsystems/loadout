@@ -18224,6 +18224,1530 @@ class OpticsCompanion extends UpdateCompanion<OpticRow> {
   }
 }
 
+class $BallisticProfilesTable extends BallisticProfiles
+    with TableInfo<$BallisticProfilesTable, BallisticProfileRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BallisticProfilesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bulletWeightGrMeta = const VerificationMeta(
+    'bulletWeightGr',
+  );
+  @override
+  late final GeneratedColumn<double> bulletWeightGr = GeneratedColumn<double>(
+    'bullet_weight_gr',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bulletDiameterInMeta = const VerificationMeta(
+    'bulletDiameterIn',
+  );
+  @override
+  late final GeneratedColumn<double> bulletDiameterIn = GeneratedColumn<double>(
+    'bullet_diameter_in',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ballisticCoefficientMeta =
+      const VerificationMeta('ballisticCoefficient');
+  @override
+  late final GeneratedColumn<double> ballisticCoefficient =
+      GeneratedColumn<double>(
+        'ballistic_coefficient',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _dragModelMeta = const VerificationMeta(
+    'dragModel',
+  );
+  @override
+  late final GeneratedColumn<String> dragModel = GeneratedColumn<String>(
+    'drag_model',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bulletLengthInMeta = const VerificationMeta(
+    'bulletLengthIn',
+  );
+  @override
+  late final GeneratedColumn<double> bulletLengthIn = GeneratedColumn<double>(
+    'bullet_length_in',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _muzzleVelocityFpsMeta = const VerificationMeta(
+    'muzzleVelocityFps',
+  );
+  @override
+  late final GeneratedColumn<double> muzzleVelocityFps =
+      GeneratedColumn<double>(
+        'muzzle_velocity_fps',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _zeroRangeYdMeta = const VerificationMeta(
+    'zeroRangeYd',
+  );
+  @override
+  late final GeneratedColumn<int> zeroRangeYd = GeneratedColumn<int>(
+    'zero_range_yd',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sightHeightInMeta = const VerificationMeta(
+    'sightHeightIn',
+  );
+  @override
+  late final GeneratedColumn<double> sightHeightIn = GeneratedColumn<double>(
+    'sight_height_in',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _twistRateMeta = const VerificationMeta(
+    'twistRate',
+  );
+  @override
+  late final GeneratedColumn<String> twistRate = GeneratedColumn<String>(
+    'twist_rate',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _firearmIdMeta = const VerificationMeta(
+    'firearmId',
+  );
+  @override
+  late final GeneratedColumn<int> firearmId = GeneratedColumn<int>(
+    'firearm_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _bulletIdMeta = const VerificationMeta(
+    'bulletId',
+  );
+  @override
+  late final GeneratedColumn<int> bulletId = GeneratedColumn<int>(
+    'bullet_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _temperatureFMeta = const VerificationMeta(
+    'temperatureF',
+  );
+  @override
+  late final GeneratedColumn<double> temperatureF = GeneratedColumn<double>(
+    'temperature_f',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _pressureInHgMeta = const VerificationMeta(
+    'pressureInHg',
+  );
+  @override
+  late final GeneratedColumn<double> pressureInHg = GeneratedColumn<double>(
+    'pressure_in_hg',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _humidityPctMeta = const VerificationMeta(
+    'humidityPct',
+  );
+  @override
+  late final GeneratedColumn<double> humidityPct = GeneratedColumn<double>(
+    'humidity_pct',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _elevationFtMeta = const VerificationMeta(
+    'elevationFt',
+  );
+  @override
+  late final GeneratedColumn<double> elevationFt = GeneratedColumn<double>(
+    'elevation_ft',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _windSpeedMphMeta = const VerificationMeta(
+    'windSpeedMph',
+  );
+  @override
+  late final GeneratedColumn<double> windSpeedMph = GeneratedColumn<double>(
+    'wind_speed_mph',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _windDirectionDegMeta = const VerificationMeta(
+    'windDirectionDeg',
+  );
+  @override
+  late final GeneratedColumn<double> windDirectionDeg = GeneratedColumn<double>(
+    'wind_direction_deg',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _latitudeDegMeta = const VerificationMeta(
+    'latitudeDeg',
+  );
+  @override
+  late final GeneratedColumn<double> latitudeDeg = GeneratedColumn<double>(
+    'latitude_deg',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _firingAzimuthDegMeta = const VerificationMeta(
+    'firingAzimuthDeg',
+  );
+  @override
+  late final GeneratedColumn<double> firingAzimuthDeg = GeneratedColumn<double>(
+    'firing_azimuth_deg',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rangeIncrementYdMeta = const VerificationMeta(
+    'rangeIncrementYd',
+  );
+  @override
+  late final GeneratedColumn<int> rangeIncrementYd = GeneratedColumn<int>(
+    'range_increment_yd',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _rangeMinYdMeta = const VerificationMeta(
+    'rangeMinYd',
+  );
+  @override
+  late final GeneratedColumn<int> rangeMinYd = GeneratedColumn<int>(
+    'range_min_yd',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _rangeMaxYdMeta = const VerificationMeta(
+    'rangeMaxYd',
+  );
+  @override
+  late final GeneratedColumn<int> rangeMaxYd = GeneratedColumn<int>(
+    'range_max_yd',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    bulletWeightGr,
+    bulletDiameterIn,
+    ballisticCoefficient,
+    dragModel,
+    bulletLengthIn,
+    muzzleVelocityFps,
+    zeroRangeYd,
+    sightHeightIn,
+    twistRate,
+    firearmId,
+    bulletId,
+    temperatureF,
+    pressureInHg,
+    humidityPct,
+    elevationFt,
+    windSpeedMph,
+    windDirectionDeg,
+    latitudeDeg,
+    firingAzimuthDeg,
+    rangeIncrementYd,
+    rangeMinYd,
+    rangeMaxYd,
+    notes,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'ballistic_profiles';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BallisticProfileRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('bullet_weight_gr')) {
+      context.handle(
+        _bulletWeightGrMeta,
+        bulletWeightGr.isAcceptableOrUnknown(
+          data['bullet_weight_gr']!,
+          _bulletWeightGrMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_bulletWeightGrMeta);
+    }
+    if (data.containsKey('bullet_diameter_in')) {
+      context.handle(
+        _bulletDiameterInMeta,
+        bulletDiameterIn.isAcceptableOrUnknown(
+          data['bullet_diameter_in']!,
+          _bulletDiameterInMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_bulletDiameterInMeta);
+    }
+    if (data.containsKey('ballistic_coefficient')) {
+      context.handle(
+        _ballisticCoefficientMeta,
+        ballisticCoefficient.isAcceptableOrUnknown(
+          data['ballistic_coefficient']!,
+          _ballisticCoefficientMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_ballisticCoefficientMeta);
+    }
+    if (data.containsKey('drag_model')) {
+      context.handle(
+        _dragModelMeta,
+        dragModel.isAcceptableOrUnknown(data['drag_model']!, _dragModelMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dragModelMeta);
+    }
+    if (data.containsKey('bullet_length_in')) {
+      context.handle(
+        _bulletLengthInMeta,
+        bulletLengthIn.isAcceptableOrUnknown(
+          data['bullet_length_in']!,
+          _bulletLengthInMeta,
+        ),
+      );
+    }
+    if (data.containsKey('muzzle_velocity_fps')) {
+      context.handle(
+        _muzzleVelocityFpsMeta,
+        muzzleVelocityFps.isAcceptableOrUnknown(
+          data['muzzle_velocity_fps']!,
+          _muzzleVelocityFpsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_muzzleVelocityFpsMeta);
+    }
+    if (data.containsKey('zero_range_yd')) {
+      context.handle(
+        _zeroRangeYdMeta,
+        zeroRangeYd.isAcceptableOrUnknown(
+          data['zero_range_yd']!,
+          _zeroRangeYdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_zeroRangeYdMeta);
+    }
+    if (data.containsKey('sight_height_in')) {
+      context.handle(
+        _sightHeightInMeta,
+        sightHeightIn.isAcceptableOrUnknown(
+          data['sight_height_in']!,
+          _sightHeightInMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_sightHeightInMeta);
+    }
+    if (data.containsKey('twist_rate')) {
+      context.handle(
+        _twistRateMeta,
+        twistRate.isAcceptableOrUnknown(data['twist_rate']!, _twistRateMeta),
+      );
+    }
+    if (data.containsKey('firearm_id')) {
+      context.handle(
+        _firearmIdMeta,
+        firearmId.isAcceptableOrUnknown(data['firearm_id']!, _firearmIdMeta),
+      );
+    }
+    if (data.containsKey('bullet_id')) {
+      context.handle(
+        _bulletIdMeta,
+        bulletId.isAcceptableOrUnknown(data['bullet_id']!, _bulletIdMeta),
+      );
+    }
+    if (data.containsKey('temperature_f')) {
+      context.handle(
+        _temperatureFMeta,
+        temperatureF.isAcceptableOrUnknown(
+          data['temperature_f']!,
+          _temperatureFMeta,
+        ),
+      );
+    }
+    if (data.containsKey('pressure_in_hg')) {
+      context.handle(
+        _pressureInHgMeta,
+        pressureInHg.isAcceptableOrUnknown(
+          data['pressure_in_hg']!,
+          _pressureInHgMeta,
+        ),
+      );
+    }
+    if (data.containsKey('humidity_pct')) {
+      context.handle(
+        _humidityPctMeta,
+        humidityPct.isAcceptableOrUnknown(
+          data['humidity_pct']!,
+          _humidityPctMeta,
+        ),
+      );
+    }
+    if (data.containsKey('elevation_ft')) {
+      context.handle(
+        _elevationFtMeta,
+        elevationFt.isAcceptableOrUnknown(
+          data['elevation_ft']!,
+          _elevationFtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('wind_speed_mph')) {
+      context.handle(
+        _windSpeedMphMeta,
+        windSpeedMph.isAcceptableOrUnknown(
+          data['wind_speed_mph']!,
+          _windSpeedMphMeta,
+        ),
+      );
+    }
+    if (data.containsKey('wind_direction_deg')) {
+      context.handle(
+        _windDirectionDegMeta,
+        windDirectionDeg.isAcceptableOrUnknown(
+          data['wind_direction_deg']!,
+          _windDirectionDegMeta,
+        ),
+      );
+    }
+    if (data.containsKey('latitude_deg')) {
+      context.handle(
+        _latitudeDegMeta,
+        latitudeDeg.isAcceptableOrUnknown(
+          data['latitude_deg']!,
+          _latitudeDegMeta,
+        ),
+      );
+    }
+    if (data.containsKey('firing_azimuth_deg')) {
+      context.handle(
+        _firingAzimuthDegMeta,
+        firingAzimuthDeg.isAcceptableOrUnknown(
+          data['firing_azimuth_deg']!,
+          _firingAzimuthDegMeta,
+        ),
+      );
+    }
+    if (data.containsKey('range_increment_yd')) {
+      context.handle(
+        _rangeIncrementYdMeta,
+        rangeIncrementYd.isAcceptableOrUnknown(
+          data['range_increment_yd']!,
+          _rangeIncrementYdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_rangeIncrementYdMeta);
+    }
+    if (data.containsKey('range_min_yd')) {
+      context.handle(
+        _rangeMinYdMeta,
+        rangeMinYd.isAcceptableOrUnknown(
+          data['range_min_yd']!,
+          _rangeMinYdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_rangeMinYdMeta);
+    }
+    if (data.containsKey('range_max_yd')) {
+      context.handle(
+        _rangeMaxYdMeta,
+        rangeMaxYd.isAcceptableOrUnknown(
+          data['range_max_yd']!,
+          _rangeMaxYdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_rangeMaxYdMeta);
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  BallisticProfileRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BallisticProfileRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      bulletWeightGr: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}bullet_weight_gr'],
+      )!,
+      bulletDiameterIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}bullet_diameter_in'],
+      )!,
+      ballisticCoefficient: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}ballistic_coefficient'],
+      )!,
+      dragModel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}drag_model'],
+      )!,
+      bulletLengthIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}bullet_length_in'],
+      ),
+      muzzleVelocityFps: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}muzzle_velocity_fps'],
+      )!,
+      zeroRangeYd: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}zero_range_yd'],
+      )!,
+      sightHeightIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sight_height_in'],
+      )!,
+      twistRate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}twist_rate'],
+      ),
+      firearmId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}firearm_id'],
+      ),
+      bulletId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}bullet_id'],
+      ),
+      temperatureF: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}temperature_f'],
+      ),
+      pressureInHg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}pressure_in_hg'],
+      ),
+      humidityPct: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}humidity_pct'],
+      ),
+      elevationFt: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}elevation_ft'],
+      ),
+      windSpeedMph: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}wind_speed_mph'],
+      ),
+      windDirectionDeg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}wind_direction_deg'],
+      ),
+      latitudeDeg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}latitude_deg'],
+      ),
+      firingAzimuthDeg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}firing_azimuth_deg'],
+      ),
+      rangeIncrementYd: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}range_increment_yd'],
+      )!,
+      rangeMinYd: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}range_min_yd'],
+      )!,
+      rangeMaxYd: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}range_max_yd'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $BallisticProfilesTable createAlias(String alias) {
+    return $BallisticProfilesTable(attachedDatabase, alias);
+  }
+}
+
+class BallisticProfileRow extends DataClass
+    implements Insertable<BallisticProfileRow> {
+  final int id;
+  final String name;
+  final double bulletWeightGr;
+  final double bulletDiameterIn;
+  final double ballisticCoefficient;
+
+  /// 'g1' | 'g7'
+  final String dragModel;
+  final double? bulletLengthIn;
+  final double muzzleVelocityFps;
+  final int zeroRangeYd;
+  final double sightHeightIn;
+  final String? twistRate;
+  final int? firearmId;
+  final int? bulletId;
+  final double? temperatureF;
+  final double? pressureInHg;
+  final double? humidityPct;
+  final double? elevationFt;
+  final double? windSpeedMph;
+  final double? windDirectionDeg;
+  final double? latitudeDeg;
+  final double? firingAzimuthDeg;
+  final int rangeIncrementYd;
+  final int rangeMinYd;
+  final int rangeMaxYd;
+  final String? notes;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const BallisticProfileRow({
+    required this.id,
+    required this.name,
+    required this.bulletWeightGr,
+    required this.bulletDiameterIn,
+    required this.ballisticCoefficient,
+    required this.dragModel,
+    this.bulletLengthIn,
+    required this.muzzleVelocityFps,
+    required this.zeroRangeYd,
+    required this.sightHeightIn,
+    this.twistRate,
+    this.firearmId,
+    this.bulletId,
+    this.temperatureF,
+    this.pressureInHg,
+    this.humidityPct,
+    this.elevationFt,
+    this.windSpeedMph,
+    this.windDirectionDeg,
+    this.latitudeDeg,
+    this.firingAzimuthDeg,
+    required this.rangeIncrementYd,
+    required this.rangeMinYd,
+    required this.rangeMaxYd,
+    this.notes,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    map['bullet_weight_gr'] = Variable<double>(bulletWeightGr);
+    map['bullet_diameter_in'] = Variable<double>(bulletDiameterIn);
+    map['ballistic_coefficient'] = Variable<double>(ballisticCoefficient);
+    map['drag_model'] = Variable<String>(dragModel);
+    if (!nullToAbsent || bulletLengthIn != null) {
+      map['bullet_length_in'] = Variable<double>(bulletLengthIn);
+    }
+    map['muzzle_velocity_fps'] = Variable<double>(muzzleVelocityFps);
+    map['zero_range_yd'] = Variable<int>(zeroRangeYd);
+    map['sight_height_in'] = Variable<double>(sightHeightIn);
+    if (!nullToAbsent || twistRate != null) {
+      map['twist_rate'] = Variable<String>(twistRate);
+    }
+    if (!nullToAbsent || firearmId != null) {
+      map['firearm_id'] = Variable<int>(firearmId);
+    }
+    if (!nullToAbsent || bulletId != null) {
+      map['bullet_id'] = Variable<int>(bulletId);
+    }
+    if (!nullToAbsent || temperatureF != null) {
+      map['temperature_f'] = Variable<double>(temperatureF);
+    }
+    if (!nullToAbsent || pressureInHg != null) {
+      map['pressure_in_hg'] = Variable<double>(pressureInHg);
+    }
+    if (!nullToAbsent || humidityPct != null) {
+      map['humidity_pct'] = Variable<double>(humidityPct);
+    }
+    if (!nullToAbsent || elevationFt != null) {
+      map['elevation_ft'] = Variable<double>(elevationFt);
+    }
+    if (!nullToAbsent || windSpeedMph != null) {
+      map['wind_speed_mph'] = Variable<double>(windSpeedMph);
+    }
+    if (!nullToAbsent || windDirectionDeg != null) {
+      map['wind_direction_deg'] = Variable<double>(windDirectionDeg);
+    }
+    if (!nullToAbsent || latitudeDeg != null) {
+      map['latitude_deg'] = Variable<double>(latitudeDeg);
+    }
+    if (!nullToAbsent || firingAzimuthDeg != null) {
+      map['firing_azimuth_deg'] = Variable<double>(firingAzimuthDeg);
+    }
+    map['range_increment_yd'] = Variable<int>(rangeIncrementYd);
+    map['range_min_yd'] = Variable<int>(rangeMinYd);
+    map['range_max_yd'] = Variable<int>(rangeMaxYd);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  BallisticProfilesCompanion toCompanion(bool nullToAbsent) {
+    return BallisticProfilesCompanion(
+      id: Value(id),
+      name: Value(name),
+      bulletWeightGr: Value(bulletWeightGr),
+      bulletDiameterIn: Value(bulletDiameterIn),
+      ballisticCoefficient: Value(ballisticCoefficient),
+      dragModel: Value(dragModel),
+      bulletLengthIn: bulletLengthIn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bulletLengthIn),
+      muzzleVelocityFps: Value(muzzleVelocityFps),
+      zeroRangeYd: Value(zeroRangeYd),
+      sightHeightIn: Value(sightHeightIn),
+      twistRate: twistRate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(twistRate),
+      firearmId: firearmId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(firearmId),
+      bulletId: bulletId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bulletId),
+      temperatureF: temperatureF == null && nullToAbsent
+          ? const Value.absent()
+          : Value(temperatureF),
+      pressureInHg: pressureInHg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pressureInHg),
+      humidityPct: humidityPct == null && nullToAbsent
+          ? const Value.absent()
+          : Value(humidityPct),
+      elevationFt: elevationFt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(elevationFt),
+      windSpeedMph: windSpeedMph == null && nullToAbsent
+          ? const Value.absent()
+          : Value(windSpeedMph),
+      windDirectionDeg: windDirectionDeg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(windDirectionDeg),
+      latitudeDeg: latitudeDeg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(latitudeDeg),
+      firingAzimuthDeg: firingAzimuthDeg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(firingAzimuthDeg),
+      rangeIncrementYd: Value(rangeIncrementYd),
+      rangeMinYd: Value(rangeMinYd),
+      rangeMaxYd: Value(rangeMaxYd),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory BallisticProfileRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BallisticProfileRow(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      bulletWeightGr: serializer.fromJson<double>(json['bulletWeightGr']),
+      bulletDiameterIn: serializer.fromJson<double>(json['bulletDiameterIn']),
+      ballisticCoefficient: serializer.fromJson<double>(
+        json['ballisticCoefficient'],
+      ),
+      dragModel: serializer.fromJson<String>(json['dragModel']),
+      bulletLengthIn: serializer.fromJson<double?>(json['bulletLengthIn']),
+      muzzleVelocityFps: serializer.fromJson<double>(json['muzzleVelocityFps']),
+      zeroRangeYd: serializer.fromJson<int>(json['zeroRangeYd']),
+      sightHeightIn: serializer.fromJson<double>(json['sightHeightIn']),
+      twistRate: serializer.fromJson<String?>(json['twistRate']),
+      firearmId: serializer.fromJson<int?>(json['firearmId']),
+      bulletId: serializer.fromJson<int?>(json['bulletId']),
+      temperatureF: serializer.fromJson<double?>(json['temperatureF']),
+      pressureInHg: serializer.fromJson<double?>(json['pressureInHg']),
+      humidityPct: serializer.fromJson<double?>(json['humidityPct']),
+      elevationFt: serializer.fromJson<double?>(json['elevationFt']),
+      windSpeedMph: serializer.fromJson<double?>(json['windSpeedMph']),
+      windDirectionDeg: serializer.fromJson<double?>(json['windDirectionDeg']),
+      latitudeDeg: serializer.fromJson<double?>(json['latitudeDeg']),
+      firingAzimuthDeg: serializer.fromJson<double?>(json['firingAzimuthDeg']),
+      rangeIncrementYd: serializer.fromJson<int>(json['rangeIncrementYd']),
+      rangeMinYd: serializer.fromJson<int>(json['rangeMinYd']),
+      rangeMaxYd: serializer.fromJson<int>(json['rangeMaxYd']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'bulletWeightGr': serializer.toJson<double>(bulletWeightGr),
+      'bulletDiameterIn': serializer.toJson<double>(bulletDiameterIn),
+      'ballisticCoefficient': serializer.toJson<double>(ballisticCoefficient),
+      'dragModel': serializer.toJson<String>(dragModel),
+      'bulletLengthIn': serializer.toJson<double?>(bulletLengthIn),
+      'muzzleVelocityFps': serializer.toJson<double>(muzzleVelocityFps),
+      'zeroRangeYd': serializer.toJson<int>(zeroRangeYd),
+      'sightHeightIn': serializer.toJson<double>(sightHeightIn),
+      'twistRate': serializer.toJson<String?>(twistRate),
+      'firearmId': serializer.toJson<int?>(firearmId),
+      'bulletId': serializer.toJson<int?>(bulletId),
+      'temperatureF': serializer.toJson<double?>(temperatureF),
+      'pressureInHg': serializer.toJson<double?>(pressureInHg),
+      'humidityPct': serializer.toJson<double?>(humidityPct),
+      'elevationFt': serializer.toJson<double?>(elevationFt),
+      'windSpeedMph': serializer.toJson<double?>(windSpeedMph),
+      'windDirectionDeg': serializer.toJson<double?>(windDirectionDeg),
+      'latitudeDeg': serializer.toJson<double?>(latitudeDeg),
+      'firingAzimuthDeg': serializer.toJson<double?>(firingAzimuthDeg),
+      'rangeIncrementYd': serializer.toJson<int>(rangeIncrementYd),
+      'rangeMinYd': serializer.toJson<int>(rangeMinYd),
+      'rangeMaxYd': serializer.toJson<int>(rangeMaxYd),
+      'notes': serializer.toJson<String?>(notes),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  BallisticProfileRow copyWith({
+    int? id,
+    String? name,
+    double? bulletWeightGr,
+    double? bulletDiameterIn,
+    double? ballisticCoefficient,
+    String? dragModel,
+    Value<double?> bulletLengthIn = const Value.absent(),
+    double? muzzleVelocityFps,
+    int? zeroRangeYd,
+    double? sightHeightIn,
+    Value<String?> twistRate = const Value.absent(),
+    Value<int?> firearmId = const Value.absent(),
+    Value<int?> bulletId = const Value.absent(),
+    Value<double?> temperatureF = const Value.absent(),
+    Value<double?> pressureInHg = const Value.absent(),
+    Value<double?> humidityPct = const Value.absent(),
+    Value<double?> elevationFt = const Value.absent(),
+    Value<double?> windSpeedMph = const Value.absent(),
+    Value<double?> windDirectionDeg = const Value.absent(),
+    Value<double?> latitudeDeg = const Value.absent(),
+    Value<double?> firingAzimuthDeg = const Value.absent(),
+    int? rangeIncrementYd,
+    int? rangeMinYd,
+    int? rangeMaxYd,
+    Value<String?> notes = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => BallisticProfileRow(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    bulletWeightGr: bulletWeightGr ?? this.bulletWeightGr,
+    bulletDiameterIn: bulletDiameterIn ?? this.bulletDiameterIn,
+    ballisticCoefficient: ballisticCoefficient ?? this.ballisticCoefficient,
+    dragModel: dragModel ?? this.dragModel,
+    bulletLengthIn: bulletLengthIn.present
+        ? bulletLengthIn.value
+        : this.bulletLengthIn,
+    muzzleVelocityFps: muzzleVelocityFps ?? this.muzzleVelocityFps,
+    zeroRangeYd: zeroRangeYd ?? this.zeroRangeYd,
+    sightHeightIn: sightHeightIn ?? this.sightHeightIn,
+    twistRate: twistRate.present ? twistRate.value : this.twistRate,
+    firearmId: firearmId.present ? firearmId.value : this.firearmId,
+    bulletId: bulletId.present ? bulletId.value : this.bulletId,
+    temperatureF: temperatureF.present ? temperatureF.value : this.temperatureF,
+    pressureInHg: pressureInHg.present ? pressureInHg.value : this.pressureInHg,
+    humidityPct: humidityPct.present ? humidityPct.value : this.humidityPct,
+    elevationFt: elevationFt.present ? elevationFt.value : this.elevationFt,
+    windSpeedMph: windSpeedMph.present ? windSpeedMph.value : this.windSpeedMph,
+    windDirectionDeg: windDirectionDeg.present
+        ? windDirectionDeg.value
+        : this.windDirectionDeg,
+    latitudeDeg: latitudeDeg.present ? latitudeDeg.value : this.latitudeDeg,
+    firingAzimuthDeg: firingAzimuthDeg.present
+        ? firingAzimuthDeg.value
+        : this.firingAzimuthDeg,
+    rangeIncrementYd: rangeIncrementYd ?? this.rangeIncrementYd,
+    rangeMinYd: rangeMinYd ?? this.rangeMinYd,
+    rangeMaxYd: rangeMaxYd ?? this.rangeMaxYd,
+    notes: notes.present ? notes.value : this.notes,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  BallisticProfileRow copyWithCompanion(BallisticProfilesCompanion data) {
+    return BallisticProfileRow(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      bulletWeightGr: data.bulletWeightGr.present
+          ? data.bulletWeightGr.value
+          : this.bulletWeightGr,
+      bulletDiameterIn: data.bulletDiameterIn.present
+          ? data.bulletDiameterIn.value
+          : this.bulletDiameterIn,
+      ballisticCoefficient: data.ballisticCoefficient.present
+          ? data.ballisticCoefficient.value
+          : this.ballisticCoefficient,
+      dragModel: data.dragModel.present ? data.dragModel.value : this.dragModel,
+      bulletLengthIn: data.bulletLengthIn.present
+          ? data.bulletLengthIn.value
+          : this.bulletLengthIn,
+      muzzleVelocityFps: data.muzzleVelocityFps.present
+          ? data.muzzleVelocityFps.value
+          : this.muzzleVelocityFps,
+      zeroRangeYd: data.zeroRangeYd.present
+          ? data.zeroRangeYd.value
+          : this.zeroRangeYd,
+      sightHeightIn: data.sightHeightIn.present
+          ? data.sightHeightIn.value
+          : this.sightHeightIn,
+      twistRate: data.twistRate.present ? data.twistRate.value : this.twistRate,
+      firearmId: data.firearmId.present ? data.firearmId.value : this.firearmId,
+      bulletId: data.bulletId.present ? data.bulletId.value : this.bulletId,
+      temperatureF: data.temperatureF.present
+          ? data.temperatureF.value
+          : this.temperatureF,
+      pressureInHg: data.pressureInHg.present
+          ? data.pressureInHg.value
+          : this.pressureInHg,
+      humidityPct: data.humidityPct.present
+          ? data.humidityPct.value
+          : this.humidityPct,
+      elevationFt: data.elevationFt.present
+          ? data.elevationFt.value
+          : this.elevationFt,
+      windSpeedMph: data.windSpeedMph.present
+          ? data.windSpeedMph.value
+          : this.windSpeedMph,
+      windDirectionDeg: data.windDirectionDeg.present
+          ? data.windDirectionDeg.value
+          : this.windDirectionDeg,
+      latitudeDeg: data.latitudeDeg.present
+          ? data.latitudeDeg.value
+          : this.latitudeDeg,
+      firingAzimuthDeg: data.firingAzimuthDeg.present
+          ? data.firingAzimuthDeg.value
+          : this.firingAzimuthDeg,
+      rangeIncrementYd: data.rangeIncrementYd.present
+          ? data.rangeIncrementYd.value
+          : this.rangeIncrementYd,
+      rangeMinYd: data.rangeMinYd.present
+          ? data.rangeMinYd.value
+          : this.rangeMinYd,
+      rangeMaxYd: data.rangeMaxYd.present
+          ? data.rangeMaxYd.value
+          : this.rangeMaxYd,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BallisticProfileRow(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('bulletWeightGr: $bulletWeightGr, ')
+          ..write('bulletDiameterIn: $bulletDiameterIn, ')
+          ..write('ballisticCoefficient: $ballisticCoefficient, ')
+          ..write('dragModel: $dragModel, ')
+          ..write('bulletLengthIn: $bulletLengthIn, ')
+          ..write('muzzleVelocityFps: $muzzleVelocityFps, ')
+          ..write('zeroRangeYd: $zeroRangeYd, ')
+          ..write('sightHeightIn: $sightHeightIn, ')
+          ..write('twistRate: $twistRate, ')
+          ..write('firearmId: $firearmId, ')
+          ..write('bulletId: $bulletId, ')
+          ..write('temperatureF: $temperatureF, ')
+          ..write('pressureInHg: $pressureInHg, ')
+          ..write('humidityPct: $humidityPct, ')
+          ..write('elevationFt: $elevationFt, ')
+          ..write('windSpeedMph: $windSpeedMph, ')
+          ..write('windDirectionDeg: $windDirectionDeg, ')
+          ..write('latitudeDeg: $latitudeDeg, ')
+          ..write('firingAzimuthDeg: $firingAzimuthDeg, ')
+          ..write('rangeIncrementYd: $rangeIncrementYd, ')
+          ..write('rangeMinYd: $rangeMinYd, ')
+          ..write('rangeMaxYd: $rangeMaxYd, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+    id,
+    name,
+    bulletWeightGr,
+    bulletDiameterIn,
+    ballisticCoefficient,
+    dragModel,
+    bulletLengthIn,
+    muzzleVelocityFps,
+    zeroRangeYd,
+    sightHeightIn,
+    twistRate,
+    firearmId,
+    bulletId,
+    temperatureF,
+    pressureInHg,
+    humidityPct,
+    elevationFt,
+    windSpeedMph,
+    windDirectionDeg,
+    latitudeDeg,
+    firingAzimuthDeg,
+    rangeIncrementYd,
+    rangeMinYd,
+    rangeMaxYd,
+    notes,
+    createdAt,
+    updatedAt,
+  ]);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BallisticProfileRow &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.bulletWeightGr == this.bulletWeightGr &&
+          other.bulletDiameterIn == this.bulletDiameterIn &&
+          other.ballisticCoefficient == this.ballisticCoefficient &&
+          other.dragModel == this.dragModel &&
+          other.bulletLengthIn == this.bulletLengthIn &&
+          other.muzzleVelocityFps == this.muzzleVelocityFps &&
+          other.zeroRangeYd == this.zeroRangeYd &&
+          other.sightHeightIn == this.sightHeightIn &&
+          other.twistRate == this.twistRate &&
+          other.firearmId == this.firearmId &&
+          other.bulletId == this.bulletId &&
+          other.temperatureF == this.temperatureF &&
+          other.pressureInHg == this.pressureInHg &&
+          other.humidityPct == this.humidityPct &&
+          other.elevationFt == this.elevationFt &&
+          other.windSpeedMph == this.windSpeedMph &&
+          other.windDirectionDeg == this.windDirectionDeg &&
+          other.latitudeDeg == this.latitudeDeg &&
+          other.firingAzimuthDeg == this.firingAzimuthDeg &&
+          other.rangeIncrementYd == this.rangeIncrementYd &&
+          other.rangeMinYd == this.rangeMinYd &&
+          other.rangeMaxYd == this.rangeMaxYd &&
+          other.notes == this.notes &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class BallisticProfilesCompanion extends UpdateCompanion<BallisticProfileRow> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<double> bulletWeightGr;
+  final Value<double> bulletDiameterIn;
+  final Value<double> ballisticCoefficient;
+  final Value<String> dragModel;
+  final Value<double?> bulletLengthIn;
+  final Value<double> muzzleVelocityFps;
+  final Value<int> zeroRangeYd;
+  final Value<double> sightHeightIn;
+  final Value<String?> twistRate;
+  final Value<int?> firearmId;
+  final Value<int?> bulletId;
+  final Value<double?> temperatureF;
+  final Value<double?> pressureInHg;
+  final Value<double?> humidityPct;
+  final Value<double?> elevationFt;
+  final Value<double?> windSpeedMph;
+  final Value<double?> windDirectionDeg;
+  final Value<double?> latitudeDeg;
+  final Value<double?> firingAzimuthDeg;
+  final Value<int> rangeIncrementYd;
+  final Value<int> rangeMinYd;
+  final Value<int> rangeMaxYd;
+  final Value<String?> notes;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  const BallisticProfilesCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.bulletWeightGr = const Value.absent(),
+    this.bulletDiameterIn = const Value.absent(),
+    this.ballisticCoefficient = const Value.absent(),
+    this.dragModel = const Value.absent(),
+    this.bulletLengthIn = const Value.absent(),
+    this.muzzleVelocityFps = const Value.absent(),
+    this.zeroRangeYd = const Value.absent(),
+    this.sightHeightIn = const Value.absent(),
+    this.twistRate = const Value.absent(),
+    this.firearmId = const Value.absent(),
+    this.bulletId = const Value.absent(),
+    this.temperatureF = const Value.absent(),
+    this.pressureInHg = const Value.absent(),
+    this.humidityPct = const Value.absent(),
+    this.elevationFt = const Value.absent(),
+    this.windSpeedMph = const Value.absent(),
+    this.windDirectionDeg = const Value.absent(),
+    this.latitudeDeg = const Value.absent(),
+    this.firingAzimuthDeg = const Value.absent(),
+    this.rangeIncrementYd = const Value.absent(),
+    this.rangeMinYd = const Value.absent(),
+    this.rangeMaxYd = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  BallisticProfilesCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    required double bulletWeightGr,
+    required double bulletDiameterIn,
+    required double ballisticCoefficient,
+    required String dragModel,
+    this.bulletLengthIn = const Value.absent(),
+    required double muzzleVelocityFps,
+    required int zeroRangeYd,
+    required double sightHeightIn,
+    this.twistRate = const Value.absent(),
+    this.firearmId = const Value.absent(),
+    this.bulletId = const Value.absent(),
+    this.temperatureF = const Value.absent(),
+    this.pressureInHg = const Value.absent(),
+    this.humidityPct = const Value.absent(),
+    this.elevationFt = const Value.absent(),
+    this.windSpeedMph = const Value.absent(),
+    this.windDirectionDeg = const Value.absent(),
+    this.latitudeDeg = const Value.absent(),
+    this.firingAzimuthDeg = const Value.absent(),
+    required int rangeIncrementYd,
+    required int rangeMinYd,
+    required int rangeMaxYd,
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  }) : name = Value(name),
+       bulletWeightGr = Value(bulletWeightGr),
+       bulletDiameterIn = Value(bulletDiameterIn),
+       ballisticCoefficient = Value(ballisticCoefficient),
+       dragModel = Value(dragModel),
+       muzzleVelocityFps = Value(muzzleVelocityFps),
+       zeroRangeYd = Value(zeroRangeYd),
+       sightHeightIn = Value(sightHeightIn),
+       rangeIncrementYd = Value(rangeIncrementYd),
+       rangeMinYd = Value(rangeMinYd),
+       rangeMaxYd = Value(rangeMaxYd);
+  static Insertable<BallisticProfileRow> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<double>? bulletWeightGr,
+    Expression<double>? bulletDiameterIn,
+    Expression<double>? ballisticCoefficient,
+    Expression<String>? dragModel,
+    Expression<double>? bulletLengthIn,
+    Expression<double>? muzzleVelocityFps,
+    Expression<int>? zeroRangeYd,
+    Expression<double>? sightHeightIn,
+    Expression<String>? twistRate,
+    Expression<int>? firearmId,
+    Expression<int>? bulletId,
+    Expression<double>? temperatureF,
+    Expression<double>? pressureInHg,
+    Expression<double>? humidityPct,
+    Expression<double>? elevationFt,
+    Expression<double>? windSpeedMph,
+    Expression<double>? windDirectionDeg,
+    Expression<double>? latitudeDeg,
+    Expression<double>? firingAzimuthDeg,
+    Expression<int>? rangeIncrementYd,
+    Expression<int>? rangeMinYd,
+    Expression<int>? rangeMaxYd,
+    Expression<String>? notes,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (bulletWeightGr != null) 'bullet_weight_gr': bulletWeightGr,
+      if (bulletDiameterIn != null) 'bullet_diameter_in': bulletDiameterIn,
+      if (ballisticCoefficient != null)
+        'ballistic_coefficient': ballisticCoefficient,
+      if (dragModel != null) 'drag_model': dragModel,
+      if (bulletLengthIn != null) 'bullet_length_in': bulletLengthIn,
+      if (muzzleVelocityFps != null) 'muzzle_velocity_fps': muzzleVelocityFps,
+      if (zeroRangeYd != null) 'zero_range_yd': zeroRangeYd,
+      if (sightHeightIn != null) 'sight_height_in': sightHeightIn,
+      if (twistRate != null) 'twist_rate': twistRate,
+      if (firearmId != null) 'firearm_id': firearmId,
+      if (bulletId != null) 'bullet_id': bulletId,
+      if (temperatureF != null) 'temperature_f': temperatureF,
+      if (pressureInHg != null) 'pressure_in_hg': pressureInHg,
+      if (humidityPct != null) 'humidity_pct': humidityPct,
+      if (elevationFt != null) 'elevation_ft': elevationFt,
+      if (windSpeedMph != null) 'wind_speed_mph': windSpeedMph,
+      if (windDirectionDeg != null) 'wind_direction_deg': windDirectionDeg,
+      if (latitudeDeg != null) 'latitude_deg': latitudeDeg,
+      if (firingAzimuthDeg != null) 'firing_azimuth_deg': firingAzimuthDeg,
+      if (rangeIncrementYd != null) 'range_increment_yd': rangeIncrementYd,
+      if (rangeMinYd != null) 'range_min_yd': rangeMinYd,
+      if (rangeMaxYd != null) 'range_max_yd': rangeMaxYd,
+      if (notes != null) 'notes': notes,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  BallisticProfilesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<double>? bulletWeightGr,
+    Value<double>? bulletDiameterIn,
+    Value<double>? ballisticCoefficient,
+    Value<String>? dragModel,
+    Value<double?>? bulletLengthIn,
+    Value<double>? muzzleVelocityFps,
+    Value<int>? zeroRangeYd,
+    Value<double>? sightHeightIn,
+    Value<String?>? twistRate,
+    Value<int?>? firearmId,
+    Value<int?>? bulletId,
+    Value<double?>? temperatureF,
+    Value<double?>? pressureInHg,
+    Value<double?>? humidityPct,
+    Value<double?>? elevationFt,
+    Value<double?>? windSpeedMph,
+    Value<double?>? windDirectionDeg,
+    Value<double?>? latitudeDeg,
+    Value<double?>? firingAzimuthDeg,
+    Value<int>? rangeIncrementYd,
+    Value<int>? rangeMinYd,
+    Value<int>? rangeMaxYd,
+    Value<String?>? notes,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+  }) {
+    return BallisticProfilesCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      bulletWeightGr: bulletWeightGr ?? this.bulletWeightGr,
+      bulletDiameterIn: bulletDiameterIn ?? this.bulletDiameterIn,
+      ballisticCoefficient: ballisticCoefficient ?? this.ballisticCoefficient,
+      dragModel: dragModel ?? this.dragModel,
+      bulletLengthIn: bulletLengthIn ?? this.bulletLengthIn,
+      muzzleVelocityFps: muzzleVelocityFps ?? this.muzzleVelocityFps,
+      zeroRangeYd: zeroRangeYd ?? this.zeroRangeYd,
+      sightHeightIn: sightHeightIn ?? this.sightHeightIn,
+      twistRate: twistRate ?? this.twistRate,
+      firearmId: firearmId ?? this.firearmId,
+      bulletId: bulletId ?? this.bulletId,
+      temperatureF: temperatureF ?? this.temperatureF,
+      pressureInHg: pressureInHg ?? this.pressureInHg,
+      humidityPct: humidityPct ?? this.humidityPct,
+      elevationFt: elevationFt ?? this.elevationFt,
+      windSpeedMph: windSpeedMph ?? this.windSpeedMph,
+      windDirectionDeg: windDirectionDeg ?? this.windDirectionDeg,
+      latitudeDeg: latitudeDeg ?? this.latitudeDeg,
+      firingAzimuthDeg: firingAzimuthDeg ?? this.firingAzimuthDeg,
+      rangeIncrementYd: rangeIncrementYd ?? this.rangeIncrementYd,
+      rangeMinYd: rangeMinYd ?? this.rangeMinYd,
+      rangeMaxYd: rangeMaxYd ?? this.rangeMaxYd,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (bulletWeightGr.present) {
+      map['bullet_weight_gr'] = Variable<double>(bulletWeightGr.value);
+    }
+    if (bulletDiameterIn.present) {
+      map['bullet_diameter_in'] = Variable<double>(bulletDiameterIn.value);
+    }
+    if (ballisticCoefficient.present) {
+      map['ballistic_coefficient'] = Variable<double>(
+        ballisticCoefficient.value,
+      );
+    }
+    if (dragModel.present) {
+      map['drag_model'] = Variable<String>(dragModel.value);
+    }
+    if (bulletLengthIn.present) {
+      map['bullet_length_in'] = Variable<double>(bulletLengthIn.value);
+    }
+    if (muzzleVelocityFps.present) {
+      map['muzzle_velocity_fps'] = Variable<double>(muzzleVelocityFps.value);
+    }
+    if (zeroRangeYd.present) {
+      map['zero_range_yd'] = Variable<int>(zeroRangeYd.value);
+    }
+    if (sightHeightIn.present) {
+      map['sight_height_in'] = Variable<double>(sightHeightIn.value);
+    }
+    if (twistRate.present) {
+      map['twist_rate'] = Variable<String>(twistRate.value);
+    }
+    if (firearmId.present) {
+      map['firearm_id'] = Variable<int>(firearmId.value);
+    }
+    if (bulletId.present) {
+      map['bullet_id'] = Variable<int>(bulletId.value);
+    }
+    if (temperatureF.present) {
+      map['temperature_f'] = Variable<double>(temperatureF.value);
+    }
+    if (pressureInHg.present) {
+      map['pressure_in_hg'] = Variable<double>(pressureInHg.value);
+    }
+    if (humidityPct.present) {
+      map['humidity_pct'] = Variable<double>(humidityPct.value);
+    }
+    if (elevationFt.present) {
+      map['elevation_ft'] = Variable<double>(elevationFt.value);
+    }
+    if (windSpeedMph.present) {
+      map['wind_speed_mph'] = Variable<double>(windSpeedMph.value);
+    }
+    if (windDirectionDeg.present) {
+      map['wind_direction_deg'] = Variable<double>(windDirectionDeg.value);
+    }
+    if (latitudeDeg.present) {
+      map['latitude_deg'] = Variable<double>(latitudeDeg.value);
+    }
+    if (firingAzimuthDeg.present) {
+      map['firing_azimuth_deg'] = Variable<double>(firingAzimuthDeg.value);
+    }
+    if (rangeIncrementYd.present) {
+      map['range_increment_yd'] = Variable<int>(rangeIncrementYd.value);
+    }
+    if (rangeMinYd.present) {
+      map['range_min_yd'] = Variable<int>(rangeMinYd.value);
+    }
+    if (rangeMaxYd.present) {
+      map['range_max_yd'] = Variable<int>(rangeMaxYd.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BallisticProfilesCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('bulletWeightGr: $bulletWeightGr, ')
+          ..write('bulletDiameterIn: $bulletDiameterIn, ')
+          ..write('ballisticCoefficient: $ballisticCoefficient, ')
+          ..write('dragModel: $dragModel, ')
+          ..write('bulletLengthIn: $bulletLengthIn, ')
+          ..write('muzzleVelocityFps: $muzzleVelocityFps, ')
+          ..write('zeroRangeYd: $zeroRangeYd, ')
+          ..write('sightHeightIn: $sightHeightIn, ')
+          ..write('twistRate: $twistRate, ')
+          ..write('firearmId: $firearmId, ')
+          ..write('bulletId: $bulletId, ')
+          ..write('temperatureF: $temperatureF, ')
+          ..write('pressureInHg: $pressureInHg, ')
+          ..write('humidityPct: $humidityPct, ')
+          ..write('elevationFt: $elevationFt, ')
+          ..write('windSpeedMph: $windSpeedMph, ')
+          ..write('windDirectionDeg: $windDirectionDeg, ')
+          ..write('latitudeDeg: $latitudeDeg, ')
+          ..write('firingAzimuthDeg: $firingAzimuthDeg, ')
+          ..write('rangeIncrementYd: $rangeIncrementYd, ')
+          ..write('rangeMinYd: $rangeMinYd, ')
+          ..write('rangeMaxYd: $rangeMaxYd, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -18257,6 +19781,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $LoadDevelopmentSessionsTable loadDevelopmentSessions =
       $LoadDevelopmentSessionsTable(this);
   late final $OpticsTable optics = $OpticsTable(this);
+  late final $BallisticProfilesTable ballisticProfiles =
+      $BallisticProfilesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -18284,6 +19810,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     userCustomFieldValues,
     loadDevelopmentSessions,
     optics,
+    ballisticProfiles,
   ];
 }
 
@@ -30967,6 +32494,667 @@ typedef $$OpticsTableProcessedTableManager =
       OpticRow,
       PrefetchHooks Function({bool manufacturerId})
     >;
+typedef $$BallisticProfilesTableCreateCompanionBuilder =
+    BallisticProfilesCompanion Function({
+      Value<int> id,
+      required String name,
+      required double bulletWeightGr,
+      required double bulletDiameterIn,
+      required double ballisticCoefficient,
+      required String dragModel,
+      Value<double?> bulletLengthIn,
+      required double muzzleVelocityFps,
+      required int zeroRangeYd,
+      required double sightHeightIn,
+      Value<String?> twistRate,
+      Value<int?> firearmId,
+      Value<int?> bulletId,
+      Value<double?> temperatureF,
+      Value<double?> pressureInHg,
+      Value<double?> humidityPct,
+      Value<double?> elevationFt,
+      Value<double?> windSpeedMph,
+      Value<double?> windDirectionDeg,
+      Value<double?> latitudeDeg,
+      Value<double?> firingAzimuthDeg,
+      required int rangeIncrementYd,
+      required int rangeMinYd,
+      required int rangeMaxYd,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+typedef $$BallisticProfilesTableUpdateCompanionBuilder =
+    BallisticProfilesCompanion Function({
+      Value<int> id,
+      Value<String> name,
+      Value<double> bulletWeightGr,
+      Value<double> bulletDiameterIn,
+      Value<double> ballisticCoefficient,
+      Value<String> dragModel,
+      Value<double?> bulletLengthIn,
+      Value<double> muzzleVelocityFps,
+      Value<int> zeroRangeYd,
+      Value<double> sightHeightIn,
+      Value<String?> twistRate,
+      Value<int?> firearmId,
+      Value<int?> bulletId,
+      Value<double?> temperatureF,
+      Value<double?> pressureInHg,
+      Value<double?> humidityPct,
+      Value<double?> elevationFt,
+      Value<double?> windSpeedMph,
+      Value<double?> windDirectionDeg,
+      Value<double?> latitudeDeg,
+      Value<double?> firingAzimuthDeg,
+      Value<int> rangeIncrementYd,
+      Value<int> rangeMinYd,
+      Value<int> rangeMaxYd,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+
+class $$BallisticProfilesTableFilterComposer
+    extends Composer<_$AppDatabase, $BallisticProfilesTable> {
+  $$BallisticProfilesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get bulletWeightGr => $composableBuilder(
+    column: $table.bulletWeightGr,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get bulletDiameterIn => $composableBuilder(
+    column: $table.bulletDiameterIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get ballisticCoefficient => $composableBuilder(
+    column: $table.ballisticCoefficient,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get dragModel => $composableBuilder(
+    column: $table.dragModel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get bulletLengthIn => $composableBuilder(
+    column: $table.bulletLengthIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get muzzleVelocityFps => $composableBuilder(
+    column: $table.muzzleVelocityFps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get zeroRangeYd => $composableBuilder(
+    column: $table.zeroRangeYd,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sightHeightIn => $composableBuilder(
+    column: $table.sightHeightIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get twistRate => $composableBuilder(
+    column: $table.twistRate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get firearmId => $composableBuilder(
+    column: $table.firearmId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get bulletId => $composableBuilder(
+    column: $table.bulletId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get temperatureF => $composableBuilder(
+    column: $table.temperatureF,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get pressureInHg => $composableBuilder(
+    column: $table.pressureInHg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get humidityPct => $composableBuilder(
+    column: $table.humidityPct,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get elevationFt => $composableBuilder(
+    column: $table.elevationFt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get windSpeedMph => $composableBuilder(
+    column: $table.windSpeedMph,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get windDirectionDeg => $composableBuilder(
+    column: $table.windDirectionDeg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get latitudeDeg => $composableBuilder(
+    column: $table.latitudeDeg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get firingAzimuthDeg => $composableBuilder(
+    column: $table.firingAzimuthDeg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rangeIncrementYd => $composableBuilder(
+    column: $table.rangeIncrementYd,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rangeMinYd => $composableBuilder(
+    column: $table.rangeMinYd,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rangeMaxYd => $composableBuilder(
+    column: $table.rangeMaxYd,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$BallisticProfilesTableOrderingComposer
+    extends Composer<_$AppDatabase, $BallisticProfilesTable> {
+  $$BallisticProfilesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get bulletWeightGr => $composableBuilder(
+    column: $table.bulletWeightGr,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get bulletDiameterIn => $composableBuilder(
+    column: $table.bulletDiameterIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get ballisticCoefficient => $composableBuilder(
+    column: $table.ballisticCoefficient,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dragModel => $composableBuilder(
+    column: $table.dragModel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get bulletLengthIn => $composableBuilder(
+    column: $table.bulletLengthIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get muzzleVelocityFps => $composableBuilder(
+    column: $table.muzzleVelocityFps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get zeroRangeYd => $composableBuilder(
+    column: $table.zeroRangeYd,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sightHeightIn => $composableBuilder(
+    column: $table.sightHeightIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get twistRate => $composableBuilder(
+    column: $table.twistRate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get firearmId => $composableBuilder(
+    column: $table.firearmId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get bulletId => $composableBuilder(
+    column: $table.bulletId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get temperatureF => $composableBuilder(
+    column: $table.temperatureF,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get pressureInHg => $composableBuilder(
+    column: $table.pressureInHg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get humidityPct => $composableBuilder(
+    column: $table.humidityPct,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get elevationFt => $composableBuilder(
+    column: $table.elevationFt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get windSpeedMph => $composableBuilder(
+    column: $table.windSpeedMph,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get windDirectionDeg => $composableBuilder(
+    column: $table.windDirectionDeg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get latitudeDeg => $composableBuilder(
+    column: $table.latitudeDeg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get firingAzimuthDeg => $composableBuilder(
+    column: $table.firingAzimuthDeg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rangeIncrementYd => $composableBuilder(
+    column: $table.rangeIncrementYd,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rangeMinYd => $composableBuilder(
+    column: $table.rangeMinYd,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rangeMaxYd => $composableBuilder(
+    column: $table.rangeMaxYd,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$BallisticProfilesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BallisticProfilesTable> {
+  $$BallisticProfilesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<double> get bulletWeightGr => $composableBuilder(
+    column: $table.bulletWeightGr,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get bulletDiameterIn => $composableBuilder(
+    column: $table.bulletDiameterIn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get ballisticCoefficient => $composableBuilder(
+    column: $table.ballisticCoefficient,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get dragModel =>
+      $composableBuilder(column: $table.dragModel, builder: (column) => column);
+
+  GeneratedColumn<double> get bulletLengthIn => $composableBuilder(
+    column: $table.bulletLengthIn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get muzzleVelocityFps => $composableBuilder(
+    column: $table.muzzleVelocityFps,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get zeroRangeYd => $composableBuilder(
+    column: $table.zeroRangeYd,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get sightHeightIn => $composableBuilder(
+    column: $table.sightHeightIn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get twistRate =>
+      $composableBuilder(column: $table.twistRate, builder: (column) => column);
+
+  GeneratedColumn<int> get firearmId =>
+      $composableBuilder(column: $table.firearmId, builder: (column) => column);
+
+  GeneratedColumn<int> get bulletId =>
+      $composableBuilder(column: $table.bulletId, builder: (column) => column);
+
+  GeneratedColumn<double> get temperatureF => $composableBuilder(
+    column: $table.temperatureF,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get pressureInHg => $composableBuilder(
+    column: $table.pressureInHg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get humidityPct => $composableBuilder(
+    column: $table.humidityPct,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get elevationFt => $composableBuilder(
+    column: $table.elevationFt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get windSpeedMph => $composableBuilder(
+    column: $table.windSpeedMph,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get windDirectionDeg => $composableBuilder(
+    column: $table.windDirectionDeg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get latitudeDeg => $composableBuilder(
+    column: $table.latitudeDeg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get firingAzimuthDeg => $composableBuilder(
+    column: $table.firingAzimuthDeg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get rangeIncrementYd => $composableBuilder(
+    column: $table.rangeIncrementYd,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get rangeMinYd => $composableBuilder(
+    column: $table.rangeMinYd,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get rangeMaxYd => $composableBuilder(
+    column: $table.rangeMaxYd,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$BallisticProfilesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BallisticProfilesTable,
+          BallisticProfileRow,
+          $$BallisticProfilesTableFilterComposer,
+          $$BallisticProfilesTableOrderingComposer,
+          $$BallisticProfilesTableAnnotationComposer,
+          $$BallisticProfilesTableCreateCompanionBuilder,
+          $$BallisticProfilesTableUpdateCompanionBuilder,
+          (
+            BallisticProfileRow,
+            BaseReferences<
+              _$AppDatabase,
+              $BallisticProfilesTable,
+              BallisticProfileRow
+            >,
+          ),
+          BallisticProfileRow,
+          PrefetchHooks Function()
+        > {
+  $$BallisticProfilesTableTableManager(
+    _$AppDatabase db,
+    $BallisticProfilesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BallisticProfilesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BallisticProfilesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BallisticProfilesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<double> bulletWeightGr = const Value.absent(),
+                Value<double> bulletDiameterIn = const Value.absent(),
+                Value<double> ballisticCoefficient = const Value.absent(),
+                Value<String> dragModel = const Value.absent(),
+                Value<double?> bulletLengthIn = const Value.absent(),
+                Value<double> muzzleVelocityFps = const Value.absent(),
+                Value<int> zeroRangeYd = const Value.absent(),
+                Value<double> sightHeightIn = const Value.absent(),
+                Value<String?> twistRate = const Value.absent(),
+                Value<int?> firearmId = const Value.absent(),
+                Value<int?> bulletId = const Value.absent(),
+                Value<double?> temperatureF = const Value.absent(),
+                Value<double?> pressureInHg = const Value.absent(),
+                Value<double?> humidityPct = const Value.absent(),
+                Value<double?> elevationFt = const Value.absent(),
+                Value<double?> windSpeedMph = const Value.absent(),
+                Value<double?> windDirectionDeg = const Value.absent(),
+                Value<double?> latitudeDeg = const Value.absent(),
+                Value<double?> firingAzimuthDeg = const Value.absent(),
+                Value<int> rangeIncrementYd = const Value.absent(),
+                Value<int> rangeMinYd = const Value.absent(),
+                Value<int> rangeMaxYd = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => BallisticProfilesCompanion(
+                id: id,
+                name: name,
+                bulletWeightGr: bulletWeightGr,
+                bulletDiameterIn: bulletDiameterIn,
+                ballisticCoefficient: ballisticCoefficient,
+                dragModel: dragModel,
+                bulletLengthIn: bulletLengthIn,
+                muzzleVelocityFps: muzzleVelocityFps,
+                zeroRangeYd: zeroRangeYd,
+                sightHeightIn: sightHeightIn,
+                twistRate: twistRate,
+                firearmId: firearmId,
+                bulletId: bulletId,
+                temperatureF: temperatureF,
+                pressureInHg: pressureInHg,
+                humidityPct: humidityPct,
+                elevationFt: elevationFt,
+                windSpeedMph: windSpeedMph,
+                windDirectionDeg: windDirectionDeg,
+                latitudeDeg: latitudeDeg,
+                firingAzimuthDeg: firingAzimuthDeg,
+                rangeIncrementYd: rangeIncrementYd,
+                rangeMinYd: rangeMinYd,
+                rangeMaxYd: rangeMaxYd,
+                notes: notes,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                required double bulletWeightGr,
+                required double bulletDiameterIn,
+                required double ballisticCoefficient,
+                required String dragModel,
+                Value<double?> bulletLengthIn = const Value.absent(),
+                required double muzzleVelocityFps,
+                required int zeroRangeYd,
+                required double sightHeightIn,
+                Value<String?> twistRate = const Value.absent(),
+                Value<int?> firearmId = const Value.absent(),
+                Value<int?> bulletId = const Value.absent(),
+                Value<double?> temperatureF = const Value.absent(),
+                Value<double?> pressureInHg = const Value.absent(),
+                Value<double?> humidityPct = const Value.absent(),
+                Value<double?> elevationFt = const Value.absent(),
+                Value<double?> windSpeedMph = const Value.absent(),
+                Value<double?> windDirectionDeg = const Value.absent(),
+                Value<double?> latitudeDeg = const Value.absent(),
+                Value<double?> firingAzimuthDeg = const Value.absent(),
+                required int rangeIncrementYd,
+                required int rangeMinYd,
+                required int rangeMaxYd,
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => BallisticProfilesCompanion.insert(
+                id: id,
+                name: name,
+                bulletWeightGr: bulletWeightGr,
+                bulletDiameterIn: bulletDiameterIn,
+                ballisticCoefficient: ballisticCoefficient,
+                dragModel: dragModel,
+                bulletLengthIn: bulletLengthIn,
+                muzzleVelocityFps: muzzleVelocityFps,
+                zeroRangeYd: zeroRangeYd,
+                sightHeightIn: sightHeightIn,
+                twistRate: twistRate,
+                firearmId: firearmId,
+                bulletId: bulletId,
+                temperatureF: temperatureF,
+                pressureInHg: pressureInHg,
+                humidityPct: humidityPct,
+                elevationFt: elevationFt,
+                windSpeedMph: windSpeedMph,
+                windDirectionDeg: windDirectionDeg,
+                latitudeDeg: latitudeDeg,
+                firingAzimuthDeg: firingAzimuthDeg,
+                rangeIncrementYd: rangeIncrementYd,
+                rangeMinYd: rangeMinYd,
+                rangeMaxYd: rangeMaxYd,
+                notes: notes,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$BallisticProfilesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BallisticProfilesTable,
+      BallisticProfileRow,
+      $$BallisticProfilesTableFilterComposer,
+      $$BallisticProfilesTableOrderingComposer,
+      $$BallisticProfilesTableAnnotationComposer,
+      $$BallisticProfilesTableCreateCompanionBuilder,
+      $$BallisticProfilesTableUpdateCompanionBuilder,
+      (
+        BallisticProfileRow,
+        BaseReferences<
+          _$AppDatabase,
+          $BallisticProfilesTable,
+          BallisticProfileRow
+        >,
+      ),
+      BallisticProfileRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -31018,4 +33206,6 @@ class $AppDatabaseManager {
       );
   $$OpticsTableTableManager get optics =>
       $$OpticsTableTableManager(_db, _db.optics);
+  $$BallisticProfilesTableTableManager get ballisticProfiles =>
+      $$BallisticProfilesTableTableManager(_db, _db.ballisticProfiles);
 }

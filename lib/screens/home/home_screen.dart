@@ -111,6 +111,7 @@ import '../paywall/paywall_screen.dart';
 import '../privacy/privacy_screen.dart';
 import '../recipes/recipes_list_screen.dart';
 import '../saami/saami_screen.dart';
+import '../settings/settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -581,6 +582,18 @@ class _MainDrawer extends StatelessWidget {
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => const BackupScreen(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings_outlined),
+              title: const Text('Settings'),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const SettingsScreen(),
                   ),
                 );
               },

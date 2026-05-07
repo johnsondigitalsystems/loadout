@@ -232,6 +232,15 @@ dependencies:
   googleapis: ^13.2.0
   googleapis_auth: ^1.6.0
 
+  # Pro feature: pull current weather (temperature / pressure / humidity /
+  # wind) from open-meteo.com for the ballistics screen's Environment
+  # section. `geolocator` provides the cross-platform location-permission
+  # handshake plus a one-shot lat/lon read; the `http` client above is
+  # reused for the actual open-meteo REST call. open-meteo requires no
+  # API key and no signup, which keeps the privacy footprint minimal —
+  # only the user's coarse coordinates leave the device.
+  geolocator: ^13.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

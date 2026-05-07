@@ -63,6 +63,9 @@ import '../../repositories/brass_lot_repository.dart';
 import '../../repositories/firearm_repository.dart';
 import '../../repositories/process_step_repository.dart';
 import '../../repositories/recipe_repository.dart';
+import '../../services/auto_save_service.dart';
+import '../../widgets/auto_save_banner.dart';
+import '../../widgets/auto_save_first_time_hint.dart';
 
 class BatchFormScreen extends StatefulWidget {
   const BatchFormScreen({super.key, this.existing});
@@ -89,6 +92,12 @@ class _BatchFormScreenState extends State<BatchFormScreen> {
   bool _busy = false;
   Future<_Refs>? _refsFuture;
 
+  late final AutoSaveController _autoSave;
+  /// Captured at insert time so that subsequent autosaves keep the
+  /// process-state JSON the original insert wrote (drift handles
+  /// `Value.absent()` skipping that column on update).
+  String? _initialProcessStateJson;
+
   @override
   void initState() {
     super.initState();
@@ -106,10 +115,61 @@ class _BatchFormScreenState extends State<BatchFormScreen> {
     _loadedAt = e?.loadedAt;
 
     _refsFuture = _loadRefs();
+
+    _autoSave = AutoSaveController(
+      service: context.read<AutoSaveService>(),
+      onSave: _runAutoSave,
+      initialSavedRowId: widget.existing?.id,
+    );
+    for (final c in [_name, _count, _firedCount, _notes]) {
+      c.addListener(_autoSave.notifyDirty);
+    }
+  }
+
+  Future<int?> _runAutoSave() async {
+    final name = _name.text.trim();
+    final count = _parseInt(_count);
+    if (name.isEmpty || count <= 0) return null;
+    final repo = context.read<BatchRepository>();
+    final existingId = _autoSave.currentRowId;
+    if (existingId == null) {
+      _initialProcessStateJson ??= await _buildInitialProcessStateJson();
+      final entry = _buildCompanion(
+        processStateJson: drift.Value(_initialProcessStateJson!),
+      );
+      return repo.insert(entry);
+    }
+    final entry = _buildCompanion(
+      processStateJson: const drift.Value.absent(),
+    );
+    await repo.update(existingId, entry);
+    return existingId;
+  }
+
+  /// Builds the companion. `processStateJson` is supplied by the caller
+  /// because the value differs between first-insert (seeded from
+  /// process steps) and updates (left absent so user progress persists).
+  BatchesCompanion _buildCompanion({
+    required drift.Value<String> processStateJson,
+  }) {
+    final count = _parseInt(_count);
+    final fired = _parseInt(_firedCount).clamp(0, count);
+    return BatchesCompanion(
+      name: drift.Value(_name.text.trim()),
+      recipeId: drift.Value(_recipeId),
+      brassLotId: drift.Value(_brassLotId),
+      firearmId: drift.Value(_firearmId),
+      count: drift.Value(count),
+      firedCount: drift.Value(fired),
+      loadedAt: drift.Value(_loadedAt),
+      notes: drift.Value(_nullIfEmpty(_notes)),
+      processStateJson: processStateJson,
+    );
   }
 
   @override
   void dispose() {
+    _autoSave.dispose();
     for (final c in [_name, _count, _firedCount, _notes]) {
       c.dispose();
     }
@@ -162,7 +222,10 @@ class _BatchFormScreenState extends State<BatchFormScreen> {
       firstDate: DateTime(now.year - 30),
       lastDate: DateTime(now.year + 1),
     );
-    if (picked != null) setState(() => _loadedAt = picked);
+    if (picked != null) {
+      setState(() => _loadedAt = picked);
+      _autoSave.notifyDirty();
+    }
   }
 
   /// Builds the initial process-state JSON for a new batch by enabling
@@ -185,28 +248,20 @@ class _BatchFormScreenState extends State<BatchFormScreen> {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
 
-    final count = _parseInt(_count);
-    final fired = _parseInt(_firedCount).clamp(0, count);
+    final existingId = _autoSave.currentRowId;
 
-    final entry = BatchesCompanion(
-      name: drift.Value(_name.text.trim()),
-      recipeId: drift.Value(_recipeId),
-      brassLotId: drift.Value(_brassLotId),
-      firearmId: drift.Value(_firearmId),
-      count: drift.Value(count),
-      firedCount: drift.Value(fired),
-      loadedAt: drift.Value(_loadedAt),
-      notes: drift.Value(_nullIfEmpty(_notes)),
-      processStateJson: widget.existing == null
-          ? drift.Value(await _buildInitialProcessStateJson())
-          : const drift.Value.absent(),
-    );
-
-    if (widget.existing == null) {
+    if (existingId == null) {
+      _initialProcessStateJson ??= await _buildInitialProcessStateJson();
+      final entry = _buildCompanion(
+        processStateJson: drift.Value(_initialProcessStateJson!),
+      );
       await repo.insert(entry);
       messenger.showSnackBar(const SnackBar(content: Text('Batch saved.')));
     } else {
-      await repo.update(widget.existing!.id, entry);
+      final entry = _buildCompanion(
+        processStateJson: const drift.Value.absent(),
+      );
+      await repo.update(existingId, entry);
       messenger.showSnackBar(
         const SnackBar(content: Text('Batch updated.')),
       );
@@ -218,18 +273,30 @@ class _BatchFormScreenState extends State<BatchFormScreen> {
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.existing != null;
-    return Scaffold(
-      appBar: AppBar(title: Text(isEdit ? 'Edit Batch' : 'New Batch')),
-      body: Form(
-        key: _formKey,
-        child: FutureBuilder<_Refs>(
-          future: _refsFuture,
-          builder: (context, snap) {
-            if (snap.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            final refs = snap.data!;
-            return ListView(
+    final autoSaveOn = context.watch<AutoSaveService>().isEnabled;
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, _) async {
+        await _autoSave.flush();
+      },
+      child: Scaffold(
+        appBar: AppBar(title: Text(isEdit ? 'Edit Batch' : 'New Batch')),
+        body: AutoSaveFirstTimeHint(
+          child: Column(
+            children: [
+              AutoSaveBanner(controller: _autoSave),
+              Expanded(
+                child: Form(
+                  key: _formKey,
+                  child: FutureBuilder<_Refs>(
+                    future: _refsFuture,
+                    builder: (context, snap) {
+                      if (snap.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                            child: CircularProgressIndicator());
+                      }
+                      final refs = snap.data!;
+                      return ListView(
               padding: const EdgeInsets.all(16),
               children: [
                 _Section(
@@ -262,7 +329,10 @@ class _BatchFormScreenState extends State<BatchFormScreen> {
                             ),
                           ),
                       ],
-                      onChanged: (v) => setState(() => _recipeId = v),
+                      onChanged: (v) {
+                        setState(() => _recipeId = v);
+                        _autoSave.notifyDirty();
+                      },
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<int?>(
@@ -284,7 +354,10 @@ class _BatchFormScreenState extends State<BatchFormScreen> {
                             ),
                           ),
                       ],
-                      onChanged: (v) => setState(() => _brassLotId = v),
+                      onChanged: (v) {
+                        setState(() => _brassLotId = v);
+                        _autoSave.notifyDirty();
+                      },
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<int?>(
@@ -306,7 +379,10 @@ class _BatchFormScreenState extends State<BatchFormScreen> {
                             ),
                           ),
                       ],
-                      onChanged: (v) => setState(() => _firearmId = v),
+                      onChanged: (v) {
+                        setState(() => _firearmId = v);
+                        _autoSave.notifyDirty();
+                      },
                     ),
                   ],
                 ),
@@ -359,8 +435,10 @@ class _BatchFormScreenState extends State<BatchFormScreen> {
                             IconButton(
                               tooltip: 'Clear',
                               icon: const Icon(Icons.clear),
-                              onPressed: () =>
-                                  setState(() => _loadedAt = null),
+                              onPressed: () {
+                                setState(() => _loadedAt = null);
+                                _autoSave.notifyDirty();
+                              },
                             ),
                           IconButton(
                             tooltip: 'Pick date',
@@ -386,15 +464,26 @@ class _BatchFormScreenState extends State<BatchFormScreen> {
                 const SizedBox(height: 24),
                 FilledButton(
                   onPressed: _busy ? null : _save,
-                  child: Text(isEdit ? 'Save Changes' : 'Create Batch'),
+                  child: Text(_finalButtonLabel(autoSaveOn, isEdit)),
                 ),
                 const SizedBox(height: 24),
               ],
             );
-          },
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  /// When autosave is on, the trailing button is just "Done".
+  String _finalButtonLabel(bool autoSaveOn, bool isEdit) {
+    if (autoSaveOn) return 'Done';
+    return isEdit ? 'Save Changes' : 'Create Batch';
   }
 }
 

@@ -7,7 +7,7 @@
     "bullets":       {"version": 1, "filename": "bullets.json"},
     "primers":       {"version": 1, "filename": "primers.json"},
     "brass":         {"version": 1, "filename": "brass.json"},
-    "firearms":      {"version": 1, "filename": "firearms.json"},
+    "firearms":      {"version": 2, "filename": "firearms.json"},
     "firearm_parts": {"version": 1, "filename": "firearm_parts.json"},
     "optics":        {"version": 1, "filename": "optics.json"}
   }

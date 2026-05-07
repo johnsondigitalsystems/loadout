@@ -1,4 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Location permissions for the Pro "use my location" weather fetch on
+         the ballistics Environment section. Coarse permission is sufficient
+         for fetching weather; fine is requested as a fallback so handsets
+         that already grant fine don't downgrade. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <application
         android:label="LoadOut"
         android:name="${applicationName}"

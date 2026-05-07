@@ -90,8 +90,13 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../services/auth_service.dart';
+
+/// Address used by the "Get help signing in" affordance. Kept in lockstep
+/// with the support tile in `lib/screens/settings/settings_screen.dart`.
+const String _supportEmail = 'support@johnsondigital.com';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -179,6 +184,33 @@ class _LoginScreenState extends State<LoginScreen> {
         SnackBar(content: Text("Sign-in link sent to $email.")),
       );
     });
+  }
+
+  /// Cross-device email-link UX safety net (LAUNCH_CHECKLIST.md). If the
+  /// user got an email-link on a phone that didn't send it, the pending-
+  /// email pref isn't local and `tryCompleteEmailLink` returns null with
+  /// no actionable feedback. This affordance gives them a way to ask for
+  /// help without bouncing out to settings.
+  Future<void> _openSupportMail() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final subject = Uri.encodeComponent('LoadOut Sign-in Help');
+    final body = Uri.encodeComponent(
+      "I'm having trouble signing in. Please describe what happened "
+      'and (if relevant) which email you signed in with.\n\n'
+      '— — —\n'
+      'App: LoadOut v1.0.0+1\n',
+    );
+    final uri = Uri.parse('mailto:$_supportEmail?subject=$subject&body=$body');
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok && mounted) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'No email app available — write to $_supportEmail.',
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _showForgotPassword() async {
@@ -353,6 +385,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: _busy ? null : _sendEmailLink,
                     icon: const Icon(Icons.link),
                     label: const Text('Email Me a Sign-In Link'),
+                  ),
+                  TextButton.icon(
+                    onPressed: _busy ? null : _openSupportMail,
+                    icon: const Icon(Icons.help_outline),
+                    label: const Text('Get help signing in'),
                   ),
                   TextButton(
                     onPressed: _busy

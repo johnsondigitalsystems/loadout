@@ -106,12 +106,14 @@
 //   `Clipboard.setData(...)`. Triggered only on the user tapping
 //   "Export DOPE card to clipboard."
 
+import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../database/database.dart';
+import '../../repositories/ballistic_profile_repository.dart';
 import '../../repositories/component_repository.dart';
 import '../../repositories/firearm_repository.dart';
 import '../../services/ballistics/atmosphere.dart';
@@ -120,6 +122,8 @@ import '../../services/ballistics/environment.dart';
 import '../../services/ballistics/projectile.dart';
 import '../../services/ballistics/solver.dart';
 import '../../services/ballistics/units.dart';
+import '../../services/entitlement_notifier.dart';
+import '../../services/weather_service.dart';
 import '../../widgets/pro_gate.dart';
 import 'widgets/trajectory_chart.dart';
 
@@ -127,6 +131,12 @@ import 'widgets/trajectory_chart.dart';
 const _kRangeIncrementKey = 'ballistics_range_increment_yd';
 const _kRangeMinKey = 'ballistics_range_min_yd';
 const _kRangeMaxKey = 'ballistics_range_max_yd';
+
+/// Persisted "user has seen the Pro weather hint" flag for the first-run
+/// MaterialBanner shown on top of the ballistics screen. Once `true`
+/// the banner is suppressed forever — the hint exists to surface the
+/// new feature, not to be dismissed-and-re-shown.
+const _kWeatherHintShownKey = 'ballistics_weather_hint_shown';
 
 /// Allowed bounds for the user-typed start / end ranges.
 const _kRangeMinMin = 0;
@@ -170,6 +180,13 @@ class BallisticsScreen extends StatefulWidget {
 enum AngleUnit { inches, moa, mil }
 
 class _BallisticsScreenState extends State<BallisticsScreen> {
+  // ─────────────────────── Saved profiles ───────────────────────
+  /// Live stream of saved profiles, used to populate the dropdown at
+  /// the top of the screen. Subscribed once on initState; the list
+  /// refreshes automatically after any insert / update / delete.
+  Stream<List<BallisticProfileRow>>? _profilesStream;
+  BallisticProfileRow? _activeProfile;
+
   // ─────────────────────── Rifle picker ───────────────────────
   /// One-shot list of the user's firearms, fetched on initState. Null until
   /// the future resolves; empty list means the user has no firearms saved.
@@ -225,13 +242,258 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   List<TrajectorySample> _samples = const [];
   String? _error;
 
+  // ─────────────────────── Weather (Pro) ───────────────────────
+  /// Spinner-on flag for the cloud icon button. Disables the button
+  /// while a fetch is in flight so the user can't fire two requests
+  /// in parallel.
+  bool _weatherFetching = false;
+
+  /// Wall-clock time of the most recent successful weather fetch.
+  /// Drives the "Updated 2:34 PM" subtitle on the Environment header.
+  DateTime? _weatherFetchedAt;
+
+  /// First-run hint state. `_weatherHintHydrated` is false until the
+  /// SharedPreferences read completes; once it's true, the banner
+  /// shows iff `_weatherHintShown` is false.
+  bool _weatherHintHydrated = false;
+  bool _weatherHintShown = true;
+
   @override
   void initState() {
     super.initState();
     _firearmsFuture = context.read<FirearmRepository>().allFirearms();
     _bulletsFuture =
         context.read<ComponentRepository>().allBulletsWithManufacturer();
+    _profilesStream = context.read<BallisticProfileRepository>().watchAll();
     _restoreRangePreferences();
+    _loadWeatherHintFlag();
+  }
+
+  /// One-shot read of the "have we shown the weather hint yet?" flag.
+  /// Called once from initState; the banner stays hidden until this
+  /// resolves so we never flash it then immediately retract it.
+  Future<void> _loadWeatherHintFlag() async {
+    final prefs = await SharedPreferences.getInstance();
+    final shown = prefs.getBool(_kWeatherHintShownKey) ?? false;
+    if (!mounted) return;
+    setState(() {
+      _weatherHintShown = shown;
+      _weatherHintHydrated = true;
+    });
+  }
+
+  /// Persists the "hint dismissed" flag and immediately collapses the
+  /// banner. Called by the "Got it" button on the MaterialBanner.
+  Future<void> _dismissWeatherHint() async {
+    setState(() => _weatherHintShown = true);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kWeatherHintShownKey, true);
+  }
+
+  /// Snapshots the current form state into a `BallisticProfilesCompanion`.
+  /// Used by both Save (insert) and Update (write existing).
+  BallisticProfilesCompanion _buildProfileCompanion(String name) {
+    return BallisticProfilesCompanion(
+      name: drift.Value(name),
+      bulletWeightGr: drift.Value(double.tryParse(_weightCtrl.text) ?? 0),
+      bulletDiameterIn: drift.Value(double.tryParse(_diameterCtrl.text) ?? 0),
+      ballisticCoefficient: drift.Value(double.tryParse(_bcCtrl.text) ?? 0),
+      dragModel: drift.Value(_dragModel == DragModel.g7 ? 'g7' : 'g1'),
+      bulletLengthIn: drift.Value(double.tryParse(_lengthCtrl.text)),
+      muzzleVelocityFps:
+          drift.Value(double.tryParse(_muzzleVelCtrl.text) ?? 0),
+      zeroRangeYd: drift.Value(int.tryParse(_zeroRangeCtrl.text) ?? 100),
+      sightHeightIn:
+          drift.Value(double.tryParse(_sightHeightCtrl.text) ?? 1.5),
+      twistRate: drift.Value(_twistCtrl.text.trim().isEmpty
+          ? null
+          : _twistCtrl.text.trim()),
+      firearmId: drift.Value(_selectedFirearm?.id),
+      bulletId: drift.Value(_selectedBullet?.bullet.id),
+      temperatureF: drift.Value(double.tryParse(_tempCtrl.text)),
+      pressureInHg: drift.Value(double.tryParse(_pressureCtrl.text)),
+      humidityPct: drift.Value(double.tryParse(_humidityCtrl.text)),
+      elevationFt: drift.Value(double.tryParse(_altitudeCtrl.text)),
+      windSpeedMph: drift.Value(double.tryParse(_windSpeedCtrl.text)),
+      windDirectionDeg: drift.Value(double.tryParse(_windDirCtrl.text)),
+      latitudeDeg: drift.Value(double.tryParse(_latitudeCtrl.text)),
+      firingAzimuthDeg: drift.Value(double.tryParse(_shotAzimuthCtrl.text)),
+      rangeIncrementYd: drift.Value(_rangeIncrement),
+      rangeMinYd: drift.Value(_readClampedMinRange()),
+      rangeMaxYd: drift.Value(_readClampedMaxRange()),
+    );
+  }
+
+  /// Pushes a profile's stored values back into the calculator's
+  /// controllers + state. Restores environment fields only when the
+  /// profile actually saved them (nullable columns); otherwise leaves
+  /// the existing values alone, which keeps the SharedPreferences
+  /// fallback intact.
+  void _applyProfile(BallisticProfileRow p) {
+    setState(() {
+      _activeProfile = p;
+      _weightCtrl.text = _trimTrailingZeros(p.bulletWeightGr);
+      _diameterCtrl.text = p.bulletDiameterIn.toStringAsFixed(3);
+      _bcCtrl.text = p.ballisticCoefficient.toStringAsFixed(3);
+      _dragModel =
+          p.dragModel.toLowerCase() == 'g1' ? DragModel.g1 : DragModel.g7;
+      if (p.bulletLengthIn != null) {
+        _lengthCtrl.text = _trimTrailingZeros(p.bulletLengthIn!);
+      }
+      if (p.twistRate != null) _twistCtrl.text = p.twistRate!;
+      _muzzleVelCtrl.text = p.muzzleVelocityFps.toStringAsFixed(0);
+      _zeroRangeCtrl.text = p.zeroRangeYd.toString();
+      _sightHeightCtrl.text = _trimTrailingZeros(p.sightHeightIn);
+      if (p.temperatureF != null) {
+        _tempCtrl.text = _trimTrailingZeros(p.temperatureF!);
+      }
+      if (p.pressureInHg != null) {
+        _pressureCtrl.text = p.pressureInHg!.toStringAsFixed(2);
+      }
+      if (p.humidityPct != null) {
+        _humidityCtrl.text = _trimTrailingZeros(p.humidityPct!);
+      }
+      if (p.elevationFt != null) {
+        _altitudeCtrl.text = _trimTrailingZeros(p.elevationFt!);
+      }
+      if (p.windSpeedMph != null) {
+        _windSpeedCtrl.text = _trimTrailingZeros(p.windSpeedMph!);
+      }
+      if (p.windDirectionDeg != null) {
+        _windDirCtrl.text = _trimTrailingZeros(p.windDirectionDeg!);
+      }
+      if (p.latitudeDeg != null) {
+        _latitudeCtrl.text = _trimTrailingZeros(p.latitudeDeg!);
+      }
+      if (p.firingAzimuthDeg != null) {
+        _shotAzimuthCtrl.text = _trimTrailingZeros(p.firingAzimuthDeg!);
+      }
+      _rangeIncrement = p.rangeIncrementYd;
+      _rangeMinCtrl.text = p.rangeMinYd.toString();
+      _rangeMaxCtrl.text = p.rangeMaxYd.toString();
+    });
+  }
+
+  String _trimTrailingZeros(double v) {
+    final s = v.toString();
+    if (!s.contains('.')) return s;
+    return s.replaceFirst(RegExp(r'\.?0+$'), '');
+  }
+
+  /// Pop-up name dialog for "Save as Profile". Returns null on cancel.
+  Future<String?> _promptForProfileName({String initial = ''}) async {
+    final controller = TextEditingController(text: initial);
+    final formKey = GlobalKey<FormState>();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Name this profile'),
+        content: Form(
+          key: formKey,
+          child: TextFormField(
+            controller: controller,
+            autofocus: true,
+            decoration: const InputDecoration(
+              labelText: 'Name',
+              hintText: 'e.g. 6.5 CM 140gr ELD-M Tikka',
+            ),
+            validator: (v) =>
+                (v == null || v.trim().isEmpty) ? 'Required' : null,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (!formKey.currentState!.validate()) return;
+              Navigator.pop(ctx, controller.text.trim());
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    return result;
+  }
+
+  Future<void> _onSaveAsProfile() async {
+    // Capture the BuildContext-derived dependencies BEFORE the async
+    // showDialog call. Lint flags otherwise — and after `_promptForProfileName`
+    // returns there's no guarantee the State is still mounted.
+    final repo = context.read<BallisticProfileRepository>();
+    final messenger = ScaffoldMessenger.of(context);
+    final name = await _promptForProfileName(
+      initial: _selectedFirearm == null
+          ? ''
+          : '${_selectedFirearm!.name} ${_weightCtrl.text}gr',
+    );
+    if (name == null) return;
+    final id = await repo.insert(_buildProfileCompanion(name));
+    if (!mounted) return;
+    final fresh = await repo.getById(id);
+    if (!mounted) return;
+    if (fresh != null) {
+      setState(() => _activeProfile = fresh);
+    }
+    messenger.showSnackBar(
+      SnackBar(content: Text('Profile "$name" saved.')),
+    );
+  }
+
+  Future<void> _onUpdateProfile() async {
+    final p = _activeProfile;
+    if (p == null) return;
+    final repo = context.read<BallisticProfileRepository>();
+    final messenger = ScaffoldMessenger.of(context);
+    await repo.update(p.id, _buildProfileCompanion(p.name));
+    if (!mounted) return;
+    final fresh = await repo.getById(p.id);
+    if (!mounted) return;
+    if (fresh != null) {
+      setState(() => _activeProfile = fresh);
+    }
+    messenger.showSnackBar(
+      SnackBar(content: Text('Profile "${p.name}" updated.')),
+    );
+  }
+
+  Future<void> _onDeleteProfile() async {
+    final p = _activeProfile;
+    if (p == null) return;
+    // Capture before any await to satisfy use_build_context_synchronously.
+    final messenger = ScaffoldMessenger.of(context);
+    final repo = context.read<BallisticProfileRepository>();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete profile?'),
+        content: Text(
+          'This will remove "${p.name}" from your saved profiles. The '
+          'calculator inputs stay where they are.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await repo.delete(p.id);
+    if (!mounted) return;
+    setState(() => _activeProfile = null);
+    messenger.showSnackBar(
+      SnackBar(content: Text('Profile "${p.name}" deleted.')),
+    );
   }
 
   Future<void> _restoreRangePreferences() async {
@@ -628,36 +890,187 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final showWeatherHint = _weatherHintHydrated && !_weatherHintShown;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Ballistics Calculator'),
       ),
       body: ProGate(
         feature: 'Ballistics Calculator',
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _firearmSection(),
-              const SizedBox(height: 8),
-              _projectileSection(),
-              const SizedBox(height: 8),
-              _muzzleZeroSection(),
-              const SizedBox(height: 8),
-              _environmentSection(),
-              const SizedBox(height: 8),
-              _outputSection(),
-              const SizedBox(height: 16),
-              _DisclaimerFooter(),
-            ],
-          ),
+        child: Column(
+          children: [
+            if (showWeatherHint) _weatherHintBanner(),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _profilePickerCard(),
+                    const SizedBox(height: 8),
+                    _firearmSection(),
+                    const SizedBox(height: 8),
+                    _projectileSection(),
+                    const SizedBox(height: 8),
+                    _muzzleZeroSection(),
+                    const SizedBox(height: 8),
+                    _environmentSection(),
+                    const SizedBox(height: 8),
+                    _outputSection(),
+                    const SizedBox(height: 16),
+                    _DisclaimerFooter(),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   // ─────────────────────── Sections ───────────────────────
+
+  /// Slim card at the top of the screen that lets the user pick / save
+  /// a [BallisticProfileRow]. Live-streams from [BallisticProfileRepository]
+  /// so newly-saved profiles appear in the dropdown without manual
+  /// refresh.
+  Widget _profilePickerCard() {
+    final theme = Theme.of(context);
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+        child: StreamBuilder<List<BallisticProfileRow>>(
+          stream: _profilesStream,
+          builder: (context, snap) {
+            final profiles = snap.data ?? const <BallisticProfileRow>[];
+            // Re-resolve _activeProfile by id whenever the stream emits
+            // so an Update keeps the dropdown selection correct.
+            BallisticProfileRow? selected;
+            if (_activeProfile != null) {
+              for (final p in profiles) {
+                if (p.id == _activeProfile!.id) {
+                  selected = p;
+                  break;
+                }
+              }
+            }
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary
+                            .withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: theme.colorScheme.primary
+                              .withValues(alpha: 0.35),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.bookmark_outline,
+                              size: 14, color: theme.colorScheme.primary),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Profiles',
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Spacer(),
+                    if (selected == null)
+                      Text(
+                        'Unsaved',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                if (profiles.isEmpty)
+                  Text(
+                    'Save the current inputs as a named profile to switch '
+                    'between rifles or loads in one tap.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  )
+                else
+                  DropdownButtonFormField<int?>(
+                    initialValue: selected?.id,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Active Profile',
+                      isDense: true,
+                    ),
+                    items: <DropdownMenuItem<int?>>[
+                      const DropdownMenuItem<int?>(
+                        value: null,
+                        child: Text('— New / Unsaved —'),
+                      ),
+                      for (final p in profiles)
+                        DropdownMenuItem<int?>(
+                          value: p.id,
+                          child: Text(
+                            p.name,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                    ],
+                    onChanged: (id) {
+                      if (id == null) {
+                        setState(() => _activeProfile = null);
+                        return;
+                      }
+                      final picked = profiles
+                          .firstWhere((p) => p.id == id, orElse: () => profiles.first);
+                      _applyProfile(picked);
+                    },
+                  ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.save_outlined, size: 16),
+                      label: const Text('Save as Profile'),
+                      onPressed: _onSaveAsProfile,
+                    ),
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.sync_outlined, size: 16),
+                      label: const Text('Update'),
+                      onPressed:
+                          selected == null ? null : _onUpdateProfile,
+                    ),
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.delete_outline, size: 16),
+                      label: const Text('Delete'),
+                      onPressed:
+                          selected == null ? null : _onDeleteProfile,
+                    ),
+                  ],
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
 
   Widget _firearmSection() {
     return _SectionCard(
@@ -1058,10 +1471,174 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
     );
   }
 
+  // ─────────────────────── Weather fetch ───────────────────────
+
+  /// Pro-gated handler wired to the cloud icon on the Environment
+  /// section's header. Walks through the gate, then the location +
+  /// network handshake in [WeatherService], then writes the
+  /// resulting fields into the controllers. Surface every failure as
+  /// a friendly snackbar; never let an exception crash the screen.
+  Future<void> _onUseMyLocation() async {
+    if (!await ensurePro(context)) return;
+    if (!mounted) return;
+    // Capture the messenger BEFORE the async fetch so we don't trip
+    // `use_build_context_synchronously` after awaits.
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _weatherFetching = true);
+    try {
+      final result = await WeatherService().fetchForCurrentLocation();
+      if (!mounted) return;
+      setState(() {
+        _tempCtrl.text = result.tempF.toStringAsFixed(1);
+        _pressureCtrl.text = result.stationPressureInHg.toStringAsFixed(2);
+        _humidityCtrl.text = result.humidityPct.toStringAsFixed(0);
+        _altitudeCtrl.text = result.elevationFt.toStringAsFixed(0);
+        _windSpeedCtrl.text = result.windSpeedMph.toStringAsFixed(1);
+        _windDirCtrl.text = result.windDirectionDeg.toStringAsFixed(0);
+        _weatherFetchedAt = result.fetchedAt;
+      });
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Weather updated · ${_formatClock(result.fetchedAt)}'),
+        ),
+      );
+    } on WeatherFetchException catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text(e.userMessage)));
+    } catch (_) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(
+            content: Text('Couldn\'t fetch weather. Try again later.')),
+      );
+    } finally {
+      if (mounted) setState(() => _weatherFetching = false);
+    }
+  }
+
+  /// Format a `DateTime` as a 12-hour clock with AM/PM (e.g.
+  /// `"2:34 PM"`). Used by the "Updated …" subtitle and snackbar.
+  String _formatClock(DateTime t) {
+    final hour24 = t.hour;
+    final hour12 = hour24 == 0 ? 12 : (hour24 > 12 ? hour24 - 12 : hour24);
+    final mm = t.minute.toString().padLeft(2, '0');
+    final period = hour24 < 12 ? 'AM' : 'PM';
+    return '$hour12:$mm $period';
+  }
+
+  /// Trailing widget rendered in the Environment section's header. A
+  /// small "Use my location" cloud icon button with a "PRO" chip next
+  /// to it so non-Pro users see what they'd be unlocking. The button
+  /// flips to a spinner while the fetch is in flight.
+  Widget _environmentTrailing() {
+    final theme = Theme.of(context);
+    final isPro = context.watch<EntitlementNotifier>().isPro;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (!isPro)
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: theme.colorScheme.primary.withValues(alpha: 0.5),
+              ),
+            ),
+            child: Text(
+              'PRO',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+        IconButton(
+          tooltip: 'Use my location',
+          onPressed: _weatherFetching ? null : _onUseMyLocation,
+          icon: _weatherFetching
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.cloud_outlined),
+        ),
+      ],
+    );
+  }
+
+  /// First-run MaterialBanner above the ballistics body. Tells Pro
+  /// (and prospective Pro) users where the new "Use my location"
+  /// affordance lives. Suppressed once the user dismisses it; the
+  /// `_kWeatherHintShownKey` SharedPreference makes the dismissal
+  /// stick across launches.
+  Widget _weatherHintBanner() {
+    final theme = Theme.of(context);
+    return Material(
+      color: theme.colorScheme.primaryContainer,
+      elevation: 0,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.cloud_outlined,
+              size: 18,
+              color: theme.colorScheme.onPrimaryContainer,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'New: pull current weather',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: theme.colorScheme.onPrimaryContainer,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Pro users can pull current weather from their location. '
+                    'Tap the cloud icon in Environment.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: theme.colorScheme.onPrimaryContainer,
+              ),
+              onPressed: () {
+                // ignore: discarded_futures
+                _dismissWeatherHint();
+              },
+              child: const Text('Got it'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _environmentSection() {
+    final updatedAt = _weatherFetchedAt;
     return _SectionCard(
       title: 'Environment',
       icon: Icons.air_outlined,
+      subtitle:
+          updatedAt == null ? null : 'Updated ${_formatClock(updatedAt)}',
+      trailing: _environmentTrailing(),
       child: Column(
         children: [
           Row(
@@ -1309,12 +1886,25 @@ class _SectionCard extends StatelessWidget {
     required this.icon,
     required this.child,
     this.initiallyExpanded = true,
+    this.subtitle,
+    this.trailing,
   });
 
   final String title;
   final IconData icon;
   final Widget child;
   final bool initiallyExpanded;
+
+  /// Optional small text rendered under the title pill (e.g.
+  /// "Updated 2:34 PM" once the user has fetched weather). When null
+  /// the row collapses cleanly.
+  final String? subtitle;
+
+  /// Optional trailing widget rendered to the right of the title pill
+  /// (e.g. the "Use my location" cloud icon on the Environment
+  /// section). When null the [ExpansionTile]'s own chevron occupies
+  /// the trailing slot as usual.
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -1357,8 +1947,23 @@ class _SectionCard extends StatelessWidget {
                 ],
               ),
             ),
+            if (trailing != null) ...[
+              const Spacer(),
+              trailing!,
+            ],
           ],
         ),
+        subtitle: subtitle == null
+            ? null
+            : Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  subtitle!,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
         children: [child],
       ),
     );

@@ -122,6 +122,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'database/database.dart';
+import 'repositories/ballistic_profile_repository.dart';
 import 'repositories/batch_repository.dart';
 import 'repositories/brass_lot_repository.dart';
 import 'repositories/component_repository.dart';
@@ -134,6 +135,7 @@ import 'screens/auth/login_screen.dart';
 import 'screens/disclaimer/disclaimer_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'services/auth_service.dart';
+import 'services/auto_save_service.dart';
 import 'services/entitlement_notifier.dart';
 import 'services/purchases_service.dart';
 import 'theme/app_theme.dart';
@@ -178,6 +180,12 @@ class LoadOutApp extends StatelessWidget {
         ),
         Provider<LoadDevelopmentRepository>(
           create: (_) => LoadDevelopmentRepository(database),
+        ),
+        Provider<BallisticProfileRepository>(
+          create: (_) => BallisticProfileRepository(database),
+        ),
+        ChangeNotifierProvider<AutoSaveService>(
+          create: (_) => AutoSaveService(),
         ),
         ChangeNotifierProvider<EntitlementNotifier>(
           create: (ctx) => EntitlementNotifier(ctx.read<PurchasesService>()),

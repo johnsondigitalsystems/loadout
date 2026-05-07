@@ -63,6 +63,9 @@ import 'package:provider/provider.dart';
 import '../../database/database.dart';
 import '../../repositories/brass_lot_repository.dart';
 import '../../repositories/component_repository.dart';
+import '../../services/auto_save_service.dart';
+import '../../widgets/auto_save_banner.dart';
+import '../../widgets/auto_save_first_time_hint.dart';
 import '../../widgets/component_field.dart';
 
 /// Allowed values for the Anneal Method dropdown. Stored lowercased to
@@ -108,6 +111,8 @@ class _BrassLotFormScreenState extends State<BrassLotFormScreen> {
 
   bool _busy = false;
 
+  late final AutoSaveController _autoSave;
+
   @override
   void initState() {
     super.initState();
@@ -139,10 +144,75 @@ class _BrassLotFormScreenState extends State<BrassLotFormScreen> {
     _neckTurned = e?.neckTurned ?? false;
     _pocketUniformed = e?.pocketUniformed ?? false;
     _flashHoleDeburred = e?.flashHoleDeburred ?? false;
+
+    _autoSave = AutoSaveController(
+      service: context.read<AutoSaveService>(),
+      onSave: _runAutoSave,
+      initialSavedRowId: widget.existing?.id,
+    );
+
+    for (final c in [
+      _name,
+      _manufacturer,
+      _caliber,
+      _headstampLot,
+      _count,
+      _firingCount,
+      _avgWeight,
+      _caseCapacity,
+      _trimToLength,
+      _lastTrimLength,
+      _neckWallThickness,
+      _neckTurnDepth,
+      _notes,
+    ]) {
+      c.addListener(_autoSave.notifyDirty);
+    }
+  }
+
+  Future<int?> _runAutoSave() async {
+    final name = _name.text.trim();
+    final caliber = _caliber.text.trim();
+    if (name.isEmpty || caliber.isEmpty) return null;
+    final repo = context.read<BrassLotRepository>();
+    final entry = _buildCompanion();
+    final existingId = _autoSave.currentRowId;
+    if (existingId == null) {
+      return repo.insert(entry);
+    }
+    await repo.update(existingId, entry);
+    return existingId;
+  }
+
+  /// Common path used by both autosave and the manual Save button so
+  /// they emit the same row shape.
+  BrassLotsCompanion _buildCompanion() {
+    return BrassLotsCompanion(
+      name: drift.Value(_name.text.trim()),
+      manufacturer: drift.Value(_nullIfEmpty(_manufacturer)),
+      caliber: drift.Value(_caliber.text.trim()),
+      headstampLot: drift.Value(_nullIfEmpty(_headstampLot)),
+      count: drift.Value(_parseInt(_count)),
+      firingCount: drift.Value(_parseInt(_firingCount)),
+      lastAnnealed: drift.Value(_lastAnnealed),
+      annealMethod: drift.Value(_annealMethod),
+      avgWeightGr: drift.Value(_parseDouble(_avgWeight)),
+      caseCapacityGrH2o: drift.Value(_parseDouble(_caseCapacity)),
+      trimToLengthIn: drift.Value(_parseDouble(_trimToLength)),
+      lastTrimLengthIn: drift.Value(_parseDouble(_lastTrimLength)),
+      neckWallThicknessIn: drift.Value(_parseDouble(_neckWallThickness)),
+      neckTurned: drift.Value(_neckTurned),
+      neckTurnDepthIn:
+          drift.Value(_neckTurned ? _parseDouble(_neckTurnDepth) : null),
+      pocketUniformed: drift.Value(_pocketUniformed),
+      flashHoleDeburred: drift.Value(_flashHoleDeburred),
+      notes: drift.Value(_nullIfEmpty(_notes)),
+    );
   }
 
   @override
   void dispose() {
+    _autoSave.dispose();
     for (final c in [
       _name,
       _manufacturer,
@@ -192,7 +262,10 @@ class _BrassLotFormScreenState extends State<BrassLotFormScreen> {
       firstDate: DateTime(now.year - 30),
       lastDate: DateTime(now.year + 1),
     );
-    if (picked != null) setState(() => _lastAnnealed = picked);
+    if (picked != null) {
+      setState(() => _lastAnnealed = picked);
+      _autoSave.notifyDirty();
+    }
   }
 
   Future<void> _save() async {
@@ -214,35 +287,16 @@ class _BrassLotFormScreenState extends State<BrassLotFormScreen> {
       }
     }
 
-    final entry = BrassLotsCompanion(
-      name: drift.Value(_name.text.trim()),
-      manufacturer: drift.Value(_nullIfEmpty(_manufacturer)),
-      caliber: drift.Value(_caliber.text.trim()),
-      headstampLot: drift.Value(_nullIfEmpty(_headstampLot)),
-      count: drift.Value(_parseInt(_count)),
-      firingCount: drift.Value(_parseInt(_firingCount)),
-      lastAnnealed: drift.Value(_lastAnnealed),
-      annealMethod: drift.Value(_annealMethod),
-      avgWeightGr: drift.Value(_parseDouble(_avgWeight)),
-      caseCapacityGrH2o: drift.Value(_parseDouble(_caseCapacity)),
-      trimToLengthIn: drift.Value(_parseDouble(_trimToLength)),
-      lastTrimLengthIn: drift.Value(_parseDouble(_lastTrimLength)),
-      neckWallThicknessIn: drift.Value(_parseDouble(_neckWallThickness)),
-      neckTurned: drift.Value(_neckTurned),
-      neckTurnDepthIn:
-          drift.Value(_neckTurned ? _parseDouble(_neckTurnDepth) : null),
-      pocketUniformed: drift.Value(_pocketUniformed),
-      flashHoleDeburred: drift.Value(_flashHoleDeburred),
-      notes: drift.Value(_nullIfEmpty(_notes)),
-    );
+    final entry = _buildCompanion();
+    final existingId = _autoSave.currentRowId;
 
-    if (widget.existing == null) {
+    if (existingId == null) {
       await repo.insert(entry);
       messenger.showSnackBar(
         const SnackBar(content: Text('Brass lot saved.')),
       );
     } else {
-      await repo.update(widget.existing!.id, entry);
+      await repo.update(existingId, entry);
       messenger.showSnackBar(
         const SnackBar(content: Text('Brass lot updated.')),
       );
@@ -300,6 +354,9 @@ class _BrassLotFormScreenState extends State<BrassLotFormScreen> {
     final next =
         (_parseInt(_firingCount) + result).clamp(0, 1 << 31).toString();
     setState(() => _firingCount.text = next);
+    // The repo write already updated the row; mirror locally so any
+    // pending autosave doesn't undo the firing-count bump.
+    _autoSave.notifyDirty();
     messenger.showSnackBar(
       SnackBar(content: Text('Recorded $result firing(s).')),
     );
@@ -355,6 +412,7 @@ class _BrassLotFormScreenState extends State<BrassLotFormScreen> {
       _lastAnnealed = result.when;
       _annealMethod = result.method;
     });
+    _autoSave.notifyDirty();
     messenger.showSnackBar(
       const SnackBar(content: Text('Marked annealed.')),
     );
@@ -404,6 +462,7 @@ class _BrassLotFormScreenState extends State<BrassLotFormScreen> {
 
     await repo.setCount(widget.existing!.id, result);
     setState(() => _count.text = result.toString());
+    _autoSave.notifyDirty();
   }
 
   // ─────────────────────── UI ───────────────────────
@@ -411,15 +470,26 @@ class _BrassLotFormScreenState extends State<BrassLotFormScreen> {
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.existing != null;
-    return Scaffold(
-      appBar: AppBar(title: Text(isEdit ? 'Edit Brass Lot' : 'New Brass Lot')),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            if (isEdit) _quickActions(),
-            if (isEdit) const SizedBox(height: 12),
+    final autoSaveOn = context.watch<AutoSaveService>().isEnabled;
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, _) async {
+        await _autoSave.flush();
+      },
+      child: Scaffold(
+        appBar: AppBar(title: Text(isEdit ? 'Edit Brass Lot' : 'New Brass Lot')),
+        body: AutoSaveFirstTimeHint(
+          child: Column(
+            children: [
+              AutoSaveBanner(controller: _autoSave),
+              Expanded(
+                child: Form(
+                  key: _formKey,
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      if (isEdit) _quickActions(),
+                      if (isEdit) const SizedBox(height: 12),
             _Section(
               title: 'Identification',
               children: [
@@ -487,7 +557,10 @@ class _BrassLotFormScreenState extends State<BrassLotFormScreen> {
                     for (final m in _annealMethodOptions)
                       DropdownMenuItem(value: m.value, child: Text(m.label)),
                   ],
-                  onChanged: (v) => setState(() => _annealMethod = v),
+                  onChanged: (v) {
+                    setState(() => _annealMethod = v);
+                    _autoSave.notifyDirty();
+                  },
                 ),
               ],
             ),
@@ -554,7 +627,10 @@ class _BrassLotFormScreenState extends State<BrassLotFormScreen> {
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Neck Turned'),
                   value: _neckTurned,
-                  onChanged: (v) => setState(() => _neckTurned = v),
+                  onChanged: (v) {
+                    setState(() => _neckTurned = v);
+                    _autoSave.notifyDirty();
+                  },
                 ),
                 if (_neckTurned)
                   Padding(
@@ -574,37 +650,56 @@ class _BrassLotFormScreenState extends State<BrassLotFormScreen> {
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Primer Pocket Uniformed'),
                   value: _pocketUniformed,
-                  onChanged: (v) => setState(() => _pocketUniformed = v),
+                  onChanged: (v) {
+                    setState(() => _pocketUniformed = v);
+                    _autoSave.notifyDirty();
+                  },
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Flash Hole Deburred'),
                   value: _flashHoleDeburred,
-                  onChanged: (v) => setState(() => _flashHoleDeburred = v),
+                  onChanged: (v) {
+                    setState(() => _flashHoleDeburred = v);
+                    _autoSave.notifyDirty();
+                  },
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            _Section(
-              title: 'Notes',
-              children: [
-                TextFormField(
-                  controller: _notes,
-                  decoration: const InputDecoration(labelText: 'Notes'),
-                  maxLines: 4,
+                      const SizedBox(height: 16),
+                      _Section(
+                        title: 'Notes',
+                        children: [
+                          TextFormField(
+                            controller: _notes,
+                            decoration:
+                                const InputDecoration(labelText: 'Notes'),
+                            maxLines: 4,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      FilledButton(
+                        onPressed: _busy ? null : _save,
+                        child: Text(_finalButtonLabel(autoSaveOn, isEdit)),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: _busy ? null : _save,
-              child: Text(isEdit ? 'Save Changes' : 'Create Brass Lot'),
-            ),
-            const SizedBox(height: 24),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  /// When autosave is on, the trailing button is just "Done" — the
+  /// data has already saved as the user typed.
+  String _finalButtonLabel(bool autoSaveOn, bool isEdit) {
+    if (autoSaveOn) return 'Done';
+    return isEdit ? 'Save Changes' : 'Create Brass Lot';
   }
 
   Widget _quickActions() {
@@ -673,7 +768,10 @@ class _BrassLotFormScreenState extends State<BrassLotFormScreen> {
             IconButton(
               tooltip: 'Clear',
               icon: const Icon(Icons.clear),
-              onPressed: () => setState(() => _lastAnnealed = null),
+              onPressed: () {
+                setState(() => _lastAnnealed = null);
+                _autoSave.notifyDirty();
+              },
             ),
           IconButton(
             tooltip: 'Pick date',

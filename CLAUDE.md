@@ -140,6 +140,39 @@ ID, and Services ID, then POSTed to Firebase via the Identity Platform admin
 API. Lose the `.p8` and you have to revoke the key in Apple Developer and
 mint a new one.
 
+### User auth posture
+
+Sign-in is **optional**. Anonymous users get every core feature:
+recipes, firearms, batches, brass lots, ballistics, SAAMI specs, the AI
+chat, the glossary, and local JSON export. The bottom-nav and drawer
+never nag a guest to sign in.
+
+The only sign-in nudge in the app is on **Backups → Backup & Export**.
+When `FirebaseAuth.instance.currentUser` is null or
+`currentUser.isAnonymous` is true, the screen shows a dismissible
+`_SignInPromptCard` at the top: "Sign in to enable cloud backup of your
+loads, firearms, and brass." Tapping past dismisses it for the session
+(`_signInPromptDismissed`); local export still works regardless. Cloud
+backup itself requires a real account so the encrypted blob has a stable
+home across devices.
+
+Account recovery lives in two places:
+- `LoginScreen` — a "Forgot Password?" link under the password field
+  fires `FirebaseAuth.sendPasswordResetEmail`. A "Get help signing in"
+  link below the email-link button opens a `mailto:` to support for the
+  cross-device email-link case (LAUNCH_CHECKLIST.md).
+- `SettingsScreen` → "Help & Support" — Email support, Restore from
+  backup, Restore purchases (calls `PurchasesService.restorePurchases`),
+  Privacy Policy, Terms & Safety Disclaimer, and a triple-confirm
+  "Delete my data" flow. Delete-my-data calls
+  `AppDatabase.wipeUserData()` (drops every row in the user-data tables
+  and re-seeds the standard process steps; the reference catalog is
+  preserved) then signs the user out.
+
+Future shared-loads / community-library features will require auth but
+are intentionally **deferred** — too much surface for launch. Don't
+introduce auth gates outside of cloud backup.
+
 ## Monetization (RevenueCat)
 
 In-app purchases are handled via RevenueCat (`purchases_flutter`).
@@ -205,9 +238,10 @@ flutterfire configure --project=loadout-precision-reloading
 
 - `lib/database/database.g.dart` is **generated**. Never edit it by hand.
   Re-run `dart run build_runner build` after touching `database.dart`.
-- `schemaVersion` lives in `AppDatabase` (currently `1`). Bumping it requires
-  adding a `MigrationStrategy` — there isn't one yet, because nothing has
-  shipped. Add one before the first store release if any schema change lands.
+- `schemaVersion` lives in `AppDatabase` (currently `8`). Bumping it requires
+  adding a `MigrationStrategy.onUpgrade` clause that brings older installs up
+  to date. Schema v8 added the `BallisticProfiles` table for saved
+  ballistics-calculator configurations.
 - Reference tables are populated by `SeedLoader.seedIfNeeded()` on first run.
   The check is `Cartridges` row count == 0. If you change the seed data
   shape, an existing user's DB will keep the old data — handle via migration.
