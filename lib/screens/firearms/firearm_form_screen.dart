@@ -112,6 +112,7 @@ import '../../repositories/component_repository.dart';
 import '../../repositories/firearm_repository.dart';
 import '../../repositories/optics_repository.dart';
 import '../../services/auto_save_service.dart';
+import '../../utils/responsive.dart';
 import '../../widgets/auto_save_banner.dart';
 import '../../widgets/auto_save_first_time_hint.dart';
 import '../../widgets/component_field.dart';
@@ -458,21 +459,27 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
                         controller: _caliber,
                       ),
                       const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _barrelLength,
-                        decoration: const InputDecoration(
-                          labelText: 'Barrel Length (in)',
-                          suffixText: 'in',
+                      // On wide layouts pair barrel length + twist rate
+                      // (both short numeric fields) into a single row so
+                      // the form doesn't waste horizontal real estate.
+                      // Phone keeps the original stacked layout.
+                      _ResponsiveRowPair(
+                        first: TextFormField(
+                          controller: _barrelLength,
+                          decoration: const InputDecoration(
+                            labelText: 'Barrel Length (in)',
+                            suffixText: 'in',
+                          ),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
                         ),
-                        keyboardType:
-                            const TextInputType.numberWithOptions(decimal: true),
-                      ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _twistRate,
-                        decoration: const InputDecoration(
-                          labelText: 'Twist Rate',
-                          hintText: 'e.g. 1:8',
+                        second: TextFormField(
+                          controller: _twistRate,
+                          decoration: const InputDecoration(
+                            labelText: 'Twist Rate',
+                            hintText: 'e.g. 1:8',
+                          ),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -804,48 +811,49 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            TextFormField(
-              controller: _defaultMuzzleVelocityFps,
-              decoration: const InputDecoration(
-                labelText: 'Default Muzzle Velocity (fps)',
-                helperText: 'Last measured / preferred MV',
-                suffixText: 'fps',
+            _ResponsiveRowPair(
+              first: TextFormField(
+                controller: _defaultMuzzleVelocityFps,
+                decoration: const InputDecoration(
+                  labelText: 'Default Muzzle Velocity (fps)',
+                  helperText: 'Last measured / preferred MV',
+                  suffixText: 'fps',
+                ),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                autocorrect: false,
+                enableSuggestions: false,
+                validator: (v) {
+                  final t = (v ?? '').trim();
+                  if (t.isEmpty) return null;
+                  final n = double.tryParse(t);
+                  if (n == null || n <= 0) {
+                    return 'Must be a positive number';
+                  }
+                  return null;
+                },
               ),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              autocorrect: false,
-              enableSuggestions: false,
-              validator: (v) {
-                final t = (v ?? '').trim();
-                if (t.isEmpty) return null;
-                final n = double.tryParse(t);
-                if (n == null || n <= 0) {
-                  return 'Must be a positive number';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _defaultZeroRangeYd,
-              decoration: const InputDecoration(
-                labelText: 'Default Zero Range (yd)',
-                helperText: 'Typical: 100-200 yd',
-                suffixText: 'yd',
+              second: TextFormField(
+                controller: _defaultZeroRangeYd,
+                decoration: const InputDecoration(
+                  labelText: 'Default Zero Range (yd)',
+                  helperText: 'Typical: 100-200 yd',
+                  suffixText: 'yd',
+                ),
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                autocorrect: false,
+                enableSuggestions: false,
+                validator: (v) {
+                  final t = (v ?? '').trim();
+                  if (t.isEmpty) return null;
+                  final n = int.tryParse(t);
+                  if (n == null || n <= 0) {
+                    return 'Must be a positive integer';
+                  }
+                  return null;
+                },
               ),
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              autocorrect: false,
-              enableSuggestions: false,
-              validator: (v) {
-                final t = (v ?? '').trim();
-                if (t.isEmpty) return null;
-                final n = int.tryParse(t);
-                if (n == null || n <= 0) {
-                  return 'Must be a positive integer';
-                }
-                return null;
-              },
             ),
             const SizedBox(height: 12),
             TextFormField(
@@ -873,6 +881,38 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Lays two form fields side by side on tablet/desktop widths and
+/// stacks them vertically on phones. Saves us from peppering every
+/// pair of inputs with the same `LayoutBuilder` boilerplate.
+class _ResponsiveRowPair extends StatelessWidget {
+  const _ResponsiveRowPair({required this.first, required this.second});
+
+  final Widget first;
+  final Widget second;
+
+  @override
+  Widget build(BuildContext context) {
+    if (Breakpoints.isPhone(context)) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          first,
+          const SizedBox(height: 12),
+          second,
+        ],
+      );
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: first),
+        const SizedBox(width: 16),
+        Expanded(child: second),
+      ],
     );
   }
 }

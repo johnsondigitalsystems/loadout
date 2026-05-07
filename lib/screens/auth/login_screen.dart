@@ -93,10 +93,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../services/auth_service.dart';
-
-/// Address used by the "Get help signing in" affordance. Kept in lockstep
-/// with the support tile in `lib/screens/settings/settings_screen.dart`.
-const String _supportEmail = 'support@johnsondigital.com';
+import '../../services/support.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -200,13 +197,13 @@ class _LoginScreenState extends State<LoginScreen> {
       '— — —\n'
       'App: LoadOut v1.0.0+1\n',
     );
-    final uri = Uri.parse('mailto:$_supportEmail?subject=$subject&body=$body');
+    final uri = Uri.parse('mailto:$supportEmail?subject=$subject&body=$body');
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && mounted) {
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-            'No email app available — write to $_supportEmail.',
+            'No email app available — write to $supportEmail.',
           ),
         ),
       );

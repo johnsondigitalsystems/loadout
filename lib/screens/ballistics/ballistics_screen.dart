@@ -124,6 +124,7 @@ import '../../services/ballistics/solver.dart';
 import '../../services/ballistics/units.dart';
 import '../../services/entitlement_notifier.dart';
 import '../../services/weather_service.dart';
+import '../../utils/responsive.dart';
 import '../../widgets/pro_gate.dart';
 import 'widgets/trajectory_chart.dart';
 
@@ -570,11 +571,27 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
       final latitude = double.tryParse(_latitudeCtrl.text.trim()) ?? 0;
       final tgtElev = double.tryParse(_targetElevationCtrl.text.trim()) ?? 0;
 
+      // Diagnose specific causes before building the ladder so the
+      // user gets a clear, actionable error instead of a generic
+      // "no ladder" message.
+      final minYd = _readClampedMinRange();
+      final maxYd = _readClampedMaxRange();
+      if (maxYd <= minYd) {
+        throw FormatException(
+            'Max yardage ($maxYd yd) must be greater than '
+            'Min yardage ($minYd yd). Increase the max or lower the min.');
+      }
+      if (_rangeIncrement <= 0) {
+        throw const FormatException(
+            'Pick a range increment (10, 25, 50, or 100 yd) to build '
+            'the trajectory ladder.');
+      }
       final ranges = _buildRangeLadder();
       if (ranges.isEmpty) {
-        throw const FormatException(
-            'Set min, max, and increment so the trajectory ladder has at '
-            'least one range.');
+        throw FormatException(
+            'Min yardage ($minYd) + increment (${_rangeIncrement.round()} yd) '
+            'overshoots max ($maxYd). Lower the increment, raise the max, '
+            'or lower the min.');
       }
 
       final projectile = Projectile(
@@ -1112,8 +1129,20 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                     optionsBuilder: (te) {
                       final q = te.text.trim().toLowerCase();
                       if (q.isEmpty) return firearms;
-                      return firearms.where(
-                          (f) => _firearmLabel(f).toLowerCase().contains(q));
+                      // Tokenized match: every whitespace-separated word
+                      // in the query must appear somewhere in the label
+                      // (e.g. "tikka 6.5" matches "Tikka T3x — 6.5 CM").
+                      final tokens = q.split(RegExp(r'\s+'))
+                          .where((t) => t.isNotEmpty)
+                          .toList(growable: false);
+                      if (tokens.isEmpty) return firearms;
+                      return firearms.where((f) {
+                        final label = _firearmLabel(f).toLowerCase();
+                        for (final t in tokens) {
+                          if (!label.contains(t)) return false;
+                        }
+                        return true;
+                      });
                     },
                     fieldViewBuilder: (
                       context,
@@ -1127,9 +1156,24 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                         autocorrect: false,
                         enableSuggestions: false,
                         textCapitalization: TextCapitalization.none,
+                        // `readOnly: true` would block typing entirely.
+                        // We keep typing on for filtering, but on tap
+                        // with an empty field we nudge a tiny no-op so
+                        // Flutter's Autocomplete recomputes options
+                        // and shows the panel.
+                        onTap: () {
+                          if (textCtrl.text.isEmpty) {
+                            // Bounce a space → empty to force the
+                            // options list to surface on focus.
+                            textCtrl.text = ' ';
+                            textCtrl.text = '';
+                          }
+                        },
                         decoration: InputDecoration(
                           labelText: 'Pick a firearm',
-                          prefixIcon: const Icon(Icons.search),
+                          // Chevron makes it visually obvious this is a
+                          // tap-to-browse dropdown, not a search box.
+                          prefixIcon: const Icon(Icons.expand_more),
                           helperText:
                               'Pre-fills twist, MV, zero range, sight height',
                           suffixIcon: textCtrl.text.isEmpty
@@ -1322,10 +1366,22 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                 optionsBuilder: (te) {
                   final q = te.text.trim().toLowerCase();
                   if (q.isEmpty) return entries;
+                  // Tokenize on whitespace and require EVERY token to
+                  // appear somewhere in the label. This is what lets a
+                  // search like "berger 109" find
+                  // "Berger Long Range Hybrid Target 6mm 109gr" — the
+                  // tokens don't have to be adjacent in the label.
+                  final tokens = q.split(RegExp(r'\s+'))
+                      .where((t) => t.isNotEmpty)
+                      .toList(growable: false);
+                  if (tokens.isEmpty) return entries;
                   return entries.where((e) {
                     final label =
                         _bulletLabel(e.bullet, e.mfg).toLowerCase();
-                    return label.contains(q);
+                    for (final t in tokens) {
+                      if (!label.contains(t)) return false;
+                    }
+                    return true;
                   });
                 },
                 fieldViewBuilder: (
@@ -1450,7 +1506,14 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                       decimal: true, signed: true),
                   decoration: const InputDecoration(
                     labelText: 'Shot azimuth (°)',
-                    helperText: '0 = north (Coriolis)',
+                    // Beginner-friendly: spell out the compass values
+                    // and call out that this is for Coriolis. Most
+                    // shooters under 1000 yd can leave this at 0.
+                    helperText:
+                        'Compass direction of the shot: 0=N, 90=E, '
+                        '180=S, 270=W. Used for Coriolis at long range '
+                        '— leave 0 if unsure.',
+                    helperMaxLines: 3,
                   ),
                 ),
               ),
@@ -1841,11 +1904,33 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
               ),
             )
           else ...[
-            // Chart first, then DOPE table — the user asked for visual
-            // flow: inputs → Calculate → chart → trajectory table.
-            TrajectoryChart(samples: _samples),
-            const SizedBox(height: 16),
-            _DopeTable(samples: _samples, unit: _unit),
+            // DOPE table first — most reloaders treat this as their
+            // "ballistic chart" (it's what they print on a card and
+            // tape to the rifle). On desktop widths we lift the chart
+            // alongside the table so the user can see both at a glance;
+            // narrower screens stack them vertically as before.
+            if (Breakpoints.isDesktop(context))
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 5,
+                      child: _DopeTable(samples: _samples, unit: _unit),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      flex: 4,
+                      child: TrajectoryChart(samples: _samples),
+                    ),
+                  ],
+                ),
+              )
+            else ...[
+              _DopeTable(samples: _samples, unit: _unit),
+              const SizedBox(height: 16),
+              TrajectoryChart(samples: _samples),
+            ],
             const SizedBox(height: 16),
             OutlinedButton.icon(
               onPressed: _exportDope,

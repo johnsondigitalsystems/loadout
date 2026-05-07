@@ -97,6 +97,7 @@ import '../../services/auth_service.dart';
 import '../../services/beginner_mode_service.dart';
 import '../../services/entitlement_notifier.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/responsive.dart';
 import '../ai_chat/ai_chat_screen.dart';
 import '../backup/backup_screen.dart';
 import '../ballistics/ballistics_screen.dart';
@@ -202,43 +203,123 @@ class HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final isPro = context.watch<EntitlementNotifier>().isPro;
     final beginnerOn = context.watch<BeginnerModeService>().isEnabled;
+    // Wide layouts (tablet / desktop / macOS) get a NavigationRail down
+    // the left edge instead of the bottom-nav bar; phone layouts keep
+    // the existing horizontally-scrollable bottom nav. The drawer stays
+    // available on every layout because it hosts secondary destinations
+    // that don't fit on the rail (Glossary, Reloading Guide, etc.).
+    final isWide = Breakpoints.isWide(context);
+    final isDesktop = Breakpoints.isDesktop(context);
+
+    final actions = <Widget>[
+      // Glossary shortcut. Pinned to the AppBar in Beginner Mode so a
+      // new reloader can look up "CBTO" or "shoulder bump" without
+      // hunting through the drawer. Power users find it in the drawer
+      // (and turn Beginner Mode off in Settings to declutter the
+      // AppBar).
+      if (beginnerOn)
+        IconButton(
+          tooltip: 'Glossary',
+          icon: const Icon(Icons.menu_book_outlined),
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const GlossaryScreen(),
+            ),
+          ),
+        ),
+      IconButton(
+        tooltip: isPro ? 'LoadOut Pro' : 'Upgrade to Pro',
+        icon: Icon(
+          isPro
+              ? Icons.workspace_premium
+              : Icons.workspace_premium_outlined,
+        ),
+        onPressed: _openPaywall,
+      ),
+    ];
+
     return Scaffold(
       drawer: const _MainDrawer(),
       appBar: AppBar(
         title: Text(_titles[_index]),
-        actions: [
-          // Glossary shortcut. Pinned to the AppBar in Beginner Mode so a
-          // new reloader can look up "CBTO" or "shoulder bump" without
-          // hunting through the drawer. Power users find it in the drawer
-          // (and turn Beginner Mode off in Settings to declutter the
-          // AppBar).
-          if (beginnerOn)
-            IconButton(
-              tooltip: 'Glossary',
-              icon: const Icon(Icons.menu_book_outlined),
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const GlossaryScreen(),
+        actions: actions,
+      ),
+      body: isWide
+          ? _WideShell(
+              navItems: _navItems,
+              selectedIndex: _index,
+              onSelected: (i) => setState(() => _index = i),
+              extended: isDesktop,
+              child: IndexedStack(index: _index, children: _pages),
+            )
+          : IndexedStack(index: _index, children: _pages),
+      bottomNavigationBar: isWide
+          ? null
+          : _ScrollableBottomNav(
+              items: _navItems,
+              selectedIndex: _index,
+              onSelected: (i) => setState(() => _index = i),
+            ),
+    );
+  }
+}
+
+/// Wide-screen layout: a [NavigationRail] on the left and the active
+/// page on the right. Used on tablets, desktops, and macOS. The rail
+/// switches to extended mode (icons + labels) at desktop widths so the
+/// extra horizontal real estate isn't wasted.
+class _WideShell extends StatelessWidget {
+  const _WideShell({
+    required this.navItems,
+    required this.selectedIndex,
+    required this.onSelected,
+    required this.extended,
+    required this.child,
+  });
+
+  final List<_NavItemData> navItems;
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+  final bool extended;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        SafeArea(
+          right: false,
+          child: NavigationRail(
+            selectedIndex: selectedIndex,
+            onDestinationSelected: onSelected,
+            extended: extended,
+            labelType: extended
+                ? NavigationRailLabelType.none
+                : NavigationRailLabelType.all,
+            useIndicator: true,
+            // Brass-tinted indicator pill matches the bottom-nav's
+            // selected style so the rail reads as the same "selected"
+            // metaphor on wider screens.
+            indicatorColor: theme.colorScheme.primary.withValues(alpha: 0.18),
+            selectedIconTheme: IconThemeData(color: theme.colorScheme.primary),
+            selectedLabelTextStyle: TextStyle(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.w600,
+            ),
+            destinations: [
+              for (final item in navItems)
+                NavigationRailDestination(
+                  icon: Icon(item.icon),
+                  selectedIcon: Icon(item.selectedIcon),
+                  label: Text(item.label),
                 ),
-              ),
-            ),
-          IconButton(
-            tooltip: isPro ? 'LoadOut Pro' : 'Upgrade to Pro',
-            icon: Icon(
-              isPro
-                  ? Icons.workspace_premium
-                  : Icons.workspace_premium_outlined,
-            ),
-            onPressed: _openPaywall,
+            ],
           ),
-        ],
-      ),
-      body: IndexedStack(index: _index, children: _pages),
-      bottomNavigationBar: _ScrollableBottomNav(
-        items: _navItems,
-        selectedIndex: _index,
-        onSelected: (i) => setState(() => _index = i),
-      ),
+        ),
+        const VerticalDivider(width: 1, thickness: 1),
+        Expanded(child: child),
+      ],
     );
   }
 }

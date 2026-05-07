@@ -53,49 +53,137 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../repositories/batch_repository.dart';
+import '../../utils/responsive.dart';
 import 'batch_detail_screen.dart';
 import 'batch_form_screen.dart';
 
-class BatchesListScreen extends StatelessWidget {
+class BatchesListScreen extends StatefulWidget {
   const BatchesListScreen({super.key});
+
+  @override
+  State<BatchesListScreen> createState() => _BatchesListScreenState();
+}
+
+class _BatchesListScreenState extends State<BatchesListScreen> {
+  // Right-pane selection on wide layouts. Detail content is read by id
+  // because [BatchDetailScreen] already does its own data lookups.
+  int? _selectedBatchId;
 
   @override
   Widget build(BuildContext context) {
     final repo = context.read<BatchRepository>();
+    final isWide = Breakpoints.isWide(context);
+
+    final list = StreamBuilder<List<BatchWithRefs>>(
+      stream: repo.watchAll(),
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final rows = snap.data ?? const <BatchWithRefs>[];
+        if (rows.isEmpty) {
+          return const Center(
+            child: Text('No batches yet. Tap + to start your first.'),
+          );
+        }
+        return ListView.separated(
+          itemCount: rows.length,
+          separatorBuilder: (_, _) => const Divider(height: 1),
+          itemBuilder: (context, i) => _BatchTile(
+            row: rows[i],
+            selected: isWide && _selectedBatchId == rows[i].batch.id,
+            onTap: () {
+              if (isWide) {
+                setState(() => _selectedBatchId = rows[i].batch.id);
+              } else {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        BatchDetailScreen(batchId: rows[i].batch.id),
+                  ),
+                );
+              }
+            },
+            onDelete: () async {
+              await repo.delete(rows[i].batch.id);
+              if (mounted && _selectedBatchId == rows[i].batch.id) {
+                setState(() => _selectedBatchId = null);
+              }
+            },
+          ),
+        );
+      },
+    );
+
+    final fab = FloatingActionButton(
+      heroTag: 'batches_fab',
+      onPressed: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const BatchFormScreen()),
+      ),
+      child: const Icon(Icons.add),
+    );
+
+    if (!isWide) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Batches')),
+        body: list,
+        floatingActionButton: fab,
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text('Batches')),
-      body: StreamBuilder<List<BatchWithRefs>>(
-        stream: repo.watchAll(),
-        builder: (context, snap) {
-          if (snap.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final rows = snap.data ?? const <BatchWithRefs>[];
-          if (rows.isEmpty) {
-            return const Center(
-              child: Text('No batches yet. Tap + to start your first.'),
-            );
-          }
-          return ListView.separated(
-            itemCount: rows.length,
-            separatorBuilder: (_, _) => const Divider(height: 1),
-            itemBuilder: (context, i) => _BatchTile(
-              row: rows[i],
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => BatchDetailScreen(batchId: rows[i].batch.id),
-                ),
-              ),
-              onDelete: () => repo.delete(rows[i].batch.id),
-            ),
-          );
-        },
+      body: Row(
+        children: [
+          SizedBox(width: 360, child: list),
+          const VerticalDivider(width: 1, thickness: 1),
+          Expanded(
+            child: _selectedBatchId == null
+                ? const _BatchEmptyDetailPane(
+                    message:
+                        'Select a batch to view details, or tap + to start one.',
+                  )
+                : BatchDetailScreen(
+                    key: ValueKey('batch_detail_${_selectedBatchId!}'),
+                    batchId: _selectedBatchId!,
+                  ),
+          ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const BatchFormScreen()),
+      floatingActionButton: fab,
+    );
+  }
+}
+
+class _BatchEmptyDetailPane extends StatelessWidget {
+  const _BatchEmptyDetailPane({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.layers_outlined,
+              size: 56,
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
-        child: const Icon(Icons.add),
       ),
     );
   }
@@ -106,11 +194,13 @@ class _BatchTile extends StatelessWidget {
     required this.row,
     required this.onTap,
     required this.onDelete,
+    this.selected = false,
   });
 
   final BatchWithRefs row;
   final VoidCallback onTap;
   final VoidCallback onDelete;
+  final bool selected;
 
   /// Three-state UI label derived from `firedCount` vs `count`.
   ({String label, Color background, Color foreground}) _statusPill(
@@ -184,6 +274,8 @@ class _BatchTile extends StatelessWidget {
       child: ListTile(
         title: Text(b.name),
         subtitle: subtitle.isEmpty ? null : Text(subtitle),
+        selected: selected,
+        selectedTileColor: theme.colorScheme.primary.withValues(alpha: 0.12),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

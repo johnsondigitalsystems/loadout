@@ -58,96 +58,231 @@ import 'package:provider/provider.dart';
 
 import '../../database/database.dart';
 import '../../repositories/firearm_repository.dart';
+import '../../utils/responsive.dart';
 import 'firearm_form_screen.dart';
 
-class FirearmsListScreen extends StatelessWidget {
+class FirearmsListScreen extends StatefulWidget {
   const FirearmsListScreen({super.key});
+
+  @override
+  State<FirearmsListScreen> createState() => _FirearmsListScreenState();
+}
+
+class _FirearmsListScreenState extends State<FirearmsListScreen> {
+  // Right-pane selection on wide layouts. Null means show the empty
+  // placeholder. Phone layouts ignore this — taps push a route.
+  int? _selectedFirearmId;
 
   @override
   Widget build(BuildContext context) {
     final repo = context.read<FirearmRepository>();
-    return Scaffold(
-      body: StreamBuilder<List<UserFirearmRow>>(
-        stream: repo.watchAll(),
-        builder: (context, snap) {
-          if (snap.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final firearms = snap.data ?? const <UserFirearmRow>[];
-          if (firearms.isEmpty) {
-            return const Center(
-              child: Text('No firearms yet. Tap + to add your first.'),
-            );
-          }
-          return ListView.separated(
-            itemCount: firearms.length,
-            separatorBuilder: (_, _) => const Divider(height: 1),
-            itemBuilder: (context, i) {
-              final f = firearms[i];
-              final subtitle = [
-                if (f.model != null) f.model,
-                if (f.caliber != null) f.caliber,
-              ].whereType<String>().join(' · ');
-              return Dismissible(
-                key: ValueKey('firearm_${f.id}'),
-                direction: DismissDirection.endToStart,
-                background: Container(
-                  color: Theme.of(context).colorScheme.errorContainer,
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: 24),
-                  child: const Icon(Icons.delete),
-                ),
-                confirmDismiss: (_) async {
-                  return await showDialog<bool>(
-                        context: context,
-                        builder: (_) => AlertDialog(
-                          title: const Text('Delete This Firearm?'),
-                          content: Text('"${f.name}" will be removed.'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, false),
-                              child: const Text('Cancel'),
-                            ),
-                            FilledButton.tonal(
-                              onPressed: () => Navigator.pop(context, true),
-                              child: const Text('Delete'),
-                            ),
-                          ],
-                        ),
-                      ) ??
-                      false;
-                },
-                onDismissed: (_) => repo.delete(f.id),
-                child: ListTile(
-                  title: Text(f.name),
-                  subtitle: subtitle.isEmpty ? null : Text(subtitle),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '${f.shotsFired} shots',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      const SizedBox(width: 8),
-                      const Icon(Icons.chevron_right),
-                    ],
-                  ),
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => FirearmFormScreen(existing: f),
-                    ),
-                  ),
-                ),
-              );
-            },
+    final isWide = Breakpoints.isWide(context);
+
+    final list = _FirearmsList(
+      selectedFirearmId: isWide ? _selectedFirearmId : null,
+      onTap: (f) {
+        if (isWide) {
+          setState(() => _selectedFirearmId = f.id);
+        } else {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => FirearmFormScreen(existing: f),
+            ),
           );
-        },
+        }
+      },
+      onDelete: (id) async {
+        await repo.delete(id);
+        if (mounted && _selectedFirearmId == id) {
+          setState(() => _selectedFirearmId = null);
+        }
+      },
+    );
+
+    final fab = FloatingActionButton(
+      heroTag: 'firearms_fab',
+      onPressed: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const FirearmFormScreen()),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const FirearmFormScreen()),
+      child: const Icon(Icons.add),
+    );
+
+    if (!isWide) {
+      return Scaffold(body: list, floatingActionButton: fab);
+    }
+
+    return Scaffold(
+      body: Row(
+        children: [
+          SizedBox(width: 360, child: list),
+          const VerticalDivider(width: 1, thickness: 1),
+          Expanded(
+            child: _selectedFirearmId == null
+                ? const _EmptyDetailPane(
+                    message:
+                        'Select a firearm to view or edit it, or tap + to add one.',
+                  )
+                : _FirearmDetailPane(
+                    key: ValueKey('firearm_detail_${_selectedFirearmId!}'),
+                    firearmId: _selectedFirearmId!,
+                  ),
+          ),
+        ],
+      ),
+      floatingActionButton: fab,
+    );
+  }
+}
+
+class _FirearmsList extends StatelessWidget {
+  const _FirearmsList({
+    required this.onTap,
+    required this.onDelete,
+    this.selectedFirearmId,
+  });
+
+  final ValueChanged<UserFirearmRow> onTap;
+  final ValueChanged<int> onDelete;
+  final int? selectedFirearmId;
+
+  @override
+  Widget build(BuildContext context) {
+    final repo = context.read<FirearmRepository>();
+    final theme = Theme.of(context);
+    return StreamBuilder<List<UserFirearmRow>>(
+      stream: repo.watchAll(),
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final firearms = snap.data ?? const <UserFirearmRow>[];
+        if (firearms.isEmpty) {
+          return const Center(
+            child: Text('No firearms yet. Tap + to add your first.'),
+          );
+        }
+        return ListView.separated(
+          itemCount: firearms.length,
+          separatorBuilder: (_, _) => const Divider(height: 1),
+          itemBuilder: (context, i) {
+            final f = firearms[i];
+            final subtitle = [
+              if (f.model != null) f.model,
+              if (f.caliber != null) f.caliber,
+            ].whereType<String>().join(' · ');
+            final selected = selectedFirearmId == f.id;
+            return Dismissible(
+              key: ValueKey('firearm_${f.id}'),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                color: theme.colorScheme.errorContainer,
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(right: 24),
+                child: const Icon(Icons.delete),
+              ),
+              confirmDismiss: (_) async {
+                return await showDialog<bool>(
+                      context: context,
+                      builder: (_) => AlertDialog(
+                        title: const Text('Delete This Firearm?'),
+                        content: Text('"${f.name}" will be removed.'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('Cancel'),
+                          ),
+                          FilledButton.tonal(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text('Delete'),
+                          ),
+                        ],
+                      ),
+                    ) ??
+                    false;
+              },
+              onDismissed: (_) => onDelete(f.id),
+              child: ListTile(
+                title: Text(f.name),
+                subtitle: subtitle.isEmpty ? null : Text(subtitle),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${f.shotsFired} shots',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.chevron_right),
+                  ],
+                ),
+                selected: selected,
+                selectedTileColor:
+                    theme.colorScheme.primary.withValues(alpha: 0.12),
+                onTap: () => onTap(f),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _FirearmDetailPane extends StatelessWidget {
+  const _FirearmDetailPane({super.key, required this.firearmId});
+
+  final int firearmId;
+
+  @override
+  Widget build(BuildContext context) {
+    final repo = context.read<FirearmRepository>();
+    return FutureBuilder<UserFirearmRow?>(
+      future: repo.getById(firearmId),
+      builder: (context, snap) {
+        if (snap.connectionState != ConnectionState.done) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final row = snap.data;
+        if (row == null) {
+          return const _EmptyDetailPane(
+            message: 'Firearm not found. It may have been deleted.',
+          );
+        }
+        return FirearmFormScreen(existing: row);
+      },
+    );
+  }
+}
+
+class _EmptyDetailPane extends StatelessWidget {
+  const _EmptyDetailPane({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.handshake_outlined,
+              size: 56,
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
-        child: const Icon(Icons.add),
       ),
     );
   }

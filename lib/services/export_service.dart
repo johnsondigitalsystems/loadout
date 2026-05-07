@@ -205,6 +205,14 @@ const List<String> kUserDataTableOrder = <String>[
   'test_sessions',
   'user_custom_fields',
   'user_custom_field_values',
+  // Schema v5 — load development sessions (charge / seating ladders). Has
+  // nullable FKs to UserFirearms, UserLoads (`sourceRecipeId`), and BrassLots
+  // (`brassLotId`), so it must land after all three.
+  'load_development_sessions',
+  // Schema v8 — ballistic profiles. Nullable FKs to UserFirearms (`firearmId`)
+  // and the seeded Bullets reference table (`bulletId`), so it must land
+  // after `user_firearms`. Listed last because nothing else references it.
+  'ballistic_profiles',
 ];
 
 /// Per-table summary returned from [ExportService.importFromJson]. Lets the
@@ -309,6 +317,8 @@ class ExportService {
     tables['test_sessions'] = await _dumpTestSessions();
     tables['user_custom_fields'] = await _dumpCustomFields();
     tables['user_custom_field_values'] = await _dumpCustomFieldValues();
+    tables['load_development_sessions'] = await _dumpLoadDevelopmentSessions();
+    tables['ballistic_profiles'] = await _dumpBallisticProfiles();
 
     final wrapper = <String, dynamic>{
       'loadout_export_version': kLoadOutExportVersion,
@@ -478,6 +488,16 @@ class ExportService {
     return rows.map((r) => r.toJson()).toList(growable: false);
   }
 
+  Future<List<Map<String, dynamic>>> _dumpLoadDevelopmentSessions() async {
+    final rows = await db.select(db.loadDevelopmentSessions).get();
+    return rows.map((r) => r.toJson()).toList(growable: false);
+  }
+
+  Future<List<Map<String, dynamic>>> _dumpBallisticProfiles() async {
+    final rows = await db.select(db.ballisticProfiles).get();
+    return rows.map((r) => r.toJson()).toList(growable: false);
+  }
+
   // ─────────────── per-table import dispatch ───────────────
 
   Future<ImportTableSummary> _importTable({
@@ -585,6 +605,19 @@ class ExportService {
         await db
             .into(db.userCustomFieldValues)
             .insert(UserCustomFieldValueRow.fromJson(json), mode: insertMode);
+        return true;
+      case 'load_development_sessions':
+        await db
+            .into(db.loadDevelopmentSessions)
+            .insert(
+              LoadDevelopmentSessionRow.fromJson(json),
+              mode: insertMode,
+            );
+        return true;
+      case 'ballistic_profiles':
+        await db
+            .into(db.ballisticProfiles)
+            .insert(BallisticProfileRow.fromJson(json), mode: insertMode);
         return true;
       default:
         // Forward-compatibility: silently ignore unknown tables so a backup

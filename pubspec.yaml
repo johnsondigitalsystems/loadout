@@ -241,14 +241,36 @@ dependencies:
   # only the user's coarse coordinates leave the device.
   geolocator: ^13.0.0
 
-  # CSV import (feature: convert Excel reloaders).
+  # Smart Import (feature: convert Excel reloaders, free-tier).
   # `file_picker` exposes the OS file picker so the user can hand us a
-  # `.csv` from anywhere on the device. Cross-platform on iOS, Android,
-  # macOS, Windows. CSV parsing itself is hand-rolled inside
-  # `lib/services/csv_import_service.dart` — small enough to avoid
-  # pulling in a third-party CSV package for the dozen lines it would
-  # save.
+  # `.csv` or `.xlsx` from anywhere on the device. Cross-platform on iOS,
+  # Android, macOS, Windows. CSV parsing itself is hand-rolled inside
+  # `lib/services/spreadsheet_import_service.dart` (RFC-4180 quoting) —
+  # small enough to avoid pulling in a third-party CSV package.
+  # `excel` reads `.xlsx` workbooks (Office Open XML) so reloaders who
+  # keep their data in Excel can hand us the workbook directly without
+  # exporting to CSV first. Pure-Dart, ships on every platform.
   file_picker: ^8.0.0
+  excel: ^4.0.6
+
+  # Photo import (feature: convert pen-and-paper reloaders, free-tier).
+  # `image_picker` is Flutter's official wrapper around the platform
+  # camera + photo library. iOS + Android only — no macOS implementation
+  # ships with the package today, so the entry-point UI is gated behind
+  # `Platform.isIOS || Platform.isAndroid` and the Photo Import bottom-
+  # sheet item is hidden on macOS / Windows.
+  # `google_mlkit_text_recognition` is Google's ML Kit on-device OCR.
+  # Supports printed + cursive Latin script. The first invocation
+  # downloads the model into local app storage (~30MB once, on-device);
+  # subsequent calls are fully offline. This keeps the photo-import flow
+  # privacy-aligned: the captured photo never leaves the device.
+  image_picker: ^1.1.0
+  google_mlkit_text_recognition: ^0.13.0
+
+  # Reads the app version + build number at runtime so the Settings
+  # footer and Help & Support mailto body don't have to re-hardcode the
+  # value listed in `pubspec.yaml` `version:`. Cross-platform.
+  package_info_plus: ^8.0.0
 
 dev_dependencies:
   flutter_test:
@@ -263,7 +285,7 @@ dev_dependencies:
   drift_dev: ^2.33.0
   build_runner: ^2.15.0
   flutter_launcher_icons: ^0.14.4
-  image: ^4.8.0
+  image: ^4.3.0
 
 flutter_launcher_icons:
   android: true

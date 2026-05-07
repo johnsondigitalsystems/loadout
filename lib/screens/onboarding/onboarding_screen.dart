@@ -3,68 +3,61 @@
 // ============================================================================
 // WHAT THIS FILE DOES
 // ============================================================================
-// Renders the "Quick Tour" — an eight-page horizontal walkthrough that
-// introduces LoadOut's features. Reachable as the Quick Tour target from
-// `HowItWorksScreen` and from the legacy "How To Use LoadOut" drawer
-// entry. The screen is intentionally linear: swipe (or tap "Next")
-// forward, swipe back, or tap "Skip" / "Get Started" at any point to
-// dismiss.
+// Renders the "Quick Tour" — a horizontal walkthrough that introduces
+// LoadOut to first-time users, with a strong bias toward the pen-and-
+// paper reloader cohort the app is being marketed to. Reachable as the
+// Quick Tour target from `HowItWorksScreen` and from the legacy
+// "How To Use LoadOut" drawer entry. The screen is intentionally linear:
+// swipe (or tap "Next") forward, swipe back, or tap "Skip" / "Get
+// Started" at any point to dismiss.
 //
-// The eight pages, in order:
+// The flow has five core "v2" slides aimed at pen-and-paper migrators:
 //
-//   1. Welcome to LoadOut
-//   2. Track Your Recipes
-//   3. Catalog Your Firearms
-//   4. Cartridge Specifications (SAAMI / CIP)
-//   5. Reloading Glossary
-//   6. LoadOut Pro                 (has a "View Pro Plans" inline CTA)
-//   7. Safety First
-//   8. Ready to Reload             ("Get Started" CTA, dismisses)
+//   1. Welcome — local-first promise, "from your notebook to your phone
+//      in 60 seconds".
+//   2. Quick Add — "type a load like you'd write it".
+//   3. Bring your existing data — buttons that deep-link to Backup &
+//      Export (where the CSV import + future photo import live).
+//   4. Grow as you go — 60+ optional fields, hidden in Beginner Mode
+//      until you're ready.
+//   5. Privacy — local-first SQLite plus end-to-end encrypted backups.
 //
 // Each page is described by the file-private `_OnboardingPage` data
 // class — icon, title, list of bullet strings, and an optional
-// `actionLabel` + `_PageActionType` pair. `_PageActionType.viewPro`
-// pushes `PaywallScreen` as a fullscreen dialog. `_PageActionType.finish`
-// closes the onboarding flow.
+// `actionLabel` + `_PageActionType` pair. Action types currently are
+// `viewPro` (push the paywall), `finish` (dismiss), `openImport`
+// (jump to Backup & Export). Backup-screen deep-link is handled by
+// popping the onboarding flow first so the user can navigate back into
+// Home → Drawer → Backup & Export cleanly.
 //
 // Layout pieces:
 //
 //   - `PageView.builder` drives the horizontal swipe behaviour.
 //   - `_OnboardingPageView` renders one page: a 96px brass-coloured
-//     hero icon, a centered title, a list of bullets (each bullet is
-//     a small brass dot + body-large text), and the optional inline
-//     action button.
+//     hero icon, a centered title, a list of bullets, and optional
+//     action button(s). Slide C (Bring your data) carries TWO buttons
+//     stacked vertically.
 //   - `_DotIndicator` is a custom-painted page indicator. The active
 //     dot animates wider via `AnimatedContainer`. Implemented inline
-//     to avoid pulling in a third-party indicator package for what's
-//     essentially a few `Container`s in a `Row`.
-//   - The bottom bar has a "Back" button (disabled on page 0) and a
-//     primary "Next" / "Get Started" button (label flips on the last
-//     page). The AppBar has a "Skip" text button on the right.
+//     to avoid pulling in a third-party indicator package.
+//   - Bottom bar: "Back" button (disabled on page 0) and a primary
+//     "Next" / "Get started" button. AppBar has "Skip" on the right.
 //
-// On dismiss (via "Skip", "Get Started", or the action-finish
-// callback), `_markSeenAndClose` writes `true` to the
-// `OnboardingScreen.seenPrefKey` SharedPreferences key
-// (`'onboarding_seen_v1'`) fire-and-forget — the disk write is not
-// awaited because it doesn't need to block the pop. Future versions
-// of the app can re-show the tour on a major UX change by bumping the
-// suffix to `_v2` etc.
+// On dismiss we mark BOTH the legacy `'onboarding_seen_v1'` flag (so a
+// returning user who already saw the v1 tour stays out of the loop)
+// and the new `'onboarding_completed_v2'` flag — anything that wants
+// to auto-show the new tour for users who saw v1 can key off the v2
+// flag specifically.
 //
 // ============================================================================
 // WHY IT EXISTS IN THE ARCHITECTURE
 // ============================================================================
-// The onboarding flow gives a brand-new user a guided overview of
-// LoadOut's primary surfaces (Recipes, Firearms, SAAMI, Glossary, Pro,
-// Safety) before they start tapping around the home screen. It's
-// optional — the user can skip out — but it's the easiest entry-point
-// for someone who downloaded the app on a recommendation and doesn't
-// know what reloading software is supposed to look like.
-//
-// `HowItWorksScreen` exposes this screen as the "Quick Tour" card at
-// the top of its topical menu. Reaching the tour through the topical
-// menu rather than auto-launching it on first run is deliberate — we
-// preserve the user's ability to immediately start using the app, with
-// the tour available as an opt-in refresher.
+// The onboarding flow is the single best chance to set expectations for
+// the pen-and-paper cohort: their notebook isn't being replaced, it's
+// being phone-i-fied. The new copy is opinionated: every slide either
+// talks about migrating from notebook/spreadsheet, or about privacy.
+// We deliberately shortened the deck (5 slides instead of 8) — fewer
+// pages to swipe through is its own UX win.
 //
 // ============================================================================
 // WHY THIS IS HARDER THAN IT LOOKS
@@ -72,16 +65,15 @@
 // Two things worth knowing:
 //
 //   1. The custom `_DotIndicator` exists to avoid a `smooth_page_indicator`
-//      style dependency just for one screen. The three `AnimatedContainer`s
+//      style dependency just for one screen. The `AnimatedContainer`s
 //      in a `Row` give us a perfectly fine animated indicator without
-//      pinning another package. If you find yourself reaching for a
-//      package, ask first whether the same effect can be done in a few
-//      `Container`s.
-//   2. The `assert((actionLabel == null) == (actionType == null), ...)`
-//      in `_OnboardingPage` protects the data-class invariant that
-//      action label and action type are either both set or both null.
-//      Forgetting one of the two would compile but produce a card
-//      with no action.
+//      pinning another package.
+//   2. The "open import" CTA pops the onboarding screen FIRST, then
+//      pushes BackupScreen onto the home navigator — pushing on top of
+//      a fullscreen-dialog onboarding route would leave the user with
+//      a bizarre back-button stack ("close import" returning them to
+//      onboarding, not home). Doing the pop first keeps the stack
+//      sensible.
 //
 // ============================================================================
 // WHO CONSUMES THIS FILE
@@ -95,21 +87,26 @@
 // ============================================================================
 // SIDE EFFECTS
 // ============================================================================
-// - Writes `true` to the SharedPreferences key
-//   `OnboardingScreen.seenPrefKey` ('onboarding_seen_v1') on dismiss.
-// - Indirectly: pushes `PaywallScreen` for the `viewPro` action,
-//   which has its own RevenueCat-driven side effects.
+// - Writes `true` to the SharedPreferences keys
+//   `OnboardingScreen.seenPrefKey` ('onboarding_seen_v1') and
+//   `OnboardingScreen.completedV2PrefKey` ('onboarding_completed_v2')
+//   on dismiss.
+// - Indirectly: pushes `PaywallScreen` for the `viewPro` action and
+//   `BackupScreen` for the `openImport` action.
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../theme/app_theme.dart';
+import '../backup/backup_screen.dart';
 import '../paywall/paywall_screen.dart';
+import '../recipes/smart_import_screen.dart';
 
 /// Multi-page guided walkthrough that introduces LoadOut's features.
-/// Reachable from the side drawer ("How To Use LoadOut"). After the user
-/// completes or skips the flow, a SharedPreferences flag is set so future
-/// versions can suppress an auto-show on first launch.
+/// Reachable from the side drawer ("How To Use LoadOut") and from
+/// `HowItWorksScreen`. After the user completes or skips the flow,
+/// SharedPreferences flags are set so future versions can suppress an
+/// auto-show on first launch.
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -117,6 +114,12 @@ class OnboardingScreen extends StatefulWidget {
   /// onboarding. Versioned so we can re-show on major UX changes by
   /// bumping to `_v2` etc.
   static const String seenPrefKey = 'onboarding_seen_v1';
+
+  /// Per-version flag for the v2 (pen-and-paper) deck. We mark this
+  /// alongside the legacy `seenPrefKey` so a future change can
+  /// reintroduce v3 by keying its auto-show off `completedV2PrefKey`
+  /// without re-prompting users who already saw v2.
+  static const String completedV2PrefKey = 'onboarding_completed_v2';
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -127,107 +130,69 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int _index = 0;
 
   late final List<_OnboardingPage> _pages = [
+    // Slide A — Welcome.
     _OnboardingPage(
       icon: Icons.workspace_premium,
-      title: 'Welcome to LoadOut',
+      title: 'LoadOut · Precision Reloading',
       bullets: const [
-        'Your local-first reloading tracker.',
-        'All data stays on this device — your loads, firearms, and components '
-            'never leave.',
-        "Tap 'Next' to learn how to use the app.",
+        'From your notebook to your phone in 60 seconds.',
+        "Your data stays on your device unless you choose to back it "
+            'up — encrypted with a password only you know.',
       ],
     ),
+    // Slide B — Quick Add.
     _OnboardingPage(
       icon: Icons.bolt,
-      title: 'From Your Notebook to LoadOut in 60 Seconds',
+      title: "Type a load like you'd write it",
       bullets: const [
-        'Quick Add lets you type a load like you\'d write it: name, caliber, '
-            'powder, charge, bullet, weight, COAL.',
-        'Add detail later — every recipe can grow into a full record with '
-            'CBTO, primer, brass, pressure indicators, and more.',
-        'Take it with you — your data stays on your phone. You can also back '
-            'up to your own iCloud or Google Drive, encrypted with a '
-            'passphrase only you know.',
+        'Quick Add gives you the five fields you keep in your '
+            'notebook — and nothing else.',
+        'Caliber. Powder + charge. Bullet + weight. COAL. Done.',
+        'Save it. Add detail later if you want.',
       ],
     ),
+    // Slide C — Bring your existing data. Spreadsheet routes to the
+    // Smart Import wizard (CSV / XLSX with auto-suggested column
+    // mapping); photo routes to Backup & Export, which is the home
+    // for the photo-import flow as it lands.
     _OnboardingPage(
-      icon: Icons.receipt_long,
-      title: 'Track Your Recipes',
+      icon: Icons.input,
+      title: 'Bring your existing data',
       bullets: const [
-        "A 'recipe' is your specific load: caliber, powder, charge, "
-            'bullet, primer, brass.',
-        'Use the Recipes tab (bottom-left) to add, edit, and search your '
-            'loads. Already have an Excel sheet? Bring it across with '
-            "'Import from CSV' on the Backup screen.",
-        "Toggle 'Detailed' or 'All' to see advanced fields like CBTO, seating "
-            'depth, and shoulder bump.',
+        'Already use Excel or paper?',
+        "Snap a photo of your notebook, or import your "
+            "spreadsheet — we'll match the columns.",
+      ],
+      actionLabel: 'Import from spreadsheet',
+      actionType: _PageActionType.openSpreadsheetImport,
+      secondaryActionLabel: 'Import from photo',
+      secondaryActionType: _PageActionType.openPhotoImport,
+    ),
+    // Slide D — Grow as you go.
+    _OnboardingPage(
+      icon: Icons.tune,
+      title: 'Track every detail when you want to',
+      bullets: const [
+        '60+ optional fields, custom fields, lot tracking, '
+            'ballistics calculator.',
+        "Hide them in Beginner Mode until you're ready.",
+        'Flip the switch in Settings whenever you want the '
+            'full power-user view.',
       ],
     ),
+    // Slide E — Privacy.
     _OnboardingPage(
-      icon: Icons.handshake,
-      title: 'Catalog Your Firearms',
+      icon: Icons.lock_outlined,
+      title: 'We never see your reloading data',
       bullets: const [
-        'Add each rifle, pistol, or shotgun to track shots fired and barrel '
-            'life.',
-        'Pick from the reference catalog (Ruger, Tikka, Bergara, etc.) or add '
-            'a custom build.',
-        'Each firearm shows total shots fired across all your recipes.',
+        'All loads, firearms, and brass live in your '
+            "phone's database.",
+        'Backups are end-to-end encrypted to your own '
+            'iCloud or Google Drive.',
+        "We don't run a backend that stores your reloading "
+            'data — by design.',
       ],
-    ),
-    _OnboardingPage(
-      icon: Icons.straighten,
-      title: 'Cartridge Specifications',
-      bullets: const [
-        'Look up SAAMI/CIP dimensions for 200+ cartridges.',
-        'Pick any cartridge to see bullet, case, body, neck, shoulder, rim, '
-            'and pressure data.',
-        'Pro: technical drawings of cartridge and chamber profiles.',
-      ],
-    ),
-    _OnboardingPage(
-      icon: Icons.menu_book,
-      title: 'Reloading Glossary',
-      bullets: const [
-        "Quick reference for reloading terms — from 'CBTO' to 'shoulder "
-            "bump'.",
-        'Open from the side menu (top-left).',
-        'Search for a term or browse alphabetically.',
-      ],
-    ),
-    _OnboardingPage(
-      icon: Icons.workspace_premium_outlined,
-      title: 'LoadOut Pro',
-      bullets: const [
-        'Pro unlocks: technical cartridge drawings, advanced ballistics, '
-            'future cloud backup.',
-        'Three plans: monthly, yearly, lifetime.',
-        'Restore prior purchases from the paywall screen.',
-      ],
-      actionLabel: 'View Pro Plans',
-      actionType: _PageActionType.viewPro,
-    ),
-    _OnboardingPage(
-      icon: Icons.warning_amber,
-      title: 'Safety First',
-      bullets: const [
-        'Reloading ammunition is inherently dangerous.',
-        'Always cross-reference loads against current published manuals '
-            '(Hodgdon, Sierra, Hornady, etc.).',
-        'LoadOut is reference data — not a substitute for proper training, '
-            'manuals, or experience.',
-        "If you're new to reloading, work with someone experienced before "
-            'producing live ammo.',
-      ],
-    ),
-    _OnboardingPage(
-      icon: Icons.rocket_launch,
-      title: 'Ready to Reload',
-      bullets: const [
-        'Start by adding your first firearm or recipe.',
-        'All your data stays on this device, always.',
-        "Tap 'Get Started' to begin.",
-      ],
-      actionLabel: 'Get Started',
+      actionLabel: 'Get started',
       actionType: _PageActionType.finish,
     ),
   ];
@@ -238,11 +203,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  /// Persist the "seen" flag and pop. Fire-and-forget — we don't block
-  /// the close on the disk write.
+  /// Persist the "seen" flags and pop. Fire-and-forget — we don't
+  /// block the close on the disk write.
   void _markSeenAndClose([bool result = true]) {
     SharedPreferences.getInstance().then((prefs) {
+      // Mark BOTH the legacy v1 and the new v2 flag. v1 keeps users
+      // who have *already* seen v1 from re-popping the deck; v2 is
+      // the per-version sentinel for this revamp.
       prefs.setBool(OnboardingScreen.seenPrefKey, true);
+      prefs.setBool(OnboardingScreen.completedV2PrefKey, true);
     });
     Navigator.of(context).pop(result);
   }
@@ -275,12 +244,51 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
+  /// Mark onboarding seen and pop. Used by every "open import" CTA
+  /// before pushing the destination — pushing on top of a fullscreen-
+  /// dialog onboarding route would leave the user with a confused
+  /// back-stack ("close import" returns to onboarding, not home).
+  void _markSeenWithoutClosing() {
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setBool(OnboardingScreen.seenPrefKey, true);
+      prefs.setBool(OnboardingScreen.completedV2PrefKey, true);
+    });
+  }
+
+  /// Spreadsheet CTA: pop onboarding, push the Smart Import wizard
+  /// directly so the user lands on the file-picker step.
+  void _openSpreadsheetImport() {
+    _markSeenWithoutClosing();
+    final navigator = Navigator.of(context);
+    navigator.pop();
+    navigator.push(
+      MaterialPageRoute(builder: (_) => const SmartImportScreen()),
+    );
+  }
+
+  /// Photo CTA: no dedicated screen exists yet — Backup & Export is
+  /// where the photo-import flow lands when shipped, so the deep-link
+  /// drops the user there. CSV import is also available on the same
+  /// screen as a fallback.
+  void _openPhotoImport() {
+    _markSeenWithoutClosing();
+    final navigator = Navigator.of(context);
+    navigator.pop();
+    navigator.push(
+      MaterialPageRoute(builder: (_) => const BackupScreen()),
+    );
+  }
+
   void _handlePageAction(_PageActionType type) {
     switch (type) {
       case _PageActionType.viewPro:
         _openPaywall();
       case _PageActionType.finish:
         _markSeenAndClose();
+      case _PageActionType.openSpreadsheetImport:
+        _openSpreadsheetImport();
+      case _PageActionType.openPhotoImport:
+        _openPhotoImport();
     }
   }
 
@@ -292,7 +300,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('How To Use LoadOut'),
+        title: const Text('Welcome to LoadOut'),
         actions: [
           TextButton(
             onPressed: _markSeenAndClose,
@@ -322,6 +330,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     onAction: page.actionType == null
                         ? null
                         : () => _handlePageAction(page.actionType!),
+                    onSecondaryAction: page.secondaryActionType == null
+                        ? null
+                        : () =>
+                            _handlePageAction(page.secondaryActionType!),
                   );
                 },
               ),
@@ -331,7 +343,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               count: _pages.length,
               activeIndex: _index,
               activeColor: theme.colorScheme.primary,
-              inactiveColor: theme.colorScheme.onSurface.withValues(alpha: 0.25),
+              inactiveColor:
+                  theme.colorScheme.onSurface.withValues(alpha: 0.25),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
@@ -347,7 +360,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   Expanded(
                     child: FilledButton(
                       onPressed: _onNext,
-                      child: Text(isLast ? 'Get Started' : 'Next'),
+                      child: Text(isLast ? 'Get started' : 'Next'),
                     ),
                   ),
                 ],
@@ -360,11 +373,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 }
 
-/// Action a page may expose via an inline button below its bullet content.
-enum _PageActionType { viewPro, finish }
+/// Action a page may expose via an inline button below its bullet
+/// content. The two import variants split out so the welcome deck can
+/// route each CTA to its own destination — spreadsheet to the Smart
+/// Import wizard (CSV/XLSX with column mapping), photo to the Backup
+/// & Export hub where photo import will land. Both are local-first;
+/// no data leaves the device on either path.
+enum _PageActionType {
+  viewPro,
+  finish,
+  openSpreadsheetImport,
+  openPhotoImport,
+}
 
-/// Plain data container for a single onboarding page. All copy lives here
-/// rather than in the build method to keep the screen body readable.
+/// Plain data container for a single onboarding page. Action label/
+/// type pairs are optional and may include a secondary action (used by
+/// the "Bring your existing data" slide for both spreadsheet and photo
+/// import buttons).
 class _OnboardingPage {
   const _OnboardingPage({
     required this.icon,
@@ -372,9 +397,16 @@ class _OnboardingPage {
     required this.bullets,
     this.actionLabel,
     this.actionType,
-  }) : assert(
+    this.secondaryActionLabel,
+    this.secondaryActionType,
+  })  : assert(
           (actionLabel == null) == (actionType == null),
           'actionLabel and actionType must be set together',
+        ),
+        assert(
+          (secondaryActionLabel == null) == (secondaryActionType == null),
+          'secondaryActionLabel and secondaryActionType must be set '
+          'together',
         );
 
   final IconData icon;
@@ -382,15 +414,23 @@ class _OnboardingPage {
   final List<String> bullets;
   final String? actionLabel;
   final _PageActionType? actionType;
+  final String? secondaryActionLabel;
+  final _PageActionType? secondaryActionType;
 }
 
-/// Renders a single page: hero icon, title, bullet list, optional action
-/// button. Scrolls if content exceeds available height (shorter screens).
+/// Renders a single page: hero icon, title, bullet list, optional
+/// action button(s). Scrolls if content exceeds available height
+/// (shorter screens).
 class _OnboardingPageView extends StatelessWidget {
-  const _OnboardingPageView({required this.page, this.onAction});
+  const _OnboardingPageView({
+    required this.page,
+    this.onAction,
+    this.onSecondaryAction,
+  });
 
   final _OnboardingPage page;
   final VoidCallback? onAction;
+  final VoidCallback? onSecondaryAction;
 
   @override
   Widget build(BuildContext context) {
@@ -440,20 +480,60 @@ class _OnboardingPageView extends StatelessWidget {
             ),
           if (page.actionLabel != null && onAction != null) ...[
             const SizedBox(height: 16),
-            FilledButton.tonal(
-              onPressed: onAction,
-              child: Text(page.actionLabel!),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.tonalIcon(
+                onPressed: onAction,
+                icon: Icon(_iconForAction(page.actionType!)),
+                label: Text(page.actionLabel!),
+              ),
+            ),
+          ],
+          if (page.secondaryActionLabel != null &&
+              onSecondaryAction != null) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: onSecondaryAction,
+                icon: Icon(_iconForSecondaryAction(page)),
+                label: Text(page.secondaryActionLabel!),
+              ),
             ),
           ],
         ],
       ),
     );
   }
+
+  /// Pick a glyph that hints at the action type. Keeps the slide
+  /// visually distinct from the page hero icon.
+  IconData _iconForAction(_PageActionType type) {
+    switch (type) {
+      case _PageActionType.openSpreadsheetImport:
+        return Icons.table_view_outlined;
+      case _PageActionType.openPhotoImport:
+        return Icons.photo_camera_outlined;
+      case _PageActionType.viewPro:
+        return Icons.workspace_premium_outlined;
+      case _PageActionType.finish:
+        return Icons.rocket_launch_outlined;
+    }
+  }
+
+  /// Pick a glyph for the secondary CTA. Reuses the same per-action
+  /// mapping the primary uses so spreadsheet vs photo glyphs stay
+  /// consistent regardless of which slot the action lands in.
+  IconData _iconForSecondaryAction(_OnboardingPage page) {
+    final type = page.secondaryActionType;
+    if (type == null) return Icons.arrow_forward;
+    return _iconForAction(type);
+  }
 }
 
-/// Custom animated dot indicator — avoids adding a new dependency just for
-/// this. Active dot is wider and uses the brass/primary colour; inactive
-/// dots are dimmed.
+/// Custom animated dot indicator — avoids adding a new dependency
+/// just for this. Active dot is wider and uses the brass/primary
+/// colour; inactive dots are dimmed.
 class _DotIndicator extends StatelessWidget {
   const _DotIndicator({
     required this.count,

@@ -51,6 +51,7 @@ import 'package:provider/provider.dart';
 
 import '../../database/database.dart';
 import '../../repositories/brass_lot_repository.dart';
+import '../../utils/responsive.dart';
 import 'brass_lot_form_screen.dart';
 
 /// Threshold (firings since last anneal) at which we show the soft
@@ -59,49 +60,161 @@ import 'brass_lot_form_screen.dart';
 /// can ignore it.
 const int _annealSoonAfterFirings = 5;
 
-class BrassLotsListScreen extends StatelessWidget {
+class BrassLotsListScreen extends StatefulWidget {
   const BrassLotsListScreen({super.key});
+
+  @override
+  State<BrassLotsListScreen> createState() => _BrassLotsListScreenState();
+}
+
+class _BrassLotsListScreenState extends State<BrassLotsListScreen> {
+  int? _selectedLotId;
 
   @override
   Widget build(BuildContext context) {
     final repo = context.read<BrassLotRepository>();
+    final isWide = Breakpoints.isWide(context);
+
+    final list = StreamBuilder<List<BrassLotRow>>(
+      stream: repo.watchAll(),
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final lots = snap.data ?? const <BrassLotRow>[];
+        if (lots.isEmpty) {
+          return const Center(
+            child: Text('No brass lots yet. Tap + to add your first.'),
+          );
+        }
+        return ListView.separated(
+          itemCount: lots.length,
+          separatorBuilder: (_, _) => const Divider(height: 1),
+          itemBuilder: (context, i) {
+            final l = lots[i];
+            return _BrassLotTile(
+              lot: l,
+              selected: isWide && _selectedLotId == l.id,
+              onTap: () {
+                if (isWide) {
+                  setState(() => _selectedLotId = l.id);
+                } else {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => BrassLotFormScreen(existing: l),
+                    ),
+                  );
+                }
+              },
+              onDismissed: () async {
+                await repo.delete(l.id);
+                if (mounted && _selectedLotId == l.id) {
+                  setState(() => _selectedLotId = null);
+                }
+              },
+            );
+          },
+        );
+      },
+    );
+
+    final fab = FloatingActionButton(
+      heroTag: 'brass_lots_fab',
+      onPressed: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const BrassLotFormScreen()),
+      ),
+      child: const Icon(Icons.add),
+    );
+
+    if (!isWide) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Brass Lots')),
+        body: list,
+        floatingActionButton: fab,
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text('Brass Lots')),
-      body: StreamBuilder<List<BrassLotRow>>(
-        stream: repo.watchAll(),
-        builder: (context, snap) {
-          if (snap.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final lots = snap.data ?? const <BrassLotRow>[];
-          if (lots.isEmpty) {
-            return const Center(
-              child: Text('No brass lots yet. Tap + to add your first.'),
-            );
-          }
-          return ListView.separated(
-            itemCount: lots.length,
-            separatorBuilder: (_, _) => const Divider(height: 1),
-            itemBuilder: (context, i) {
-              final l = lots[i];
-              return _BrassLotTile(
-                lot: l,
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => BrassLotFormScreen(existing: l),
+      body: Row(
+        children: [
+          SizedBox(width: 360, child: list),
+          const VerticalDivider(width: 1, thickness: 1),
+          Expanded(
+            child: _selectedLotId == null
+                ? const _BrassEmptyDetailPane(
+                    message:
+                        'Select a brass lot to view or edit it, or tap + to add one.',
+                  )
+                : _BrassLotDetailPane(
+                    key: ValueKey('brass_lot_detail_${_selectedLotId!}'),
+                    lotId: _selectedLotId!,
                   ),
-                ),
-                onDismissed: () => repo.delete(l.id),
-              );
-            },
-          );
-        },
+          ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const BrassLotFormScreen()),
+      floatingActionButton: fab,
+    );
+  }
+}
+
+/// Right-pane wrapper that resolves a lot id back to a row before
+/// embedding [BrassLotFormScreen]. Same pattern as recipes / firearms.
+class _BrassLotDetailPane extends StatelessWidget {
+  const _BrassLotDetailPane({super.key, required this.lotId});
+
+  final int lotId;
+
+  @override
+  Widget build(BuildContext context) {
+    final repo = context.read<BrassLotRepository>();
+    return FutureBuilder<BrassLotRow?>(
+      future: repo.getById(lotId),
+      builder: (context, snap) {
+        if (snap.connectionState != ConnectionState.done) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final row = snap.data;
+        if (row == null) {
+          return const _BrassEmptyDetailPane(
+            message: 'Brass lot not found. It may have been deleted.',
+          );
+        }
+        return BrassLotFormScreen(existing: row);
+      },
+    );
+  }
+}
+
+class _BrassEmptyDetailPane extends StatelessWidget {
+  const _BrassEmptyDetailPane({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.inventory_2_outlined,
+              size: 56,
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
-        child: const Icon(Icons.add),
       ),
     );
   }
@@ -112,11 +225,13 @@ class _BrassLotTile extends StatelessWidget {
     required this.lot,
     required this.onTap,
     required this.onDismissed,
+    this.selected = false,
   });
 
   final BrassLotRow lot;
   final VoidCallback onTap;
   final VoidCallback onDismissed;
+  final bool selected;
 
   bool get _annealSoon =>
       lot.firingCount >= _annealSoonAfterFirings && lot.lastAnnealed == null;
@@ -170,6 +285,8 @@ class _BrassLotTile extends StatelessWidget {
       child: ListTile(
         title: Text(lot.name),
         subtitle: Text(subtitle),
+        selected: selected,
+        selectedTileColor: theme.colorScheme.primary.withValues(alpha: 0.12),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

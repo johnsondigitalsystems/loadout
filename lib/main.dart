@@ -91,8 +91,10 @@
 //   "splash duration" the user perceives.
 
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'app.dart';
@@ -109,8 +111,24 @@ Future<void> main() async {
   final db = AppDatabase();
   await SeedLoader(db).seedIfNeeded();
 
+  // `purchases_flutter` ships macOS bindings as of 9.x, but the App
+  // Store Connect side of the IAP setup is still iOS/Android-only —
+  // there is no macOS storefront for the LoadOut Pro SKUs. Skip the
+  // SDK boot on macOS (and any future desktop / web build) so the
+  // desktop build doesn't try to negotiate with a storefront that
+  // doesn't host our products. `PurchasesService.isConfigured` stays
+  // false, and the paywall surfaces its "Pro not yet available"
+  // placeholder. Cross-device entitlements still propagate through
+  // RevenueCat — the user just buys on iOS or Android first.
   final purchases = PurchasesService();
-  await purchases.initialize();
+  if (!_isPurchasesSupported) {
+    debugPrint(
+      'main: RevenueCat is not enabled on this platform; '
+      'skipping PurchasesService.initialize().',
+    );
+  } else {
+    await purchases.initialize();
+  }
 
   // Fire-and-forget pull of the latest reference catalog from Firebase
   // Storage. We deliberately do NOT await this — the user should see the
@@ -121,4 +139,11 @@ Future<void> main() async {
   unawaited(SeedUpdater(db).checkForUpdates());
 
   runApp(LoadOutApp(database: db, purchases: purchases));
+}
+
+/// True when `purchases_flutter` has bindings for the current platform.
+/// Web and macOS don't ship a binary today, so we gate the SDK boot.
+bool get _isPurchasesSupported {
+  if (kIsWeb) return false;
+  return Platform.isIOS || Platform.isAndroid;
 }

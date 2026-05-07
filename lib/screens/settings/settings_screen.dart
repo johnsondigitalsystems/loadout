@@ -57,23 +57,18 @@ import 'package:flutter/services.dart' show PlatformException;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:package_info_plus/package_info_plus.dart';
+
 import '../../database/database.dart';
 import '../../services/auth_service.dart';
 import '../../services/auto_save_service.dart';
 import '../../services/beginner_mode_service.dart';
 import '../../services/entitlement_notifier.dart';
 import '../../services/purchases_service.dart';
+import '../../services/support.dart';
 import '../backup/backup_screen.dart';
 import '../disclaimer/disclaimer_screen.dart';
 import '../privacy/privacy_screen.dart';
-
-/// Hardcoded for the support-mailto body. Kept in lockstep with
-/// `pubspec.yaml`'s `version:` field — bump both together at release time.
-const String _appVersion = '1.0.0+1';
-
-/// Address used by the Help & Support and email-link recovery flows.
-/// Centralized so a future change only edits one constant.
-const String _supportEmail = 'support@johnsondigital.com';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -84,6 +79,31 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _busy = false;
+
+  /// Populated from `package_info_plus` in [initState]. Falls back to
+  /// the empty string until the future resolves so the footer keeps the
+  /// "LoadOut v…" prefix without a trailing literal.
+  String _appVersion = '';
+
+  @override
+  void initState() {
+    super.initState();
+    // ignore: discarded_futures
+    _loadAppVersion();
+  }
+
+  Future<void> _loadAppVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (!mounted) return;
+      setState(() {
+        _appVersion = '${info.version}+${info.buildNumber}';
+      });
+    } catch (_) {
+      // PackageInfo may fail on edge platforms / tests; the footer
+      // simply won't show a version. Not a fatal condition.
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -100,9 +120,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               secondary: const Icon(Icons.school_outlined),
               title: const Text('Beginner Mode'),
               subtitle: const Text(
-                'Recipe forms open with just the basics, less-common '
-                'fields show short explainers, and the Glossary stays one '
-                'tap away. Turn off for the full power-user view.',
+                'Keeps the recipe form simple, shows extra hints, and '
+                'starts you in the Quick Add screen. Turn off when you '
+                'want every field at your fingertips.',
               ),
               value: beginner.isEnabled,
               onChanged: (v) {
@@ -183,7 +203,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(
-                  'LoadOut v$_appVersion',
+                  _appVersion.isEmpty
+                      ? 'LoadOut'
+                      : 'LoadOut v$_appVersion',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
@@ -212,13 +234,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       'Account: $accountState\n',
     );
     final subject = Uri.encodeComponent('LoadOut Support');
-    final uri = Uri.parse('mailto:$_supportEmail?subject=$subject&body=$body');
+    final uri = Uri.parse('mailto:$supportEmail?subject=$subject&body=$body');
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'No email app available — write to $_supportEmail.',
+            'No email app available — write to $supportEmail.',
           ),
         ),
       );

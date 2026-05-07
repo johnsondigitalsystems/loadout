@@ -15,7 +15,9 @@
       "Bash(flutter pub *)",
       "Bash(dart compile *)",
       "Bash(git stash *)",
-      "Bash(flutter test *)"
+      "Bash(flutter test *)",
+      "Bash(flutter --version)",
+      "Bash(flutter create *)"
     ]
   }
 }

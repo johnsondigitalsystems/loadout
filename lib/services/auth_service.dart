@@ -249,7 +249,10 @@ class AuthService {
   // Firebase's web OAuth flow.
 
   Future<UserCredential> signInWithApple() async {
-    if (Platform.isIOS) {
+    // Native Sign in with Apple sheet is supported on iOS and macOS. On
+    // Android (and any other platform) we fall back to Firebase's hosted
+    // OAuth web flow.
+    if (Platform.isIOS || Platform.isMacOS) {
       final apple = await SignInWithApple.getAppleIDCredential(
         scopes: const [
           AppleIDAuthorizationScopes.email,

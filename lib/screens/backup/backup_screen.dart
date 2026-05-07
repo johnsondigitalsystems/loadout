@@ -104,6 +104,7 @@ import '../../services/export_service.dart';
 import '../../services/icloud_backup_service.dart';
 import '../auth/login_screen.dart';
 import '../paywall/paywall_screen.dart';
+import '../recipes/smart_import_screen.dart';
 
 /// Top-level "Backup & Export" destination reachable from the home drawer.
 ///
@@ -194,7 +195,8 @@ class _BackupScreenState extends State<BackupScreen> {
             const SizedBox(height: 16),
             _CsvImportCard(
               busy: _busy,
-              onImport: _runCsvImport,
+              onSmartImport: _runSmartImport,
+              onQuickImport: _runQuickCsvImport,
             ),
             const SizedBox(height: 16),
             if (!isPro) ...[
@@ -259,16 +261,25 @@ class _BackupScreenState extends State<BackupScreen> {
     }, errorPrefix: 'Export failed');
   }
 
-  /// "Import from CSV" entry. Opens the OS file picker, reads the
-  /// chosen `.csv`, shows a preview dialog, and on confirm walks the
-  /// rows inserting recipes via `CsvImportService`. Errors are surfaced
-  /// in the status banner; partial imports are normal (rows missing a
-  /// recipe name are skipped).
-  Future<void> _runCsvImport() async {
-    // Resolve the repository BEFORE the first await so we never reach
-    // into the BuildContext after an async gap — keeps the analyzer's
-    // `use_build_context_synchronously` lint quiet without needing a
-    // mounted guard.
+  /// "Import from CSV / Excel" entry. Pushes the Smart Import wizard,
+  /// which walks the user through file pick → header detection →
+  /// column mapping → import. Always free, never Pro-gated. The
+  /// previous one-shot CSV importer (`CsvImportService`) is still
+  /// exposed for power users via the bottom-row "Quick CSV import"
+  /// affordance below.
+  Future<void> _runSmartImport() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const SmartImportScreen()),
+    );
+    if (!mounted) return;
+    _setStatus('Smart Import finished.');
+  }
+
+  /// Legacy one-shot CSV importer kept as a fallback for the
+  /// power-user flow ("my columns are named exactly the way you
+  /// expect; just go"). Reads the file, parses, prompts a single
+  /// confirmation dialog, then imports.
+  Future<void> _runQuickCsvImport() async {
     final repo = context.read<RecipeRepository>();
 
     final picked = await FilePicker.platform.pickFiles(
@@ -303,8 +314,9 @@ class _BackupScreenState extends State<BackupScreen> {
       }
       if (!preview.canImport) {
         _setStatus(
-          'No recipe-name column was detected. Add a column called '
-          '"Name" or "Recipe Name" and try again.',
+          'No recipe-name column was detected. Use Smart Import for '
+          'spreadsheets with custom column names, or rename a column '
+          'to "Name" / "Recipe Name" first.',
         );
         return;
       }
@@ -1149,14 +1161,22 @@ class _CloudBackupListScreenState extends State<_CloudBackupListScreen> {
   }
 }
 
-/// "Import from CSV" tile on the Backup screen. Always free — the goal
-/// is to make it dead simple for an Excel reloader to bring their data
-/// across.
+/// "Import from CSV / Excel" tile on the Backup screen. Always free —
+/// the goal is to make it dead simple for an Excel reloader to bring
+/// their data across, regardless of how their column names are
+/// labeled. The primary action is Smart Import (mapping wizard);
+/// the secondary "Quick CSV import" is for power users whose CSV
+/// already has standard column names.
 class _CsvImportCard extends StatelessWidget {
-  const _CsvImportCard({required this.busy, required this.onImport});
+  const _CsvImportCard({
+    required this.busy,
+    required this.onSmartImport,
+    required this.onQuickImport,
+  });
 
   final bool busy;
-  final VoidCallback onImport;
+  final VoidCallback onSmartImport;
+  final VoidCallback onQuickImport;
 
   @override
   Widget build(BuildContext context) {
@@ -1172,7 +1192,7 @@ class _CsvImportCard extends StatelessWidget {
                 Icon(Icons.table_chart_outlined,
                     color: theme.colorScheme.primary),
                 const SizedBox(width: 8),
-                Text('Import from CSV',
+                Text('Import from CSV / Excel',
                     style: theme.textTheme.titleMedium),
                 const Spacer(),
                 Chip(
@@ -1186,19 +1206,28 @@ class _CsvImportCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Already track your loads in Excel? Export the sheet to '
-              'CSV and bring it across in one tap. Common column names '
-              'like "Recipe Name", "Caliber", "Powder", "Charge", '
-              '"Bullet", and "COAL" are recognised automatically.',
+              'Already track your loads in a spreadsheet? Bring them in '
+              'with Smart Import — it shows you each column, suggests '
+              'how it maps to LoadOut, and lets you confirm. Works with '
+              'any column names.',
               style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: 12),
             Align(
               alignment: Alignment.centerLeft,
               child: FilledButton.icon(
-                onPressed: busy ? null : onImport,
+                onPressed: busy ? null : onSmartImport,
+                icon: const Icon(Icons.auto_fix_high),
+                label: const Text('Smart Import (CSV / Excel)'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: busy ? null : onQuickImport,
                 icon: const Icon(Icons.upload_file),
-                label: const Text('Import from CSV'),
+                label: const Text('Quick CSV import (power users)'),
               ),
             ),
           ],

@@ -83,8 +83,11 @@ import '../../data/recipe_templates.dart';
 import '../../database/database.dart';
 import '../../repositories/component_repository.dart';
 import '../../repositories/recipe_repository.dart';
+import '../../services/beginner_mode_service.dart';
 import '../../widgets/component_field.dart';
+import '../glossary/glossary_screen.dart';
 import 'recipe_form_screen.dart';
+import 'smart_import_screen.dart';
 
 /// One-of dimension axis used for the COAL/CBTO segmented control. Only
 /// one is rendered at a time — the other is cleared when the user
@@ -249,9 +252,27 @@ class _QuickAddRecipeScreenState extends State<QuickAddRecipeScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // Glossary shortcut surfaces in the AppBar when Beginner Mode is on
+    // so a new reloader can look up "COAL" or "CBTO" mid-entry without
+    // hunting through the drawer.
+    final beginnerOn = context.watch<BeginnerModeService>().isEnabled;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Quick Add Recipe'),
+        actions: [
+          if (beginnerOn)
+            IconButton(
+              tooltip: 'Glossary',
+              icon: const Icon(Icons.menu_book_outlined),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const GlossaryScreen(),
+                  ),
+                );
+              },
+            ),
+        ],
       ),
       body: AbsorbPointer(
         absorbing: _busy,
@@ -265,6 +286,16 @@ class _QuickAddRecipeScreenState extends State<QuickAddRecipeScreen> {
               _TemplatePickerCard(
                 selectedId: _selectedTemplateId,
                 onPick: _applyTemplate,
+              ),
+              const SizedBox(height: 12),
+              _SmartImportEntryCard(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const SmartImportScreen(),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -474,6 +505,38 @@ class _TemplatePickerCard extends StatelessWidget {
               onTap: () => onPick(t),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// Compact "Import from spreadsheet" affordance on the Quick Add
+/// screen. Routes to the Smart Import wizard so a user with an Excel
+/// or CSV table doesn't have to retype every recipe by hand.
+class _SmartImportEntryCard extends StatelessWidget {
+  const _SmartImportEntryCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: ListTile(
+        leading: Icon(
+          Icons.table_chart_outlined,
+          color: theme.colorScheme.primary,
+        ),
+        title: Text(
+          'Import from spreadsheet',
+          style: theme.textTheme.titleSmall,
+        ),
+        subtitle: const Text(
+          'Bring in many recipes at once from a CSV or Excel file. Free.',
+        ),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: onTap,
       ),
     );
   }
