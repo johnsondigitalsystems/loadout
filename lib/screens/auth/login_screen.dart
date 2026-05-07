@@ -105,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final email = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Reset password'),
+        title: const Text('Reset Password'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -197,7 +197,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 16),
                   FilledButton(
                     onPressed: _busy ? null : _submitEmailPassword,
-                    child: Text(_isSignUp ? 'Create account' : 'Sign in'),
+                    child: Text(_isSignUp ? 'Create Account' : 'Sign In'),
                   ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -208,14 +208,14 @@ class _LoginScreenState extends State<LoginScreen> {
                             : () => setState(() => _isSignUp = !_isSignUp),
                         child: Text(
                           _isSignUp
-                              ? 'Have an account? Sign in'
-                              : 'Need an account? Sign up',
+                              ? 'Have an Account? Sign In'
+                              : 'Need an Account? Sign Up',
                         ),
                       ),
                       if (!_isSignUp)
                         TextButton(
                           onPressed: _busy ? null : _showForgotPassword,
-                          child: const Text('Forgot password?'),
+                          child: const Text('Forgot Password?'),
                         ),
                     ],
                   ),
@@ -225,7 +225,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       Expanded(child: Divider()),
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 12),
-                        child: Text('or continue with'),
+                        child: Text('Or Continue With'),
                       ),
                       Expanded(child: Divider()),
                     ],
@@ -266,13 +266,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   TextButton.icon(
                     onPressed: _busy ? null : _sendEmailLink,
                     icon: const Icon(Icons.link),
-                    label: const Text('Email me a sign-in link'),
+                    label: const Text('Email Me a Sign-In Link'),
                   ),
                   TextButton(
                     onPressed: _busy
                         ? null
                         : () => _runAuth(auth.signInAnonymously),
-                    child: const Text('Continue as guest'),
+                    child: const Text('Continue as Guest'),
                   ),
                 ],
               ),

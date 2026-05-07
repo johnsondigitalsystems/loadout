@@ -36,6 +36,19 @@ this updated as new items come up.
   concern). Generate a new key in Apple Developer → Keys, send me the
   new `.p8` + Key ID, I'll regenerate the JWT.
 
+## Monetization (RevenueCat / IAP)
+
+- [ ] **Sign up for RevenueCat** at https://app.revenuecat.com and create the LoadOut project.
+- [ ] **Set up App Store Connect IAP** — create the LoadOut app entry, complete tax and banking, generate an App Store Connect API key (`.p8`) for RevenueCat, generate the App-Specific Shared Secret. Define the three products: `loadout_pro_monthly` (subscription), `loadout_pro_yearly` (subscription), `loadout_pro_lifetime` (non-consumable).
+- [ ] **Set up Google Play Console IAP** — complete the payments profile, create the service account JSON, define the same three products under Monetize.
+- [ ] **Connect both stores to RevenueCat** in the RevenueCat dashboard. Create the `pro` entitlement and attach all three products to it. Create a `default` offering with monthly/annual/lifetime packages.
+- [x] iOS RevenueCat key (`appl_*`) plugged into `lib/services/revenue_cat_config.dart`.
+- [ ] **Replace the Android RevenueCat key** in `lib/services/revenue_cat_config.dart` with the real `goog_*` key once the Android app is set up in RevenueCat (blocked on Google Play identity verification).
+- [ ] **Sandbox-test purchases** — at least one round-trip per platform (purchase, restore, cancel) before any TestFlight / internal-testing build goes out.
+- [ ] **Decide final prices** for monthly / yearly / lifetime. Current placeholders: $2.99 / $19.99 / $49.99. See REVENUECAT_SETUP.md for the working ranges.
+- [ ] **Add a Privacy Policy URL** to both store listings (required before IAP can ship).
+- [ ] **First Pro feature gate live** — at least one Pro feature actually behind `ProGate` so users can see what they get.
+
 ## Authentication
 
 - [ ] **Enable Associated Domains capability on the iOS App ID** —
@@ -64,17 +77,36 @@ this updated as new items come up.
   Domains entitlements). Build compiles clean without code signing as of
   this commit.
 
-## Firestore
+## Local data store (drift / SQLite)
 
-- [ ] Audit `firestore.rules` before production — current rules are
-  per-user only, no field-level validation.
-- [ ] Configure scheduled Firestore backups (exports to GCS).
-- [ ] Add composite indexes as queries grow.
-- [ ] Decide on Spark vs Blaze plan. Spark is fine for early users; Blaze
-  unlocks scheduled exports, Cloud Functions, phone auth, etc.
+- [x] **Migrated from Firestore to local SQLite via `drift`.** User reload
+  data (loads, firearms, custom components) lives only on the device.
+  Firebase Auth still handles identity. `cloud_firestore` removed.
+- [ ] Database migrations — `schemaVersion` is 1. Bumping requires writing
+  migration steps in `MigrationStrategy`. Test on a real device before
+  shipping any schema change.
+- [ ] Optional: Cloud backup / multi-device sync as an opt-in feature
+  (would need new privacy disclosure). Currently not on the roadmap.
+- [ ] Optional: export-to-CSV / JSON so users can back up their loads
+  manually.
+- [ ] Firestore rules / hosting / database — `firestore.rules` and the
+  `(default)` Firestore database are still provisioned but unused. We
+  could either delete them or keep them dormant in case the privacy
+  posture changes. Hosting is still used for the AASA / assetlinks
+  files, so don't delete that.
+- [ ] Decide on Spark vs Blaze plan. Spark is fine for current usage
+  (Auth + Hosting). Blaze only matters if we re-add Firestore, Cloud
+  Functions, or phone auth.
 
 ## Business / legal setup
 
+- [ ] **EU Digital Services Act (DSA) trader info** — App Store Connect
+  requires a publicly visible address, phone, and email for the EU
+  product page. Picking "trader" is required to distribute in the EU
+  (and the paid Pro tier makes us a trader). For now, can use personal
+  or virtual-mailbox info. Update this **after incorporation** to use
+  the LLC's registered business address. Apple Connect → App Information
+  → Digital Services Act Compliance.
 - [ ] **Get an EIN** (free, instant online via irs.gov/ein) — required for
   business Apple Developer + Play Console accounts.
 - [ ] **Get a DUNS number** for the business (free from Dun & Bradstreet,
@@ -119,12 +151,28 @@ this updated as new items come up.
 - [ ] Content rating questionnaire.
 - [ ] Screenshots.
 
+## App functionality
+
+- [ ] Load development tracking (range data) — schema for batches +
+  individual firings (velocity, ES, SD, group size, temperature, date)
+  matching the user's existing Excel workflow. Tables not yet created;
+  start with `LoadBatches` + `LoadFirings` linked to `UserLoads`.
+- [ ] Inventory tracking — quantity-on-hand for powder (gr), bullets
+  (count), primers (count), brass (count). Decrement on a "loaded N
+  rounds" action.
+- [ ] Loading log — record when a recipe was loaded, how many, and which
+  brass batch was used.
+- [ ] Cost tracking — optional per-component cost so the app can show
+  cost-per-round.
+
 ## Production hardening
 
 - [ ] Replace placeholder `test/widget_test.dart` with real coverage —
-  models, repositories (with FakeFirebaseFirestore), auth flows.
+  drift integration tests with `NativeDatabase.memory()`, repository
+  tests, key UI smoke tests.
 - [ ] Add Firebase Crashlytics.
-- [ ] Add Firebase Analytics.
-- [ ] Set up CI (GitHub Actions or similar) for `flutter analyze` + tests
-  on every PR.
+- [ ] Add Firebase Analytics (privacy-respecting — no logging of
+  reloading data).
+- [ ] Set up CI (GitHub Actions or similar) for `flutter analyze`
+  + `dart run build_runner build` + tests on every PR.
 - [ ] Versioning / release process.

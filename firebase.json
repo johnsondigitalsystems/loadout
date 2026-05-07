@@ -20,6 +20,14 @@
     ],
     "rewrites": [
       {
+        "source": "/privacy",
+        "destination": "/privacy/index.html"
+      },
+      {
+        "source": "/privacy/**",
+        "destination": "/privacy/index.html"
+      },
+      {
         "source": "/auth/**",
         "destination": "/index.html"
       }

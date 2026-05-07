@@ -43,3 +43,15 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Sensitive credentials — never commit
+*.p8
+*.pem
+*.key
+*.keystore
+*.jks
+key.properties
+.env
+.env.*
+serviceAccountKey.json
+firebase-adminsdk-*.json

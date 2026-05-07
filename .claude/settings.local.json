@@ -5,7 +5,10 @@
       "Bash(firebase --version)",
       "Bash(flutterfire --version)",
       "Bash(dart pub *)",
-      "Bash(firebase login:list)"
+      "Bash(firebase login:list)",
+      "Bash(flutter build *)",
+      "Bash(python3 -c \"import json; d = json.load\\(open\\('assets/seed_data/cartridges.json'\\)\\); print\\(f'OK: {len\\(d\\)} cartridges'\\); pistol_saami = [c for c in d if c.get\\('saamiDoc'\\) == 'Z299.3']; print\\(f'SAAMI pistol cartridges: {len\\(pistol_saami\\)}'\\); [print\\(f'  - {c[\\\\\"name\\\\\"]}'\\) for c in pistol_saami]\")",
+      "Bash(python3 build/apply_audit.py)"
     ]
   }
 }

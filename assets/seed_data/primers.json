@@ -1,0 +1,159 @@
+{
+  "manufacturers": [
+    {
+      "name": "CCI",
+      "country": "USA",
+      "products": [
+        {"name":"200","size":"large-rifle","magnum":false,"grade":"standard","productLine":"Standard Large Rifle","notes":"Standard large rifle primer for general reloading."},
+        {"name":"250","size":"large-rifle","magnum":true,"grade":"standard","productLine":"Magnum Large Rifle","notes":"Magnum large rifle primer for heavy charges and ball powders."},
+        {"name":"400","size":"small-rifle","magnum":false,"grade":"standard","productLine":"Standard Small Rifle","notes":"Standard small rifle primer for general reloading."},
+        {"name":"450","size":"small-rifle","magnum":true,"grade":"standard","productLine":"Magnum Small Rifle","notes":"Magnum small rifle primer for hot loads and cold weather."},
+        {"name":"41","size":"small-rifle","magnum":false,"grade":"standard","productLine":"5.56 NATO Mil-Spec Small Rifle","notes":"Crimped, mil-spec primer for 5.56 NATO with harder cup and slower ignition."},
+        {"name":"34","size":"large-rifle","magnum":false,"grade":"standard","productLine":"7.62 NATO Mil-Spec Large Rifle","notes":"Crimped, mil-spec primer for 7.62 NATO and other military calibers."},
+        {"name":"500","size":"small-pistol","magnum":false,"grade":"standard","productLine":"Standard Small Pistol","notes":"Standard small pistol primer."},
+        {"name":"550","size":"small-pistol","magnum":true,"grade":"standard","productLine":"Magnum Small Pistol","notes":"Magnum small pistol primer for ball powders and high-pressure loads."},
+        {"name":"300","size":"large-pistol","magnum":false,"grade":"standard","productLine":"Standard Large Pistol","notes":"Standard large pistol primer."},
+        {"name":"350","size":"large-pistol","magnum":true,"grade":"standard","productLine":"Magnum Large Pistol","notes":"Magnum large pistol primer for heavy magnum handgun loads."},
+        {"name":"BR2","size":"large-rifle","magnum":false,"grade":"benchrest","productLine":"Benchrest Large Rifle","notes":"Benchrest-grade large rifle primer for precision shooting."},
+        {"name":"BR4","size":"small-rifle","magnum":false,"grade":"benchrest","productLine":"Benchrest Small Rifle","notes":"Benchrest-grade small rifle primer, popular for precision."},
+        {"name":"209","size":"shotshell-209","magnum":false,"grade":"standard","productLine":"Standard Shotshell","notes":"Standard shotshell primer for 12, 16, 20 gauge target loads."},
+        {"name":"209M","size":"shotshell-209","magnum":true,"grade":"standard","productLine":"Magnum Shotshell","notes":"Magnum shotshell primer for heavy waterfowl and steel shot loads."}
+      ]
+    },
+    {
+      "name": "Federal",
+      "country": "USA",
+      "products": [
+        {"name":"100","size":"small-pistol","magnum":false,"grade":"standard","productLine":"Standard Small Pistol","notes":"Standard small pistol primer."},
+        {"name":"150","size":"large-pistol","magnum":false,"grade":"standard","productLine":"Standard Large Pistol","notes":"Standard large pistol primer."},
+        {"name":"155","size":"large-pistol","magnum":true,"grade":"standard","productLine":"Magnum Large Pistol","notes":"Magnum large pistol primer for heavy handgun loads."},
+        {"name":"200","size":"small-rifle","magnum":false,"grade":"standard","productLine":"Standard Small Rifle","notes":"Standard small rifle primer for general use."},
+        {"name":"205","size":"small-rifle","magnum":false,"grade":"standard","productLine":"Premium Small Rifle","notes":"Standard small rifle primer."},
+        {"name":"205M","size":"small-rifle","magnum":false,"grade":"match","productLine":"Premium Small Rifle Match","notes":"Match-grade small rifle primer for accuracy loads."},
+        {"name":"210","size":"large-rifle","magnum":false,"grade":"standard","productLine":"Standard Large Rifle","notes":"Standard large rifle primer for general reloading."},
+        {"name":"210M","size":"large-rifle","magnum":false,"grade":"match","productLine":"Premium Large Rifle Match","notes":"Match-grade large rifle primer for precision."},
+        {"name":"215","size":"large-rifle","magnum":true,"grade":"standard","productLine":"Magnum Large Rifle","notes":"Magnum large rifle primer for belted magnums and ball powders."},
+        {"name":"215M","size":"large-rifle","magnum":true,"grade":"match","productLine":"Premium Large Rifle Magnum Match","notes":"Match-grade magnum large rifle primer."},
+        {"name":"GM205M","size":"small-rifle","magnum":false,"grade":"match","productLine":"Premium Gold Medal Small Rifle Match","notes":"Gold Medal Match small rifle primer with consistent ignition."},
+        {"name":"GM210M","size":"large-rifle","magnum":false,"grade":"match","productLine":"Premium Gold Medal Large Rifle Match","notes":"Gold Medal Match large rifle primer favored by precision shooters."},
+        {"name":"GM215M","size":"large-rifle","magnum":true,"grade":"match","productLine":"Premium Gold Medal Large Rifle Magnum Match","notes":"Gold Medal Match magnum large rifle primer."},
+        {"name":"GM100M","size":"small-pistol","magnum":false,"grade":"match","productLine":"Premium Gold Medal Small Pistol Match","notes":"Gold Medal Match small pistol primer for competition handgun loads."},
+        {"name":"GM150M","size":"large-pistol","magnum":false,"grade":"match","productLine":"Premium Gold Medal Large Pistol Match","notes":"Gold Medal Match large pistol primer for competition use."},
+        {"name":"209A","size":"shotshell-209","magnum":false,"grade":"standard","productLine":"Standard Shotshell","notes":"Versatile shotshell primer for target and field loads."}
+      ]
+    },
+    {
+      "name": "Winchester",
+      "country": "USA",
+      "products": [
+        {"name":"WSP","size":"small-pistol","magnum":false,"grade":"standard","productLine":"Standard Small Pistol","notes":"Winchester small pistol primer."},
+        {"name":"WSPM","size":"small-pistol","magnum":true,"grade":"standard","productLine":"Magnum Small Pistol","notes":"Winchester small pistol magnum primer."},
+        {"name":"WLP","size":"large-pistol","magnum":false,"grade":"standard","productLine":"Standard Large Pistol","notes":"Winchester large pistol primer; rated for standard and magnum loads."},
+        {"name":"WLPM","size":"large-pistol","magnum":true,"grade":"standard","productLine":"Magnum Large Pistol","notes":"Winchester large pistol magnum primer."},
+        {"name":"WSR","size":"small-rifle","magnum":false,"grade":"standard","productLine":"Standard Small Rifle","notes":"Winchester small rifle primer for standard loads."},
+        {"name":"WSRM","size":"small-rifle","magnum":true,"grade":"standard","productLine":"Magnum Small Rifle","notes":"Winchester small rifle magnum primer."},
+        {"name":"WLR","size":"large-rifle","magnum":false,"grade":"standard","productLine":"Standard Large Rifle","notes":"Winchester large rifle primer for standard loads."},
+        {"name":"WLRM","size":"large-rifle","magnum":true,"grade":"standard","productLine":"Magnum Large Rifle","notes":"Winchester large rifle magnum primer for belted magnums."},
+        {"name":"209","size":"shotshell-209","magnum":false,"grade":"standard","productLine":"Standard Shotshell","notes":"Winchester 209 shotshell primer for shotgun reloading."}
+      ]
+    },
+    {
+      "name": "Remington",
+      "country": "USA",
+      "products": [
+        {"name":"1.5","size":"small-pistol","magnum":false,"grade":"standard","productLine":"Standard Small Pistol","notes":"Remington small pistol primer for standard loads."},
+        {"name":"2.5","size":"large-pistol","magnum":false,"grade":"standard","productLine":"Standard Large Pistol","notes":"Remington large pistol primer."},
+        {"name":"5.5","size":"small-pistol","magnum":true,"grade":"standard","productLine":"Magnum Small Pistol","notes":"Remington small pistol magnum primer for .357 SIG and similar."},
+        {"name":"6.5","size":"small-rifle","magnum":false,"grade":"standard","productLine":"Standard Small Rifle","notes":"Remington small rifle primer."},
+        {"name":"7.5","size":"small-rifle","magnum":false,"grade":"benchrest","productLine":"Benchrest Small Rifle","notes":"Benchrest small rifle primer for precision and high-pressure loads."},
+        {"name":"9.5","size":"large-rifle","magnum":false,"grade":"standard","productLine":"Standard Large Rifle","notes":"Remington large rifle primer."},
+        {"name":"9.5M","size":"large-rifle","magnum":true,"grade":"standard","productLine":"Standard Magnum Large Rifle","notes":"Remington large rifle magnum primer."},
+        {"name":"209 P","size":"shotshell-209","magnum":false,"grade":"standard","productLine":"Premier Shotshell","notes":"Remington 209 Premier shotshell primer."},
+        {"name":"STS","size":"shotshell-209","magnum":false,"grade":"match","productLine":"Premier STS Shotshell","notes":"Premier STS shotshell primer for target loads, very consistent."}
+      ]
+    },
+    {
+      "name": "Sellier & Bellot",
+      "country": "Czech Republic",
+      "products": [
+        {"name":"4.4","size":"small-pistol","magnum":false,"grade":"standard","productLine":"Boxer Small Pistol","notes":"S&B small pistol primer (Boxer)."},
+        {"name":"4.5","size":"large-pistol","magnum":false,"grade":"standard","productLine":"Boxer Large Pistol","notes":"S&B large pistol primer (Boxer)."},
+        {"name":"5.5","size":"large-pistol","magnum":true,"grade":"standard","productLine":"Boxer Large Pistol Magnum","notes":"S&B large pistol magnum primer."},
+        {"name":"LR","size":"large-rifle","magnum":false,"grade":"standard","productLine":"Large Rifle","notes":"S&B large rifle primer."},
+        {"name":"SR","size":"small-rifle","magnum":false,"grade":"standard","productLine":"Small Rifle","notes":"S&B small rifle primer."},
+        {"name":"LRM","size":"large-rifle","magnum":true,"grade":"standard","productLine":"Large Rifle Magnum","notes":"S&B large rifle magnum primer."},
+        {"name":"SRM","size":"small-rifle","magnum":true,"grade":"standard","productLine":"Small Rifle Magnum","notes":"S&B small rifle magnum primer."}
+      ]
+    },
+    {
+      "name": "RWS",
+      "country": "Germany",
+      "products": [
+        {"name":"4031","size":"small-rifle","magnum":false,"grade":"standard","productLine":"4031 Small Rifle","notes":"RWS small rifle primer, known for consistent ignition."},
+        {"name":"5333","size":"large-rifle","magnum":false,"grade":"standard","productLine":"5333 Large Rifle","notes":"RWS large rifle primer used in European factory ammunition."},
+        {"name":"R-50","size":"small-rifle","magnum":false,"grade":"match","productLine":"R-50 Match Small Rifle","notes":"RWS R-50 match-grade small rifle primer."},
+        {"name":"Match","size":"large-rifle","magnum":false,"grade":"match","productLine":"Match Large Rifle","notes":"RWS match-grade large rifle primer for target shooting."}
+      ]
+    },
+    {
+      "name": "Murom",
+      "country": "Russia",
+      "products": [
+        {"name":"KVB-7","size":"large-rifle","magnum":false,"grade":"standard","productLine":"KVB-7 Large Rifle","notes":"Russian large rifle primer; import restricted in US since 2021."},
+        {"name":"KVB-9","size":"small-rifle","magnum":false,"grade":"standard","productLine":"KVB-9 Small Rifle","notes":"Russian small rifle primer; limited availability due to import restrictions."},
+        {"name":"KVB-223","size":"small-rifle","magnum":false,"grade":"standard","productLine":"KVB-223 Small Rifle","notes":"Russian small rifle primer for .223; limited availability."}
+      ]
+    },
+    {
+      "name": "Tula",
+      "country": "Russia",
+      "products": [
+        {"name":"TSP","size":"small-pistol","magnum":false,"grade":"standard","productLine":"Small Pistol","notes":"Tula small pistol primer; US import restricted since 2021."},
+        {"name":"TLP","size":"large-pistol","magnum":false,"grade":"standard","productLine":"Large Pistol","notes":"Tula large pistol primer; US import restricted."}
+      ]
+    },
+    {
+      "name": "Wolf",
+      "country": "Russia",
+      "products": [
+        {"name":"SP","size":"small-pistol","magnum":false,"grade":"standard","productLine":"Small Pistol","notes":"Wolf-branded Russian small pistol primer; US import restricted."},
+        {"name":"LP","size":"large-pistol","magnum":false,"grade":"standard","productLine":"Large Pistol","notes":"Wolf-branded large pistol primer."},
+        {"name":"SR","size":"small-rifle","magnum":false,"grade":"standard","productLine":"Small Rifle","notes":"Wolf-branded small rifle primer."},
+        {"name":"LR","size":"large-rifle","magnum":false,"grade":"standard","productLine":"Large Rifle","notes":"Wolf-branded large rifle primer."},
+        {"name":"LRM","size":"large-rifle","magnum":true,"grade":"standard","productLine":"Large Rifle Magnum","notes":"Wolf-branded large rifle magnum primer."}
+      ]
+    },
+    {
+      "name": "Fiocchi",
+      "country": "Italy",
+      "products": [
+        {"name":"SP","size":"small-pistol","magnum":false,"grade":"standard","productLine":"Small Pistol","notes":"Fiocchi small pistol primer."},
+        {"name":"LP","size":"large-pistol","magnum":false,"grade":"standard","productLine":"Large Pistol","notes":"Fiocchi large pistol primer."},
+        {"name":"SR","size":"small-rifle","magnum":false,"grade":"standard","productLine":"Small Rifle","notes":"Fiocchi small rifle primer."},
+        {"name":"LR","size":"large-rifle","magnum":false,"grade":"standard","productLine":"Large Rifle","notes":"Fiocchi large rifle primer."},
+        {"name":"616","size":"shotshell-209","magnum":false,"grade":"standard","productLine":"616 Shotshell","notes":"Fiocchi 616 shotshell primer for shotgun reloading."}
+      ]
+    },
+    {
+      "name": "Ginex",
+      "country": "Italy",
+      "products": [
+        {"name":"SP","size":"small-pistol","magnum":false,"grade":"standard","productLine":"Small Pistol","notes":"Ginex small pistol primer."},
+        {"name":"LP","size":"large-pistol","magnum":false,"grade":"standard","productLine":"Large Pistol","notes":"Ginex large pistol primer."},
+        {"name":"SR","size":"small-rifle","magnum":false,"grade":"standard","productLine":"Small Rifle","notes":"Ginex small rifle primer."},
+        {"name":"LR","size":"large-rifle","magnum":false,"grade":"standard","productLine":"Large Rifle","notes":"Ginex large rifle primer."},
+        {"name":"209","size":"shotshell-209","magnum":false,"grade":"standard","productLine":"209 Shotshell","notes":"Ginex 209 shotshell primer."}
+      ]
+    },
+    {
+      "name": "Vihtavuori",
+      "country": "Finland",
+      "products": [
+        {"name":"SP","size":"small-pistol","magnum":false,"grade":"standard","productLine":"Small Pistol","notes":"Vihtavuori small pistol primer."},
+        {"name":"LP","size":"large-pistol","magnum":false,"grade":"standard","productLine":"Large Pistol","notes":"Vihtavuori large pistol primer."},
+        {"name":"SR","size":"small-rifle","magnum":false,"grade":"standard","productLine":"Small Rifle","notes":"Vihtavuori small rifle primer."},
+        {"name":"LR","size":"large-rifle","magnum":false,"grade":"standard","productLine":"Large Rifle","notes":"Vihtavuori large rifle primer for precision shooting."}
+      ]
+    }
+  ]
+}

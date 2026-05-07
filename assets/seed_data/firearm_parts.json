@@ -1,0 +1,300 @@
+{
+  "manufacturers": [
+    {"name":"TriggerTech","country":"Canada","categories":["trigger"],"products":[
+      {"name":"Diamond Trigger - Remington 700","category":"trigger","compatibleWith":["Remington 700 footprint"],"notes":"Adjustable 1.5-4 lb pull, frictionless release."},
+      {"name":"Special Trigger - Remington 700","category":"trigger","compatibleWith":["Remington 700 footprint"],"notes":"Adjustable 1-3.5 lb single-stage."},
+      {"name":"Primary Trigger - Remington 700","category":"trigger","compatibleWith":["Remington 700 footprint"],"notes":"User-adjustable 2.5-5 lb."},
+      {"name":"Adaptable Trigger - Remington 700","category":"trigger","compatibleWith":["Remington 700 footprint"],"notes":"Adjustable 1.5-4 lb with bottom safety."},
+      {"name":"Diamond Trigger - Tikka","category":"trigger","compatibleWith":["Tikka T3","Tikka T3x"],"notes":"Frictionless release, 1.5-4 lb adjustable."},
+      {"name":"Special Trigger - Ruger 10/22","category":"trigger","compatibleWith":["Ruger 10/22"],"notes":"Drop-in replacement, 1.5-4 lb adjustable."},
+      {"name":"AR-Primary Trigger","category":"trigger","compatibleWith":["AR-15","AR-10"],"notes":"Single-stage drop-in 3.5 lb pull."},
+      {"name":"AR-Diamond Trigger","category":"trigger","compatibleWith":["AR-15","AR-10"],"notes":"Adjustable two-stage."}
+    ]},
+    {"name":"Timney Triggers","country":"USA","categories":["trigger"],"products":[
+      {"name":"Calvin Elite - Remington 700","category":"trigger","compatibleWith":["Remington 700 footprint"],"notes":"Two-stage adjustable 8 oz to 2.5 lb."},
+      {"name":"Elite Hunter - Remington 700","category":"trigger","compatibleWith":["Remington 700 footprint"],"notes":"Single-stage hunting trigger 1.5-4 lb."},
+      {"name":"AR-15 Competition Trigger","category":"trigger","compatibleWith":["AR-15"],"notes":"Drop-in single-stage 3 lb or 4 lb."},
+      {"name":"AR-15 Targa Two-Stage","category":"trigger","compatibleWith":["AR-15"],"notes":"Adjustable two-stage drop-in."},
+      {"name":"Impact AR Trigger","category":"trigger","compatibleWith":["AR-15","AR-10"],"notes":"Budget single-stage 3 lb drop-in."},
+      {"name":"Tikka T3/T3x Trigger","category":"trigger","compatibleWith":["Tikka T3","Tikka T3x"],"notes":"Adjustable 1-4 lb."},
+      {"name":"Savage Trigger","category":"trigger","compatibleWith":["Savage 10/110"],"notes":"1.5-4 lb adjustable replacement."},
+      {"name":"Ruger 10/22 Trigger","category":"trigger","compatibleWith":["Ruger 10/22"],"notes":"Drop-in 2.75 lb."},
+      {"name":"Glock Alpha Competition Trigger","category":"trigger","compatibleWith":["Glock Gen 3","Glock Gen 4","Glock Gen 5"],"notes":"Drop-in 3 lb pistol trigger."}
+    ]},
+    {"name":"Geissele Automatics","country":"USA","categories":["trigger","rail","charging-handle","scope-mount"],"products":[
+      {"name":"SSA-E (Super Semi-Auto Enhanced)","category":"trigger","compatibleWith":["AR-15","AR-10"],"notes":"Two-stage 2.3/1.2 lb."},
+      {"name":"SSA (Super Semi-Auto)","category":"trigger","compatibleWith":["AR-15","AR-10"],"notes":"Two-stage 4.5 lb combat trigger."},
+      {"name":"S3G (Super 3-Gun)","category":"trigger","compatibleWith":["AR-15"],"notes":"Hybrid single-stage, 3 Gun competition."},
+      {"name":"Super Dynamic Combat (SD-C)","category":"trigger","compatibleWith":["AR-15","AR-10"],"notes":"Two-stage 4.5 lb flat bow."},
+      {"name":"Super Dynamic Enhanced (SD-E)","category":"trigger","compatibleWith":["AR-15"],"notes":"Two-stage 3.5 lb flat bow."},
+      {"name":"Single-Stage Precision (SSP)","category":"trigger","compatibleWith":["AR-15"],"notes":"Single-stage 3.5 lb precision flat trigger."},
+      {"name":"Super Modular Rail MK16","category":"rail","compatibleWith":["AR-15"],"notes":"M-LOK free-float handguard, 7-15 inch."},
+      {"name":"Super Charging Handle SCH","category":"charging-handle","compatibleWith":["AR-15","AR-10"],"notes":"Ambidextrous extended latch."},
+      {"name":"Super Precision Scope Mount","category":"scope-mount","compatibleWith":["AR-15"],"notes":"30mm or 34mm cantilever."}
+    ]},
+    {"name":"Rise Armament","country":"USA","categories":["trigger"],"products":[
+      {"name":"RA-535 Advanced-Performance Trigger","category":"trigger","compatibleWith":["AR-15","AR-10"],"notes":"Single-stage 3.5 lb drop-in flat trigger."},
+      {"name":"RA-140 Super Sporting Trigger","category":"trigger","compatibleWith":["AR-15"],"notes":"Single-stage 3.5 lb budget drop-in."},
+      {"name":"Iconic Trigger","category":"trigger","compatibleWith":["AR-15","AR-10"],"notes":"Premium flat 2.75 lb single-stage."}
+    ]},
+    {"name":"Apex Tactical Specialties","country":"USA","categories":["trigger"],"products":[
+      {"name":"Action Enhancement Trigger - Glock","category":"trigger","compatibleWith":["Glock Gen 3","Glock Gen 4","Glock Gen 5"],"notes":"Reduces pull weight, improved reset."},
+      {"name":"Flat-Faced Forward Set Trigger - M&P","category":"trigger","compatibleWith":["S&W M&P","M&P 2.0"],"notes":"4.5-5 lb pull with shorter reset."},
+      {"name":"Shield 9/40 Action Enhancement Kit","category":"trigger","compatibleWith":["S&W Shield"],"notes":"Polymer trigger with reduced pull."}
+    ]},
+    {"name":"ALG Defense","country":"USA","categories":["trigger"],"products":[
+      {"name":"ACT (Advanced Combat Trigger)","category":"trigger","compatibleWith":["AR-15"],"notes":"Mil-spec geometry with nickel-Teflon coat."},
+      {"name":"QMS (Quality Mil-Spec) Trigger","category":"trigger","compatibleWith":["AR-15"],"notes":"Polished mil-spec 6 lb pull."},
+      {"name":"AKT (Advanced Kalashnikov Trigger)","category":"trigger","compatibleWith":["AK-47","AKM"],"notes":"Single-hook AK trigger 3.5 lb pull."}
+    ]},
+    {"name":"Bix'n Andy","country":"Austria","categories":["trigger"],"products":[
+      {"name":"TacSport Pro - Remington 700","category":"trigger","compatibleWith":["Remington 700 footprint"],"notes":"Premium ball-bearing trigger 4 oz to 2.5 lb."},
+      {"name":"Dakota Trigger - Remington 700","category":"trigger","compatibleWith":["Remington 700 footprint"],"notes":"Two-stage adjustable benchrest."},
+      {"name":"TacSport Pro - Tikka","category":"trigger","compatibleWith":["Tikka T3","Tikka T3x"],"notes":"Drop-in adjustable from 4 oz."}
+    ]},
+    {"name":"CMC Triggers","country":"USA","categories":["trigger"],"products":[
+      {"name":"Match-Grade Flat Trigger 3.5 lb","category":"trigger","compatibleWith":["AR-15","AR-10"],"notes":"Drop-in single-stage flat bow."},
+      {"name":"Match-Grade Curved Trigger 3.5 lb","category":"trigger","compatibleWith":["AR-15","AR-10"],"notes":"Drop-in curved bow single-stage."},
+      {"name":"Two-Stage Tactical 2 lb / 2 lb","category":"trigger","compatibleWith":["AR-15"],"notes":"Two-stage 4 lb total cassette."}
+    ]},
+    {"name":"LaRue Tactical","country":"USA","categories":["trigger","scope-mount"],"products":[
+      {"name":"MBT-2S","category":"trigger","compatibleWith":["AR-15","AR-10"],"notes":"Two-stage 2.5/2 lb, popular value precision trigger."},
+      {"name":"MBT-1S Single-Stage","category":"trigger","compatibleWith":["AR-15"],"notes":"Single-stage 4.5 lb mil-spec replacement."},
+      {"name":"LT104 SPR-E Mount","category":"scope-mount","compatibleWith":["AR-15"],"notes":"QD cantilever 30mm."},
+      {"name":"LT170 QD Mount","category":"scope-mount","compatibleWith":["AR-15"],"notes":"QD 30mm/34mm scope mount."}
+    ]},
+    {"name":"Hipertouch (Hiperfire)","country":"USA","categories":["trigger"],"products":[
+      {"name":"Hipertouch 24","category":"trigger","compatibleWith":["AR-15"],"notes":"Adjustable 2.5/3.5 lb single-stage."},
+      {"name":"Hipertouch Eclipse","category":"trigger","compatibleWith":["AR-15"],"notes":"Adjustable 2-3.5 lb."},
+      {"name":"Hipertouch Genesis","category":"trigger","compatibleWith":["AR-15"],"notes":"Single-stage 3.5 lb match trigger."}
+    ]},
+    {"name":"Jewell Triggers","country":"USA","categories":["trigger"],"products":[
+      {"name":"HVR Remington 700 Trigger","category":"trigger","compatibleWith":["Remington 700 footprint"],"notes":"Premium benchrest trigger 1.5 oz to 3 lb."},
+      {"name":"BR Benchrest Trigger","category":"trigger","compatibleWith":["Remington 700 footprint"],"notes":"Ultra-light benchrest trigger 1 oz capable."}
+    ]},
+    {"name":"MDT","country":"Canada","categories":["chassis","magazine"],"products":[
+      {"name":"ACC Chassis System","category":"chassis","compatibleWith":["Remington 700 footprint","Tikka T3x","Howa 1500"],"notes":"Aluminum Core Chassis, PRS-focused."},
+      {"name":"ACC Elite Chassis","category":"chassis","compatibleWith":["Remington 700 footprint"],"notes":"Top-tier PRS chassis."},
+      {"name":"XRS Chassis System","category":"chassis","compatibleWith":["Remington 700 footprint","Tikka T3x","Bergara B-14"],"notes":"Folding chassis hunting/tactical."},
+      {"name":"ESS Chassis System","category":"chassis","compatibleWith":["Remington 700 footprint","Tikka T3x"],"notes":"Aluminum chassis with traditional rear stock."},
+      {"name":"LSS-XL Gen 2 Chassis","category":"chassis","compatibleWith":["Remington 700 footprint","Howa 1500","Tikka T3x"],"notes":"Drop-in Light Sniper System."},
+      {"name":"HS3 Chassis","category":"chassis","compatibleWith":["Remington 700 footprint"],"notes":"Hunting/sport precision chassis."},
+      {"name":"TAC21 Chassis","category":"chassis","compatibleWith":["Remington 700 footprint","Savage 10/110"],"notes":"Original MDT tactical chassis."},
+      {"name":"AICS-Pattern Magazine 10rd .308","category":"magazine","compatibleWith":["AICS pattern"],"notes":"Steel-bodied 10-round short action mag."},
+      {"name":"AICS-Pattern Magazine 5rd Magnum","category":"magazine","compatibleWith":["AICS pattern"],"notes":"Long action magnum AICS-pattern mag."}
+    ]},
+    {"name":"KRG","country":"USA","categories":["chassis","bolt-knob"],"products":[
+      {"name":"Bravo Chassis","category":"chassis","compatibleWith":["Remington 700 footprint","Tikka T3x","Howa 1500","Savage 10/110"],"notes":"Polymer hybrid chassis, popular budget PRS."},
+      {"name":"Whiskey-3 Chassis","category":"chassis","compatibleWith":["Remington 700 footprint","Tikka T3x"],"notes":"Folding adjustable hybrid chassis."},
+      {"name":"X-Ray Chassis","category":"chassis","compatibleWith":["Remington 700 footprint"],"notes":"Aluminum precision chassis."},
+      {"name":"Bolt Lift Knob","category":"bolt-knob","compatibleWith":["Remington 700","Tikka T3x"],"notes":"Threaded oversized aluminum bolt knob."}
+    ]},
+    {"name":"XLR Industries","country":"USA","categories":["chassis"],"products":[
+      {"name":"Element 4.0 Chassis","category":"chassis","compatibleWith":["Remington 700 footprint","Tikka T3x","Savage 10/110"],"notes":"Modular aluminum precision chassis."},
+      {"name":"Envy Pro Chassis","category":"chassis","compatibleWith":["Remington 700 footprint"],"notes":"Top-tier competition PRS chassis."},
+      {"name":"Carbon Element Chassis","category":"chassis","compatibleWith":["Remington 700 footprint"],"notes":"Carbon fiber lightweight hunting chassis."}
+    ]},
+    {"name":"Foundation Stocks","country":"USA","categories":["stock"],"products":[
+      {"name":"Foundation Centurion","category":"stock","compatibleWith":["Remington 700 footprint"],"notes":"Fiberglass tactical stock with adjustable cheek."},
+      {"name":"Foundation Genesis 2 Hunter","category":"stock","compatibleWith":["Remington 700 footprint"],"notes":"Lightweight hunting fiberglass stock."},
+      {"name":"Foundation Samson","category":"stock","compatibleWith":["Remington 700 footprint"],"notes":"Heavy palm-swell PRS-style stock."}
+    ]},
+    {"name":"Manners Composite Stocks","country":"USA","categories":["stock"],"products":[
+      {"name":"T2A Stock","category":"stock","compatibleWith":["Remington 700 footprint"],"notes":"Carbon-fiber tactical stock."},
+      {"name":"T4A Stock","category":"stock","compatibleWith":["Remington 700 footprint"],"notes":"Heavier vertical-grip tactical stock."},
+      {"name":"T5A Stock","category":"stock","compatibleWith":["Remington 700 footprint"],"notes":"Adjustable PRS-style precision stock."},
+      {"name":"EH1 (Elite Hunter)","category":"stock","compatibleWith":["Remington 700 footprint"],"notes":"Lightweight carbon hunting stock."},
+      {"name":"PRS1 Stock","category":"stock","compatibleWith":["Remington 700 footprint"],"notes":"Adjustable competition stock."}
+    ]},
+    {"name":"AG Composites","country":"USA","categories":["stock"],"products":[
+      {"name":"Adaptable Hunter","category":"stock","compatibleWith":["Remington 700 footprint","Tikka T3x","Bergara B-14"],"notes":"Carbon-fiber lightweight stock."},
+      {"name":"Alpine Hunter","category":"stock","compatibleWith":["Remington 700 footprint","Tikka T3x"],"notes":"Mountain hunting stock under 26 oz."},
+      {"name":"Chalk Branch","category":"stock","compatibleWith":["Remington 700 footprint"],"notes":"Sporter-styled carbon-fiber hunting stock."},
+      {"name":"Ridgeline","category":"stock","compatibleWith":["Remington 700 footprint","Tikka T3x"],"notes":"Mid-weight all-purpose carbon-fiber stock."}
+    ]},
+    {"name":"Cadex Defence","country":"Canada","categories":["chassis"],"products":[
+      {"name":"CDX-MC Kraken Chassis","category":"chassis","compatibleWith":["Remington 700 footprint"],"notes":"Premium PRS-grade folding chassis."},
+      {"name":"Strike Nuke Evo Chassis","category":"chassis","compatibleWith":["Remington 700 footprint"],"notes":"Tactical folding chassis."},
+      {"name":"Falcon Lite Chassis","category":"chassis","compatibleWith":["Remington 700 footprint"],"notes":"Lightweight hunting chassis."}
+    ]},
+    {"name":"Magpul Industries","country":"USA","categories":["chassis","stock","bipod","grip","magazine","buttstock"],"products":[
+      {"name":"Pro 700 Chassis","category":"chassis","compatibleWith":["Remington 700 footprint"],"notes":"Folding aluminum chassis, AICS-pattern mags."},
+      {"name":"Pro 700 SA Folding","category":"chassis","compatibleWith":["Remington 700 footprint"],"notes":"Short action variant of Pro 700."},
+      {"name":"Hunter 700 Stock","category":"stock","compatibleWith":["Remington 700 footprint"],"notes":"Polymer hunting stock with detachable mag."},
+      {"name":"Bipod for M-LOK","category":"bipod","compatibleWith":["M-LOK"],"notes":"M-LOK direct attachment 6.8-10.3 inch."},
+      {"name":"Bipod for ARMS 17S Style","category":"bipod","compatibleWith":["Picatinny rail"],"notes":"Direct rail attach via ARMS 17S footprint."},
+      {"name":"MOE Grip","category":"grip","compatibleWith":["AR-15","AR-10"],"notes":"Polymer drop-in pistol grip."},
+      {"name":"MIAD Grip","category":"grip","compatibleWith":["AR-15","AR-10"],"notes":"Modular grip with interchangeable backstraps."},
+      {"name":"PMAG 30 GEN M3","category":"magazine","compatibleWith":["AR-15"],"notes":"30-round 5.56 NATO polymer magazine."},
+      {"name":"PMAG 20 LR/SR GEN M3","category":"magazine","compatibleWith":["AR-10","SR-25"],"notes":"20-round 7.62 NATO polymer magazine."},
+      {"name":"CTR Carbine Stock","category":"buttstock","compatibleWith":["AR-15 mil-spec buffer tube"],"notes":"Compact adjustable carbine stock."},
+      {"name":"PRS Gen3 Stock","category":"buttstock","compatibleWith":["AR-15 mil-spec buffer tube","AR-10 mil-spec buffer tube"],"notes":"Precision rifle stock with adjustable comb."},
+      {"name":"UBR Gen2 Stock","category":"buttstock","compatibleWith":["AR-15"],"notes":"Utility/Battle Rifle stock with proprietary buffer."}
+    ]},
+    {"name":"McMillan Fiberglass Stocks","country":"USA","categories":["stock"],"products":[
+      {"name":"A-3 Stock","category":"stock","compatibleWith":["Remington 700 footprint"],"notes":"Tactical stock with adjustable cheek piece."},
+      {"name":"A-5 Stock","category":"stock","compatibleWith":["Remington 700 footprint"],"notes":"Heavier tactical/PRS stock."},
+      {"name":"HTG (Hunter Tactical Gun)","category":"stock","compatibleWith":["Remington 700 footprint"],"notes":"Hybrid hunter/tactical fiberglass stock."},
+      {"name":"Game Scout","category":"stock","compatibleWith":["Remington 700 footprint"],"notes":"Lightweight hunting stock."},
+      {"name":"Hunter's Edge","category":"stock","compatibleWith":["Remington 700 footprint"],"notes":"Ultra-light mountain hunting stock."}
+    ]},
+    {"name":"Bell & Carlson","country":"USA","categories":["stock"],"products":[
+      {"name":"Medalist Stock","category":"stock","compatibleWith":["Remington 700 footprint","Savage 10/110","Winchester Model 70"],"notes":"Aluminum bedded fiberglass tactical stock."},
+      {"name":"Carbelite Hunter","category":"stock","compatibleWith":["Remington 700 footprint","Savage 10/110"],"notes":"Lightweight hunting composite stock."}
+    ]},
+    {"name":"Boyds Gun Stocks","country":"USA","categories":["stock"],"products":[
+      {"name":"Pro Varmint Laminated Stock","category":"stock","compatibleWith":["Remington 700","Ruger 10/22","Savage 10/110"],"notes":"Laminated wood varmint stock."},
+      {"name":"Classic Laminated Stock","category":"stock","compatibleWith":["Remington 700","Tikka T3","Savage 10/110"],"notes":"Traditional sporter laminated wood."},
+      {"name":"At-One Adjustable Stock","category":"stock","compatibleWith":["Remington 700","Ruger 10/22","Savage 10/110"],"notes":"Tool-less LOP and comb adjustment."}
+    ]},
+    {"name":"Grayboe","country":"USA","categories":["stock"],"products":[
+      {"name":"Renegade Stock","category":"stock","compatibleWith":["Remington 700 footprint"],"notes":"Fiberglass tactical-style stock."},
+      {"name":"Trekker Stock","category":"stock","compatibleWith":["Remington 700 footprint"],"notes":"Hunter-style composite stock."},
+      {"name":"Phoenix Stock","category":"stock","compatibleWith":["Remington 700 footprint"],"notes":"Heavy palm-swell PRS-style stock."},
+      {"name":"Outlander Stock","category":"stock","compatibleWith":["Remington 700 footprint"],"notes":"Lightweight backcountry hunting stock."}
+    ]},
+    {"name":"GRS Riflestocks","country":"Norway","categories":["stock"],"products":[
+      {"name":"Bifrost Stock","category":"stock","compatibleWith":["Remington 700","Tikka T3x","Sako 85","Howa 1500"],"notes":"Adjustable laminated stock with thumbhole."},
+      {"name":"Berserk Stock","category":"stock","compatibleWith":["Remington 700","Tikka T3x","Sako 85"],"notes":"Pistol-grip laminated hunting stock."}
+    ]},
+    {"name":"Bartlein Barrels","country":"USA","categories":["barrel"],"products":[
+      {"name":"5R Rifling Custom Barrel","category":"barrel","compatibleWith":["Remington 700","Custom actions"],"notes":"Cut-rifled 5R for precision rifle."},
+      {"name":"4-Groove Cut-Rifled Barrel","category":"barrel","compatibleWith":["Remington 700","Custom actions"],"notes":"Conventional 4-groove benchrest barrel."},
+      {"name":"Gain Twist Barrel","category":"barrel","compatibleWith":["Custom actions"],"notes":"Progressive twist for ELR shooting."},
+      {"name":"Heavy Palma Contour Barrel","category":"barrel","compatibleWith":["Remington 700"],"notes":"Heavy contour for F-class and PRS."}
+    ]},
+    {"name":"Krieger Barrels","country":"USA","categories":["barrel"],"products":[
+      {"name":"Single-Point Cut-Rifled Match Barrel","category":"barrel","compatibleWith":["Remington 700","Custom actions"],"notes":"Single-point cut-rifled premium match barrel."}
+    ]},
+    {"name":"Rock Creek Barrels","country":"USA","categories":["barrel"],"products":[
+      {"name":"Rock Creek 5R Cut-Rifled","category":"barrel","compatibleWith":["Remington 700","Custom actions"],"notes":"Cut-rifled 5R precision barrel."}
+    ]},
+    {"name":"Proof Research","country":"USA","categories":["barrel"],"products":[
+      {"name":"Carbon Fiber Wrapped Barrel","category":"barrel","compatibleWith":["Remington 700","Tikka T3x","AR-15","AR-10"],"notes":"Carbon-wrapped steel core barrel."},
+      {"name":"Steel Match-Grade Barrel","category":"barrel","compatibleWith":["Remington 700","Custom actions"],"notes":"Stainless steel match barrel."},
+      {"name":"AR Carbon Fiber Barrel","category":"barrel","compatibleWith":["AR-15","AR-10"],"notes":"Carbon-fiber wrapped AR barrel."}
+    ]},
+    {"name":"Hawk Hill Custom","country":"USA","categories":["barrel"],"products":[
+      {"name":"Hawk Hill Cut-Rifled Match Barrel","category":"barrel","compatibleWith":["Remington 700","Custom actions"],"notes":"Cut-rifled barrel for precision rifle."}
+    ]},
+    {"name":"Brux Barrels","country":"USA","categories":["barrel"],"products":[
+      {"name":"Brux 5R Cut-Rifled Barrel","category":"barrel","compatibleWith":["Remington 700","Custom actions"],"notes":"5R cut-rifled benchrest-quality barrel."}
+    ]},
+    {"name":"Bergara","country":"Spain","categories":["barrel"],"products":[
+      {"name":"Bergara Premier Barrel","category":"barrel","compatibleWith":["Remington 700","Bergara B-14"],"notes":"Hand-lapped match grade barrel."}
+    ]},
+    {"name":"Christensen Arms","country":"USA","categories":["barrel"],"products":[
+      {"name":"Christensen Arms Carbon Fiber Barrel","category":"barrel","compatibleWith":["Remington 700","Tikka T3x"],"notes":"Aerospace carbon-wrapped barrel."}
+    ]},
+    {"name":"Vortex Optics","country":"USA","categories":["scope-mount","scope-ring"],"products":[
+      {"name":"Pro Series Cantilever Mount","category":"scope-mount","compatibleWith":["AR-15"],"notes":"30mm or 34mm cantilever AR scope mount."},
+      {"name":"Precision Matched Rings","category":"scope-ring","compatibleWith":["Picatinny rail"],"notes":"30mm/34mm matched height rings."},
+      {"name":"Hunter Series Rings","category":"scope-ring","compatibleWith":["Picatinny rail"],"notes":"Lightweight aluminum hunting rings."},
+      {"name":"Pro Series Rings","category":"scope-ring","compatibleWith":["Picatinny rail"],"notes":"Premium 30mm/34mm rings."},
+      {"name":"Tactical 30mm Rings","category":"scope-ring","compatibleWith":["Picatinny rail"],"notes":"Heavy-duty 6-screw cap tactical rings."}
+    ]},
+    {"name":"Spuhr","country":"Sweden","categories":["scope-mount"],"products":[
+      {"name":"Spuhr SP-3002 Mount","category":"scope-mount","compatibleWith":["Picatinny rail"],"notes":"Premium 30mm mount with built-in cant and bubble level."},
+      {"name":"Spuhr SP-4002 Mount","category":"scope-mount","compatibleWith":["Picatinny rail"],"notes":"34mm cantilever mount with 6 MOA cant."},
+      {"name":"Spuhr SP-4602 Mount","category":"scope-mount","compatibleWith":["Picatinny rail"],"notes":"34mm 0 MOA mount."},
+      {"name":"Spuhr SP-4801 Mount","category":"scope-mount","compatibleWith":["Picatinny rail"],"notes":"34mm cantilever with high mount height."}
+    ]},
+    {"name":"Nightforce Optics","country":"USA","categories":["scope-mount","scope-ring"],"products":[
+      {"name":"UltraMount","category":"scope-mount","compatibleWith":["Picatinny rail"],"notes":"30mm/34mm precision unimount."},
+      {"name":"X-Treme Duty Mount","category":"scope-mount","compatibleWith":["Picatinny rail"],"notes":"Heavy-duty cantilever mount."},
+      {"name":"X-Treme Duty Rings","category":"scope-ring","compatibleWith":["Picatinny rail"],"notes":"30mm/34mm machined steel rings."},
+      {"name":"Magmount Mount","category":"scope-mount","compatibleWith":["Picatinny rail"],"notes":"Magnesium-alloy cantilever mount."}
+    ]},
+    {"name":"ARC (American Rifle Company)","country":"USA","categories":["scope-mount"],"products":[
+      {"name":"ARC M10 Mount","category":"scope-mount","compatibleWith":["Picatinny rail"],"notes":"30mm/34mm one-piece scope mount."},
+      {"name":"ARC M20 Mount","category":"scope-mount","compatibleWith":["Picatinny rail"],"notes":"Two-piece base/ring system with 20 MOA option."},
+      {"name":"ARC Apex Mount","category":"scope-mount","compatibleWith":["Picatinny rail"],"notes":"Premium one-piece mount with built-in level."}
+    ]},
+    {"name":"Reptilia Corp","country":"USA","categories":["scope-mount","scope-ring"],"products":[
+      {"name":"Reptilia AUS Mount","category":"scope-mount","compatibleWith":["AR-15"],"notes":"Cantilever 30mm/34mm AR-style mount."},
+      {"name":"Reptilia ROF-90 Mount","category":"scope-ring","compatibleWith":["30mm scope"],"notes":"Red dot offset mounted to scope tube."},
+      {"name":"Reptilia ROF-SAR","category":"scope-mount","compatibleWith":["Picatinny rail"],"notes":"Side-mounted offset red-dot mount."}
+    ]},
+    {"name":"Area 419","country":"USA","categories":["muzzle-brake"],"products":[
+      {"name":"Hellfire Self-Timing Muzzle Brake","category":"muzzle-brake","compatibleWith":["Remington 700","Custom actions"],"notes":"Self-timing brake with replaceable end caps."},
+      {"name":"Sidewinder Muzzle Brake","category":"muzzle-brake","compatibleWith":["Remington 700","Custom actions"],"notes":"Side-port self-timing brake."},
+      {"name":"Maverick Muzzle Brake","category":"muzzle-brake","compatibleWith":["AR-15"],"notes":"Self-timing AR brake."}
+    ]},
+    {"name":"SureFire","country":"USA","categories":["muzzle-brake","suppressor"],"products":[
+      {"name":"SureFire ProComp 556","category":"muzzle-brake","compatibleWith":["AR-15"],"notes":"5.56 NATO closed-tine compensator."},
+      {"name":"SureFire MB556K Brake","category":"muzzle-brake","compatibleWith":["AR-15"],"notes":"Suppressor-mount muzzle brake."},
+      {"name":"SureFire SOCOM556-RC2 Suppressor","category":"suppressor","compatibleWith":["AR-15"],"notes":"Fast-attach 5.56 suppressor."},
+      {"name":"SureFire SOCOM762-RC2 Suppressor","category":"suppressor","compatibleWith":["AR-10","Bolt action 7.62"],"notes":"Fast-attach 7.62 suppressor."},
+      {"name":"SureFire WarComp","category":"muzzle-brake","compatibleWith":["AR-15"],"notes":"3-prong flash hider/comp."}
+    ]},
+    {"name":"SilencerCo","country":"USA","categories":["suppressor"],"products":[
+      {"name":"SilencerCo Omega 36M","category":"suppressor","compatibleWith":["AR-10","Bolt action 7.62","AR-15"],"notes":"Modular multi-caliber rifle suppressor."},
+      {"name":"SilencerCo Hybrid 46M","category":"suppressor","compatibleWith":["AR-10","Bolt action","Pistol"],"notes":"Modular multi-caliber up to .45-70."},
+      {"name":"SilencerCo Saker 556 ASR","category":"suppressor","compatibleWith":["AR-15"],"notes":"5.56 ASR-mount rifle suppressor."},
+      {"name":"SilencerCo Banish 30","category":"suppressor","compatibleWith":["Bolt action 7.62","AR-10"],"notes":"Modular .30 caliber rifle suppressor."},
+      {"name":"SilencerCo Banish 338","category":"suppressor","compatibleWith":["Bolt action .338"],"notes":"Magnum-rated .338 suppressor."},
+      {"name":"SilencerCo Banish 45","category":"suppressor","compatibleWith":["Pistol .45 ACP"],"notes":"Modular .45 ACP pistol suppressor."},
+      {"name":"SilencerCo Osprey 9","category":"suppressor","compatibleWith":["Pistol 9mm"],"notes":"Eccentric-mount 9mm pistol suppressor."}
+    ]},
+    {"name":"Dead Air Silencers","country":"USA","categories":["suppressor"],"products":[
+      {"name":"Dead Air Sandman-S","category":"suppressor","compatibleWith":["AR-10","Bolt action 7.62","AR-15"],"notes":"Stellite-baffled .30 caliber suppressor."},
+      {"name":"Dead Air Sandman-L","category":"suppressor","compatibleWith":["AR-10","Bolt action 7.62"],"notes":"Larger .30 caliber suppressor."},
+      {"name":"Dead Air Nomad-30","category":"suppressor","compatibleWith":["Bolt action 7.62","AR-10","AR-15"],"notes":"Lightweight titanium .30 caliber suppressor."},
+      {"name":"Dead Air Wolverine PBS-1","category":"suppressor","compatibleWith":["AK-47","AKM"],"notes":"AK-pattern suppressor."},
+      {"name":"Dead Air Sierra-5","category":"suppressor","compatibleWith":["AR-15"],"notes":"5.56 dedicated rifle suppressor."}
+    ]},
+    {"name":"Thunder Beast Arms Corporation","country":"USA","categories":["suppressor"],"products":[
+      {"name":"TBAC Ultra 5","category":"suppressor","compatibleWith":["AR-10","Bolt action 7.62"],"notes":"5-inch .30 cal precision suppressor."},
+      {"name":"TBAC Ultra 7","category":"suppressor","compatibleWith":["Bolt action 7.62","AR-10"],"notes":"7-inch .30 cal precision suppressor."},
+      {"name":"TBAC Ultra 9","category":"suppressor","compatibleWith":["Bolt action 7.62"],"notes":"9-inch .30 cal precision rifle suppressor."},
+      {"name":"TBAC Magnus","category":"suppressor","compatibleWith":["Bolt action .338","Magnum"],"notes":"Magnum-rated precision suppressor."},
+      {"name":"TBAC Dominus","category":"suppressor","compatibleWith":["Bolt action 7.62","AR-10"],"notes":"Modular precision suppressor."}
+    ]},
+    {"name":"Atlas Bipods","country":"USA","categories":["bipod"],"products":[
+      {"name":"Atlas BT10 Bipod","category":"bipod","compatibleWith":["Picatinny rail"],"notes":"Standard Atlas bipod with leg pan/cant."},
+      {"name":"Atlas BT47 PSR Bipod","category":"bipod","compatibleWith":["Picatinny rail"],"notes":"Precision Sniper Rifle bipod."},
+      {"name":"Atlas BT47-NC Bipod","category":"bipod","compatibleWith":["Picatinny rail"],"notes":"Atlas PSR bipod with no-cant version."},
+      {"name":"Atlas BT46-LW17 PSR","category":"bipod","compatibleWith":["Picatinny rail"],"notes":"Long-leg PSR bipod."},
+      {"name":"Atlas CAL Series Bipod","category":"bipod","compatibleWith":["Picatinny rail"],"notes":"Cant and leveler integrated bipod."}
+    ]},
+    {"name":"Harris Engineering","country":"USA","categories":["bipod"],"products":[
+      {"name":"Harris S-BR Bipod","category":"bipod","compatibleWith":["Sling stud"],"notes":"Benchrest 6-9 inch fixed leg bipod."},
+      {"name":"Harris 1A2 Bipod","category":"bipod","compatibleWith":["Sling stud"],"notes":"9-13 inch swivel-leg bipod."},
+      {"name":"Harris 25BRMS Bipod","category":"bipod","compatibleWith":["Sling stud"],"notes":"12-25 inch tall extended bipod."}
+    ]},
+    {"name":"Accu-Tac","country":"USA","categories":["bipod"],"products":[
+      {"name":"Accu-Tac BR-4 G2","category":"bipod","compatibleWith":["Picatinny rail"],"notes":"Aluminum precision bipod with integrated cant."},
+      {"name":"Accu-Tac FC-5 G2","category":"bipod","compatibleWith":["Picatinny rail"],"notes":"Five-position folding cant bipod."},
+      {"name":"Accu-Tac LR-10 G2","category":"bipod","compatibleWith":["Picatinny rail"],"notes":"Heavy-duty long range bipod."}
+    ]},
+    {"name":"Spartan Precision","country":"UK","categories":["bipod"],"products":[
+      {"name":"Javelin Pro Hunt Bipod","category":"bipod","compatibleWith":["Sling stud","Picatinny rail"],"notes":"Magnetic-attach lightweight carbon-fiber bipod."},
+      {"name":"Javelin Lite Bipod","category":"bipod","compatibleWith":["Sling stud"],"notes":"Ultralight magnetic mountain hunting bipod."}
+    ]},
+    {"name":"Pacific Tool & Gauge","country":"USA","categories":["bolt-knob","bolt-handle","bolt-head"],"products":[
+      {"name":"PTG Tactical Bolt Knob","category":"bolt-knob","compatibleWith":["Remington 700"],"notes":"Threaded oversize bolt knob."},
+      {"name":"PTG Bolt Handle Assembly","category":"bolt-handle","compatibleWith":["Remington 700"],"notes":"Replacement bolt body with knob."},
+      {"name":"PTG Bolt Head","category":"bolt-head","compatibleWith":["Remington 700"],"notes":"Replacement bolt head for various calibers."}
+    ]},
+    {"name":"Hawkins Precision","country":"USA","categories":["bolt-knob","bolt-handle","magazine","scope-ring"],"products":[
+      {"name":"Hawkins DLOC Bolt Knob","category":"bolt-knob","compatibleWith":["Remington 700"],"notes":"Spline-locked anti-rotation bolt knob."},
+      {"name":"Hawkins Tac-Bolt","category":"bolt-handle","compatibleWith":["Remington 700"],"notes":"Tactical bolt handle replacement."},
+      {"name":"Hawkins Hunter DBM","category":"magazine","compatibleWith":["Remington 700"],"notes":"Detachable bottom metal for AICS-pattern mags."},
+      {"name":"Hawkins Ultralight Rings","category":"scope-ring","compatibleWith":["Picatinny rail"],"notes":"Featherweight aluminum 30mm/34mm rings."}
+    ]},
+    {"name":"Aero Precision","country":"USA","categories":["rail","handguard","other","charging-handle"],"products":[
+      {"name":"ATLAS S-ONE Handguard","category":"handguard","compatibleWith":["AR-15"],"notes":"Free-float M-LOK handguard, 7-15 inch."},
+      {"name":"ATLAS R-ONE Handguard","category":"handguard","compatibleWith":["AR-15"],"notes":"Slim-profile M-LOK handguard."},
+      {"name":"M4E1 Threaded Upper Receiver","category":"other","compatibleWith":["AR-15"],"notes":"Forged upper with integrated handguard mount."},
+      {"name":"Aero Precision Breach Charging Handle","category":"charging-handle","compatibleWith":["AR-15","AR-10"],"notes":"Ambidextrous charging handle."}
+    ]},
+    {"name":"BCM","country":"USA","categories":["charging-handle","rail","handguard","grip","buttstock"],"products":[
+      {"name":"BCM Gunfighter Charging Handle Mod 4","category":"charging-handle","compatibleWith":["AR-15"],"notes":"Extended latch ambidextrous handle."},
+      {"name":"BCM Gunfighter Charging Handle Mod 4B","category":"charging-handle","compatibleWith":["AR-15"],"notes":"Larger Mod 4B latch for hard use."},
+      {"name":"BCM MCMR Handguard","category":"handguard","compatibleWith":["AR-15"],"notes":"M-LOK Compatible Modular Rail."},
+      {"name":"BCM KMR-A Handguard","category":"handguard","compatibleWith":["AR-15"],"notes":"Aluminum KeyMod free-float handguard."},
+      {"name":"BCM Gunfighter Grip Mod 3","category":"grip","compatibleWith":["AR-15","AR-10"],"notes":"Ergonomic vertical-angle pistol grip."},
+      {"name":"BCM Gunfighter Stock Mod 0","category":"buttstock","compatibleWith":["AR-15 mil-spec buffer tube"],"notes":"Compact carbine stock."}
+    ]}
+  ]
+}
