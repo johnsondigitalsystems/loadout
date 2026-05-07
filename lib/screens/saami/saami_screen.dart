@@ -34,10 +34,12 @@
 // label stays visible while the user scrolls through long detail
 // cards.
 //
-// `_Format` is a small static helper class with `diameter`, `length`,
-// `angle`, `pressure`, `primerType`, and `gauge` formatters. Each one
-// returns the em-dash `—` for nulls so missing values render
-// uniformly across cards.
+// `_Format` is a small per-card helper instance (`_Format(units)`) with
+// `diameter`, `length`, `angle`, `pressure`, `primerType`, and `gauge`
+// formatters. Each card constructs one from `context.watch<UnitService>()`
+// so dimension labels track the user's chosen smallLength unit (in / cm).
+// Each formatter returns the em-dash `—` for nulls so missing values
+// render uniformly across cards.
 //
 // ============================================================================
 // WHY IT EXISTS IN THE ARCHITECTURE
@@ -117,6 +119,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../database/database.dart';
+import '../../services/unit_service.dart';
 import '../../utils/natural_sort.dart';
 import '../../repositories/component_repository.dart';
 import '../../widgets/cartridge_diagram.dart';
@@ -709,23 +712,24 @@ class _DimensionsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = cartridge;
     final shoulder = _hasShoulder;
+    final fmt = _Format(context.watch<UnitService>());
     final rows = <_KV>[
-      _KV('Bullet Diameter', _Format.diameter(c.bulletDiameterIn)),
-      _KV('Case Length', _Format.length(c.caseLengthIn)),
-      _KV('Max COAL', _Format.length(c.maxCoalIn)),
-      _KV('Body Diameter', _Format.diameter(c.bodyDiameterIn)),
+      _KV('Bullet Diameter', fmt.diameter(c.bulletDiameterIn)),
+      _KV('Case Length', fmt.length(c.caseLengthIn)),
+      _KV('Max COAL', fmt.length(c.maxCoalIn)),
+      _KV('Body Diameter', fmt.diameter(c.bodyDiameterIn)),
       if (shoulder) ...[
-        _KV('Shoulder Diameter', _Format.diameter(c.shoulderDiameterIn)),
-        _KV('Shoulder Angle', _Format.angle(c.shoulderAngleDeg)),
+        _KV('Shoulder Diameter', fmt.diameter(c.shoulderDiameterIn)),
+        _KV('Shoulder Angle', fmt.angle(c.shoulderAngleDeg)),
       ],
-      _KV('Neck Diameter', _Format.diameter(c.neckDiameterIn)),
+      _KV('Neck Diameter', fmt.diameter(c.neckDiameterIn)),
       if (shoulder) ...[
-        _KV('Neck Length', _Format.length(c.neckLengthIn)),
-        _KV('Base to Shoulder', _Format.length(c.baseToShoulderIn)),
-        _KV('Base to Neck', _Format.length(c.baseToNeckIn)),
+        _KV('Neck Length', fmt.length(c.neckLengthIn)),
+        _KV('Base to Shoulder', fmt.length(c.baseToShoulderIn)),
+        _KV('Base to Neck', fmt.length(c.baseToNeckIn)),
       ],
-      _KV('Rim Diameter', _Format.diameter(c.rimDiameterIn)),
-      _KV('Rim Thickness', _Format.length(c.rimThicknessIn)),
+      _KV('Rim Diameter', fmt.diameter(c.rimDiameterIn)),
+      _KV('Rim Thickness', fmt.length(c.rimThicknessIn)),
     ];
 
     return _Section(
@@ -741,9 +745,10 @@ class _BoreRiflingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fmt = _Format(context.watch<UnitService>());
     final rows = <_KV>[
-      _KV('Bore Diameter', _Format.diameter(cartridge.boreDiameterIn)),
-      _KV('Groove Diameter', _Format.diameter(cartridge.grooveDiameterIn)),
+      _KV('Bore Diameter', fmt.diameter(cartridge.boreDiameterIn)),
+      _KV('Groove Diameter', fmt.diameter(cartridge.grooveDiameterIn)),
       _KV('Twist Rate', cartridge.twistRate ?? '—'),
     ];
     return _Section(
@@ -759,9 +764,10 @@ class _PressurePrimingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fmt = _Format(context.watch<UnitService>());
     final rows = <_KV>[
-      _KV('Max Avg Pressure', _Format.pressure(cartridge.maxAvgPressurePsi)),
-      _KV('Primer Type', _Format.primerType(cartridge.primerType)),
+      _KV('Max Avg Pressure', fmt.pressure(cartridge.maxAvgPressurePsi)),
+      _KV('Primer Type', fmt.primerType(cartridge.primerType)),
     ];
     return _Section(
       title: 'Pressure & Priming',
@@ -776,10 +782,11 @@ class _ShotgunCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fmt = _Format(context.watch<UnitService>());
     final rows = <_KV>[
-      _KV('Gauge', _Format.gauge(cartridge.gauge)),
-      _KV('Shell Length', _Format.length(cartridge.shellLengthIn)),
-      _KV('Max Avg Pressure', _Format.pressure(cartridge.maxAvgPressurePsi)),
+      _KV('Gauge', fmt.gauge(cartridge.gauge)),
+      _KV('Shell Length', fmt.length(cartridge.shellLengthIn)),
+      _KV('Max Avg Pressure', fmt.pressure(cartridge.maxAvgPressurePsi)),
     ];
     return _Section(
       title: 'Shotshell',
@@ -942,33 +949,63 @@ class _DisclaimerFooter extends StatelessWidget {
 
 // ─────────────────────── Formatting helpers ───────────────────────
 
-// TODO(units): expose UnitService for display labels. SAAMI specs are
-// reference data published in inches / PSI; a future migration could
-// surface millimeter / hPa equivalents alongside the imperial values.
+// SAAMI specs are reference data published in inches / PSI. The
+// dimension formatters (`diameter`, `length`) convert the canonical
+// imperial value to the user's chosen smallLength unit (in / cm) for
+// display. Chamber pressure stays in PSI: `UnitCategory.pressure` is
+// an *atmospheric* pressure category (inHg / hPa / mmHg) used by the
+// ballistics environmental block — it is not the same as cartridge
+// chamber pressure, which is a different domain measurement that
+// reloaders cross-reference against load manuals in PSI / CUP / MPa.
+// The angle formatter is degrees (chamber shoulder geometry); it is
+// distinct from `UnitCategory.angle` (MOA / MRAD) which describes
+// optical adjustment, not chamber geometry.
 class _Format {
+  const _Format(this.units);
+
+  final UnitService units;
+
   static const String _dash = '—';
 
-  static String diameter(double? d) {
+  String diameter(double? d) {
     if (d == null) return _dash;
+    final unit = units.unitFor(UnitCategory.smallLength);
+    final converted = units.convertSmallLength(d);
+    final label = unitDisplayLabel(unit);
+    if (unit == unitCm) {
+      // Convert threshold: 0.5 in = 1.27 cm; format with extra digit
+      // below ~1.5 cm to mirror the imperial 0.5 in cutoff.
+      return converted >= 1.5
+          ? '${converted.toStringAsFixed(2)} $label'
+          : '${converted.toStringAsFixed(3)} $label';
+    }
     return d >= 0.5
-        ? '${d.toStringAsFixed(2)} in'
-        : '${d.toStringAsFixed(3)} in';
+        ? '${converted.toStringAsFixed(2)} $label'
+        : '${converted.toStringAsFixed(3)} $label';
   }
 
-  static String length(double? l) {
+  String length(double? l) {
     if (l == null) return _dash;
+    final unit = units.unitFor(UnitCategory.smallLength);
+    final converted = units.convertSmallLength(l);
+    final label = unitDisplayLabel(unit);
+    if (unit == unitCm) {
+      return converted >= 1.5
+          ? '${converted.toStringAsFixed(2)} $label'
+          : '${converted.toStringAsFixed(3)} $label';
+    }
     return l >= 0.5
-        ? '${l.toStringAsFixed(2)} in'
-        : '${l.toStringAsFixed(3)} in';
+        ? '${converted.toStringAsFixed(2)} $label'
+        : '${converted.toStringAsFixed(3)} $label';
   }
 
-  static String angle(double? a) {
+  String angle(double? a) {
     if (a == null) return _dash;
     final asInt = a.truncateToDouble() == a;
     return asInt ? '${a.toStringAsFixed(0)}°' : '${a.toStringAsFixed(1)}°';
   }
 
-  static String pressure(int? psi) {
+  String pressure(int? psi) {
     if (psi == null) return _dash;
     final s = psi.toString();
     final buf = StringBuffer();
@@ -979,7 +1016,7 @@ class _Format {
     return '$buf PSI';
   }
 
-  static String primerType(String? t) {
+  String primerType(String? t) {
     if (t == null) return _dash;
     return t
         .split('-')
@@ -987,7 +1024,7 @@ class _Format {
         .join(' ');
   }
 
-  static String gauge(double? g) {
+  String gauge(double? g) {
     if (g == null) return _dash;
     if (g > 50) return '.410 bore';
     final asInt = g.truncateToDouble() == g;

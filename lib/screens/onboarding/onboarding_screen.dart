@@ -97,6 +97,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../theme/app_theme.dart';
 import '../backup/backup_screen.dart';
 import '../paywall/paywall_screen.dart';
@@ -130,73 +131,78 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _controller = PageController();
   int _index = 0;
 
-  late final List<_OnboardingPage> _pages = [
-    // Slide A — Welcome.
-    _OnboardingPage(
-      icon: Icons.workspace_premium,
-      title: 'LoadOut · Precision Reloading',
-      bullets: const [
-        'From your notebook to your phone in 60 seconds.',
-        "Your data stays on your device unless you choose to back it "
-            'up — encrypted with a password only you know.',
-      ],
-    ),
-    // Slide B — Quick Add.
-    _OnboardingPage(
-      icon: Icons.bolt,
-      title: "Type a load like you'd write it",
-      bullets: const [
-        'Quick Add gives you the five fields you keep in your '
-            'notebook — and nothing else.',
-        'Caliber. Powder + charge. Bullet + weight. COAL. Done.',
-        'Save it. Add detail later if you want.',
-      ],
-    ),
-    // Slide C — Bring your existing data. Spreadsheet routes to the
-    // Smart Import wizard (CSV / XLSX with auto-suggested column
-    // mapping); photo routes to Backup & Export, which is the home
-    // for the photo-import flow as it lands.
-    _OnboardingPage(
-      icon: Icons.input,
-      title: 'Bring your existing data',
-      bullets: const [
-        'Already use Excel or paper?',
-        "Snap a photo of your notebook, or import your "
-            "spreadsheet — we'll match the columns.",
-      ],
-      actionLabel: 'Import from spreadsheet',
-      actionType: _PageActionType.openSpreadsheetImport,
-      secondaryActionLabel: 'Import from photo',
-      secondaryActionType: _PageActionType.openPhotoImport,
-    ),
-    // Slide D — Grow as you go.
-    _OnboardingPage(
-      icon: Icons.tune,
-      title: 'Track every detail when you want to',
-      bullets: const [
-        '60+ optional fields, custom fields, lot tracking, '
-            'ballistics calculator.',
-        "Hide them in Beginner Mode until you're ready.",
-        'Flip the switch in Settings whenever you want the '
-            'full power-user view.',
-      ],
-    ),
-    // Slide E — Privacy.
-    _OnboardingPage(
-      icon: Icons.lock_outlined,
-      title: 'We never see your reloading data',
-      bullets: const [
-        'All loads, firearms, and brass live in your '
-            "phone's database.",
-        'Backups are end-to-end encrypted to your own '
-            'iCloud or Google Drive.',
-        "We don't run a backend that stores your reloading "
-            'data — by design.',
-      ],
-      actionLabel: 'Get started',
-      actionType: _PageActionType.finish,
-    ),
-  ];
+  /// Build the slide deck against the current locale. Called from
+  /// `build()` because `AppLocalizations.of(context)` requires a
+  /// `BuildContext` and its result changes when the user switches the
+  /// app language in Settings — so the list cannot be a `late final`.
+  /// The list is small (5 entries) and rebuilding it on every frame is
+  /// cheap.
+  List<_OnboardingPage> _buildPages(AppLocalizations l) {
+    return [
+      // Slide A — Welcome.
+      _OnboardingPage(
+        icon: Icons.workspace_premium,
+        title: l.onboardingWelcomeTitle,
+        bullets: [
+          l.onboardingWelcomeBullet1,
+          l.onboardingWelcomeBullet2,
+        ],
+      ),
+      // Slide B — Quick Add.
+      _OnboardingPage(
+        icon: Icons.bolt,
+        title: l.onboardingQuickAddTitle,
+        bullets: [
+          l.onboardingQuickAddBullet1,
+          l.onboardingQuickAddBullet2,
+          l.onboardingQuickAddBullet3,
+        ],
+      ),
+      // Slide C — Bring your existing data. Spreadsheet routes to the
+      // Smart Import wizard (CSV / XLSX with auto-suggested column
+      // mapping); photo routes to Backup & Export, which is the home
+      // for the photo-import flow as it lands.
+      _OnboardingPage(
+        icon: Icons.input,
+        title: l.onboardingImportTitle,
+        bullets: [
+          l.onboardingImportBullet1,
+          l.onboardingImportBullet2,
+        ],
+        actionLabel: l.onboardingImportSpreadsheetButton,
+        actionType: _PageActionType.openSpreadsheetImport,
+        secondaryActionLabel: l.onboardingImportPhotoButton,
+        secondaryActionType: _PageActionType.openPhotoImport,
+      ),
+      // Slide D — Grow as you go.
+      _OnboardingPage(
+        icon: Icons.tune,
+        title: l.onboardingDetailTitle,
+        bullets: [
+          l.onboardingDetailBullet1,
+          l.onboardingDetailBullet2,
+          l.onboardingDetailBullet3,
+        ],
+      ),
+      // Slide E — Privacy.
+      _OnboardingPage(
+        icon: Icons.lock_outlined,
+        title: l.onboardingPrivacyTitle,
+        bullets: [
+          l.onboardingPrivacyBullet1,
+          l.onboardingPrivacyBullet2,
+          l.onboardingPrivacyBullet3,
+        ],
+        actionLabel: l.onboardingGetStarted,
+        actionType: _PageActionType.finish,
+      ),
+    ];
+  }
+
+  /// Cached during `build()` so callbacks (`_onNext`, `_handlePageAction`)
+  /// can read the slide count / final-slide check without rebuilding
+  /// the list. Updated on every build so a locale change refreshes it.
+  late List<_OnboardingPage> _pages;
 
   @override
   void dispose() {
@@ -302,17 +308,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context)!;
+    // Re-build the page list against the current locale on every
+    // build so a Settings → Language change updates the slides
+    // without restarting the flow.
+    _pages = _buildPages(l);
     final isLast = _index == _pages.length - 1;
     final isFirst = _index == 0;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Welcome to LoadOut'),
+        title: Text(l.onboardingAppBarTitle),
         actions: [
           TextButton(
             onPressed: _markSeenAndClose,
             child: Text(
-              'Skip',
+              l.commonSkip,
               style: TextStyle(
                 color: theme.colorScheme.primary,
                 fontWeight: FontWeight.w600,
@@ -360,14 +371,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   Expanded(
                     child: OutlinedButton(
                       onPressed: isFirst ? null : _onBack,
-                      child: const Text('Back'),
+                      child: Text(l.commonBack),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: FilledButton(
                       onPressed: _onNext,
-                      child: Text(isLast ? 'Get started' : 'Next'),
+                      child: Text(isLast ? l.onboardingGetStarted : l.commonNext),
                     ),
                   ),
                 ],

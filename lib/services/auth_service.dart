@@ -90,8 +90,9 @@
 //    App Links — handled in `lib/app.dart` using the `app_links` package.
 //    For the same-device case the email is in `SharedPreferences`. For the
 //    cross-device case (user opens email on phone B but started on phone A)
-//    we currently return null and the UI must prompt the user to retype it.
-//    See LAUNCH_CHECKLIST.md.
+//    `tryCompleteEmailLink` returns `EmailLinkResult.needsEmail`, which the
+//    UI uses to prompt for the email and then call
+//    `completeEmailLinkWithEmail`.
 //
 // 3. GOOGLE SIGN-IN 7.X SINGLETON. The 7.x API replaced the per-instance
 //    constructor with a global singleton that REQUIRES an `initialize()`
@@ -141,6 +142,40 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+
+/// Outcome of [AuthService.tryCompleteEmailLink].
+///
+/// Three-state result so callers can tell the difference between "this URL
+/// wasn't an email-link sign-in URL at all" (ignore it), "we signed in
+/// successfully" (let auth state propagate), and "we know this is an
+/// email-link URL but we don't have the email locally — please prompt the
+/// user and call [AuthService.completeEmailLinkWithEmail]" (cross-device
+/// flow).
+enum EmailLinkOutcome { notEmailLink, signedIn, needsEmail }
+
+class EmailLinkResult {
+  const EmailLinkResult._(this.outcome, {this.credential, this.link});
+
+  /// The URL was not a Firebase email-link sign-in URL — caller should
+  /// ignore it.
+  factory EmailLinkResult.notEmailLink() =>
+      const EmailLinkResult._(EmailLinkOutcome.notEmailLink);
+
+  /// Sign-in completed; [credential] is the resulting Firebase user.
+  factory EmailLinkResult.signedIn(UserCredential credential) =>
+      EmailLinkResult._(EmailLinkOutcome.signedIn, credential: credential);
+
+  /// The URL is a valid email-link URL but no pending email is stored on
+  /// this device. Caller should prompt the user for their email and then
+  /// call [AuthService.completeEmailLinkWithEmail] with [link] and the
+  /// entered email.
+  factory EmailLinkResult.needsEmail(String link) =>
+      EmailLinkResult._(EmailLinkOutcome.needsEmail, link: link);
+
+  final EmailLinkOutcome outcome;
+  final UserCredential? credential;
+  final String? link;
+}
 
 class AuthService {
   AuthService({FirebaseAuth? auth}) : _auth = auth ?? FirebaseAuth.instance;
@@ -202,23 +237,61 @@ class AuthService {
     await prefs.setString(_pendingEmailKey, email);
   }
 
-  /// If [link] is a Firebase email-link sign-in URL and we have a pending
-  /// email saved locally, finish sign-in. Returns null otherwise.
-  Future<UserCredential?> tryCompleteEmailLink(String link) async {
-    if (!_auth.isSignInWithEmailLink(link)) return null;
+  /// Inspect [link] and either complete email-link sign-in (same-device
+  /// case, where the pending email is in `SharedPreferences`) or signal
+  /// that the caller must prompt the user for their email (cross-device
+  /// case).
+  ///
+  /// Three return cases:
+  /// - [EmailLinkOutcome.notEmailLink] — [link] isn't a Firebase
+  ///   email-link sign-in URL; caller should ignore it.
+  /// - [EmailLinkOutcome.signedIn] — we had the pending email locally and
+  ///   sign-in succeeded. The Firebase auth-state stream will propagate
+  ///   the new user.
+  /// - [EmailLinkOutcome.needsEmail] — the URL is valid but no pending
+  ///   email exists on this device (the user requested the link on a
+  ///   different device). Caller must prompt for the email and call
+  ///   [completeEmailLinkWithEmail] with the URL and entered email.
+  Future<EmailLinkResult> tryCompleteEmailLink(String link) async {
+    if (!_auth.isSignInWithEmailLink(link)) {
+      return EmailLinkResult.notEmailLink();
+    }
     final prefs = await SharedPreferences.getInstance();
     final email = prefs.getString(_pendingEmailKey);
-    if (email == null) return null;
+    if (email == null) {
+      return EmailLinkResult.needsEmail(link);
+    }
     try {
       final cred = await _auth.signInWithEmailLink(
         email: email,
         emailLink: link,
       );
       await prefs.remove(_pendingEmailKey);
-      return cred;
+      return EmailLinkResult.signedIn(cred);
     } catch (_) {
-      return null;
+      // The pending email didn't match the one the link was issued for
+      // (e.g. user retyped a different address before opening the link).
+      // Treat as cross-device: clear the stale pref and ask the user.
+      await prefs.remove(_pendingEmailKey);
+      return EmailLinkResult.needsEmail(link);
     }
+  }
+
+  /// Cross-device completion path: the user supplied [email] via a UI
+  /// prompt because no pending email was saved on this device. Throws on
+  /// failure (Firebase error, mismatched email, expired link) so the UI
+  /// can surface the error inline.
+  Future<UserCredential> completeEmailLinkWithEmail(
+    String link,
+    String email,
+  ) async {
+    final cred = await _auth.signInWithEmailLink(
+      email: email,
+      emailLink: link,
+    );
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_pendingEmailKey);
+    return cred;
   }
 
   bool isSignInWithEmailLink(String link) =>

@@ -308,15 +308,41 @@ provider's developer portal. Secrets that need rotation are tracked in
 
 - Package name: `com.johnsondigital.loadout`. Kotlin source path matches
   (`android/app/src/main/kotlin/com/johnsondigital/loadout/MainActivity.kt`).
-- `android/app/build.gradle.kts` currently signs the release build with the
-  debug keystore (`signingConfig = signingConfigs.getByName("debug")`). This
-  must be replaced before Play Store upload.
+- `android/app/build.gradle.kts` reads `android/key.properties` (gitignored)
+  for the release keystore. If the file exists and has all four required
+  fields (`storeFile`, `storePassword`, `keyAlias`, `keyPassword`), release
+  builds sign with the real keystore. If it's missing, release builds fall
+  back to the debug keystore so `flutter run --release` keeps working on a
+  fresh checkout. The debug-signed fallback **must not** be uploaded to the
+  Play Store.
+- To set up release signing on a new machine:
+  1. Run `scripts/generate_release_keystore.sh` (interactive — prompts for
+     store password and key password). Writes
+     `android/app/loadout_release.keystore`.
+  2. `cp android/key.properties.example android/key.properties` and fill in
+     the passwords you chose. `key.properties` is `.gitignore`d.
+  3. Build: `flutter build appbundle --release` (or `apk --release`).
+  4. Back up the keystore + passwords to a password manager. Losing the
+     upload key after Play Store publication requires Google support
+     intervention.
+- Extract the release SHA-1 / SHA-256 with:
+  ```sh
+  keytool -list -v -keystore android/app/loadout_release.keystore -alias loadout
+  ```
 - `compileOptions` and `kotlinOptions` are pinned to JDK 17.
-- Only the **debug** SHA-1 / SHA-256 are registered with the Firebase Android
-  app today. Google Sign-In and email-link verification will fail on a Play
-  Store build until the upload key (or Play App Signing fingerprint) is
-  registered. Same fingerprint also has to be added to
-  `public/.well-known/assetlinks.json` and re-deployed via Firebase Hosting.
+- The release keystore SHA-256 must be registered in **two** places before
+  a Play Store build will work:
+  1. **Firebase Console** → Project Settings → your Android app → SHA
+     fingerprints → Add fingerprint. Without this, Google Sign-In and
+     email-link verification fail on the release build. (If you switch to
+     Play App Signing, register the *App signing key certificate* SHA shown
+     in Play Console → Setup → App integrity, not the upload key SHA.)
+  2. **`public/.well-known/assetlinks.json`** (Android App Links). Run
+     `scripts/update_assetlinks.sh` to merge the release SHA in alongside
+     the existing debug SHA, then `firebase deploy --only hosting`.
+- Only the **debug** SHA-1 / SHA-256 are registered with the Firebase
+  Android app today; same for `assetlinks.json`. Both need the release SHA
+  added before Play Store upload — see `LAUNCH_CHECKLIST.md`.
 - `android/app/src/main/AndroidManifest.xml` has an
   `<intent-filter android:autoVerify="true">` for
   `https://loadout-precision-reloading.web.app/auth/*` and
@@ -428,3 +454,252 @@ when you discover new blockers. As of 2026-05-06 highlights:
 
 `SETUP.md` predates the Firestore removal — read with caution; the
 authoritative architecture description is this file.
+
+## 15. Companion apps (Apple Watch + Wear OS)
+
+LoadOut ships scaffolding for two native companion apps. They are **not**
+Flutter — Flutter has no first-class watchOS or Wear OS support — they are
+small native apps that live alongside the Flutter Runner / phone module
+and talk to it over each platform's standard transport.
+
+| | Apple Watch | Wear OS |
+|---|---|---|
+| Source | `ios/RunnerWatchApp/` | `android/wear/` |
+| Bundle / app ID | `com.johnsondigital.loadout.watchkitapp` | `com.johnsondigital.loadout.wear` |
+| UI framework | SwiftUI (native) | Compose for Wear OS (native) |
+| Min OS | watchOS 10.0 | Wear OS 3 / Android 11 (API 30) |
+| Phone-watch transport | `WatchConnectivity` (`WCSession`) | Google Play Services Wearable Data Layer |
+| Status | "Coming Soon" placeholder UI; transport activated, no payloads sent yet |
+
+Detailed READMEs live next to the source:
+
+- `ios/RunnerWatchApp/README.md` — full Xcode wiring instructions plus
+  proposed first-feature payloads.
+- `android/wear/README.md` — Gradle setup is already done; lists the
+  proposed Data Layer message paths.
+
+### What is wired up automatically
+
+- **Wear OS:** `:wear` is a real Gradle module, registered in
+  `android/settings.gradle.kts`. `./gradlew :wear:assembleDebug` builds
+  it. The Compose Compiler plugin
+  (`org.jetbrains.kotlin.plugin.compose` v2.2.20) is declared at the
+  settings level but only the `:wear` module applies it — the Flutter
+  `:app` module is unaffected.
+- **iOS:** the Swift sources, plist, entitlements, and asset catalog
+  exist on disk under `ios/RunnerWatchApp/`, plus an iPhone-side bridge
+  stub at `ios/Runner/WatchSessionBridge.swift`. Neither is in the
+  Xcode project file — see manual steps below.
+
+### What requires manual Xcode wiring (one-time)
+
+`Runner.xcodeproj/project.pbxproj` is fragile to edit by hand for
+multi-platform targets, so the watchOS target has to be added through
+Xcode's GUI:
+
+1. Open `ios/Runner.xcworkspace`.
+2. **File → New → Target… → watchOS → App**:
+   - Product Name: `RunnerWatchApp`
+   - Bundle ID: `com.johnsondigital.loadout.watchkitapp`
+   - Embed in Application: `Runner`
+   - Interface: SwiftUI, Language: Swift
+3. **Delete the auto-generated source files** Xcode created, then
+   right-click the new target group and **Add Files to "Runner"…**
+   pointing at every file already on disk in `ios/RunnerWatchApp/`
+   (the Swift files, `Info.plist`, the `.entitlements`, and the
+   `Assets.xcassets` and `Preview Content` folders). "Copy items if
+   needed" must be **off**.
+4. In **Build Settings** for the watch target set:
+   - `INFOPLIST_FILE = RunnerWatchApp/Info.plist`
+   - `CODE_SIGN_ENTITLEMENTS = RunnerWatchApp/RunnerWatchApp.entitlements`
+   - `DEVELOPMENT_ASSET_PATHS = "RunnerWatchApp/Preview Content"`
+   - `WATCHOS_DEPLOYMENT_TARGET = 10.0`
+   - `ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon`
+   - `ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor`
+5. Add `ios/Runner/WatchSessionBridge.swift` to the **Runner** (iPhone)
+   target's Sources build phase. Then in `AppDelegate.swift`, after the
+   `GeneratedPluginRegistrant.register(with: self)` call, add:
+   ```swift
+   if let controller = window?.rootViewController as? FlutterViewController {
+       WatchSessionBridge.shared.activate(with: controller)
+   }
+   ```
+6. Provision App Group `group.com.johnsondigital.loadout` on
+   developer.apple.com and enable it on **both** the Runner and the
+   RunnerWatchApp targets. (Optional today — only needed once a feature
+   shares state via the App Group container.)
+
+### Integration architecture for future feature work
+
+Both transports are designed to share the same Dart-side service so
+features only have to be implemented once. Recommended layering:
+
+```
+   ┌────────────────── Flutter (Dart) ──────────────────┐
+   │  lib/services/watch_bridge_service.dart            │
+   │    sendToWatch(Map payload)                        │
+   │    Stream<Map> incoming                            │
+   └─────────────┬───────────────────────┬──────────────┘
+                 │                       │
+       MethodChannel: loadout/watch_bridge
+       EventChannel:  loadout/watch_bridge/events
+                 │                       │
+   ┌─────────────▼─────────────┐  ┌──────▼─────────────────┐
+   │ ios/Runner/                │  │ android/app/           │
+   │   WatchSessionBridge.swift │  │   WatchBridge.kt       │
+   │    └─ WCSession            │  │    └─ MessageClient    │
+   │                            │  │       DataClient       │
+   └─────────────┬──────────────┘  └──────┬─────────────────┘
+                 │                        │
+   ┌─────────────▼──────────────┐  ┌──────▼─────────────────┐
+   │ ios/RunnerWatchApp/        │  │ android/wear/          │
+   │   WatchConnectivityManager │  │   PhoneDataLayerListen │
+   │   (SwiftUI)                │  │   MainActivity (Compose│
+   └────────────────────────────┘  └────────────────────────┘
+```
+
+The phone-side Dart service already has a clear contract; any feature
+should be added by:
+
+1. Defining a typed payload (e.g. `class DopeSnapshot`) in
+   `lib/models/watch_payloads.dart`.
+2. Adding `toJsonForWatch()` and `fromWatchJson()` helpers.
+3. Calling `watchBridge.send({...})` from a screen / repository.
+4. Implementing the watch-side decoder + UI.
+
+Reserved message paths / dictionary keys (use these consistently across
+iOS and Android):
+
+| Path / key | Direction | Purpose |
+|---|---|---|
+| `active_load` | phone → watch | Currently selected load row |
+| `dope` | phone → watch | Drop / windage chart for active load |
+| `firearm_glance` | phone → watch | Active firearm + barrel-life summary |
+| `log_shot` | watch → phone | Time-stamped shot, queued by `transferUserInfo` (iOS) / Data Layer (Android) when the phone is asleep |
+
+### Privacy posture for companion apps
+
+Companion apps must obey the same rule the phone app does (§ 13):
+**no LoadOut-operated backend ever sees reloading data.** Concretely:
+
+- **No HTTP / fetch calls from either watch app.** All transport is the
+  platform's encrypted peer-to-peer channel (`WatchConnectivity` /
+  Wearable Data Layer).
+- **No Firebase, RevenueCat, analytics, or crash-reporting SDKs in either
+  watch target.** Pro entitlement checks happen on the phone; the watch
+  reflects whatever the phone forwards via the bridge.
+- The Apple App Group container and any cached Wear OS DataItem are
+  on-device only — they never leave the user's wrist.
+
+## 16. Internationalization
+
+LoadOut uses Flutter's first-party `gen_l10n` pipeline (no `easy_localization`,
+no `intl_utils`). The app ships translations for **English, German, Spanish,
+French, Italian, and Russian**; English is the source of truth.
+
+### Layout
+
+```
+l10n.yaml                          gen-l10n config (arb-dir, template, output filename)
+lib/l10n/
+  app_en.arb                       English source — add new keys HERE first
+  app_de.arb                       German
+  app_es.arb                       Spanish
+  app_fr.arb                       French
+  app_it.arb                       Italian
+  app_ru.arb                       Russian
+  app_localizations.dart           GENERATED facade — never edit
+  app_localizations_*.dart         GENERATED per-locale subclass — never edit
+```
+
+The generated `*.dart` files are produced by `flutter gen-l10n` automatically
+on `flutter pub get` / `flutter run` because `flutter: generate: true` is set
+in `pubspec.yaml`. They are NOT git-ignored (yet) — if a build environment
+needs them they're already present, but they should be regenerated on every
+ARB edit.
+
+### Wiring
+
+- `lib/services/locale_service.dart` is a `ChangeNotifier` that holds the
+  user's chosen language tag (or `null` for "follow system locale"). Persists
+  to `SharedPreferences` under `app_locale`.
+- `lib/app.dart` provides it in `MultiProvider` and wraps `MaterialApp` in a
+  `Consumer<LocaleService>` so a Settings → Language change re-resolves
+  `AppLocalizations` without a restart. The MaterialApp gets
+  `localizationsDelegates: AppLocalizations.localizationsDelegates` and
+  `supportedLocales: AppLocalizations.supportedLocales`.
+- `lib/screens/settings/settings_screen.dart` exposes the picker via
+  `_LanguageTile` → `_LanguagePickerSheet`. The "System default" row maps
+  back to `null`.
+
+### Migration pattern (engineers)
+
+To localize one screen / widget:
+
+1. Find every user-visible English literal (`'Save'`, `'Recipe'`, `"You haven't
+   added any loads yet"`).
+2. Add a key for each one to `lib/l10n/app_en.arb`. Use camelCase, group with
+   a prefix (`commonSave`, `recipesEmptyState`, `errorRequiredField`). Add an
+   `@key` block right after with a `description` that gives the translator
+   enough context — describe WHERE the string appears and WHAT it means.
+3. Run `flutter pub get` (or just save and `flutter run` — generation is
+   on-the-fly). New keys appear on `AppLocalizations` immediately.
+4. In the screen, `import '../../l10n/app_localizations.dart';` and read with
+   `final l = AppLocalizations.of(context)!;` at the top of `build()`. Replace
+   each literal with `l.<key>`.
+5. For widgets that hold a state-built list of strings (the onboarding-deck
+   pattern), DO NOT cache the list as `late final` — Flutter rebuilds widgets
+   when the locale changes, so build the list inside `build()` against the
+   current `AppLocalizations`.
+6. Translate the new keys in `app_de.arb`, `app_es.arb`, etc. Missing keys
+   silently fall back to English at runtime, so partial translation is safe.
+7. Run `flutter analyze` — clean.
+8. Run the app, switch language in Settings, eyeball the screen.
+
+### For translators
+
+- Edit only `app_<lang>.arb`. Never touch `app_en.arb` (English is the source
+  of truth — bug the engineer if a key needs reworded).
+- Each ARB is a flat JSON object. Keep the JSON keys identical to `app_en.arb`;
+  translate only the string values. Do not edit `@@locale` or any `@key`
+  blocks — those are metadata.
+- Use the `@@x-comment` field at the top to leave per-file translator notes
+  ("// TRANSLATOR-REVIEW: technical reloading terms in this pack still need a
+  native-speaker pass").
+- Reloading vocabulary is precise and not always intuitive. If unsure, use the
+  shooter-community convention from the major reloading magazine in your
+  language (Visier for German, Cibles for French, Armi & Tiro for Italian)
+  rather than the dictionary translation. Leave `// TRANSLATOR-REVIEW`
+  comments on any guess.
+- Some abbreviations (COAL, CBTO, SAAMI, BC, MOA, MIL, FPS) are intentionally
+  left in English — they are universal among reloaders. If your language
+  community reads them differently, surface it during review.
+- Apostrophes inside JSON strings: use `'` for single, `"` is reserved for
+  the JSON delimiter. Quote characters inside ICU placeholders need to stay
+  matched.
+
+### Adding a new language
+
+1. Copy `lib/l10n/app_en.arb` to `lib/l10n/app_<code>.arb`. Update `@@locale`.
+2. Translate every value (or leave `// TRANSLATOR-REVIEW` placeholders).
+3. Add the language tag to `kSupportedLanguageCodes` in
+   `lib/services/locale_service.dart`, and a display label to
+   `kLanguageDisplayNames` (the language's name in its own language).
+4. `flutter pub get` to regenerate.
+5. Settings → Language picks it up automatically.
+
+### Known follow-ups
+
+- The 30 strings in the initial scaffold cover navigation, common buttons,
+  section headers, error messages, and the entire onboarding deck. The
+  remaining English literals across `lib/screens/**` (recipe form, ballistics
+  inputs, settings tiles other than Language, error snackbars, glossary,
+  SAAMI tab, drawer items, dialog titles) still need migration.
+- Some technical reloading vocabulary in the German / Russian / Italian
+  packs was drafted from a non-native-speaker base and is flagged
+  `// TRANSLATOR-REVIEW` in each ARB header. A native-speaker review pass is
+  required before launch advertising "available in 6 languages".
+- Right-to-left languages (Arabic, Hebrew) are not yet wired. Adding them
+  needs `MaterialApp.localizationsDelegates` already includes the RTL
+  delegate, so it's "just" a translation effort — but the form layouts have
+  not been audited for RTL mirroring.

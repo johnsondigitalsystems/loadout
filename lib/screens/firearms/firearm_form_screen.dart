@@ -113,6 +113,7 @@ import '../../repositories/firearm_repository.dart';
 import '../../repositories/optics_repository.dart';
 import '../../repositories/reticle_repository.dart';
 import '../../services/auto_save_service.dart';
+import '../../services/unit_service.dart';
 import '../../utils/responsive.dart';
 import '../../widgets/auto_save_banner.dart';
 import '../../widgets/auto_save_first_time_hint.dart';
@@ -507,26 +508,35 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
                       // the form doesn't waste horizontal real estate.
                       // Phone keeps the original stacked layout.
                       //
-                      // TODO(units): expose UnitService for display labels.
-                      _ResponsiveRowPair(
-                        first: TextFormField(
-                          controller: _barrelLength,
-                          decoration: const InputDecoration(
-                            labelText: 'Barrel Length (in)',
-                            suffixText: 'in',
+                      // Barrel length displays in the user's chosen
+                      // smallLength unit (in / cm); the persisted column
+                      // stays canonical inches. Twist rate is a text
+                      // string (e.g. "1:8") and has no unit suffix.
+                      Builder(builder: (ctx) {
+                        final smallLen = unitDisplayLabel(ctx
+                            .watch<UnitService>()
+                            .unitFor(UnitCategory.smallLength));
+                        return _ResponsiveRowPair(
+                          first: TextFormField(
+                            controller: _barrelLength,
+                            decoration: InputDecoration(
+                              labelText: 'Barrel Length ($smallLen)',
+                              suffixText: smallLen,
+                            ),
+                            keyboardType:
+                                const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
                           ),
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
+                          second: TextFormField(
+                            controller: _twistRate,
+                            decoration: const InputDecoration(
+                              labelText: 'Twist Rate',
+                              hintText: 'e.g. 1:8',
+                            ),
                           ),
-                        ),
-                        second: TextFormField(
-                          controller: _twistRate,
-                          decoration: const InputDecoration(
-                            labelText: 'Twist Rate',
-                            hintText: 'e.g. 1:8',
-                          ),
-                        ),
-                      ),
+                        );
+                      }),
                       const SizedBox(height: 16),
                       _shotsFiredField(context),
                       const SizedBox(height: 16),
@@ -851,8 +861,19 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
   /// ballistics calculator's rifle picker can pre-fill once the user picks
   /// this firearm. Wrapped in a small card so the section reads as a
   /// distinct grouping rather than just three loose inputs.
+  ///
+  /// Unit suffixes (`fps`/`m·s`, `yd`/`m`, `in`/`cm`) are display-only
+  /// — the persisted columns stay canonical imperial. The values typed
+  /// here are interpreted as canonical imperial too: the ballistics
+  /// calculator does its own display↔canonical conversion when it loads
+  /// these defaults, so the firearm form needs only to label the inputs
+  /// in the user's chosen units.
   Widget _ballisticsDefaultsSection(BuildContext context) {
     final theme = Theme.of(context);
+    final units = context.watch<UnitService>();
+    final velUnit = unitDisplayLabel(units.unitFor(UnitCategory.velocity));
+    final rangeUnit = unitDisplayLabel(units.unitFor(UnitCategory.range));
+    final smallLen = unitDisplayLabel(units.unitFor(UnitCategory.smallLength));
     return Card(
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
@@ -884,14 +905,13 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            // TODO(units): expose UnitService for display labels (velocity / range / smallLength).
             _ResponsiveRowPair(
               first: TextFormField(
                 controller: _defaultMuzzleVelocityFps,
-                decoration: const InputDecoration(
-                  labelText: 'Default Muzzle Velocity (fps)',
+                decoration: InputDecoration(
+                  labelText: 'Default Muzzle Velocity ($velUnit)',
                   helperText: 'Last measured / preferred MV',
-                  suffixText: 'fps',
+                  suffixText: velUnit,
                 ),
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
@@ -909,10 +929,10 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
               ),
               second: TextFormField(
                 controller: _defaultZeroRangeYd,
-                decoration: const InputDecoration(
-                  labelText: 'Default Zero Range (yd)',
-                  helperText: 'Typical: 100-200 yd',
-                  suffixText: 'yd',
+                decoration: InputDecoration(
+                  labelText: 'Default Zero Range ($rangeUnit)',
+                  helperText: 'Typical: 100-200 $rangeUnit',
+                  suffixText: rangeUnit,
                 ),
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -932,11 +952,11 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _sightHeightIn,
-              decoration: const InputDecoration(
-                labelText: 'Sight Height (in)',
+              decoration: InputDecoration(
+                labelText: 'Sight Height ($smallLen)',
                 helperText:
-                    'Center of optic above bore axis, typically 1.5–2.0 in',
-                suffixText: 'in',
+                    'Center of optic above bore axis, typically 1.5–2.0 $smallLen',
+                suffixText: smallLen,
               ),
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),

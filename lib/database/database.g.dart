@@ -23178,6 +23178,584 @@ class ReticlesCompanion extends UpdateCompanion<ReticleRow> {
   }
 }
 
+class $DragCurvesTable extends DragCurves
+    with TableInfo<$DragCurvesTable, DragCurveRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DragCurvesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _manufacturerMeta = const VerificationMeta(
+    'manufacturer',
+  );
+  @override
+  late final GeneratedColumn<String> manufacturer = GeneratedColumn<String>(
+    'manufacturer',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lineMeta = const VerificationMeta('line');
+  @override
+  late final GeneratedColumn<String> line = GeneratedColumn<String>(
+    'line',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _weightGrMeta = const VerificationMeta(
+    'weightGr',
+  );
+  @override
+  late final GeneratedColumn<double> weightGr = GeneratedColumn<double>(
+    'weight_gr',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _diameterInMeta = const VerificationMeta(
+    'diameterIn',
+  );
+  @override
+  late final GeneratedColumn<double> diameterIn = GeneratedColumn<double>(
+    'diameter_in',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _datapointsJsonMeta = const VerificationMeta(
+    'datapointsJson',
+  );
+  @override
+  late final GeneratedColumn<String> datapointsJson = GeneratedColumn<String>(
+    'datapoints_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    manufacturer,
+    line,
+    weightGr,
+    diameterIn,
+    datapointsJson,
+    source,
+    notes,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'drag_curves';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DragCurveRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('manufacturer')) {
+      context.handle(
+        _manufacturerMeta,
+        manufacturer.isAcceptableOrUnknown(
+          data['manufacturer']!,
+          _manufacturerMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_manufacturerMeta);
+    }
+    if (data.containsKey('line')) {
+      context.handle(
+        _lineMeta,
+        line.isAcceptableOrUnknown(data['line']!, _lineMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_lineMeta);
+    }
+    if (data.containsKey('weight_gr')) {
+      context.handle(
+        _weightGrMeta,
+        weightGr.isAcceptableOrUnknown(data['weight_gr']!, _weightGrMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_weightGrMeta);
+    }
+    if (data.containsKey('diameter_in')) {
+      context.handle(
+        _diameterInMeta,
+        diameterIn.isAcceptableOrUnknown(data['diameter_in']!, _diameterInMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_diameterInMeta);
+    }
+    if (data.containsKey('datapoints_json')) {
+      context.handle(
+        _datapointsJsonMeta,
+        datapointsJson.isAcceptableOrUnknown(
+          data['datapoints_json']!,
+          _datapointsJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_datapointsJsonMeta);
+    }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {manufacturer, line, weightGr, diameterIn},
+  ];
+  @override
+  DragCurveRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DragCurveRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      manufacturer: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}manufacturer'],
+      )!,
+      line: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}line'],
+      )!,
+      weightGr: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}weight_gr'],
+      )!,
+      diameterIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}diameter_in'],
+      )!,
+      datapointsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}datapoints_json'],
+      )!,
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $DragCurvesTable createAlias(String alias) {
+    return $DragCurvesTable(attachedDatabase, alias);
+  }
+}
+
+class DragCurveRow extends DataClass implements Insertable<DragCurveRow> {
+  final int id;
+
+  /// Manufacturer / brand (e.g. "Berger", "Hornady"). Stored as text
+  /// rather than an FK to `Manufacturers` because the source of these
+  /// curves is editorial — many curves come from the manufacturer's
+  /// public ballistic-tool data — and the manufacturer name on the
+  /// curve does not have to round-trip to a `Manufacturers` row.
+  final String manufacturer;
+
+  /// Bullet line / family (e.g. "Hybrid Target", "ELD-Match", "VLD").
+  final String line;
+
+  /// Bullet mass in grains.
+  final double weightGr;
+
+  /// Bullet diameter in inches (e.g. 0.264 for 6.5mm).
+  final double diameterIn;
+
+  /// JSON array of `{"mach": x, "cd": y}` objects, sorted ascending by
+  /// Mach. Decoded by `CustomDragCurve.fromDatapointsJson`.
+  final String datapointsJson;
+
+  /// Free-form provenance / source citation
+  /// (e.g. "Berger Bullets CDM file 2024-01-15").
+  final String? source;
+  final String? notes;
+  final DateTime createdAt;
+  const DragCurveRow({
+    required this.id,
+    required this.manufacturer,
+    required this.line,
+    required this.weightGr,
+    required this.diameterIn,
+    required this.datapointsJson,
+    this.source,
+    this.notes,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['manufacturer'] = Variable<String>(manufacturer);
+    map['line'] = Variable<String>(line);
+    map['weight_gr'] = Variable<double>(weightGr);
+    map['diameter_in'] = Variable<double>(diameterIn);
+    map['datapoints_json'] = Variable<String>(datapointsJson);
+    if (!nullToAbsent || source != null) {
+      map['source'] = Variable<String>(source);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  DragCurvesCompanion toCompanion(bool nullToAbsent) {
+    return DragCurvesCompanion(
+      id: Value(id),
+      manufacturer: Value(manufacturer),
+      line: Value(line),
+      weightGr: Value(weightGr),
+      diameterIn: Value(diameterIn),
+      datapointsJson: Value(datapointsJson),
+      source: source == null && nullToAbsent
+          ? const Value.absent()
+          : Value(source),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory DragCurveRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DragCurveRow(
+      id: serializer.fromJson<int>(json['id']),
+      manufacturer: serializer.fromJson<String>(json['manufacturer']),
+      line: serializer.fromJson<String>(json['line']),
+      weightGr: serializer.fromJson<double>(json['weightGr']),
+      diameterIn: serializer.fromJson<double>(json['diameterIn']),
+      datapointsJson: serializer.fromJson<String>(json['datapointsJson']),
+      source: serializer.fromJson<String?>(json['source']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'manufacturer': serializer.toJson<String>(manufacturer),
+      'line': serializer.toJson<String>(line),
+      'weightGr': serializer.toJson<double>(weightGr),
+      'diameterIn': serializer.toJson<double>(diameterIn),
+      'datapointsJson': serializer.toJson<String>(datapointsJson),
+      'source': serializer.toJson<String?>(source),
+      'notes': serializer.toJson<String?>(notes),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  DragCurveRow copyWith({
+    int? id,
+    String? manufacturer,
+    String? line,
+    double? weightGr,
+    double? diameterIn,
+    String? datapointsJson,
+    Value<String?> source = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
+    DateTime? createdAt,
+  }) => DragCurveRow(
+    id: id ?? this.id,
+    manufacturer: manufacturer ?? this.manufacturer,
+    line: line ?? this.line,
+    weightGr: weightGr ?? this.weightGr,
+    diameterIn: diameterIn ?? this.diameterIn,
+    datapointsJson: datapointsJson ?? this.datapointsJson,
+    source: source.present ? source.value : this.source,
+    notes: notes.present ? notes.value : this.notes,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  DragCurveRow copyWithCompanion(DragCurvesCompanion data) {
+    return DragCurveRow(
+      id: data.id.present ? data.id.value : this.id,
+      manufacturer: data.manufacturer.present
+          ? data.manufacturer.value
+          : this.manufacturer,
+      line: data.line.present ? data.line.value : this.line,
+      weightGr: data.weightGr.present ? data.weightGr.value : this.weightGr,
+      diameterIn: data.diameterIn.present
+          ? data.diameterIn.value
+          : this.diameterIn,
+      datapointsJson: data.datapointsJson.present
+          ? data.datapointsJson.value
+          : this.datapointsJson,
+      source: data.source.present ? data.source.value : this.source,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DragCurveRow(')
+          ..write('id: $id, ')
+          ..write('manufacturer: $manufacturer, ')
+          ..write('line: $line, ')
+          ..write('weightGr: $weightGr, ')
+          ..write('diameterIn: $diameterIn, ')
+          ..write('datapointsJson: $datapointsJson, ')
+          ..write('source: $source, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    manufacturer,
+    line,
+    weightGr,
+    diameterIn,
+    datapointsJson,
+    source,
+    notes,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DragCurveRow &&
+          other.id == this.id &&
+          other.manufacturer == this.manufacturer &&
+          other.line == this.line &&
+          other.weightGr == this.weightGr &&
+          other.diameterIn == this.diameterIn &&
+          other.datapointsJson == this.datapointsJson &&
+          other.source == this.source &&
+          other.notes == this.notes &&
+          other.createdAt == this.createdAt);
+}
+
+class DragCurvesCompanion extends UpdateCompanion<DragCurveRow> {
+  final Value<int> id;
+  final Value<String> manufacturer;
+  final Value<String> line;
+  final Value<double> weightGr;
+  final Value<double> diameterIn;
+  final Value<String> datapointsJson;
+  final Value<String?> source;
+  final Value<String?> notes;
+  final Value<DateTime> createdAt;
+  const DragCurvesCompanion({
+    this.id = const Value.absent(),
+    this.manufacturer = const Value.absent(),
+    this.line = const Value.absent(),
+    this.weightGr = const Value.absent(),
+    this.diameterIn = const Value.absent(),
+    this.datapointsJson = const Value.absent(),
+    this.source = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  DragCurvesCompanion.insert({
+    this.id = const Value.absent(),
+    required String manufacturer,
+    required String line,
+    required double weightGr,
+    required double diameterIn,
+    required String datapointsJson,
+    this.source = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : manufacturer = Value(manufacturer),
+       line = Value(line),
+       weightGr = Value(weightGr),
+       diameterIn = Value(diameterIn),
+       datapointsJson = Value(datapointsJson);
+  static Insertable<DragCurveRow> custom({
+    Expression<int>? id,
+    Expression<String>? manufacturer,
+    Expression<String>? line,
+    Expression<double>? weightGr,
+    Expression<double>? diameterIn,
+    Expression<String>? datapointsJson,
+    Expression<String>? source,
+    Expression<String>? notes,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (manufacturer != null) 'manufacturer': manufacturer,
+      if (line != null) 'line': line,
+      if (weightGr != null) 'weight_gr': weightGr,
+      if (diameterIn != null) 'diameter_in': diameterIn,
+      if (datapointsJson != null) 'datapoints_json': datapointsJson,
+      if (source != null) 'source': source,
+      if (notes != null) 'notes': notes,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  DragCurvesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? manufacturer,
+    Value<String>? line,
+    Value<double>? weightGr,
+    Value<double>? diameterIn,
+    Value<String>? datapointsJson,
+    Value<String?>? source,
+    Value<String?>? notes,
+    Value<DateTime>? createdAt,
+  }) {
+    return DragCurvesCompanion(
+      id: id ?? this.id,
+      manufacturer: manufacturer ?? this.manufacturer,
+      line: line ?? this.line,
+      weightGr: weightGr ?? this.weightGr,
+      diameterIn: diameterIn ?? this.diameterIn,
+      datapointsJson: datapointsJson ?? this.datapointsJson,
+      source: source ?? this.source,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (manufacturer.present) {
+      map['manufacturer'] = Variable<String>(manufacturer.value);
+    }
+    if (line.present) {
+      map['line'] = Variable<String>(line.value);
+    }
+    if (weightGr.present) {
+      map['weight_gr'] = Variable<double>(weightGr.value);
+    }
+    if (diameterIn.present) {
+      map['diameter_in'] = Variable<double>(diameterIn.value);
+    }
+    if (datapointsJson.present) {
+      map['datapoints_json'] = Variable<String>(datapointsJson.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DragCurvesCompanion(')
+          ..write('id: $id, ')
+          ..write('manufacturer: $manufacturer, ')
+          ..write('line: $line, ')
+          ..write('weightGr: $weightGr, ')
+          ..write('diameterIn: $diameterIn, ')
+          ..write('datapointsJson: $datapointsJson, ')
+          ..write('source: $source, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -23219,6 +23797,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $ShotImpactsTable shotImpacts = $ShotImpactsTable(this);
   late final $ReticlesTable reticles = $ReticlesTable(this);
+  late final $DragCurvesTable dragCurves = $DragCurvesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -23251,6 +23830,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     rangeDaySessions,
     shotImpacts,
     reticles,
+    dragCurves,
   ];
 }
 
@@ -38348,6 +38928,282 @@ typedef $$ReticlesTableProcessedTableManager =
       ReticleRow,
       PrefetchHooks Function()
     >;
+typedef $$DragCurvesTableCreateCompanionBuilder =
+    DragCurvesCompanion Function({
+      Value<int> id,
+      required String manufacturer,
+      required String line,
+      required double weightGr,
+      required double diameterIn,
+      required String datapointsJson,
+      Value<String?> source,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+    });
+typedef $$DragCurvesTableUpdateCompanionBuilder =
+    DragCurvesCompanion Function({
+      Value<int> id,
+      Value<String> manufacturer,
+      Value<String> line,
+      Value<double> weightGr,
+      Value<double> diameterIn,
+      Value<String> datapointsJson,
+      Value<String?> source,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+    });
+
+class $$DragCurvesTableFilterComposer
+    extends Composer<_$AppDatabase, $DragCurvesTable> {
+  $$DragCurvesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get manufacturer => $composableBuilder(
+    column: $table.manufacturer,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get line => $composableBuilder(
+    column: $table.line,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get weightGr => $composableBuilder(
+    column: $table.weightGr,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get diameterIn => $composableBuilder(
+    column: $table.diameterIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get datapointsJson => $composableBuilder(
+    column: $table.datapointsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DragCurvesTableOrderingComposer
+    extends Composer<_$AppDatabase, $DragCurvesTable> {
+  $$DragCurvesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get manufacturer => $composableBuilder(
+    column: $table.manufacturer,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get line => $composableBuilder(
+    column: $table.line,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get weightGr => $composableBuilder(
+    column: $table.weightGr,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get diameterIn => $composableBuilder(
+    column: $table.diameterIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get datapointsJson => $composableBuilder(
+    column: $table.datapointsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DragCurvesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DragCurvesTable> {
+  $$DragCurvesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get manufacturer => $composableBuilder(
+    column: $table.manufacturer,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get line =>
+      $composableBuilder(column: $table.line, builder: (column) => column);
+
+  GeneratedColumn<double> get weightGr =>
+      $composableBuilder(column: $table.weightGr, builder: (column) => column);
+
+  GeneratedColumn<double> get diameterIn => $composableBuilder(
+    column: $table.diameterIn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get datapointsJson => $composableBuilder(
+    column: $table.datapointsJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$DragCurvesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DragCurvesTable,
+          DragCurveRow,
+          $$DragCurvesTableFilterComposer,
+          $$DragCurvesTableOrderingComposer,
+          $$DragCurvesTableAnnotationComposer,
+          $$DragCurvesTableCreateCompanionBuilder,
+          $$DragCurvesTableUpdateCompanionBuilder,
+          (
+            DragCurveRow,
+            BaseReferences<_$AppDatabase, $DragCurvesTable, DragCurveRow>,
+          ),
+          DragCurveRow,
+          PrefetchHooks Function()
+        > {
+  $$DragCurvesTableTableManager(_$AppDatabase db, $DragCurvesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DragCurvesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DragCurvesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DragCurvesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> manufacturer = const Value.absent(),
+                Value<String> line = const Value.absent(),
+                Value<double> weightGr = const Value.absent(),
+                Value<double> diameterIn = const Value.absent(),
+                Value<String> datapointsJson = const Value.absent(),
+                Value<String?> source = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => DragCurvesCompanion(
+                id: id,
+                manufacturer: manufacturer,
+                line: line,
+                weightGr: weightGr,
+                diameterIn: diameterIn,
+                datapointsJson: datapointsJson,
+                source: source,
+                notes: notes,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String manufacturer,
+                required String line,
+                required double weightGr,
+                required double diameterIn,
+                required String datapointsJson,
+                Value<String?> source = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => DragCurvesCompanion.insert(
+                id: id,
+                manufacturer: manufacturer,
+                line: line,
+                weightGr: weightGr,
+                diameterIn: diameterIn,
+                datapointsJson: datapointsJson,
+                source: source,
+                notes: notes,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DragCurvesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DragCurvesTable,
+      DragCurveRow,
+      $$DragCurvesTableFilterComposer,
+      $$DragCurvesTableOrderingComposer,
+      $$DragCurvesTableAnnotationComposer,
+      $$DragCurvesTableCreateCompanionBuilder,
+      $$DragCurvesTableUpdateCompanionBuilder,
+      (
+        DragCurveRow,
+        BaseReferences<_$AppDatabase, $DragCurvesTable, DragCurveRow>,
+      ),
+      DragCurveRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -38409,4 +39265,6 @@ class $AppDatabaseManager {
       $$ShotImpactsTableTableManager(_db, _db.shotImpacts);
   $$ReticlesTableTableManager get reticles =>
       $$ReticlesTableTableManager(_db, _db.reticles);
+  $$DragCurvesTableTableManager get dragCurves =>
+      $$DragCurvesTableTableManager(_db, _db.dragCurves);
 }

@@ -24,6 +24,11 @@ plugins {
     id("com.google.gms.google-services") version("4.3.15") apply false
     // END: FlutterFire Configuration
     id("org.jetbrains.kotlin.android") version "2.2.20" apply false
+    // Compose Compiler plugin — required by `:wear` (Compose for Wear OS) since
+    // Kotlin 2.0. Only the `:wear` module applies it; the Flutter `:app` module
+    // does not pull this in.
+    id("org.jetbrains.kotlin.plugin.compose") version "2.2.20" apply false
 }
 
 include(":app")
+include(":wear")

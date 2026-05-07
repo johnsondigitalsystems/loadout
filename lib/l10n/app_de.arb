@@ -1,0 +1,62 @@
+{
+    "@@locale": "de",
+    "@@x-comment": "German translation. Technical reloading terms (COAL, SAAMI, Pulver, Geschoss, Hülse, Zünder) follow the convention used by Visier magazine and the German DEVA reloading community. // TRANSLATOR-REVIEW pass recommended before launch — all bullet copy was drafted by a non-native speaker.",
+
+    "appTitle": "LoadOut",
+
+    "navRecipes": "Rezepte",
+    "navFirearms": "Waffen",
+    "navBatches": "Chargen",
+    "navBallistics": "Ballistik",
+    "navRangeDay": "Schießstand",
+    "navSaami": "SAAMI",
+
+    "commonSave": "Speichern",
+    "commonCancel": "Abbrechen",
+    "commonDelete": "Löschen",
+    "commonEdit": "Bearbeiten",
+    "commonNext": "Weiter",
+    "commonBack": "Zurück",
+    "commonSkip": "Überspringen",
+
+    "sectionRecipe": "Rezept",
+    "sectionFirearm": "Waffe",
+    "sectionBallistics": "Ballistik",
+    "sectionRangeDay": "Schießstand",
+
+    "errorRequiredField": "Dieses Feld ist erforderlich.",
+    "errorInvalidNumber": "Bitte eine gültige Zahl eingeben.",
+    "errorSaveFailed": "Speichern fehlgeschlagen. Bitte erneut versuchen.",
+
+    "settingsLanguage": "Sprache",
+    "settingsLanguageSubtitle": "Wählen Sie die Sprache, die LoadOut verwendet.",
+    "settingsLanguageSystem": "Systemstandard",
+
+    "onboardingWelcomeTitle": "LoadOut · Präzisionswiederladen",
+    "onboardingWelcomeBullet1": "Vom Notizbuch aufs Smartphone in 60 Sekunden.",
+    "onboardingWelcomeBullet2": "Ihre Daten bleiben auf Ihrem Gerät, es sei denn, Sie entscheiden sich für eine Sicherung — verschlüsselt mit einem Passwort, das nur Sie kennen.",
+
+    "onboardingQuickAddTitle": "Eine Ladung eingeben, wie Sie sie aufschreiben würden",
+    "onboardingQuickAddBullet1": "Quick Add bietet Ihnen die fünf Felder, die Sie in Ihrem Notizbuch führen — und nichts weiter.",
+    "onboardingQuickAddBullet2": "Kaliber. Pulver + Ladung. Geschoss + Gewicht. COAL. Fertig.",
+    "onboardingQuickAddBullet3": "Speichern. Details später hinzufügen, wenn Sie möchten.",
+
+    "onboardingImportTitle": "Bestehende Daten übernehmen",
+    "onboardingImportBullet1": "Nutzen Sie bereits Excel oder Papier?",
+    "onboardingImportBullet2": "Fotografieren Sie Ihr Notizbuch oder importieren Sie Ihre Tabelle — wir ordnen die Spalten zu.",
+    "onboardingImportSpreadsheetButton": "Aus Tabelle importieren",
+    "onboardingImportPhotoButton": "Aus Foto importieren",
+
+    "onboardingDetailTitle": "Jedes Detail erfassen, wenn Sie möchten",
+    "onboardingDetailBullet1": "Über 60 optionale Felder, eigene Felder, Chargenverwaltung, Ballistikrechner.",
+    "onboardingDetailBullet2": "Im Anfängermodus ausgeblendet, bis Sie bereit sind.",
+    "onboardingDetailBullet3": "Schalter in den Einstellungen umlegen, wann immer Sie die volle Profi-Ansicht wünschen.",
+
+    "onboardingPrivacyTitle": "Wir sehen Ihre Wiederladedaten nie",
+    "onboardingPrivacyBullet1": "Alle Ladungen, Waffen und Hülsen liegen in der Datenbank Ihres Smartphones.",
+    "onboardingPrivacyBullet2": "Sicherungen sind Ende-zu-Ende-verschlüsselt auf Ihr eigenes iCloud oder Google Drive.",
+    "onboardingPrivacyBullet3": "Wir betreiben kein Backend, das Ihre Wiederladedaten speichert — bewusst.",
+
+    "onboardingGetStarted": "Loslegen",
+    "onboardingAppBarTitle": "Willkommen bei LoadOut"
+}

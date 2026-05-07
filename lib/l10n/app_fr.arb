@@ -1,0 +1,62 @@
+{
+    "@@locale": "fr",
+    "@@x-comment": "French translation. Technical reloading terms (COAL, douille, étui, ogive, amorce, poudre) follow the convention used by French-speaking IPSC / TLD precision-rifle communities (Cibles magazine reference). // TRANSLATOR-REVIEW pass recommended for Quebec vs. metropolitan France divergence (fusil de chasse vs. armes de poing).",
+
+    "appTitle": "LoadOut",
+
+    "navRecipes": "Recettes",
+    "navFirearms": "Armes",
+    "navBatches": "Lots",
+    "navBallistics": "Balistique",
+    "navRangeDay": "Stand de tir",
+    "navSaami": "SAAMI",
+
+    "commonSave": "Enregistrer",
+    "commonCancel": "Annuler",
+    "commonDelete": "Supprimer",
+    "commonEdit": "Modifier",
+    "commonNext": "Suivant",
+    "commonBack": "Retour",
+    "commonSkip": "Passer",
+
+    "sectionRecipe": "Recette",
+    "sectionFirearm": "Arme",
+    "sectionBallistics": "Balistique",
+    "sectionRangeDay": "Stand de tir",
+
+    "errorRequiredField": "Ce champ est obligatoire.",
+    "errorInvalidNumber": "Veuillez saisir un nombre valide.",
+    "errorSaveFailed": "Échec de l'enregistrement. Veuillez réessayer.",
+
+    "settingsLanguage": "Langue",
+    "settingsLanguageSubtitle": "Choisissez la langue utilisée par LoadOut.",
+    "settingsLanguageSystem": "Par défaut du système",
+
+    "onboardingWelcomeTitle": "LoadOut · Rechargement de précision",
+    "onboardingWelcomeBullet1": "De votre carnet à votre téléphone en 60 secondes.",
+    "onboardingWelcomeBullet2": "Vos données restent sur votre appareil sauf si vous choisissez de les sauvegarder — chiffrées avec un mot de passe que vous seul connaissez.",
+
+    "onboardingQuickAddTitle": "Saisissez une charge comme vous l'écririez",
+    "onboardingQuickAddBullet1": "Quick Add vous offre les cinq champs que vous notez dans votre carnet — et rien d'autre.",
+    "onboardingQuickAddBullet2": "Calibre. Poudre + charge. Ogive + poids. COAL. Terminé.",
+    "onboardingQuickAddBullet3": "Enregistrez. Ajoutez des détails plus tard si vous le souhaitez.",
+
+    "onboardingImportTitle": "Importez vos données existantes",
+    "onboardingImportBullet1": "Vous utilisez déjà Excel ou du papier ?",
+    "onboardingImportBullet2": "Prenez en photo votre carnet ou importez votre tableur — nous ferons correspondre les colonnes.",
+    "onboardingImportSpreadsheetButton": "Importer depuis un tableur",
+    "onboardingImportPhotoButton": "Importer depuis une photo",
+
+    "onboardingDetailTitle": "Suivez chaque détail quand vous le souhaitez",
+    "onboardingDetailBullet1": "Plus de 60 champs optionnels, champs personnalisés, suivi des lots, calculateur balistique.",
+    "onboardingDetailBullet2": "Masqués en Mode Débutant jusqu'à ce que vous soyez prêt.",
+    "onboardingDetailBullet3": "Activez l'interrupteur dans les Réglages quand vous voulez la vue complète d'utilisateur avancé.",
+
+    "onboardingPrivacyTitle": "Nous ne voyons jamais vos données de rechargement",
+    "onboardingPrivacyBullet1": "Toutes les charges, armes et douilles vivent dans la base de données de votre téléphone.",
+    "onboardingPrivacyBullet2": "Les sauvegardes sont chiffrées de bout en bout vers votre propre iCloud ou Google Drive.",
+    "onboardingPrivacyBullet3": "Nous n'exploitons pas de backend qui stockerait vos données de rechargement — par conception.",
+
+    "onboardingGetStarted": "Commencer",
+    "onboardingAppBarTitle": "Bienvenue sur LoadOut"
+}

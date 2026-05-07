@@ -33,6 +33,12 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# Generated localizations: produced by `flutter gen-l10n` from the ARB
+# files under lib/l10n/. Regenerated on every `flutter pub get` so we
+# don't track them — only the ARB source files are version-controlled.
+lib/l10n/app_localizations.dart
+lib/l10n/app_localizations_*.dart
+
 # Symbolication related
 app.*.symbols
 

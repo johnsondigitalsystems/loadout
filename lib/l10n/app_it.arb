@@ -1,0 +1,62 @@
+{
+    "@@locale": "it",
+    "@@x-comment": "Italian translation. Technical reloading terms (COAL, bossolo, palla, polvere, innesco) follow the convention used by Armi & Tiro magazine and Italian IPSC / Bench Rest communities. // TRANSLATOR-REVIEW pass recommended before launch.",
+
+    "appTitle": "LoadOut",
+
+    "navRecipes": "Ricette",
+    "navFirearms": "Armi",
+    "navBatches": "Lotti",
+    "navBallistics": "Balistica",
+    "navRangeDay": "Giornata al poligono",
+    "navSaami": "SAAMI",
+
+    "commonSave": "Salva",
+    "commonCancel": "Annulla",
+    "commonDelete": "Elimina",
+    "commonEdit": "Modifica",
+    "commonNext": "Avanti",
+    "commonBack": "Indietro",
+    "commonSkip": "Salta",
+
+    "sectionRecipe": "Ricetta",
+    "sectionFirearm": "Arma",
+    "sectionBallistics": "Balistica",
+    "sectionRangeDay": "Giornata al poligono",
+
+    "errorRequiredField": "Questo campo è obbligatorio.",
+    "errorInvalidNumber": "Inserire un numero valido.",
+    "errorSaveFailed": "Salvataggio non riuscito. Riprovare.",
+
+    "settingsLanguage": "Lingua",
+    "settingsLanguageSubtitle": "Scegli la lingua utilizzata da LoadOut.",
+    "settingsLanguageSystem": "Predefinita di sistema",
+
+    "onboardingWelcomeTitle": "LoadOut · Ricarica di precisione",
+    "onboardingWelcomeBullet1": "Dal taccuino al telefono in 60 secondi.",
+    "onboardingWelcomeBullet2": "I tuoi dati restano sul dispositivo, a meno che tu non scelga di farne il backup — crittografati con una password che conosci solo tu.",
+
+    "onboardingQuickAddTitle": "Inserisci una ricarica come la scriveresti",
+    "onboardingQuickAddBullet1": "Quick Add ti offre i cinque campi che annoti sul tuo taccuino — e nient'altro.",
+    "onboardingQuickAddBullet2": "Calibro. Polvere + dose. Palla + peso. COAL. Fatto.",
+    "onboardingQuickAddBullet3": "Salvala. Aggiungi i dettagli più tardi se vuoi.",
+
+    "onboardingImportTitle": "Porta i tuoi dati esistenti",
+    "onboardingImportBullet1": "Usi già Excel o la carta?",
+    "onboardingImportBullet2": "Fotografa il tuo taccuino o importa il foglio di calcolo — abbineremo le colonne.",
+    "onboardingImportSpreadsheetButton": "Importa da foglio di calcolo",
+    "onboardingImportPhotoButton": "Importa da foto",
+
+    "onboardingDetailTitle": "Registra ogni dettaglio quando vuoi",
+    "onboardingDetailBullet1": "Oltre 60 campi opzionali, campi personalizzati, tracciamento dei lotti, calcolatore balistico.",
+    "onboardingDetailBullet2": "Nascosti in Modalità Principiante finché non sei pronto.",
+    "onboardingDetailBullet3": "Aziona l'interruttore in Impostazioni quando vuoi la vista completa da utente avanzato.",
+
+    "onboardingPrivacyTitle": "Non vediamo mai i tuoi dati di ricarica",
+    "onboardingPrivacyBullet1": "Tutte le ricariche, armi e bossoli vivono nel database del tuo telefono.",
+    "onboardingPrivacyBullet2": "I backup sono crittografati end-to-end verso il tuo iCloud o Google Drive.",
+    "onboardingPrivacyBullet3": "Non gestiamo un backend che memorizza i tuoi dati di ricarica — per scelta progettuale.",
+
+    "onboardingGetStarted": "Inizia",
+    "onboardingAppBarTitle": "Benvenuto in LoadOut"
+}

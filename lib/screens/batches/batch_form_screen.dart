@@ -387,9 +387,10 @@ class _BatchFormScreenState extends State<BatchFormScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                // TODO(units): expose UnitService for display labels
-                // when the batch form gains unit-bearing fields (none today
-                // — counts and dates only).
+                // Note: the batch form has no unit-bearing fields — only
+                // integer counts and dates — so it does not need to
+                // observe `UnitService`. Add a watch here if a future
+                // schema change introduces a length / weight column.
                 _Section(
                   title: 'Counts',
                   children: [

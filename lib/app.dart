@@ -122,10 +122,12 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'database/database.dart';
+import 'l10n/app_localizations.dart';
 import 'repositories/ballistic_profile_repository.dart';
 import 'repositories/batch_repository.dart';
 import 'repositories/brass_lot_repository.dart';
 import 'repositories/component_repository.dart';
+import 'repositories/drag_curve_repository.dart';
 import 'repositories/firearm_repository.dart';
 import 'repositories/load_development_repository.dart';
 import 'repositories/optics_repository.dart';
@@ -141,18 +143,27 @@ import 'services/auth_service.dart';
 import 'services/auto_save_service.dart';
 import 'services/beginner_mode_service.dart';
 import 'services/ble/ble_service.dart';
+import 'services/ble/bushnell_rangefinder_service.dart';
 import 'services/ble/kestrel_service.dart';
+import 'services/ble/leica_geovid_service.dart';
+import 'services/ble/sig_kilo_service.dart';
+import 'services/ble/vortex_rangefinder_service.dart';
 import 'services/entitlement_notifier.dart';
 import 'services/hit_probability_service.dart';
+import 'services/locale_service.dart';
 import 'services/purchases_service.dart';
+import 'services/sensors/cant_service.dart';
+import 'services/sensors/magnetometer_service.dart';
 import 'services/unit_service.dart';
 import 'theme/app_theme.dart';
 import 'widgets/disclaimer_overlay.dart';
 
 /// Pref key for the legal disclaimer acceptance flag. Versioned so that
-/// updating the disclaimer text in a future release can force re-acceptance
-/// by bumping the suffix (e.g. `disclaimer_accepted_v2`).
-const _disclaimerPrefKey = 'disclaimer_accepted_v1';
+/// updating the disclaimer text forces re-acceptance for everyone. Bumped
+/// to `_v2` on 2026-05-07 alongside the launch-quality rewrite of the
+/// safety disclaimer body — every user who accepted v1 will see the v2
+/// content once and have to re-tick the acknowledgement.
+const _disclaimerPrefKey = 'disclaimer_accepted_v2';
 
 class LoadOutApp extends StatelessWidget {
   const LoadOutApp({
@@ -181,6 +192,9 @@ class LoadOutApp extends StatelessWidget {
         ),
         Provider<ReticleRepository>(
           create: (_) => ReticleRepository(database),
+        ),
+        Provider<DragCurveRepository>(
+          create: (_) => DragCurveRepository(database),
         ),
         Provider<BrassLotRepository>(
           create: (_) => BrassLotRepository(database),
@@ -216,6 +230,13 @@ class LoadOutApp extends StatelessWidget {
         ChangeNotifierProvider<UnitService>(
           create: (_) => UnitService(),
         ),
+        // User-chosen UI language. `null` means "follow the system
+        // locale". MaterialApp below subscribes via Consumer so a
+        // language change re-resolves AppLocalizations without a
+        // restart.
+        ChangeNotifierProvider<LocaleService>(
+          create: (_) => LocaleService(),
+        ),
         ChangeNotifierProvider<EntitlementNotifier>(
           create: (ctx) => EntitlementNotifier(ctx.read<PurchasesService>()),
         ),
@@ -234,6 +255,36 @@ class LoadOutApp extends StatelessWidget {
         ),
         ChangeNotifierProvider<KestrelService>(
           create: (ctx) => KestrelService(ctx.read<BleService>()),
+        ),
+        // Bluetooth rangefinder adapters. One ChangeNotifier per brand so
+        // the Devices screen can show per-brand connection state and the
+        // Range Day distance picker can read the most recent value from
+        // whichever rangefinder the user has connected. All four are
+        // BETA — the protocols are reverse-engineered from public
+        // sources and need real-device validation.
+        ChangeNotifierProvider<SigKiloService>(
+          create: (ctx) => SigKiloService(ctx.read<BleService>()),
+        ),
+        ChangeNotifierProvider<BushnellRangefinderService>(
+          create: (ctx) => BushnellRangefinderService(ctx.read<BleService>()),
+        ),
+        ChangeNotifierProvider<VortexRangefinderService>(
+          create: (ctx) => VortexRangefinderService(ctx.read<BleService>()),
+        ),
+        ChangeNotifierProvider<LeicaGeovidService>(
+          create: (ctx) => LeicaGeovidService(ctx.read<BleService>()),
+        ),
+        // Live device-sensor services for the Range Day Setup section.
+        // Provided once and shared so the underlying OS sensor streams
+        // are subscribed to only when a screen actually calls start().
+        // Both services are graceful no-ops on platforms where the
+        // sensors aren't available (macOS, web), exposing
+        // `isAvailable == false` so the UI can hide the affordance.
+        ChangeNotifierProvider<CantService>(
+          create: (_) => CantService(),
+        ),
+        ChangeNotifierProvider<MagnetometerService>(
+          create: (_) => MagnetometerService(),
         ),
         // Seed the auth-state stream with `FirebaseAuth.instance.currentUser`,
         // which is the SYNCHRONOUSLY-available cached user from the prior
@@ -260,12 +311,25 @@ class LoadOutApp extends StatelessWidget {
           initialData: FirebaseAuth.instance.currentUser,
         ),
       ],
-      child: MaterialApp(
-        title: 'LoadOut',
-        theme: AppTheme.light,
-        darkTheme: AppTheme.dark,
-        themeMode: ThemeMode.dark, // Brand identity defaults to dark.
-        home: const _DisclaimerGate(),
+      child: Consumer<LocaleService>(
+        builder: (context, localeService, _) {
+          // `localeService.languageCode == null` means "follow the
+          // device locale" — we pass `null` to MaterialApp.locale and
+          // Flutter's built-in resolution picks the closest supported
+          // language from `supportedLocales`, falling back to English
+          // when nothing matches.
+          final code = localeService.languageCode;
+          return MaterialApp(
+            title: 'LoadOut',
+            theme: AppTheme.light,
+            darkTheme: AppTheme.dark,
+            themeMode: ThemeMode.dark, // Brand identity defaults to dark.
+            locale: code == null ? null : Locale(code),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: const _DisclaimerGate(),
+          );
+        },
       ),
     );
   }
@@ -353,16 +417,59 @@ class _AuthGateState extends State<_AuthGate> {
 
   Future<void> _initDeepLinks() async {
     final appLinks = AppLinks();
-    final auth = context.read<AuthService>();
 
     final initialUri = await appLinks.getInitialLink();
     if (initialUri != null) {
-      await auth.tryCompleteEmailLink(initialUri.toString());
+      await _handleEmailLink(initialUri.toString());
     }
 
     _linkSub = appLinks.uriLinkStream.listen((uri) {
-      auth.tryCompleteEmailLink(uri.toString());
+      // ignore: discarded_futures
+      _handleEmailLink(uri.toString());
     });
+  }
+
+  /// Run [AuthService.tryCompleteEmailLink] and, if the URL is a valid
+  /// email-link sign-in URL but the pending email isn't on this device,
+  /// prompt the user for it and finish sign-in. Called for both the
+  /// cold-start initial URL and warm-app stream URLs.
+  Future<void> _handleEmailLink(String link) async {
+    final auth = context.read<AuthService>();
+    final result = await auth.tryCompleteEmailLink(link);
+    if (!mounted) return;
+    if (result.outcome == EmailLinkOutcome.needsEmail) {
+      await _promptForEmailAndComplete(result.link!);
+    }
+  }
+
+  /// Cross-device email-link UX. Shows an [AlertDialog] asking for the
+  /// email address that requested the link, then calls
+  /// [AuthService.completeEmailLinkWithEmail]. On Firebase error (mismatched
+  /// email, expired link), surfaces the message via a [SnackBar] so the
+  /// user can retry.
+  Future<void> _promptForEmailAndComplete(String link) async {
+    final email = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => const _EmailLinkPromptDialog(),
+    );
+    if (email == null || email.isEmpty) return;
+    if (!mounted) return;
+    final auth = context.read<AuthService>();
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await auth.completeEmailLinkWithEmail(link, email);
+      // On success, the auth-state stream will rebuild this gate into
+      // HomeScreen. No further UI work needed here.
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(e.message ?? e.code)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text(e.toString())));
+    }
   }
 
   /// Mirror the Firebase Auth user into RevenueCat so entitlement state
@@ -392,5 +499,73 @@ class _AuthGateState extends State<_AuthGate> {
   Widget build(BuildContext context) {
     final user = context.watch<User?>();
     return user == null ? const LoginScreen() : const HomeScreen();
+  }
+}
+
+/// Modal prompt for the cross-device email-link flow. Returns the entered
+/// email via [Navigator.pop], or null if the user cancelled.
+class _EmailLinkPromptDialog extends StatefulWidget {
+  const _EmailLinkPromptDialog();
+
+  @override
+  State<_EmailLinkPromptDialog> createState() => _EmailLinkPromptDialogState();
+}
+
+class _EmailLinkPromptDialogState extends State<_EmailLinkPromptDialog> {
+  final _controller = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (!_formKey.currentState!.validate()) return;
+    Navigator.pop(context, _controller.text.trim());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Confirm your email'),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'We need your email address to finish signing you in. This '
+              'happens when you opened the sign-in link on a different '
+              'device than the one that requested it.',
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _controller,
+              decoration: const InputDecoration(labelText: 'Email'),
+              keyboardType: TextInputType.emailAddress,
+              autofillHints: const [AutofillHints.email],
+              autofocus: true,
+              onFieldSubmitted: (_) => _submit(),
+              validator: (v) {
+                final value = v?.trim() ?? '';
+                if (value.isEmpty) return 'Required';
+                if (!value.contains('@')) return 'Enter a valid email';
+                return null;
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(onPressed: _submit, child: const Text('Sign in')),
+      ],
+    );
   }
 }

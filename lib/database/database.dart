@@ -36,7 +36,7 @@
 // methods plus generated companions like `UserLoadsCompanion` for
 // constructing rows.
 //
-// `schemaVersion` is currently 7. The `MigrationStrategy` defines two
+// `schemaVersion` is currently 12. The `MigrationStrategy` defines two
 // callbacks: `onCreate` runs on a fresh install (creates every table, then
 // seeds the 8 standard reloading process steps), and `onUpgrade` runs
 // when an installed user opens a build with a newer `schemaVersion`. The
@@ -430,6 +430,60 @@ class Reticles extends Table {
   TextColumn get definitionJson => text()();
   TextColumn get notes => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// Reference catalog of custom drag curves (CDMs / DSFs) for specific
+/// bullets (added schema v12). Modern long-range bullet vendors publish
+/// per-bullet drag-coefficient tables — Berger calls them Custom Drag
+/// Models (CDMs), Hornady calls them DSFs / 4DOF data — that are
+/// dramatically more accurate than a single-number BC against a generic
+/// G7 reference shape.
+///
+/// Each row stores one bullet's `(mach, cd)` table, JSON-encoded in
+/// `datapointsJson`. The ballistics screen lets the user pick a curve
+/// from this catalog as an alternative to the G1/G2/G5/G6/G7/G8
+/// dropdown; when a curve is selected, the Projectile receives a
+/// `CustomDragCurve` instance and the solver bypasses the G-table
+/// path. Custom curves do NOT use a BC — the curve already captures
+/// the bullet's real Cd-vs-Mach relationship — so the BC field is
+/// hidden in the UI when a curve is active.
+///
+/// Seeded from `assets/seed_data/drag_curves/*.json` on first launch
+/// (see `seed_loader.dart`). The repository layer reads rows from
+/// here and constructs `CustomDragCurve` instances for the solver.
+@DataClassName('DragCurveRow')
+class DragCurves extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  /// Manufacturer / brand (e.g. "Berger", "Hornady"). Stored as text
+  /// rather than an FK to `Manufacturers` because the source of these
+  /// curves is editorial — many curves come from the manufacturer's
+  /// public ballistic-tool data — and the manufacturer name on the
+  /// curve does not have to round-trip to a `Manufacturers` row.
+  TextColumn get manufacturer => text()();
+  /// Bullet line / family (e.g. "Hybrid Target", "ELD-Match", "VLD").
+  TextColumn get line => text()();
+  /// Bullet mass in grains.
+  RealColumn get weightGr => real()();
+  /// Bullet diameter in inches (e.g. 0.264 for 6.5mm).
+  RealColumn get diameterIn => real()();
+  /// JSON array of `{"mach": x, "cd": y}` objects, sorted ascending by
+  /// Mach. Decoded by `CustomDragCurve.fromDatapointsJson`.
+  TextColumn get datapointsJson => text()();
+  /// Free-form provenance / source citation
+  /// (e.g. "Berger Bullets CDM file 2024-01-15").
+  TextColumn get source => text().nullable()();
+  TextColumn get notes => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  /// `(manufacturer, line, weightGr, diameterIn)` together identify a
+  /// curve so a re-seed (or a manifest-driven update) can detect that
+  /// "Berger 6.5mm 140gr Hybrid Target" already exists rather than
+  /// inserting a duplicate. Unique constraint mirrors the seed-loader's
+  /// behaviour for other catalogs.
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {manufacturer, line, weightGr, diameterIn},
+      ];
 }
 
 // ─────────────────────── User data tables ───────────────────────
@@ -993,6 +1047,8 @@ class UserCustomFieldValues extends Table {
     ShotImpacts,
     // Schema v11 additions.
     Reticles,
+    // Schema v12 additions.
+    DragCurves,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -1001,7 +1057,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1201,6 +1257,16 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(rangeDaySessions, rangeDaySessions.reticleId);
             await m.addColumn(
                 rangeDaySessions, rangeDaySessions.correctionUnit);
+          }
+          if (from < 12) {
+            // v12 — Custom drag curves catalog. Adds the `DragCurves`
+            // reference table (seeded from
+            // `assets/seed_data/drag_curves/*.json`) so the ballistics
+            // calculator can use per-bullet Doppler-radar drag curves
+            // (Berger CDM, Hornady DSF / 4DOF) instead of the standard
+            // G1/G2/G5/G6/G7/G8 curve + BC fit. Additive only — no
+            // existing column or table changes; user data is preserved.
+            await m.createTable(dragCurves);
           }
         },
       );
@@ -1433,6 +1499,17 @@ class AppDatabase extends _$AppDatabase {
         await (selectOnly(reticles)..addColumns([reticles.id.count()]))
             .map((row) => row.read(reticles.id.count()) ?? 0)
             .getSingle();
+    return count == 0;
+  }
+
+  /// True when the custom drag curves catalog is empty. Used by the
+  /// seed loader to decide whether to insert the bundled CDM / DSF
+  /// library on first launch (or after a v12 migration).
+  Future<bool> get dragCurvesAreEmpty async {
+    final count = await (selectOnly(dragCurves)
+          ..addColumns([dragCurves.id.count()]))
+        .map((row) => row.read(dragCurves.id.count()) ?? 0)
+        .getSingle();
     return count == 0;
   }
 }

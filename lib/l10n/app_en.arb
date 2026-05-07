@@ -1,0 +1,200 @@
+{
+    "@@locale": "en",
+    "@@x-comment": "English source of truth. Add new strings here first, then translate into the per-locale ARBs. Keep keys camelCase and group related strings via prefix (nav*, common*, error*, onboarding*).",
+
+    "appTitle": "LoadOut",
+    "@appTitle": {
+        "description": "App title shown in switcher / launcher and the AppBar default."
+    },
+
+    "navRecipes": "Recipes",
+    "@navRecipes": {
+        "description": "Bottom-nav label for the load recipes tab."
+    },
+    "navFirearms": "Firearms",
+    "@navFirearms": {
+        "description": "Bottom-nav label for the firearms tab."
+    },
+    "navBatches": "Batches",
+    "@navBatches": {
+        "description": "Bottom-nav label for the loaded-batches tab."
+    },
+    "navBallistics": "Ballistics",
+    "@navBallistics": {
+        "description": "Bottom-nav label for the ballistics calculator tab."
+    },
+    "navRangeDay": "Range Day",
+    "@navRangeDay": {
+        "description": "Bottom-nav label for the range-day session tracking tab."
+    },
+    "navSaami": "SAAMI",
+    "@navSaami": {
+        "description": "Bottom-nav label for the SAAMI cartridge specs reference tab."
+    },
+
+    "commonSave": "Save",
+    "@commonSave": {
+        "description": "Generic Save button label, used in every form."
+    },
+    "commonCancel": "Cancel",
+    "@commonCancel": {
+        "description": "Generic Cancel button label, used in every dialog/form."
+    },
+    "commonDelete": "Delete",
+    "@commonDelete": {
+        "description": "Generic Delete button label."
+    },
+    "commonEdit": "Edit",
+    "@commonEdit": {
+        "description": "Generic Edit button label."
+    },
+    "commonNext": "Next",
+    "@commonNext": {
+        "description": "Onboarding / wizard forward button."
+    },
+    "commonBack": "Back",
+    "@commonBack": {
+        "description": "Onboarding / wizard backward button."
+    },
+    "commonSkip": "Skip",
+    "@commonSkip": {
+        "description": "Onboarding skip-everything button."
+    },
+
+    "sectionRecipe": "Recipe",
+    "@sectionRecipe": {
+        "description": "Section header for the load recipe form (caliber + powder + bullet)."
+    },
+    "sectionFirearm": "Firearm",
+    "@sectionFirearm": {
+        "description": "Section header for the firearm details / firearm-form pane."
+    },
+    "sectionBallistics": "Ballistics",
+    "@sectionBallistics": {
+        "description": "Section header for ballistics calculator inputs."
+    },
+    "sectionRangeDay": "Range Day",
+    "@sectionRangeDay": {
+        "description": "Section header for range-day session UI."
+    },
+
+    "errorRequiredField": "This field is required.",
+    "@errorRequiredField": {
+        "description": "Validation error: a required form field was left empty."
+    },
+    "errorInvalidNumber": "Please enter a valid number.",
+    "@errorInvalidNumber": {
+        "description": "Validation error: a numeric field could not parse."
+    },
+    "errorSaveFailed": "Save failed. Please try again.",
+    "@errorSaveFailed": {
+        "description": "Generic save-failure snackbar text."
+    },
+
+    "settingsLanguage": "Language",
+    "@settingsLanguage": {
+        "description": "Settings list-tile title for the language picker."
+    },
+    "settingsLanguageSubtitle": "Choose the language LoadOut uses.",
+    "@settingsLanguageSubtitle": {
+        "description": "Settings list-tile subtitle below the Language tile."
+    },
+    "settingsLanguageSystem": "System default",
+    "@settingsLanguageSystem": {
+        "description": "Language-picker option that follows the device locale."
+    },
+
+    "onboardingWelcomeTitle": "LoadOut · Precision Reloading",
+    "@onboardingWelcomeTitle": {
+        "description": "Title of the welcome onboarding slide."
+    },
+    "onboardingWelcomeBullet1": "From your notebook to your phone in 60 seconds.",
+    "@onboardingWelcomeBullet1": {
+        "description": "First welcome-slide bullet — describes the migration promise."
+    },
+    "onboardingWelcomeBullet2": "Your data stays on your device unless you choose to back it up — encrypted with a password only you know.",
+    "@onboardingWelcomeBullet2": {
+        "description": "Welcome-slide bullet — privacy promise."
+    },
+
+    "onboardingQuickAddTitle": "Type a load like you'd write it",
+    "@onboardingQuickAddTitle": {
+        "description": "Title of the Quick Add introduction slide."
+    },
+    "onboardingQuickAddBullet1": "Quick Add gives you the five fields you keep in your notebook — and nothing else.",
+    "@onboardingQuickAddBullet1": {
+        "description": "Quick Add bullet — describes the simplified five-field form."
+    },
+    "onboardingQuickAddBullet2": "Caliber. Powder + charge. Bullet + weight. COAL. Done.",
+    "@onboardingQuickAddBullet2": {
+        "description": "Quick Add bullet — names the five fields. COAL is a technical reloading term (Cartridge Overall Length); leave untranslated if no native equivalent exists."
+    },
+    "onboardingQuickAddBullet3": "Save it. Add detail later if you want.",
+    "@onboardingQuickAddBullet3": {
+        "description": "Quick Add bullet — emphasises that saving early is fine."
+    },
+
+    "onboardingImportTitle": "Bring your existing data",
+    "@onboardingImportTitle": {
+        "description": "Title of the data-import onboarding slide."
+    },
+    "onboardingImportBullet1": "Already use Excel or paper?",
+    "@onboardingImportBullet1": {
+        "description": "Import-slide bullet (rhetorical question)."
+    },
+    "onboardingImportBullet2": "Snap a photo of your notebook, or import your spreadsheet — we'll match the columns.",
+    "@onboardingImportBullet2": {
+        "description": "Import-slide bullet — explains the two import paths."
+    },
+    "onboardingImportSpreadsheetButton": "Import from spreadsheet",
+    "@onboardingImportSpreadsheetButton": {
+        "description": "Primary CTA on the import slide; opens the Smart Import wizard."
+    },
+    "onboardingImportPhotoButton": "Import from photo",
+    "@onboardingImportPhotoButton": {
+        "description": "Secondary CTA on the import slide; opens the photo importer."
+    },
+
+    "onboardingDetailTitle": "Track every detail when you want to",
+    "@onboardingDetailTitle": {
+        "description": "Title of the optional-fields onboarding slide."
+    },
+    "onboardingDetailBullet1": "60+ optional fields, custom fields, lot tracking, ballistics calculator.",
+    "@onboardingDetailBullet1": {
+        "description": "Detail-slide bullet — feature inventory."
+    },
+    "onboardingDetailBullet2": "Hide them in Beginner Mode until you're ready.",
+    "@onboardingDetailBullet2": {
+        "description": "Detail-slide bullet — Beginner Mode reassurance."
+    },
+    "onboardingDetailBullet3": "Flip the switch in Settings whenever you want the full power-user view.",
+    "@onboardingDetailBullet3": {
+        "description": "Detail-slide bullet — pointer to Settings toggle."
+    },
+
+    "onboardingPrivacyTitle": "We never see your reloading data",
+    "@onboardingPrivacyTitle": {
+        "description": "Title of the privacy onboarding slide."
+    },
+    "onboardingPrivacyBullet1": "All loads, firearms, and brass live in your phone's database.",
+    "@onboardingPrivacyBullet1": {
+        "description": "Privacy-slide bullet — local-first storage."
+    },
+    "onboardingPrivacyBullet2": "Backups are end-to-end encrypted to your own iCloud or Google Drive.",
+    "@onboardingPrivacyBullet2": {
+        "description": "Privacy-slide bullet — encrypted backup target."
+    },
+    "onboardingPrivacyBullet3": "We don't run a backend that stores your reloading data — by design.",
+    "@onboardingPrivacyBullet3": {
+        "description": "Privacy-slide bullet — no-server promise."
+    },
+
+    "onboardingGetStarted": "Get started",
+    "@onboardingGetStarted": {
+        "description": "Final-slide primary CTA — closes onboarding and lands the user on Home."
+    },
+    "onboardingAppBarTitle": "Welcome to LoadOut",
+    "@onboardingAppBarTitle": {
+        "description": "AppBar title shown above the onboarding flow."
+    }
+}

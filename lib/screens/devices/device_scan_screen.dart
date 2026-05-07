@@ -3,24 +3,34 @@
 // ============================================================================
 // WHAT THIS FILE DOES
 // ============================================================================
-// Scans for Kestrel weather meters in range and presents the results
-// as a tappable list. Selecting a device kicks off the connect +
-// service-discovery + GATT-subscribe handshake via [KestrelService];
-// success bounces the user back to the [DevicesScreen] which now
-// shows "Connected".
+// Generic BLE scan + connect screen, parameterized by [DeviceScanKind].
+// Originally Kestrel-only; now drives the pairing flow for every BLE
+// device LoadOut talks to:
 //
-// The scan uses the GATT service-UUID filter so discovery is fast
-// even in BLE-noisy environments. As a fallback, devices whose name
-// starts with "Kestrel" are also included — some Kestrel firmware
-// versions advertise their service UUID only in the scan-response
-// rather than the broadcast packet, and the OS's pre-filter would
-// otherwise drop them.
+//   - Kestrel 5xxx Link weather meter
+//   - Sig Sauer KILO BDX rangefinder
+//   - Bushnell rangefinders (Forge / Prime / Phantom 2 / Engage / Elite)
+//   - Vortex Razor HD 4000 / Fury HD AB
+//   - Leica Geovid Pro
+//
+// The kind enum carries the per-brand service UUID, friendly title, and
+// "looks like" matcher used for fallback name-based discovery (some
+// firmware advertises the service UUID only in the scan-response, which
+// the OS pre-filter would otherwise drop). On selection, the kind also
+// owns the connect handler — each adapter has its own ChangeNotifier
+// service in the provider tree.
+//
+// The scan uses an OS-level service-UUID filter for speed, with a name
+// fallback in the result-handling code for devices whose firmware lies
+// about advertising data. As before, the connection survives this
+// screen's teardown — the live GATT subscription lives on the adapter
+// service.
 //
 // ============================================================================
 // WHO CONSUMES THIS FILE
 // ============================================================================
 // - lib/screens/devices/devices_screen.dart — pushes this screen as a
-//   fullscreen dialog from the "Scan for devices" button.
+//   fullscreen dialog with a [DeviceScanKind] argument.
 //
 // ============================================================================
 // SIDE EFFECTS
@@ -28,7 +38,7 @@
 // - Starts a BLE scan (lasts up to 12 seconds or until the user backs
 //   out).
 // - On selection, opens a GATT connection that survives this screen's
-//   teardown — the connection lives on the [KestrelService] singleton.
+//   teardown.
 
 import 'dart:async';
 
@@ -37,10 +47,146 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:provider/provider.dart';
 
 import '../../services/ble/ble_service.dart';
+import '../../services/ble/bushnell_rangefinder_service.dart';
 import '../../services/ble/kestrel_service.dart';
+import '../../services/ble/leica_geovid_service.dart';
+import '../../services/ble/sig_kilo_service.dart';
+import '../../services/ble/vortex_rangefinder_service.dart';
+
+/// What kind of device this scan-and-connect flow is for. Each kind
+/// carries its own service UUID, friendly title, and connect handler.
+enum DeviceScanKind {
+  kestrel,
+  sigKilo,
+  bushnell,
+  vortex,
+  leicaGeovid,
+}
+
+extension _DeviceScanKindCopy on DeviceScanKind {
+  /// Title shown in the AppBar.
+  String get title {
+    switch (this) {
+      case DeviceScanKind.kestrel:
+        return 'Scan for Kestrel';
+      case DeviceScanKind.sigKilo:
+        return 'Scan for Sig KILO';
+      case DeviceScanKind.bushnell:
+        return 'Scan for Bushnell';
+      case DeviceScanKind.vortex:
+        return 'Scan for Vortex';
+      case DeviceScanKind.leicaGeovid:
+        return 'Scan for Leica';
+    }
+  }
+
+  /// Empty-state label.
+  String get emptyLabel {
+    switch (this) {
+      case DeviceScanKind.kestrel:
+        return 'No Kestrel devices found.';
+      case DeviceScanKind.sigKilo:
+        return 'No Sig KILO devices found.';
+      case DeviceScanKind.bushnell:
+        return 'No Bushnell devices found.';
+      case DeviceScanKind.vortex:
+        return 'No Vortex devices found.';
+      case DeviceScanKind.leicaGeovid:
+        return 'No Leica devices found.';
+    }
+  }
+
+  /// Connected snackbar message.
+  String get connectedMessage {
+    switch (this) {
+      case DeviceScanKind.kestrel:
+        return 'Connected to Kestrel.';
+      case DeviceScanKind.sigKilo:
+        return 'Connected to Sig KILO.';
+      case DeviceScanKind.bushnell:
+        return 'Connected to Bushnell rangefinder.';
+      case DeviceScanKind.vortex:
+        return 'Connected to Vortex rangefinder.';
+      case DeviceScanKind.leicaGeovid:
+        return 'Connected to Leica Geovid.';
+    }
+  }
+
+  /// Service UUIDs to filter on at scan time.
+  List<Guid> get scanFilters {
+    switch (this) {
+      case DeviceScanKind.kestrel:
+        return [kKestrelServiceUuid];
+      case DeviceScanKind.sigKilo:
+        return [kSigKiloServiceUuid];
+      case DeviceScanKind.bushnell:
+        return [kBushnellPrimaryServiceUuid];
+      case DeviceScanKind.vortex:
+        return [kVortexServiceUuid];
+      case DeviceScanKind.leicaGeovid:
+        return [kLeicaGeovidServiceUuid];
+    }
+  }
+
+  /// Whether a scan result looks like the kind of device we're hunting.
+  bool matches(ScanResult r) {
+    switch (this) {
+      case DeviceScanKind.kestrel:
+        return r.advertisementData.serviceUuids
+                .contains(kKestrelServiceUuid) ||
+            r.device.platformName.toLowerCase().startsWith('kestrel');
+      case DeviceScanKind.sigKilo:
+        return SigKiloService.looksLikeKilo(r);
+      case DeviceScanKind.bushnell:
+        return BushnellRangefinderService.looksLikeBushnell(r);
+      case DeviceScanKind.vortex:
+        return VortexRangefinderService.looksLikeVortex(r);
+      case DeviceScanKind.leicaGeovid:
+        return LeicaGeovidService.looksLikeLeica(r);
+    }
+  }
+
+  /// Leading icon for each device row.
+  IconData get listIcon {
+    switch (this) {
+      case DeviceScanKind.kestrel:
+        return Icons.air;
+      case DeviceScanKind.sigKilo:
+      case DeviceScanKind.bushnell:
+      case DeviceScanKind.vortex:
+      case DeviceScanKind.leicaGeovid:
+        return Icons.gps_fixed;
+    }
+  }
+
+  /// Empty-state hint shown under the spinner.
+  String get emptyHint {
+    switch (this) {
+      case DeviceScanKind.kestrel:
+        return 'Make sure the meter is powered on, in pairing mode, and within '
+            'about 30 ft of this device.';
+      case DeviceScanKind.sigKilo:
+        return 'Make sure the KILO is powered on with Bluetooth enabled '
+            '(BDX mode), and within about 30 ft of this device.';
+      case DeviceScanKind.bushnell:
+        return 'Make sure the rangefinder is powered on with Bluetooth '
+            'enabled, and within about 30 ft of this device.';
+      case DeviceScanKind.vortex:
+        return 'Make sure the rangefinder / binocular is powered on with '
+            'Bluetooth enabled, and within about 30 ft of this device.';
+      case DeviceScanKind.leicaGeovid:
+        return 'Make sure the Geovid Pro is powered on with Bluetooth '
+            'enabled, and within about 30 ft of this device.';
+    }
+  }
+}
 
 class DeviceScanScreen extends StatefulWidget {
-  const DeviceScanScreen({super.key});
+  const DeviceScanScreen({super.key, this.kind = DeviceScanKind.kestrel});
+
+  /// What kind of device this scan is for. Drives filtering, copy, and
+  /// the connect handler.
+  final DeviceScanKind kind;
 
   @override
   State<DeviceScanScreen> createState() => _DeviceScanScreenState();
@@ -70,14 +216,11 @@ class _DeviceScanScreenState extends State<DeviceScanScreen> {
     try {
       final stream = await ble.startScan(
         timeout: const Duration(seconds: 12),
-        withServices: [kKestrelServiceUuid],
+        withServices: widget.kind.scanFilters,
       );
       _sub = stream.listen((batch) {
         for (final r in batch) {
-          final isKestrel = r.advertisementData.serviceUuids
-                  .contains(kKestrelServiceUuid) ||
-              r.device.platformName.toLowerCase().startsWith('kestrel');
-          if (isKestrel) {
+          if (widget.kind.matches(r)) {
             _seen[r.device.remoteId.str] = r;
           }
         }
@@ -117,7 +260,7 @@ class _DeviceScanScreenState extends State<DeviceScanScreen> {
       ..sort((a, b) => b.rssi.compareTo(a.rssi));
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Scan for Kestrel'),
+        title: Text(widget.kind.title),
         actions: [
           if (_scanning)
             const Padding(
@@ -190,15 +333,12 @@ class _DeviceScanScreenState extends State<DeviceScanScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            _scanning
-                ? 'Scanning for Kestrel devices…'
-                : 'No Kestrel devices found.',
+            _scanning ? 'Scanning…' : widget.kind.emptyLabel,
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 4),
           Text(
-            "Make sure the meter is powered on, in pairing mode, and within "
-            'about 30 ft of this device.',
+            widget.kind.emptyHint,
             textAlign: TextAlign.center,
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
@@ -217,7 +357,7 @@ class _DeviceScanScreenState extends State<DeviceScanScreen> {
         ? id
         : r.device.platformName.trim();
     return ListTile(
-      leading: const Icon(Icons.air),
+      leading: Icon(widget.kind.listIcon),
       title: Text(name),
       subtitle: Text(
         'Signal: ${r.rssi} dBm · $id',
@@ -240,14 +380,17 @@ class _DeviceScanScreenState extends State<DeviceScanScreen> {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
     final ble = context.read<BleService>();
-    final kestrel = context.read<KestrelService>();
+    // Resolve the right adapter UP FRONT — using BuildContext after the
+    // `await ble.stopScan()` async gap below would trip the
+    // use_build_context_synchronously lint.
+    final connectAdapter = _resolveConnect();
     setState(() => _connectingId = device.remoteId.str);
     try {
       await ble.stopScan();
-      await kestrel.connect(device);
+      await connectAdapter(device);
       if (!mounted) return;
       messenger.showSnackBar(
-        const SnackBar(content: Text('Connected to Kestrel.')),
+        SnackBar(content: Text(widget.kind.connectedMessage)),
       );
       navigator.pop();
     } on BleException catch (e) {
@@ -260,6 +403,29 @@ class _DeviceScanScreenState extends State<DeviceScanScreen> {
         SnackBar(content: Text('Connection failed: $e')),
       );
       setState(() => _connectingId = null);
+    }
+  }
+
+  /// Bind the connect handler from the right adapter for [widget.kind]
+  /// using the current BuildContext, so the resulting closure can be
+  /// invoked across an async gap without `context.read` re-entry.
+  Future<void> Function(BluetoothDevice) _resolveConnect() {
+    switch (widget.kind) {
+      case DeviceScanKind.kestrel:
+        final svc = context.read<KestrelService>();
+        return svc.connect;
+      case DeviceScanKind.sigKilo:
+        final svc = context.read<SigKiloService>();
+        return svc.connect;
+      case DeviceScanKind.bushnell:
+        final svc = context.read<BushnellRangefinderService>();
+        return svc.connect;
+      case DeviceScanKind.vortex:
+        final svc = context.read<VortexRangefinderService>();
+        return svc.connect;
+      case DeviceScanKind.leicaGeovid:
+        final svc = context.read<LeicaGeovidService>();
+        return svc.connect;
     }
   }
 }

@@ -188,11 +188,31 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # `flutter_localizations` ships the Cupertino + Material delegates that
+  # plumb a non-English `Locale` through Flutter's built-in widgets (Cancel
+  # button text, date pickers, default error strings). Required as soon as
+  # the app supports any locale beyond English. Pairs with `intl` and the
+  # generated `AppLocalizations` class produced by `flutter gen-l10n` from
+  # the ARB files in `lib/l10n/`. See the "Internationalization" section in
+  # CLAUDE.md for the migration pattern.
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.0
+
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   firebase_core: ^4.7.0
   firebase_auth: ^6.4.0
+  # Optional crash reporting. OFF by default. Activated only when the
+  # user flips the "Send anonymous crash reports" switch in
+  # Settings → Diagnostics, which sets the
+  # `crashlytics_enabled` SharedPreferences flag and triggers
+  # `Firebase.setCrashlyticsCollectionEnabled(true)` plus the
+  # `FlutterError.onError` / `PlatformDispatcher.instance.onError`
+  # hooks in `lib/main.dart`. No reloading data, recipes, firearms,
+  # or PII is ever sent — only stack traces and platform metadata.
+  firebase_crashlytics: ^5.2.0  # paired with firebase_core ^4.7.0
   # Pulls reference-catalog updates (cartridges, powders, primers, etc.) from
   # Firebase Storage on launch so the team can ship JSON fixes without an
   # App Store / Play Store release. User reloading data is never uploaded —
@@ -284,6 +304,20 @@ dependencies:
   flutter_blue_plus: ^1.32.0
   permission_handler: ^11.0.0
 
+  # Live device sensors for the Range Day Setup section.
+  # `sensors_plus` exposes the OS accelerometer, gyroscope, and
+  # magnetometer event streams behind a uniform Dart API. We use it
+  # for two range-day affordances:
+  #   1. Tilt / "cant" — phone-on-rifle level + cant correction term in
+  #      the firing solution (Pro).
+  #   2. Magnetometer — true-heading auto-fill of the shot azimuth field
+  #      (free; sensors are already on the device).
+  # iOS and Android expose all three sensors natively; macOS / Linux /
+  # Windows / Web do not have a magnetometer (and accelerometer support
+  # varies). The wrapper services in `lib/services/sensors/` detect
+  # absence of samples and gate the UI gracefully.
+  sensors_plus: ^6.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -318,6 +352,14 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  # Tells the Flutter build to run the gen-l10n code generator, which
+  # reads `l10n.yaml` at the project root, parses every ARB file in
+  # `lib/l10n/`, and emits `AppLocalizations` (+ per-locale subclasses)
+  # under `.dart_tool/flutter_gen/gen_l10n/`. The generated code is
+  # picked up automatically — no `dart run build_runner` step needed.
+  # See CLAUDE.md → Internationalization for the migration pattern.
+  generate: true
 
   assets:
     - assets/seed_data/

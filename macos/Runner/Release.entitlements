@@ -10,5 +10,21 @@
 	<true/>
 	<key>com.apple.security.device.bluetooth</key>
 	<true/>
+	<!--
+	  Universal Links for Firebase email-link sign-in. Same domains as iOS
+	  (see ios/Runner/Runner.entitlements). The AASA file at
+	  https://loadout-precision-reloading.web.app/.well-known/apple-app-site-association
+	  declares appID "7265YL85SB.com.johnsondigital.loadout" — that single
+	  entry covers both iOS and macOS because Apple matches against the
+	  running app's applicationIdentifier (TeamID.BundleID), and the macOS
+	  app uses the same bundle ID and team. No separate macOS section is
+	  needed in AASA. Requires the Associated Domains capability to be
+	  enabled on the App ID at developer.apple.com.
+	-->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:loadout-precision-reloading.web.app</string>
+		<string>applinks:loadout-precision-reloading.firebaseapp.com</string>
+	</array>
 </dict>
 </plist>

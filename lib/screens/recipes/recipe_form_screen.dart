@@ -24,7 +24,11 @@
 //    doesn't need to know what kind of editor a field uses.
 // 3. `_Section` — a const list that groups `_FieldId`s into the
 //    collapsible sections you see on screen ("Load Identification",
-//    "Powder", "Primer", "Bullet", etc.).
+//    "Powder", "Primer", "Bullet", etc.). Each section can also
+//    declare 2-up `pairs` of related field IDs that render side by
+//    side on desktop-class widths (≥ 1024 px); the renderer falls
+//    back to the stacked layout on phone / tablet so reach-typing
+//    still works on narrow screens.
 //
 // On top of the FieldDef registry is a 3-level detail toggle
 // (`DetailLevel.basic`/`detailed`/`all`) with `SharedPreferences`
@@ -92,7 +96,11 @@
 //   2. Add a `_FieldDef` for it inside `_buildFieldDefs`, providing
 //      label, level, aliases, and a builder.
 //   3. Add the new id to the appropriate `_Section.fieldIds` list so it
-//      lands in a section.
+//      lands in a section. Optionally extend that section's `pairs`
+//      list with `[fieldA, fieldB]` to render the new field side-by-
+//      side with another (desktop widths only — see `_planSectionLayout`
+//      for the constraints: same section, both visible, declared
+//      adjacency in the visible list).
 //
 // The form rendering loop and the filter logic pick it up automatically
 // after that. Forgetting step 3 is the most common mistake — the field
@@ -168,6 +176,7 @@ import '../../services/ble/ble_service.dart';
 import '../../services/ble/garmin_xero_service.dart';
 import '../../services/recipe_print_service.dart';
 import '../../services/unit_service.dart';
+import '../../utils/responsive.dart';
 import '../../widgets/auto_save_banner.dart';
 import '../../widgets/auto_save_first_time_hint.dart';
 import '../../widgets/component_field.dart';
@@ -369,7 +378,10 @@ enum _FieldId {
 /// New fields are added by:
 ///   1. Append a new value to [_FieldId].
 ///   2. Add a `_FieldDef` for it inside `_buildFieldDefs`.
-///   3. Add the id to whichever `_Section.fields` list it belongs in.
+///   3. Add the id to whichever `_Section.fieldIds` list it belongs in.
+///   4. (Optional) extend that section's `pairs` list with this field
+///      and a logically related sibling so the two render side by side
+///      on desktop layouts.
 ///
 /// No other changes to the form rendering loop are required.
 class _FieldDef {
@@ -413,6 +425,7 @@ class _Section {
     required this.id,
     required this.title,
     required this.fieldIds,
+    this.pairs = const <List<_FieldId>>[],
   });
 
   /// Stable id used for `PageStorageKey` so each section's expansion
@@ -424,12 +437,42 @@ class _Section {
 
   /// Field ids that live in this section, in display order.
   final List<_FieldId> fieldIds;
+
+  /// Optional 2-up pairings rendered side-by-side on screens at the
+  /// desktop breakpoint (≥ 1024 px wide). Each inner list is a pair of
+  /// field IDs that should appear in the same `Row` when both fields
+  /// are visible (filtered + at the active detail level). Phones and
+  /// narrow tablets fall back to the original stacked layout.
+  ///
+  /// A pair is honored only when *both* of its fields are visible —
+  /// if filter or detail-level rules hide one, the surviving field
+  /// stacks normally on its own row. Pairs never re-flow, so the
+  /// declared section order still controls the visual sequence.
+  final List<List<_FieldId>> pairs;
 }
 
 /// Identifier used in the `_Section.id` to distinguish the special
 /// custom-fields section, which is rendered with bespoke logic instead of
 /// driving off the FieldDef map.
 const String _customFieldsSectionId = 'custom_fields';
+
+/// One slot in a section's render plan — either a single field or a
+/// 2-up pair. The renderer (`_buildSection` → `_buildRenderItem`) walks
+/// a `List<_SectionRenderItem>` and emits Material widgets accordingly.
+sealed class _SectionRenderItem {
+  const _SectionRenderItem();
+}
+
+class _SingleFieldItem extends _SectionRenderItem {
+  const _SingleFieldItem(this.field);
+  final _FieldDef field;
+}
+
+class _PairFieldItem extends _SectionRenderItem {
+  const _PairFieldItem(this.first, this.second);
+  final _FieldDef first;
+  final _FieldDef second;
+}
 
 class RecipeFormScreen extends StatefulWidget {
   const RecipeFormScreen({super.key, this.existing});
@@ -2252,14 +2295,21 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         _FieldId.powderLot,
         _FieldId.chargeTolerance,
       ],
+      pairs: [
+        [_FieldId.powder, _FieldId.powderCharge],
+      ],
     ),
     _Section(
       id: 'primer',
       title: 'Primer',
+      // `primerDepth` moves to the Bullet section so it can pair with
+      // `seatingDepth` on desktop layouts — they're both seating-depth
+      // measurements that reloaders cross-check together. The Primer
+      // section keeps the brand / size / lot / seating-force fields
+      // that describe primer selection rather than installed geometry.
       fieldIds: [
         _FieldId.primer,
         _FieldId.primerSize,
-        _FieldId.primerDepth,
         _FieldId.primerLot,
         _FieldId.primerSeatingForce,
       ],
@@ -2282,7 +2332,11 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         _FieldId.bulletBtoTolerance,
         _FieldId.bulletDiameterSorted,
         _FieldId.seatingDepth,
-        _FieldId.cbto,
+        _FieldId.primerDepth,
+      ],
+      pairs: [
+        [_FieldId.bullet, _FieldId.bulletWeight],
+        [_FieldId.seatingDepth, _FieldId.primerDepth],
       ],
     ),
     _Section(
@@ -2296,16 +2350,29 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         _FieldId.mandrelSize,
         _FieldId.bushingSize,
       ],
+      pairs: [
+        [_FieldId.shoulderBump, _FieldId.mandrelSize],
+      ],
     ),
     _Section(
       id: 'dimensions',
       title: 'Loaded Round Dimensions',
+      // `cbto` moves here from the Bullet section because it pairs
+      // logically with `coal` (Cartridge Overall Length) — both are
+      // measurements of the loaded round, and reloaders typically read
+      // them together when chasing a target jump-to-lands or seating
+      // depth. The pair fires on desktop widths via the `pairs` block
+      // below.
       fieldIds: [
         _FieldId.coal,
+        _FieldId.cbto,
         _FieldId.distanceToLands,
         _FieldId.jumpToLands,
         _FieldId.loadedNeckDiameter,
         _FieldId.bulletRunout,
+      ],
+      pairs: [
+        [_FieldId.coal, _FieldId.cbto],
       ],
     ),
     _Section(
@@ -2323,8 +2390,14 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     _Section(
       id: 'process',
       title: 'Process / Equipment / Provenance',
+      // `loadedBy` moves up to sit next to `loadingDate` so the desktop
+      // pair declared below can render them side-by-side. The two
+      // fields are conceptually a "who & when" header for the section
+      // anyway, so the new ordering also reads better top-down on
+      // narrow widths.
       fieldIds: [
         _FieldId.loadingDate,
+        _FieldId.loadedBy,
         _FieldId.roundsLoadedInBatch,
         _FieldId.pressUsed,
         _FieldId.sizingDieUsed,
@@ -2334,7 +2407,9 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         _FieldId.comparatorInsertUsed,
         _FieldId.chronographUsed,
         _FieldId.boreState,
-        _FieldId.loadedBy,
+      ],
+      pairs: [
+        [_FieldId.loadingDate, _FieldId.loadedBy],
       ],
     ),
     _Section(
@@ -2613,6 +2688,18 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
       'recipe_section_${section.id}_search_$isSearching',
     );
 
+    // Compute the rendering plan for this section's visible fields.
+    // On desktop widths each declared pair (when both halves are
+    // visible AND the second half lives in this section) renders as a
+    // single Row; everything else stacks. On phone / tablet widths
+    // the plan is always a flat list of single-field rows.
+    final isDesktop = Breakpoints.isDesktop(context);
+    final renderItems = _planSectionLayout(
+      section: section,
+      visibleFields: visibleFields,
+      pairOnRow: isDesktop,
+    );
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Card(
@@ -2639,15 +2726,12 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
             count: visibleFields.length,
           ),
           children: [
-            for (int i = 0; i < visibleFields.length; i++) ...[
+            for (int i = 0; i < renderItems.length; i++) ...[
               if (i > 0) const SizedBox(height: 12),
-              KeyedSubtree(
-                key: ValueKey('field_${visibleFields[i].id.name}'),
-                child: _BeginnerWrap(
-                  showTooltip: beginnerOn,
-                  tooltip: visibleFields[i].beginnerTooltip,
-                  child: visibleFields[i].builder(context),
-                ),
+              _buildRenderItem(
+                context: context,
+                item: renderItems[i],
+                beginnerOn: beginnerOn,
               ),
             ],
             if (visibleFields.isEmpty)
@@ -2665,6 +2749,118 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Computes a render plan for one section's visible fields.
+  ///
+  /// Walks `visibleFields` in declared order and emits either a
+  /// `_SingleFieldItem` (one field) or a `_PairFieldItem` (two fields
+  /// rendered side-by-side). A pair is honored only when:
+  ///   * `pairOnRow` is true (caller already checked the breakpoint),
+  ///   * both pair members are present in `visibleFields` (i.e. neither
+  ///     was filtered or hidden by detail-level rules),
+  ///   * both pair members live in `section.fieldIds` (so cross-section
+  ///     pair declarations don't accidentally collapse two unrelated
+  ///     fields together — see the comment on `_Section.pairs`),
+  ///   * the first member's position in `visibleFields` is the next one
+  ///     to be emitted (preserves declared order — pairs never
+  ///     re-order fields).
+  ///
+  /// Surviving fields whose pair partner was hidden stack as singles in
+  /// their declared position.
+  List<_SectionRenderItem> _planSectionLayout({
+    required _Section section,
+    required List<_FieldDef> visibleFields,
+    required bool pairOnRow,
+  }) {
+    final items = <_SectionRenderItem>[];
+    if (visibleFields.isEmpty) return items;
+
+    // Build the lookup of declared pair partners. Both halves must
+    // appear in section.fieldIds for the pair to be eligible.
+    final partner = <_FieldId, _FieldId>{};
+    if (pairOnRow) {
+      final inSection = section.fieldIds.toSet();
+      for (final pair in section.pairs) {
+        if (pair.length != 2) continue;
+        final a = pair[0];
+        final b = pair[1];
+        if (!inSection.contains(a) || !inSection.contains(b)) continue;
+        partner[a] = b;
+        partner[b] = a;
+      }
+    }
+
+    // Walk visible fields in order, greedily pairing with the next
+    // visible field if it's the declared partner.
+    final visibleIds = {for (final f in visibleFields) f.id};
+    var i = 0;
+    while (i < visibleFields.length) {
+      final current = visibleFields[i];
+      final mate = partner[current.id];
+      if (mate != null &&
+          visibleIds.contains(mate) &&
+          i + 1 < visibleFields.length &&
+          visibleFields[i + 1].id == mate) {
+        items.add(_PairFieldItem(current, visibleFields[i + 1]));
+        i += 2;
+      } else {
+        items.add(_SingleFieldItem(current));
+        i += 1;
+      }
+    }
+    return items;
+  }
+
+  Widget _buildRenderItem({
+    required BuildContext context,
+    required _SectionRenderItem item,
+    required bool beginnerOn,
+  }) {
+    if (item is _SingleFieldItem) {
+      final field = item.field;
+      return KeyedSubtree(
+        key: ValueKey('field_${field.id.name}'),
+        child: _BeginnerWrap(
+          showTooltip: beginnerOn,
+          tooltip: field.beginnerTooltip,
+          child: field.builder(context),
+        ),
+      );
+    }
+    final pair = item as _PairFieldItem;
+    final first = pair.first;
+    final second = pair.second;
+    return KeyedSubtree(
+      key: ValueKey(
+          'field_pair_${first.id.name}_${second.id.name}'),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: KeyedSubtree(
+              key: ValueKey('field_${first.id.name}'),
+              child: _BeginnerWrap(
+                showTooltip: beginnerOn,
+                tooltip: first.beginnerTooltip,
+                child: first.builder(context),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: KeyedSubtree(
+              key: ValueKey('field_${second.id.name}'),
+              child: _BeginnerWrap(
+                showTooltip: beginnerOn,
+                tooltip: second.beginnerTooltip,
+                child: second.builder(context),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

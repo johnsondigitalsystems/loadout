@@ -3,41 +3,32 @@
 // ============================================================================
 // WHAT THIS FILE DOES
 // ============================================================================
-// "Connected Devices" — single-stop UI for pairing the two pieces of
-// gear LoadOut talks to over Bluetooth: a Garmin Xero C1 Pro
-// chronograph and a Kestrel 5xxx Link weather meter. Reached from
-// Settings → Devices.
+// "Connected Devices" — single-stop UI for pairing every piece of gear
+// LoadOut talks to over Bluetooth:
 //
-// The screen has three tiles:
+//   - Garmin Xero C1 Pro chronograph (.fit import + future BLE)
+//   - Kestrel 5xxx Link weather meter (BLE live data)
+//   - Sig Sauer KILO BDX rangefinder (BLE range push)
+//   - Bushnell rangefinders (BLE range push, scan-and-display only)
+//   - Vortex Razor HD 4000 / Fury HD AB (BLE range push)
+//   - Leica Geovid Pro (BLE range push)
 //
+// Reached from Settings → Devices.
+//
+// Tile structure:
 //   1. Bluetooth status banner. Surfaces "Bluetooth is off" / "Not
-//      available on this device" when the radio isn't usable; otherwise
-//      hidden. This keeps the rest of the screen functional even if
-//      BLE is unavailable on the platform — the .fit import path still
-//      works without Bluetooth.
-//   2. Garmin Xero card. "Pair via Bluetooth" placeholder (coming-soon
-//      snackbar) plus "Import .fit file" button — the latter is the
-//      v1 import path. Both gated behind Pro.
-//   3. Kestrel card. Shows current connection status; offers "Scan for
-//      devices" → opens the [DeviceScanScreen] modal where the user
-//      picks a discovered Kestrel and connects. Live readings are
-//      shown as a single "Last reading" line. Pro-gated.
+//      available on this device" when the radio isn't usable.
+//   2. Chronograph section: Garmin Xero card.
+//   3. Weather Meter section: Kestrel card.
+//   4. Rangefinders section: one card per supported brand. Each card
+//      shows the connection state, a Scan button (Pro-gated), and a
+//      BETA badge so the user knows we expect to iterate. The same
+//      DeviceScanScreen handles all four — it's parameterized by
+//      DeviceScanKind.
+//   5. System: deep-link to OS bluetooth permissions.
 //
-// A "Manage permissions" tile at the bottom deep-links to system
-// settings via [BleService.openAppSettingsPage] for users who
-// previously denied Bluetooth permanently and need to grant it
-// manually.
-//
-// ============================================================================
-// WHY IT EXISTS IN THE ARCHITECTURE
-// ============================================================================
-// Centralizing all BLE entry points in one screen keeps each feature
-// shell free of pairing UI. The ballistics screen and range-day
-// session detail just consume the [KestrelService] stream; they
-// don't have to know anything about scanning or connection state.
-// Same idea for the .fit import — Recipe Form and Range Day pull
-// the import handler from `garmin_xero_service.dart` rather than
-// reimplementing FIT parsing.
+// Live BLE pairing is Pro-gated; manual entry stays free across the
+// app (the distance picker on Range Day still accepts typed values).
 //
 // ============================================================================
 // WHO CONSUMES THIS FILE
@@ -57,8 +48,13 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:provider/provider.dart';
 
 import '../../services/ble/ble_service.dart';
+import '../../services/ble/bushnell_rangefinder_service.dart';
 import '../../services/ble/garmin_xero_service.dart';
 import '../../services/ble/kestrel_service.dart';
+import '../../services/ble/leica_geovid_service.dart';
+import '../../services/ble/rangefinder_reading.dart';
+import '../../services/ble/sig_kilo_service.dart';
+import '../../services/ble/vortex_rangefinder_service.dart';
 import '../../widgets/pro_gate.dart';
 import 'device_scan_screen.dart';
 
@@ -89,6 +85,10 @@ class _DevicesScreenState extends State<DevicesScreen> {
   Widget build(BuildContext context) {
     final ble = context.watch<BleService>();
     final kestrel = context.watch<KestrelService>();
+    final sigKilo = context.watch<SigKiloService>();
+    final bushnell = context.watch<BushnellRangefinderService>();
+    final vortex = context.watch<VortexRangefinderService>();
+    final leica = context.watch<LeicaGeovidService>();
     return Scaffold(
       appBar: AppBar(title: const Text('Connected Devices')),
       body: ListView(
@@ -100,6 +100,48 @@ class _DevicesScreenState extends State<DevicesScreen> {
           const SizedBox(height: 8),
           const _SectionHeader('Weather Meter'),
           _KestrelCard(kestrel: kestrel),
+          const SizedBox(height: 8),
+          const _SectionHeader('Rangefinders'),
+          _RangefinderCard(
+            kind: DeviceScanKind.sigKilo,
+            title: 'Sig Sauer KILO BDX',
+            subtitle:
+                'KILO1600BDX / 2200BDX / 2400BDX / 3000BDX / 5K / 6K / 8K-ABS / 10K-ABS HD',
+            device: sigKilo.device,
+            lastReading: sigKilo.lastReading,
+            onDisconnect: () => sigKilo.disconnect(),
+          ),
+          _RangefinderCard(
+            kind: DeviceScanKind.bushnell,
+            title: 'Bushnell',
+            subtitle:
+                'Elite 1 Mile · Forge · Prime · Phantom 2 · Engage / Engage X',
+            device: bushnell.device,
+            lastReading: bushnell.lastReading,
+            onDisconnect: () => bushnell.disconnect(),
+            footer: 'Scan-and-display only. The device pushes a value '
+                'each time you fire the laser.',
+          ),
+          _RangefinderCard(
+            kind: DeviceScanKind.vortex,
+            title: 'Vortex Razor HD 4000 / Fury HD AB',
+            subtitle: 'Razor HD 4000 · Razor HD 4000 GB · Fury HD 5000 AB',
+            device: vortex.device,
+            lastReading: vortex.lastReading,
+            onDisconnect: () => vortex.disconnect(),
+            footer: 'Scan-and-display only. The device pushes a value '
+                'each time you fire the laser.',
+          ),
+          _RangefinderCard(
+            kind: DeviceScanKind.leicaGeovid,
+            title: 'Leica Geovid Pro',
+            subtitle: 'Geovid Pro 32 · Geovid Pro 42 · Geovid Pro AB+ · Rangemaster CRF Pro',
+            device: leica.device,
+            lastReading: leica.lastReading,
+            onDisconnect: () => leica.disconnect(),
+            footer: 'Scan-and-display only. The device pushes a value '
+                'each time you fire the laser.',
+          ),
           const SizedBox(height: 16),
           const _SectionHeader('System'),
           ListTile(
@@ -365,23 +407,7 @@ class _KestrelCard extends StatelessWidget {
                               style: theme.textTheme.titleMedium,
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.tertiaryContainer,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              'BETA',
-                              style:
-                                  theme.textTheme.labelSmall?.copyWith(
-                                color: theme.colorScheme.onTertiaryContainer,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ),
+                          const _BetaBadge(),
                         ],
                       ),
                       const SizedBox(height: 2),
@@ -453,7 +479,7 @@ class _KestrelCard extends StatelessWidget {
     if (!context.mounted) return;
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => const DeviceScanScreen(),
+        builder: (_) => const DeviceScanScreen(kind: DeviceScanKind.kestrel),
         fullscreenDialog: true,
       ),
     );
@@ -471,6 +497,191 @@ class _KestrelCard extends StatelessWidget {
     final n = d.platformName.trim();
     if (n.isNotEmpty) return n;
     return d.remoteId.str;
+  }
+}
+
+// ─────────────────────── Generic rangefinder card ───────────────────────
+
+/// One card per supported rangefinder brand. Driven by [DeviceScanKind]
+/// so we don't repeat the same UI four times.
+class _RangefinderCard extends StatelessWidget {
+  const _RangefinderCard({
+    required this.kind,
+    required this.title,
+    required this.subtitle,
+    required this.device,
+    required this.lastReading,
+    required this.onDisconnect,
+    this.footer,
+  });
+
+  final DeviceScanKind kind;
+  final String title;
+  final String subtitle;
+  final BluetoothDevice? device;
+  final RangefinderReading? lastReading;
+  final Future<void> Function() onDisconnect;
+  /// Optional small italic footer copy below the buttons. Falls back to
+  /// the standard "Beta — feedback welcome" line.
+  final String? footer;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.gps_fixed, color: theme.colorScheme.primary),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title,
+                              style: theme.textTheme.titleMedium,
+                            ),
+                          ),
+                          const _BetaBadge(),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        device == null
+                            ? 'Status: Not connected'
+                            : 'Connected · ${_friendlyName(device!)}',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: [
+                if (device == null)
+                  FilledButton.icon(
+                    icon: const Icon(Icons.search, size: 18),
+                    onPressed: () => _onScan(context),
+                    label: const Text('Scan'),
+                  )
+                else
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.bluetooth_disabled, size: 18),
+                    onPressed: () => _onDisconnect(context),
+                    label: const Text('Disconnect'),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (lastReading != null)
+              Text(
+                _formatReading(lastReading!),
+                style: theme.textTheme.bodySmall,
+              )
+            else
+              Text(
+                'Last reading: —',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            const SizedBox(height: 4),
+            Text(
+              footer ??
+                  'Beta — feedback welcome. The protocol UUIDs are best-effort '
+                      'and need real-device validation; if readings look off, '
+                      'email support so we can iterate.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static String _formatReading(RangefinderReading r) {
+    final yd = r.rangeYd.toStringAsFixed(0);
+    final m = r.rangeM.toStringAsFixed(0);
+    final pieces = <String>['Last range: $yd yd ($m m)'];
+    if (r.angleDeg != null) {
+      pieces.add('angle ${r.angleDeg!.toStringAsFixed(1)}°');
+    }
+    if (r.inclineCorrectedRangeYd != null) {
+      pieces.add(
+          'shoot-to ${r.inclineCorrectedRangeYd!.toStringAsFixed(0)} yd');
+    }
+    return pieces.join(' · ');
+  }
+
+  Future<void> _onScan(BuildContext context) async {
+    if (!await ensurePro(context)) return;
+    if (!context.mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => DeviceScanScreen(kind: kind),
+        fullscreenDialog: true,
+      ),
+    );
+  }
+
+  Future<void> _onDisconnect(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    await onDisconnect();
+    messenger.showSnackBar(
+      SnackBar(content: Text('Disconnected from $title.')),
+    );
+  }
+
+  String _friendlyName(BluetoothDevice d) {
+    final n = d.platformName.trim();
+    if (n.isNotEmpty) return n;
+    return d.remoteId.str;
+  }
+}
+
+class _BetaBadge extends StatelessWidget {
+  const _BetaBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.tertiaryContainer,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        'BETA',
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: theme.colorScheme.onTertiaryContainer,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
   }
 }
 

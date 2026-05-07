@@ -320,6 +320,20 @@ class Environment {
     return (x: vx, y: 0, z: vz);
   }
 
+  /// Signed crosswind component in m/s. Positive when the wind is
+  /// from the shooter's left (i.e. pushing the bullet to the right,
+  /// the same sign as spin drift for a right-hand twist barrel).
+  /// Used by the aerodynamic-jump correction.
+  double get crossWindComponentMps {
+    // sin(0)=0 (no cross), sin(90°)=+1 (wind from right → -Z bullet),
+    // sin(270°)=-1 (wind from left → +Z bullet). We return the value
+    // such that "wind from the right" is NEGATIVE and "wind from the
+    // left" is POSITIVE — matching the AB convention and the spin
+    // drift direction sign for a right-hand twist.
+    final theta = degreesToRadians(windFromDegrees);
+    return -windSpeedMps * math.sin(theta);
+  }
+
   /// Earth's rotation vector projected into the shooter-local frame.
   ///
   /// Earth rotates at Ω = 7.2921159e-5 rad/s about its polar axis. In a

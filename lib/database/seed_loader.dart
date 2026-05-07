@@ -189,6 +189,8 @@ class SeedLoader {
         firstRun || await db.targetsAreEmpty || flag('targets');
     final reticlesReseed =
         firstRun || await db.reticlesAreEmpty || flag('reticles');
+    final dragCurvesReseed =
+        firstRun || await db.dragCurvesAreEmpty || flag('drag_curves');
 
     final any = cartridgesReseed ||
         powdersReseed ||
@@ -199,7 +201,8 @@ class SeedLoader {
         firearmPartsReseed ||
         opticsReseed ||
         targetsReseed ||
-        reticlesReseed;
+        reticlesReseed ||
+        dragCurvesReseed;
     if (!any) return;
 
     await db.transaction(() async {
@@ -290,6 +293,15 @@ class SeedLoader {
         }
         await _seedReticles();
       }
+      if (dragCurvesReseed) {
+        // Drag curves are independent of `Manufacturers` — the table
+        // stores manufacturer as free-form text, mirroring how reticles
+        // and targets handle their brand labels. Wipe and re-seed.
+        if (!firstRun) {
+          await db.delete(db.dragCurves).go();
+        }
+        await _seedDragCurves();
+      }
       // Re-seed primers if they're missing — the v3 migration intentionally
       // clears them so the new productLine field gets populated for
       // upgrading users without nuking the rest of the DB. The forced
@@ -327,6 +339,7 @@ class SeedLoader {
     await clearIf(opticsReseed, 'optics');
     await clearIf(targetsReseed, 'targets');
     await clearIf(reticlesReseed, 'reticles');
+    await clearIf(dragCurvesReseed, 'drag_curves');
   }
 
   Future<int> _manufacturerId(
@@ -686,5 +699,54 @@ class SeedLoader {
       ));
     }
     await db.batch((b) => b.insertAll(db.reticles, batch));
+  }
+
+  /// Seed the [DragCurves] reference catalog from
+  /// `assets/seed_data/drag_curves/curves.json`. The JSON shape is an
+  /// object with a top-level `curves` array; each curve has:
+  ///   - `name`, `manufacturer`, `line`
+  ///   - `weight_gr`, `diameter_in`
+  ///   - `datapoints`: array of `{mach, cd}` (sorted ascending by mach)
+  ///   - `source`, `notes` (optional)
+  ///
+  /// The leading `_template.json` placeholder file is ignored — only
+  /// the `curves.json` entry from the manifest is read. We expect the
+  /// `curves` array to be populated over time with verified
+  /// manufacturer-published Doppler-radar drag tables (Berger CDM,
+  /// Hornady DSF / 4DOF). An empty array is a perfectly valid state
+  /// — the calculator simply won't show any pre-built custom curves
+  /// in the dropdown until entries are added.
+  Future<void> _seedDragCurves() async {
+    final root = await _readJsonObject('drag_curves/curves.json');
+    final list = (root['curves'] as List<dynamic>? ?? const <dynamic>[]);
+    if (list.isEmpty) return;
+    final batch = <DragCurvesCompanion>[];
+    for (final entry in list) {
+      final m = entry as Map<String, dynamic>;
+      final datapoints = (m['datapoints'] as List<dynamic>);
+      // Validate every point is finite + positive Cd before persisting,
+      // mirroring the runtime guard in `CustomDragCurve.fromPoints`.
+      for (final dp in datapoints) {
+        final dpMap = dp as Map<String, dynamic>;
+        final mach = (dpMap['mach'] as num).toDouble();
+        final cd = (dpMap['cd'] as num).toDouble();
+        if (!mach.isFinite || mach < 0 || !cd.isFinite || cd <= 0) {
+          throw StateError(
+            'Drag curve "${m['name']}" has invalid datapoint '
+            '(mach=$mach, cd=$cd)',
+          );
+        }
+      }
+      batch.add(DragCurvesCompanion.insert(
+        manufacturer: m['manufacturer'] as String,
+        line: m['line'] as String,
+        weightGr: (m['weight_gr'] as num).toDouble(),
+        diameterIn: (m['diameter_in'] as num).toDouble(),
+        datapointsJson: json.encode(datapoints),
+        source: Value(m['source'] as String?),
+        notes: Value(m['notes'] as String?),
+      ));
+    }
+    await db.batch((b) => b.insertAll(db.dragCurves, batch));
   }
 }

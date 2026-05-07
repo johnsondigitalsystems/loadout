@@ -117,8 +117,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../database/database.dart';
 import '../../repositories/ballistic_profile_repository.dart';
 import '../../repositories/component_repository.dart';
+import '../../repositories/drag_curve_repository.dart';
 import '../../repositories/firearm_repository.dart';
 import '../../services/ballistics/atmosphere.dart';
+import '../../services/ballistics/custom_drag.dart';
 import '../../services/ballistics/drag_functions.dart';
 import '../../services/ballistics/environment.dart';
 import '../../services/ballistics/projectile.dart';
@@ -130,6 +132,7 @@ import '../../services/unit_service.dart';
 import '../../services/weather_service.dart';
 import '../../utils/responsive.dart';
 import '../../widgets/pro_gate.dart';
+import 'widgets/contribution_breakdown.dart';
 import 'widgets/trajectory_chart.dart';
 
 /// SharedPreferences keys for the range increment / min / max persistence.
@@ -208,6 +211,26 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   Future<List<({BulletRow bullet, ManufacturerRow mfg})>>? _bulletsFuture;
   ({BulletRow bullet, ManufacturerRow mfg})? _selectedBullet;
 
+  /// Indicates whether the currently-selected bullet has a matching
+  /// curve in the custom-drag catalog. Drives the "Custom drag
+  /// available" badge on the bullet picker. Refreshed in
+  /// [_applyBulletSelection] / [_clearBulletSelection].
+  bool _bulletHasCustomCurve = false;
+
+  // ─────────────────────── Custom drag curve ───────────────────────
+  /// One-shot list of every drag curve in the catalog. Used by the
+  /// "Custom" drag-function path to populate the curve dropdown.
+  Future<List<DragCurveRow>>? _dragCurvesFuture;
+
+  /// True when the user has picked the "Custom" entry on the drag-
+  /// function selector. While true, [_bcCtrl] is hidden because
+  /// custom curves don't use a BC.
+  bool _useCustomDragCurve = false;
+
+  /// The selected custom curve. Null when [_useCustomDragCurve] is
+  /// false or when the catalog is empty.
+  DragCurveRow? _selectedDragCurve;
+
   // ─────────────────────── Projectile ───────────────────────
   final _diameterCtrl = TextEditingController(text: '0.264');
   final _weightCtrl = TextEditingController(text: '140');
@@ -245,6 +268,16 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   int _rangeIncrement = _kRangeIncrementDefault;
 
   List<TrajectorySample> _samples = const [];
+
+  /// Snapshot of the inputs that produced [_samples]. We hold on to
+  /// these so the contribution-breakdown widget can re-solve variants
+  /// (gravity off, drag off, etc.) without re-parsing the form.
+  /// Cleared whenever `_samples` is cleared.
+  Projectile? _lastSolvedProjectile;
+  Environment? _lastSolvedEnvironment;
+  ShotInputs? _lastSolvedShot;
+  List<double>? _lastSolvedRanges;
+
   String? _error;
 
   // ─────────────────────── Weather (Pro) ───────────────────────
@@ -297,6 +330,7 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
     _firearmsFuture = context.read<FirearmRepository>().allFirearms();
     _bulletsFuture =
         context.read<ComponentRepository>().allBulletsWithManufacturer();
+    _dragCurvesFuture = context.read<DragCurveRepository>().allCurves();
     _profilesStream = context.read<BallisticProfileRepository>().watchAll();
     _restoreRangePreferences();
     _loadWeatherHintFlag();
@@ -879,13 +913,33 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
             'or lower the min.');
       }
 
+      // Build the custom drag curve only when the user has selected
+      // both "Custom" on the drag-function selector AND a specific
+      // curve from the dropdown. If "Custom" is selected without a
+      // curve picked we fail loudly rather than silently fall back —
+      // the UI's empty-curve hint already tells the user to pick one.
+      CustomDragCurve? customCurve;
+      if (_useCustomDragCurve) {
+        final row = _selectedDragCurve;
+        if (row == null) {
+          throw const FormatException(
+              'Custom drag curve selected but no curve picked. Choose '
+              'one from the dropdown or switch back to a G-curve.');
+        }
+        customCurve = DragCurveRepository.toCustomDragCurve(row);
+      }
+
       final projectile = Projectile(
         diameterIn: diameter,
         weightGr: weight,
+        // BC is ignored when a custom curve is set (Projectile.formFactor
+        // returns 1.0 for that case), but we still pass it through so
+        // the field's value is preserved if the user toggles back.
         bc: bc,
         dragModel: _dragModel,
         lengthIn: length,
         twistInches: twist,
+        customDragCurve: customCurve,
       );
       final atmosphere = Atmosphere.station(
         tempF: temp,
@@ -916,16 +970,28 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
 
       setState(() {
         _samples = samples;
+        _lastSolvedProjectile = projectile;
+        _lastSolvedEnvironment = environment;
+        _lastSolvedShot = shot;
+        _lastSolvedRanges = ranges;
       });
     } on FormatException catch (e) {
       setState(() {
         _error = e.message;
         _samples = const [];
+        _lastSolvedProjectile = null;
+        _lastSolvedEnvironment = null;
+        _lastSolvedShot = null;
+        _lastSolvedRanges = null;
       });
     } catch (e) {
       setState(() {
         _error = 'Could not solve: $e';
         _samples = const [];
+        _lastSolvedProjectile = null;
+        _lastSolvedEnvironment = null;
+        _lastSolvedShot = null;
+        _lastSolvedRanges = null;
       });
     }
   }
@@ -1037,12 +1103,47 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
       // the user can fill it in for stability calculations if they have
       // the spec sheet handy.
     });
+    // Async lookup of the matching custom drag curve. We don't auto-
+    // switch the user to "Custom" — that would surprise them — but we
+    // do surface a small "Custom drag available" badge on the picker.
+    _refreshBulletCustomCurveBadge(sel);
   }
 
   void _clearBulletSelection() {
     setState(() {
       _selectedBullet = null;
+      _bulletHasCustomCurve = false;
     });
+  }
+
+  /// Look up whether the selected bullet has a matching custom drag
+  /// curve in the catalog and update [_bulletHasCustomCurve] for the
+  /// badge. Catches errors silently — a stale lookup just leaves the
+  /// badge hidden.
+  Future<void> _refreshBulletCustomCurveBadge(
+      ({BulletRow bullet, ManufacturerRow mfg}) sel) async {
+    final repo = context.read<DragCurveRepository>();
+    try {
+      final match = await repo.findCurveForBullet(
+        manufacturer: sel.mfg.name,
+        line: sel.bullet.line,
+        weightGr: sel.bullet.weightGr,
+        diameterIn: sel.bullet.diameterIn,
+      );
+      if (!mounted) return;
+      // Guard against a later selection arriving while this lookup
+      // was in flight: only update the badge if the bullet we looked
+      // up is still the one selected.
+      if (_selectedBullet?.bullet.id != sel.bullet.id) return;
+      setState(() {
+        _bulletHasCustomCurve = match != null;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _bulletHasCustomCurve = false;
+      });
+    }
   }
 
   /// Format a firearm row for the rifle picker dropdown:
@@ -1620,41 +1721,156 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(
-                child: TextField(
-                  controller: _bcCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true),
-                  decoration: const InputDecoration(
-                    labelText: 'BC',
-                    helperText: 'In the chosen drag-model family',
+              // BC is hidden when a custom drag curve is active because
+              // CDM/DSF curves replace the BC + reference-shape pair —
+              // there's no reference projectile to scale against. We
+              // render an explanation in its place so the row keeps
+              // its width and the drag-function selector doesn't jump.
+              if (!_useCustomDragCurve)
+                Expanded(
+                  child: TextField(
+                    controller: _bcCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true),
+                    decoration: const InputDecoration(
+                      labelText: 'BC',
+                      helperText: 'In the chosen drag-model family',
+                    ),
+                  ),
+                )
+              else
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Text(
+                      'Custom curves don\'t use a BC — the curve already '
+                      'captures the bullet\'s real Cd vs Mach.',
+                      style:
+                          Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
+                    ),
                   ),
                 ),
-              ),
               const SizedBox(width: 12),
-              Expanded(
-                child: DropdownButtonFormField<DragModel>(
-                  initialValue: _dragModel,
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Drag function',
-                  ),
-                  items: [
-                    for (final m in DragModel.values)
-                      DropdownMenuItem(
-                        value: m,
-                        child: Text(m.label, overflow: TextOverflow.ellipsis),
-                      ),
-                  ],
-                  onChanged: (v) {
-                    if (v != null) setState(() => _dragModel = v);
-                  },
-                ),
-              ),
+              Expanded(child: _dragFunctionSelector()),
             ],
           ),
+          if (_useCustomDragCurve) ...[
+            const SizedBox(height: 12),
+            _customDragCurvePicker(),
+          ],
         ],
       ),
+    );
+  }
+
+  /// Combined drag-function selector. The user picks between G1/G2/G5/
+  /// G6/G7/G8 (the standard reference projectile families) and "Custom",
+  /// which switches the calculator to use a manufacturer-supplied
+  /// CDM/DSF curve from the seeded catalog. We model "Custom" as a
+  /// nullable sentinel because Dart enums don't allow us to extend
+  /// [DragModel] without breaking the solver.
+  Widget _dragFunctionSelector() {
+    // Sentinel value the dropdown exposes for the "Custom" entry.
+    // Kept inside the closure so it doesn't leak into other call
+    // sites — the toggle is private to this widget.
+    const customSentinel = -1;
+    final currentValue =
+        _useCustomDragCurve ? customSentinel : _dragModel.index;
+    return DropdownButtonFormField<int>(
+      initialValue: currentValue,
+      isExpanded: true,
+      decoration: const InputDecoration(
+        labelText: 'Drag function',
+      ),
+      items: [
+        for (final m in DragModel.values)
+          DropdownMenuItem(
+            value: m.index,
+            child: Text(m.label, overflow: TextOverflow.ellipsis),
+          ),
+        const DropdownMenuItem(
+          value: customSentinel,
+          child: Text('Custom (CDM / DSF)'),
+        ),
+      ],
+      onChanged: (v) {
+        if (v == null) return;
+        setState(() {
+          if (v == customSentinel) {
+            _useCustomDragCurve = true;
+          } else {
+            _useCustomDragCurve = false;
+            _selectedDragCurve = null;
+            _dragModel = DragModel.values[v];
+          }
+        });
+      },
+    );
+  }
+
+  /// Curve-selection dropdown shown only when the user has picked
+  /// "Custom" on the drag-function selector. Sources its list from
+  /// [_dragCurvesFuture]; an empty catalog renders an explanatory
+  /// helper-text instead of a useless empty dropdown.
+  Widget _customDragCurvePicker() {
+    return FutureBuilder<List<DragCurveRow>>(
+      future: _dragCurvesFuture,
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: LinearProgressIndicator(),
+          );
+        }
+        final curves = snap.data ?? const <DragCurveRow>[];
+        if (curves.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              'No custom drag curves are bundled in this build. Switch '
+              'back to a G-curve, or add curve files to '
+              'assets/seed_data/drag_curves/curves.json.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
+          );
+        }
+        return DropdownButtonFormField<int>(
+          initialValue: _selectedDragCurve?.id,
+          isExpanded: true,
+          decoration: const InputDecoration(
+            labelText: 'Custom drag curve',
+            helperText:
+                'Doppler-radar Cd vs Mach for a specific bullet — replaces '
+                'BC + G-curve.',
+          ),
+          items: [
+            for (final c in curves)
+              DropdownMenuItem(
+                value: c.id,
+                child: Text(
+                  DragCurveRepository.displayLabel(c),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+          ],
+          onChanged: (id) {
+            if (id == null) return;
+            final picked = curves.firstWhere(
+              (c) => c.id == id,
+              orElse: () => curves.first,
+            );
+            setState(() {
+              _selectedDragCurve = picked;
+            });
+          },
+        );
+      },
     );
   }
 
@@ -1669,106 +1885,179 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
           );
         }
         final entries = snap.data ?? const [];
-        return Row(
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Autocomplete<({BulletRow bullet, ManufacturerRow mfg})>(
-                initialValue: TextEditingValue(
-                  text: _selectedBullet == null
-                      ? ''
-                      : _bulletLabel(_selectedBullet!.bullet,
-                          _selectedBullet!.mfg),
-                ),
-                displayStringForOption: (e) =>
-                    _bulletLabel(e.bullet, e.mfg),
-                optionsBuilder: (te) {
-                  final q = te.text.trim().toLowerCase();
-                  if (q.isEmpty) return entries;
-                  // Tokenize on whitespace and require EVERY token to
-                  // appear somewhere in the label. This is what lets a
-                  // search like "berger 109" find
-                  // "Berger Long Range Hybrid Target 6mm 109gr" — the
-                  // tokens don't have to be adjacent in the label.
-                  final tokens = q.split(RegExp(r'\s+'))
-                      .where((t) => t.isNotEmpty)
-                      .toList(growable: false);
-                  if (tokens.isEmpty) return entries;
-                  return entries.where((e) {
-                    final label =
-                        _bulletLabel(e.bullet, e.mfg).toLowerCase();
-                    for (final t in tokens) {
-                      if (!label.contains(t)) return false;
-                    }
-                    return true;
-                  });
-                },
-                fieldViewBuilder: (
-                  context,
-                  textCtrl,
-                  focusNode,
-                  onFieldSubmitted,
-                ) {
-                  return TextField(
-                    controller: textCtrl,
-                    focusNode: focusNode,
-                    autocorrect: false,
-                    enableSuggestions: false,
-                    textCapitalization: TextCapitalization.none,
-                    decoration: InputDecoration(
-                      labelText: 'Pick from catalog',
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: textCtrl.text.isEmpty
-                          ? null
-                          : IconButton(
-                              icon: const Icon(Icons.close),
-                              tooltip: 'Clear',
-                              onPressed: () {
-                                textCtrl.clear();
-                                _clearBulletSelection();
+            Row(
+              children: [
+                Expanded(
+                  child: Autocomplete<({BulletRow bullet, ManufacturerRow mfg})>(
+                    initialValue: TextEditingValue(
+                      text: _selectedBullet == null
+                          ? ''
+                          : _bulletLabel(_selectedBullet!.bullet,
+                              _selectedBullet!.mfg),
+                    ),
+                    displayStringForOption: (e) =>
+                        _bulletLabel(e.bullet, e.mfg),
+                    optionsBuilder: (te) {
+                      final q = te.text.trim().toLowerCase();
+                      if (q.isEmpty) return entries;
+                      // Tokenize on whitespace and require EVERY token to
+                      // appear somewhere in the label. This is what lets a
+                      // search like "berger 109" find
+                      // "Berger Long Range Hybrid Target 6mm 109gr" — the
+                      // tokens don't have to be adjacent in the label.
+                      final tokens = q.split(RegExp(r'\s+'))
+                          .where((t) => t.isNotEmpty)
+                          .toList(growable: false);
+                      if (tokens.isEmpty) return entries;
+                      return entries.where((e) {
+                        final label =
+                            _bulletLabel(e.bullet, e.mfg).toLowerCase();
+                        for (final t in tokens) {
+                          if (!label.contains(t)) return false;
+                        }
+                        return true;
+                      });
+                    },
+                    fieldViewBuilder: (
+                      context,
+                      textCtrl,
+                      focusNode,
+                      onFieldSubmitted,
+                    ) {
+                      return TextField(
+                        controller: textCtrl,
+                        focusNode: focusNode,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        textCapitalization: TextCapitalization.none,
+                        decoration: InputDecoration(
+                          labelText: 'Pick from catalog',
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon: textCtrl.text.isEmpty
+                              ? null
+                              : IconButton(
+                                  icon: const Icon(Icons.close),
+                                  tooltip: 'Clear',
+                                  onPressed: () {
+                                    textCtrl.clear();
+                                    _clearBulletSelection();
+                                  },
+                                ),
+                        ),
+                        onSubmitted: (_) => onFieldSubmitted(),
+                      );
+                    },
+                    onSelected: _applyBulletSelection,
+                    optionsViewBuilder: (context, onSelected, options) {
+                      return Align(
+                        alignment: Alignment.topLeft,
+                        child: Material(
+                          elevation: 4,
+                          child: ConstrainedBox(
+                            constraints:
+                                const BoxConstraints(maxHeight: 360),
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              padding: EdgeInsets.zero,
+                              itemCount: options.length,
+                              itemBuilder: (context, i) {
+                                final e = options.elementAt(i);
+                                return ListTile(
+                                  dense: true,
+                                  title:
+                                      Text(_bulletLabel(e.bullet, e.mfg)),
+                                  onTap: () => onSelected(e),
+                                );
                               },
                             ),
-                    ),
-                    onSubmitted: (_) => onFieldSubmitted(),
-                  );
-                },
-                onSelected: _applyBulletSelection,
-                optionsViewBuilder: (context, onSelected, options) {
-                  return Align(
-                    alignment: Alignment.topLeft,
-                    child: Material(
-                      elevation: 4,
-                      child: ConstrainedBox(
-                        constraints:
-                            const BoxConstraints(maxHeight: 360),
-                        child: ListView.builder(
-                          shrinkWrap: true,
-                          padding: EdgeInsets.zero,
-                          itemCount: options.length,
-                          itemBuilder: (context, i) {
-                            final e = options.elementAt(i);
-                            return ListTile(
-                              dense: true,
-                              title: Text(_bulletLabel(e.bullet, e.mfg)),
-                              onTap: () => onSelected(e),
-                            );
-                          },
+                          ),
                         ),
-                      ),
-                    ),
-                  );
-                },
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                TextButton.icon(
+                  onPressed: _selectedBullet == null
+                      ? null
+                      : _clearBulletSelection,
+                  icon: const Icon(Icons.refresh, size: 18),
+                  label: const Text('Clear'),
+                ),
+              ],
+            ),
+            // "Custom drag available" badge — surfaces when the user
+            // picks a bullet that has a matching CDM/DSF curve in the
+            // catalog. Tapping it switches the calculator to that
+            // curve in one move (no rummaging in the drag-function
+            // dropdown).
+            if (_bulletHasCustomCurve)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: _customDragAvailableBadge(),
               ),
-            ),
-            const SizedBox(width: 8),
-            TextButton.icon(
-              onPressed:
-                  _selectedBullet == null ? null : _clearBulletSelection,
-              icon: const Icon(Icons.refresh, size: 18),
-              label: const Text('Clear'),
-            ),
           ],
         );
       },
+    );
+  }
+
+  /// Small chip-like banner surfaced under the bullet picker when the
+  /// selected bullet has a matching custom drag curve in the catalog.
+  /// Tapping it auto-applies the matching curve and switches the
+  /// drag-function selector to "Custom".
+  Widget _customDragAvailableBadge() {
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: () async {
+        final sel = _selectedBullet;
+        if (sel == null) return;
+        final repo = context.read<DragCurveRepository>();
+        final match = await repo.findCurveForBullet(
+          manufacturer: sel.mfg.name,
+          line: sel.bullet.line,
+          weightGr: sel.bullet.weightGr,
+          diameterIn: sel.bullet.diameterIn,
+        );
+        if (!mounted || match == null) return;
+        setState(() {
+          _useCustomDragCurve = true;
+          _selectedDragCurve = match;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: Theme.of(context)
+              .colorScheme
+              .primaryContainer
+              .withAlpha(120),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.primary.withAlpha(80),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.show_chart,
+              size: 16,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              'Custom drag available — tap to apply',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -2359,6 +2648,23 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
               const SizedBox(height: 16),
               TrajectoryChart(samples: _samples),
             ],
+            const SizedBox(height: 16),
+            // Per-effect contribution breakdown for the DOPE row the
+            // user picks. Default-collapsed because the full solve
+            // already answers the everyday question; this is the
+            // "show me where the numbers come from" deep dive.
+            if (_lastSolvedProjectile != null &&
+                _lastSolvedEnvironment != null &&
+                _lastSolvedShot != null &&
+                _lastSolvedRanges != null)
+              ContributionBreakdown(
+                projectile: _lastSolvedProjectile!,
+                environment: _lastSolvedEnvironment!,
+                shot: _lastSolvedShot!,
+                sampleRangesYards: _lastSolvedRanges!,
+                fullSamples: _samples,
+                unit: _unit,
+              ),
             const SizedBox(height: 16),
             OutlinedButton.icon(
               onPressed: _exportDope,

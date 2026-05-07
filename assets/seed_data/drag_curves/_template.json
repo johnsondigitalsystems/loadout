@@ -1,0 +1,29 @@
+{
+  "_comment": "TEMPLATE FILE — not loaded by the seed loader. The seed loader globs *.json in this directory but the seed_loader filters out filenames starting with an underscore so this file is ignored at runtime. Use it as a reference for the expected shape of a real curve file.",
+  "_schema": {
+    "name": "<string> — human-readable name shown in the UI dropdown",
+    "manufacturer": "<string> — brand (e.g. Berger, Hornady, Sierra)",
+    "line": "<string> — bullet line / model (e.g. Hybrid Target, ELD-Match)",
+    "weight_gr": "<number> — bullet mass in grains",
+    "diameter_in": "<number> — bullet diameter in inches",
+    "source": "<string> — provenance, e.g. 'Berger Bullets CDM file 2024-01-15'",
+    "notes": "<string?, optional>",
+    "datapoints": "<array of {mach, cd}> — sorted ascending by mach"
+  },
+  "_example": {
+    "name": "Berger 6.5mm 140gr Hybrid Target",
+    "manufacturer": "Berger",
+    "line": "Hybrid Target",
+    "weight_gr": 140,
+    "diameter_in": 0.264,
+    "source": "Berger Bullets Custom Drag Model file (date)",
+    "notes": "Doppler-radar Cd table for Berger 6.5mm 140gr Hybrid Target",
+    "datapoints": [
+      {"mach": 0.0, "cd": 0.000},
+      {"mach": 0.5, "cd": 0.000},
+      {"mach": 1.0, "cd": 0.000},
+      {"mach": 2.0, "cd": 0.000},
+      {"mach": 3.0, "cd": 0.000}
+    ]
+  }
+}

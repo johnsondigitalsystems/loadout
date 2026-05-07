@@ -13,13 +13,16 @@
 // Before `runApp()` runs, this file performs the cold-start work the rest of
 // the app assumes is already done. In order: it boots Flutter's binding
 // layer (the bridge between Dart and the underlying native platform), it
-// connects to Firebase (the only Google service we use is Firebase Auth for
-// sign-in), it opens the on-device SQLite database via the `drift` package
-// (a typed Dart ORM that compiles SQL queries from class definitions), it
-// calls `SeedLoader.seedIfNeeded()` to populate the reference catalog from
-// JSON files bundled in `assets/seed_data/` if the database is empty or
-// stale, and finally it initializes RevenueCat (the in-app purchase
-// platform) before launching `LoadOutApp`.
+// connects to Firebase (Auth is the only Firebase product used at runtime;
+// Crashlytics is conditionally activated below based on a SharedPreferences
+// opt-in), it reads the `crashlytics_enabled` opt-in flag and wires the
+// global Flutter / PlatformDispatcher error handlers to Crashlytics ONLY
+// when the user has opted in, it opens the on-device SQLite database via
+// the `drift` package (a typed Dart ORM that compiles SQL queries from
+// class definitions), it calls `SeedLoader.seedIfNeeded()` to populate the
+// reference catalog from JSON files bundled in `assets/seed_data/` if the
+// database is empty or stale, and finally it initializes RevenueCat (the
+// in-app purchase platform) before launching `LoadOutApp`.
 //
 // The `await` keyword you see throughout means "pause here until this async
 // operation finishes." `Future<void>` is Dart's equivalent of "this function
@@ -79,6 +82,10 @@
 // ============================================================================
 // - Initializes Firebase (network handshake to Google's auth servers on
 //   first run; cached on subsequent launches).
+// - Reads the `crashlytics_enabled` SharedPreferences flag and either
+//   activates Firebase Crashlytics (installing FlutterError.onError /
+//   PlatformDispatcher.instance.onError handlers) or explicitly disables
+//   collection. The default is DISABLED — see `_configureCrashlytics`.
 // - Opens / creates the SQLite database file in the app's support
 //   directory on disk.
 // - On first launch (or after a schema upgrade that requires re-seed):
@@ -94,8 +101,10 @@ import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
 import 'data/reticle_seed_defaults.dart';
@@ -105,9 +114,20 @@ import 'firebase_options.dart';
 import 'services/purchases_service.dart';
 import 'services/seed_updater.dart';
 
+/// SharedPreferences key driving the Crashlytics opt-in. Default false
+/// — collection is OFF unless the user flips the
+/// "Send anonymous crash reports" switch in Settings → Diagnostics.
+const String kCrashlyticsEnabledPrefKey = 'crashlytics_enabled';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Crashlytics is opt-in. Read the SharedPreferences flag (default
+  // false → collection OFF) and wire the global error handlers only
+  // when the user has explicitly enabled crash reports. Privacy-first:
+  // a fresh install never sends anything to Firebase Crashlytics.
+  await _configureCrashlytics();
 
   final db = AppDatabase();
   await SeedLoader(db).seedIfNeeded();
@@ -152,4 +172,59 @@ Future<void> main() async {
 bool get _isPurchasesSupported {
   if (kIsWeb) return false;
   return Platform.isIOS || Platform.isAndroid;
+}
+
+/// True when the Crashlytics plugin actually has native bindings on the
+/// current platform. The plugin throws `MissingPluginException` on
+/// macOS / web today; we gate every call so dev / desktop builds keep
+/// working.
+bool get _isCrashlyticsSupported {
+  if (kIsWeb) return false;
+  return Platform.isIOS || Platform.isAndroid;
+}
+
+/// Read the user's opt-in choice and wire global error handlers if
+/// (and ONLY if) collection is enabled. Defaults to OFF — a fresh
+/// install with no preference set is treated as opted-out.
+///
+/// When the flag is false we still call
+/// `setCrashlyticsCollectionEnabled(false)` so the plugin can short
+/// out any data it might otherwise queue from native crashes between
+/// process launches.
+Future<void> _configureCrashlytics() async {
+  if (!_isCrashlyticsSupported) return;
+
+  bool enabled = false;
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    enabled = prefs.getBool(kCrashlyticsEnabledPrefKey) ?? false;
+  } catch (e) {
+    debugPrint('main: could not read Crashlytics opt-in flag: $e');
+    // Fail closed — leave collection OFF.
+    enabled = false;
+  }
+
+  try {
+    await FirebaseCrashlytics.instance
+        .setCrashlyticsCollectionEnabled(enabled);
+  } catch (e) {
+    debugPrint('main: could not set Crashlytics collection state: $e');
+    return;
+  }
+
+  if (!enabled) return;
+
+  // Forward Flutter-thrown errors (build, layout, paint, etc.) to
+  // Crashlytics. The plugin's `recordFlutterError` strips most of the
+  // PII out of the error context — we still rely on
+  // FirebaseCrashlytics's redaction rather than rolling our own.
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
+
+  // Forward errors thrown outside the Flutter framework (async
+  // callbacks, isolates, plugin code). Returning `true` tells the
+  // platform we've handled the error so it isn't escalated.
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
 }

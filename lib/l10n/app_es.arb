@@ -1,0 +1,62 @@
+{
+    "@@locale": "es",
+    "@@x-comment": "Spanish (neutral / Latin American leaning) translation. Technical reloading terms (COAL, vaina, casquillo, fogueo, pistón) follow the convention used by Spanish-speaking IPSC / precision-rifle communities. // TRANSLATOR-REVIEW pass recommended for region-specific terminology (es-MX vs. es-ES vs. es-AR may diverge on 'casquillo' vs. 'vaina').",
+
+    "appTitle": "LoadOut",
+
+    "navRecipes": "Recetas",
+    "navFirearms": "Armas",
+    "navBatches": "Lotes",
+    "navBallistics": "Balística",
+    "navRangeDay": "Día de Tiro",
+    "navSaami": "SAAMI",
+
+    "commonSave": "Guardar",
+    "commonCancel": "Cancelar",
+    "commonDelete": "Eliminar",
+    "commonEdit": "Editar",
+    "commonNext": "Siguiente",
+    "commonBack": "Atrás",
+    "commonSkip": "Omitir",
+
+    "sectionRecipe": "Receta",
+    "sectionFirearm": "Arma",
+    "sectionBallistics": "Balística",
+    "sectionRangeDay": "Día de Tiro",
+
+    "errorRequiredField": "Este campo es obligatorio.",
+    "errorInvalidNumber": "Por favor, introduzca un número válido.",
+    "errorSaveFailed": "Error al guardar. Inténtelo de nuevo.",
+
+    "settingsLanguage": "Idioma",
+    "settingsLanguageSubtitle": "Elija el idioma que usa LoadOut.",
+    "settingsLanguageSystem": "Predeterminado del sistema",
+
+    "onboardingWelcomeTitle": "LoadOut · Recarga de Precisión",
+    "onboardingWelcomeBullet1": "De su cuaderno al teléfono en 60 segundos.",
+    "onboardingWelcomeBullet2": "Sus datos permanecen en su dispositivo a menos que elija respaldarlos — cifrados con una contraseña que solo usted conoce.",
+
+    "onboardingQuickAddTitle": "Escriba una carga como la anotaría",
+    "onboardingQuickAddBullet1": "Quick Add le ofrece los cinco campos que apunta en su cuaderno — y nada más.",
+    "onboardingQuickAddBullet2": "Calibre. Pólvora + carga. Bala + peso. COAL. Listo.",
+    "onboardingQuickAddBullet3": "Guárdelo. Añada detalles más adelante si lo desea.",
+
+    "onboardingImportTitle": "Traiga sus datos existentes",
+    "onboardingImportBullet1": "¿Ya usa Excel o papel?",
+    "onboardingImportBullet2": "Tome una foto de su cuaderno o importe su hoja de cálculo — emparejaremos las columnas.",
+    "onboardingImportSpreadsheetButton": "Importar desde hoja de cálculo",
+    "onboardingImportPhotoButton": "Importar desde foto",
+
+    "onboardingDetailTitle": "Registre cada detalle cuando quiera",
+    "onboardingDetailBullet1": "Más de 60 campos opcionales, campos personalizados, control de lotes, calculadora balística.",
+    "onboardingDetailBullet2": "Ocúltelos en el Modo Principiante hasta que esté listo.",
+    "onboardingDetailBullet3": "Active el interruptor en Ajustes cuando quiera la vista completa de usuario avanzado.",
+
+    "onboardingPrivacyTitle": "Nunca vemos sus datos de recarga",
+    "onboardingPrivacyBullet1": "Todas las cargas, armas y casquillos viven en la base de datos de su teléfono.",
+    "onboardingPrivacyBullet2": "Las copias de seguridad están cifradas de extremo a extremo a su propio iCloud o Google Drive.",
+    "onboardingPrivacyBullet3": "No operamos un backend que almacene sus datos de recarga — por diseño.",
+
+    "onboardingGetStarted": "Empezar",
+    "onboardingAppBarTitle": "Bienvenido a LoadOut"
+}

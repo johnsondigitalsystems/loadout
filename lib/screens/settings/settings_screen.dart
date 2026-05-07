@@ -51,25 +51,31 @@
 //   every row in user-data tables) and `AuthService.signOut()`.
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show PlatformException;
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../database/database.dart';
+import '../../l10n/app_localizations.dart';
+import '../../main.dart' show kCrashlyticsEnabledPrefKey;
 import '../../services/auth_service.dart';
 import '../../services/auto_save_service.dart';
 import '../../services/beginner_mode_service.dart';
 import '../../services/entitlement_notifier.dart';
+import '../../services/locale_service.dart';
 import '../../services/purchases_service.dart';
 import '../../services/support.dart';
 import '../../services/unit_service.dart';
 import '../backup/backup_screen.dart';
 import '../devices/devices_screen.dart';
 import '../disclaimer/disclaimer_screen.dart';
+import '../legal/terms_screen.dart';
 import '../privacy/privacy_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -87,11 +93,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// "LoadOut v…" prefix without a trailing literal.
   String _appVersion = '';
 
+  /// Mirrors the `crashlytics_enabled` SharedPreferences flag. Defaults
+  /// to false (collection OFF) until the disk read returns. The
+  /// SwitchListTile is built against this value so the user sees the
+  /// real state rather than a flicker on first frame.
+  bool _crashlyticsEnabled = false;
+
   @override
   void initState() {
     super.initState();
     // ignore: discarded_futures
     _loadAppVersion();
+    // ignore: discarded_futures
+    _loadCrashlyticsPref();
   }
 
   Future<void> _loadAppVersion() async {
@@ -107,11 +121,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  Future<void> _loadCrashlyticsPref() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (!mounted) return;
+      setState(() {
+        _crashlyticsEnabled =
+            prefs.getBool(kCrashlyticsEnabledPrefKey) ?? false;
+      });
+    } catch (_) {
+      // Fail closed — leave the toggle in its default OFF state.
+    }
+  }
+
+  /// Persist the new opt-in choice and immediately propagate it to the
+  /// running Crashlytics instance so the user doesn't have to relaunch
+  /// to take effect. The global `FlutterError.onError` /
+  /// `PlatformDispatcher.instance.onError` handlers wired in
+  /// `lib/main.dart` are NOT installed mid-session here — that
+  /// requires a relaunch. We do still flip
+  /// `setCrashlyticsCollectionEnabled` so any native-side queueing the
+  /// plugin does is gated immediately.
+  Future<void> _setCrashlyticsEnabled(bool value) async {
+    setState(() => _crashlyticsEnabled = value);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(kCrashlyticsEnabledPrefKey, value);
+    } catch (e) {
+      debugPrint('Settings: could not persist Crashlytics opt-in: $e');
+    }
+    try {
+      await FirebaseCrashlytics.instance
+          .setCrashlyticsCollectionEnabled(value);
+    } catch (e) {
+      debugPrint(
+        'Settings: could not update Crashlytics collection state: $e',
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final service = context.watch<AutoSaveService>();
     final beginner = context.watch<BeginnerModeService>();
     final units = context.watch<UnitService>();
+    final localeService = context.watch<LocaleService>();
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: AbsorbPointer(
@@ -134,6 +189,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // ignore: discarded_futures
                 beginner.setEnabled(v);
               },
+            ),
+            // Language picker. Renders the user's chosen language as
+            // the trailing label and opens a bottom sheet listing every
+            // supported locale + the "System default" option. The
+            // dropdown re-resolves AppLocalizations on selection so
+            // every visible string flips immediately, including this
+            // tile.
+            _LanguageTile(
+              localeService: localeService,
+              title: l.settingsLanguage,
+              subtitle: l.settingsLanguageSubtitle,
+              systemDefaultLabel: l.settingsLanguageSystem,
             ),
             const _SectionHeader('Editing'),
             SwitchListTile(
@@ -158,6 +225,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 'Pair a Bluetooth chronograph or Kestrel weather meter.',
               ),
               onTap: _openDevices,
+            ),
+            const _SectionHeader('Diagnostics'),
+            SwitchListTile(
+              secondary: const Icon(Icons.bug_report_outlined),
+              title: const Text('Send anonymous crash reports'),
+              subtitle: const Text(
+                'Helps us catch bugs faster. No personal data, '
+                'recipes, or firearms info is included.',
+              ),
+              value: _crashlyticsEnabled,
+              onChanged: (v) {
+                // ignore: discarded_futures
+                _setCrashlyticsEnabled(v);
+              },
             ),
             const _SectionHeader('Help & Support'),
             ListTile(
@@ -191,8 +272,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: _openPrivacy,
             ),
             ListTile(
+              leading: const Icon(Icons.description_outlined),
+              title: const Text('Terms of Service'),
+              onTap: _openTerms,
+            ),
+            ListTile(
               leading: const Icon(Icons.gavel_outlined),
-              title: const Text('Terms & Safety Disclaimer'),
+              title: const Text('Re-read safety disclaimer'),
+              subtitle: const Text(
+                'Reloading is dangerous. Read the warning again any time.',
+              ),
               onTap: _openDisclaimer,
             ),
             ListTile(
@@ -276,6 +365,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _openPrivacy() {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const PrivacyScreen()),
+    );
+  }
+
+  void _openTerms() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const TermsScreen()),
     );
   }
 
@@ -576,4 +671,127 @@ class _UnitCategoryRow extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Settings list-tile that opens a bottom-sheet picker for the UI
+/// language. The tile's trailing label reflects the current selection
+/// (or "System default" when no override is set). Tapping it opens
+/// `_LanguagePickerSheet` which lists every supported locale plus the
+/// system-default option, each labeled in its OWN language so a user
+/// who can't read the current UI can still find their language.
+class _LanguageTile extends StatelessWidget {
+  const _LanguageTile({
+    required this.localeService,
+    required this.title,
+    required this.subtitle,
+    required this.systemDefaultLabel,
+  });
+
+  final LocaleService localeService;
+  final String title;
+  final String subtitle;
+  final String systemDefaultLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final code = localeService.languageCode;
+    final currentLabel = code == null
+        ? systemDefaultLabel
+        : kLanguageDisplayNames[code] ?? code;
+    return ListTile(
+      leading: const Icon(Icons.language_outlined),
+      title: Text(title),
+      subtitle: Text(subtitle),
+      trailing: Text(
+        currentLabel,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+      ),
+      onTap: () => _openPicker(context),
+    );
+  }
+
+  Future<void> _openPicker(BuildContext context) async {
+    final selected = await showModalBottomSheet<_LanguagePickerResult>(
+      context: context,
+      builder: (ctx) => _LanguagePickerSheet(
+        currentCode: localeService.languageCode,
+        systemDefaultLabel: systemDefaultLabel,
+      ),
+    );
+    if (selected == null) return;
+    // ignore: discarded_futures
+    localeService.setLanguageCode(selected.code);
+  }
+}
+
+/// Bottom-sheet picker — one row per supported locale, plus "System
+/// default" at the top. Returning `null` means the user dismissed
+/// without picking; otherwise a `_LanguagePickerResult` with the
+/// chosen language tag (or `null` for the system-default row).
+class _LanguagePickerSheet extends StatelessWidget {
+  const _LanguagePickerSheet({
+    required this.currentCode,
+    required this.systemDefaultLabel,
+  });
+
+  final String? currentCode;
+  final String systemDefaultLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    // Each row is a plain ListTile with a manual check icon for the
+    // currently-selected entry. Avoids the `RadioListTile.groupValue` /
+    // `onChanged` deprecation introduced in Flutter 3.32+ (which wants
+    // a `RadioGroup` ancestor) without the boilerplate of wrapping the
+    // whole sheet in one.
+    final rows = <_LanguagePickerRowData>[
+      _LanguagePickerRowData(code: null, label: systemDefaultLabel),
+      for (final code in kSupportedLanguageCodes)
+        _LanguagePickerRowData(
+          code: code,
+          label: kLanguageDisplayNames[code] ?? code,
+        ),
+    ];
+    return SafeArea(
+      child: ListView(
+        shrinkWrap: true,
+        children: [
+          for (final row in rows)
+            ListTile(
+              leading: Icon(
+                row.code == currentCode
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_unchecked,
+                color: row.code == currentCode
+                    ? Theme.of(context).colorScheme.primary
+                    : null,
+              ),
+              title: Text(row.label),
+              onTap: () => Navigator.of(context).pop(
+                _LanguagePickerResult(row.code),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Row metadata for a single entry in [_LanguagePickerSheet]. `code:
+/// null` is the "System default" row.
+class _LanguagePickerRowData {
+  const _LanguagePickerRowData({required this.code, required this.label});
+  final String? code;
+  final String label;
+}
+
+/// Tiny result wrapper so we can distinguish "the user picked the
+/// system-default row" (returns `_LanguagePickerResult(null)`) from
+/// "the user dismissed the sheet" (returns `null` from
+/// showModalBottomSheet).
+class _LanguagePickerResult {
+  const _LanguagePickerResult(this.code);
+  final String? code;
 }

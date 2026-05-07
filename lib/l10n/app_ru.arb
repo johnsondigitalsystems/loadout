@@ -1,0 +1,62 @@
+{
+    "@@locale": "ru",
+    "@@x-comment": "Russian translation. Technical reloading terms follow the convention used by Russian-speaking IPSC and precision-rifle communities (порох / pulver, пуля / bullet, гильза / case, капсюль / primer). 'COAL' is left as a Latin abbreviation since the Russian equivalent ОДП (общая длина патрона) is less recognized by reloaders. // TRANSLATOR-REVIEW pass recommended.",
+
+    "appTitle": "LoadOut",
+
+    "navRecipes": "Рецепты",
+    "navFirearms": "Оружие",
+    "navBatches": "Партии",
+    "navBallistics": "Баллистика",
+    "navRangeDay": "Стрельбище",
+    "navSaami": "SAAMI",
+
+    "commonSave": "Сохранить",
+    "commonCancel": "Отмена",
+    "commonDelete": "Удалить",
+    "commonEdit": "Изменить",
+    "commonNext": "Далее",
+    "commonBack": "Назад",
+    "commonSkip": "Пропустить",
+
+    "sectionRecipe": "Рецепт",
+    "sectionFirearm": "Оружие",
+    "sectionBallistics": "Баллистика",
+    "sectionRangeDay": "Стрельбище",
+
+    "errorRequiredField": "Это поле обязательно для заполнения.",
+    "errorInvalidNumber": "Пожалуйста, введите корректное число.",
+    "errorSaveFailed": "Не удалось сохранить. Повторите попытку.",
+
+    "settingsLanguage": "Язык",
+    "settingsLanguageSubtitle": "Выберите язык, используемый LoadOut.",
+    "settingsLanguageSystem": "Системный по умолчанию",
+
+    "onboardingWelcomeTitle": "LoadOut · Точное снаряжение",
+    "onboardingWelcomeBullet1": "Из вашего блокнота в телефон за 60 секунд.",
+    "onboardingWelcomeBullet2": "Ваши данные остаются на устройстве, пока вы сами не решите сделать резервную копию — зашифрованную паролем, известным только вам.",
+
+    "onboardingQuickAddTitle": "Записывайте патрон так, как вы бы его записали",
+    "onboardingQuickAddBullet1": "Quick Add даёт вам те пять полей, которые вы ведёте в блокноте, — и ничего больше.",
+    "onboardingQuickAddBullet2": "Калибр. Порох + навеска. Пуля + вес. COAL. Готово.",
+    "onboardingQuickAddBullet3": "Сохраните. Добавьте детали позже, если захотите.",
+
+    "onboardingImportTitle": "Перенесите имеющиеся данные",
+    "onboardingImportBullet1": "Уже используете Excel или бумагу?",
+    "onboardingImportBullet2": "Сфотографируйте свой блокнот или импортируйте таблицу — мы сопоставим колонки.",
+    "onboardingImportSpreadsheetButton": "Импорт из таблицы",
+    "onboardingImportPhotoButton": "Импорт из фото",
+
+    "onboardingDetailTitle": "Фиксируйте каждую деталь, когда захотите",
+    "onboardingDetailBullet1": "Более 60 необязательных полей, пользовательские поля, учёт партий, баллистический калькулятор.",
+    "onboardingDetailBullet2": "Скрыты в режиме новичка, пока вы не будете готовы.",
+    "onboardingDetailBullet3": "Включите переключатель в настройках, когда захотите полный режим опытного пользователя.",
+
+    "onboardingPrivacyTitle": "Мы никогда не видим ваши данные о снаряжении",
+    "onboardingPrivacyBullet1": "Все патроны, оружие и гильзы хранятся в базе данных вашего телефона.",
+    "onboardingPrivacyBullet2": "Резервные копии сквозно зашифрованы и сохраняются в вашем iCloud или Google Drive.",
+    "onboardingPrivacyBullet3": "Мы не запускаем сервер, который хранит ваши данные о снаряжении — намеренно.",
+
+    "onboardingGetStarted": "Начать",
+    "onboardingAppBarTitle": "Добро пожаловать в LoadOut"
+}

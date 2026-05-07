@@ -1,0 +1,24 @@
+# Configuration for `flutter gen-l10n`. Read by the Flutter build when
+# `flutter:` `generate: true` is set in `pubspec.yaml`. Tells the
+# generator where the ARB source files live, which one is the English
+# template, and what to call the generated AppLocalizations Dart file.
+#
+# - `arb-dir`                  Folder containing the per-locale ARB files
+#                              (`app_en.arb`, `app_de.arb`, etc.). All
+#                              non-template ARBs are translated against
+#                              the keys defined in the template.
+# - `template-arb-file`        The English source-of-truth ARB. Adding a
+#                              new string starts here. Other locales
+#                              "should" mirror this file's keys; missing
+#                              keys fall back to English at runtime.
+# - `output-localization-file` Name of the generated Dart facade. Imported
+#                              from app code as
+#                              `package:flutter_gen/gen_l10n/app_localizations.dart`.
+#
+# After editing any ARB file, just run `flutter pub get` (or `flutter
+# run`) — the generator fires automatically. There is no `build_runner`
+# step. The generated code lands in `.dart_tool/flutter_gen/gen_l10n/`
+# and is git-ignored.
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-localization-file: app_localizations.dart

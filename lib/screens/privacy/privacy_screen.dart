@@ -3,72 +3,63 @@
 // ============================================================================
 // WHAT THIS FILE DOES
 // ============================================================================
-// Renders the in-app privacy policy as a scrollable text screen. Reachable
-// from the privacy dialog on the home screen and from the
-// "Local-First & Privacy" topic CTA on `HowItWorksScreen`. The screen has
-// no input or interactive state — just headings, paragraphs, bullet
-// lists, and one "Effective date" line.
+// Renders the in-app privacy policy as a scrollable text screen. Mirrors
+// the hosted policy at `public/legal/privacy.html` — keep them in sync. The
+// screen has no input or interactive state — just headings, paragraphs,
+// and bullet lists.
 //
-// The policy was last revised on 2026-05-07 to handle the introduction of
-// optional cloud backup without weakening the headline "we don't track
-// you" promise. The structure of the page is:
+// The policy was last revised on 2026-05-07 to add explicit coverage of
+// RevenueCat (in-app purchase verification), the optional opt-in
+// Crashlytics future surface, the four device permissions LoadOut asks
+// for (camera, photos, location-when-in-use, Bluetooth), an enumerated
+// data-retention section, and an enumerated GDPR/CCPA rights section. A
+// "Draft — review with counsel before publication" banner sits at the
+// top so anyone reading this in a build before legal review knows what
+// they're looking at. Remove the banner once counsel signs off.
 //
-//   - Title + effective date
+// Page sections, in order:
+//
+//   - Title + effective date + draft banner
 //   - "What this app is" — one paragraph orienting the reader
-//   - "The short version" — four-bullet TL;DR
-//   - "Data we store on your device" — the local SQLite DB
-//   - "Data we send to a server" — Firebase Auth ONLY (email, OAuth tokens,
-//     hashed password if email/password sign-in)
-//   - "Backups & exports" — two subsections:
-//       * Local export (free) — JSON file written to Files / Downloads
-//       * Cloud backup (Pro, opt-in) — passphrase-encrypted on-device
-//         BEFORE upload, written to the user's OWN iCloud Drive or Google
-//         Drive. LoadOut never sees the encrypted blob.
-//   - "What we don't do" — explicit list of negatives (no analytics, no
-//     ads, no third-party sharing, etc.)
-//   - "Sign-in providers" — links to each provider's policy
-//   - "Children" — disclaim minors
-//   - "Your rights" — delete, export, GDPR/CCPA contact path
-//   - "Changes to this policy" — re-prompt on material changes
-//   - "Contact" — Johnson Digital Systems support address
+//   - "The short version" — TL;DR bullets
+//   - "What we collect"
+//       * Account & authentication (Firebase Authentication)
+//       * In-app purchases (RevenueCat)
+//       * Diagnostics (optional, opt-in — future release)
+//       * Data we download (one-way catalog updates)
+//   - "What we don't collect" — explicit negatives
+//   - "Device permissions" — when the app prompts for each
+//   - "Backups & exports" — local export (free) + opt-in cloud backup (Pro)
+//   - "Sub-processors and third parties"
+//   - "How long we keep data"
+//   - "How to delete your data" — Settings → Delete my data, account deletion
+//   - "Your privacy rights" — GDPR / CCPA / other US states
+//   - "Children" — 18+
+//   - "International data transfers" — SCCs etc.
+//   - "Security"
+//   - "Changes to this policy"
+//   - "Contact" — support@johnsondigital.com
 //
-// `_BulletList` and `_NumberedList` are file-private helpers that lay
-// out a list of strings as `•` or `1.`-prefixed rows, with text wrapping
-// correctly under the marker.
+// `_BulletList` lays out a list of strings as `•`-prefixed rows so long
+// items wrap correctly under the marker.
 //
 // ============================================================================
 // WHY IT EXISTS IN THE ARCHITECTURE
 // ============================================================================
 // LoadOut's marketing positioning rests on the claim that user reloading
 // data never leaves the device unless the user opts in to cloud backup.
-// That promise has to be reinforced in three places — the App Store /
-// Play Store privacy disclosures, the `PRIVACY_POLICY.md` file in the
-// repo root, and this screen — and the three must stay aligned. This
-// file is the user-facing surface of that policy.
-//
-// Leading with "we don't run a backend that stores your reloading data"
-// sets the right mental frame before the cloud-backup section explains
-// the opt-in flow. The point is to make the cloud-backup-supports-iCloud-
-// /-Drive paragraph land as "convenience for the user without weakening
-// the privacy posture" rather than as "wait, so they DO have my data?"
-//
-// ============================================================================
-// WHY THIS IS HARDER THAN IT LOOKS
-// ============================================================================
-// The hard part isn't the code — the code is a pile of `Text`s in a
-// `ListView`. The hard part is keeping the legal copy synchronized
-// across this file, `PRIVACY_POLICY.md`, and the platform-specific
-// privacy disclosures in App Store Connect / Play Console. Bumping the
-// `_effectiveDate` constant signals a meaningful policy change; the
-// in-app re-prompt of the disclaimer dialog is what actually surfaces
-// it to existing users.
+// That promise has to be reinforced consistently in the App Store /
+// Play Store privacy disclosures, the hosted privacy page, and this
+// screen. This file is the user-facing surface of that policy and is
+// reachable from the home privacy dialog and from Settings.
 //
 // ============================================================================
 // WHO CONSUMES THIS FILE
 // ============================================================================
-// - `lib/screens/home/home_screen.dart` — the privacy dialog's "Read
-//   the full policy" link pushes this screen.
-// - `lib/screens/how_it_works/how_it_works_screen.dart` — the
+// - lib/screens/home/home_screen.dart — the privacy dialog's "Read the
+//   full policy" link pushes this screen.
+// - lib/screens/settings/settings_screen.dart — "Privacy Policy" tile.
+// - lib/screens/how_it_works/how_it_works_screen.dart — the
 //   "Local-First & Privacy" topic CTA pushes this screen.
 //
 // ============================================================================
@@ -80,7 +71,8 @@
 import 'package:flutter/material.dart';
 
 /// Full-text privacy policy. Reachable from the privacy dialog on the home
-/// screen. Mirrors `PRIVACY_POLICY.md` in the repo root — keep them in sync.
+/// screen and Settings. Mirrors `public/legal/privacy.html` — keep them
+/// in sync.
 class PrivacyScreen extends StatelessWidget {
   const PrivacyScreen({super.key});
 
@@ -112,15 +104,17 @@ class PrivacyScreen extends StatelessWidget {
             'Effective date: $_effectiveDate',
             style: mutedBodyStyle,
           ),
+          const SizedBox(height: 16),
+          _DraftBanner(theme: theme),
           const SizedBox(height: 24),
 
           Text('What this app is', style: headingStyle),
           const SizedBox(height: 8),
           Text(
-            'LoadOut is a reloading reference and tracking app. It helps you '
-            'record your recipes, firearms, and components. Reference '
-            'catalogs (cartridges, powders, bullets, primers, brass, '
-            'firearms, parts) ship with the app for browsing.',
+            'LoadOut is a local-first reloading reference and tracking app '
+            'for iOS and Android. It helps you record your loads, firearms, '
+            'and components, and read SAAMI cartridge specifications. '
+            'Reference catalogs ship with the app for browsing offline.',
             style: bodyStyle,
           ),
           const SizedBox(height: 24),
@@ -130,43 +124,33 @@ class PrivacyScreen extends StatelessWidget {
           _BulletList(
             style: bodyStyle,
             items: const [
-              'We don\'t track you. No analytics. No advertising. No '
-                  'third-party data sharing.',
-              'We don\'t run a backend that stores your reloading data. '
-                  'Your recipes, firearms, custom components, and inventory '
-                  'live on your device.',
-              'The only thing we send to a server is what\'s needed for '
-                  'sign-in (your email, an OAuth token, etc.) — and that '
-                  'goes to Firebase Authentication, not to us.',
+              'We don\'t track you. No analytics. No advertising. No selling '
+                  'of your data.',
+              'Your reloading data — loads, firearms, components, batches, '
+                  'brass lots, ballistic profiles — lives on your device. We '
+                  'don\'t run a server that stores it.',
+              'The only thing we send to our service providers is what\'s '
+                  'needed for sign-in (email, OAuth tokens) and for '
+                  'processing in-app purchases (anonymous purchase records).',
               'If you opt in to cloud backup (a Pro feature), your data is '
                   'encrypted on your device with a passphrase only you know, '
-                  'and uploaded to your own iCloud Drive or Google Drive. '
-                  'LoadOut never receives the encrypted blob.',
+                  'and uploaded to your own iCloud Drive or Google Drive. We '
+                  'never receive the encrypted blob.',
             ],
           ),
           const SizedBox(height: 24),
 
-          Text('Data we store on your device', style: headingStyle),
-          const SizedBox(height: 8),
-          _BulletList(
-            style: bodyStyle,
-            items: const [
-              'Recipes, custom components you add, firearms you\'ve added, '
-                  'and shots-fired counts.',
-              'This data lives in an on-device SQLite database (in your '
-                  'app\'s private storage).',
-              'The only ways this data is removed are if you delete the app, '
-                  'reset your device, clear app storage, or use the in-app '
-                  'delete actions.',
-            ],
-          ),
-          const SizedBox(height: 24),
+          Text('What we collect', style: headingStyle),
+          const SizedBox(height: 12),
 
-          Text('Data we send to a server', style: headingStyle),
+          Text(
+            'Account & authentication (Firebase Authentication)',
+            style: subheadingStyle,
+          ),
           const SizedBox(height: 8),
           Text(
-            'We use Firebase Authentication (Google Cloud) for sign-in. The '
-            'following data is processed by Firebase Authentication on '
+            'We use Firebase Authentication (Google Cloud) to identify you '
+            'and let you sign in across devices. Firebase stores, on '
             'Google\'s servers:',
             style: bodyStyle,
           ),
@@ -175,38 +159,155 @@ class PrivacyScreen extends StatelessWidget {
             style: bodyStyle,
             items: const [
               'Your email address.',
-              'A password hash (if you use email/password sign-in) — stored '
-                  'by Firebase, not by us; we never see the plaintext.',
+              'A Firebase-assigned anonymous user ID (UID).',
+              'A password hash, if you use email/password sign-in. We never '
+                  'see the plaintext.',
               'OAuth tokens for any third-party providers you use (Google, '
                   'Apple, Microsoft, Yahoo).',
-              'Firebase\'s own technical metadata (anonymous user IDs, '
-                  'timestamps of sign-ins).',
+              'Sign-in metadata (timestamps, last sign-in IP) maintained by '
+                  'Firebase.',
             ],
           ),
           const SizedBox(height: 8),
           Text(
-            'We do not see, store, or transmit any of your reloading data — '
-            'recipes, firearms, components, or inventory. LoadOut does not '
-            'operate any backend that receives or stores reloading data.',
+            'We use this data only to authenticate you, not for marketing or '
+            'analytics.',
+            style: bodyStyle,
+          ),
+          const SizedBox(height: 16),
+
+          Text(
+            'In-app purchases (RevenueCat)',
+            style: subheadingStyle,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'If you buy LoadOut Pro, the App Store or Google Play processes '
+            'the transaction. We use RevenueCat to verify your purchase and '
+            'unlock Pro features across devices. RevenueCat receives:',
+            style: bodyStyle,
+          ),
+          const SizedBox(height: 8),
+          _BulletList(
+            style: bodyStyle,
+            items: const [
+              'Your Firebase UID (so your purchase follows your account).',
+              'The store-level transaction record (product ID, purchase '
+                  'date, expiration if applicable).',
+              'Anonymous device and platform metadata RevenueCat needs to '
+                  'validate receipts.',
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'RevenueCat does not receive your email address or any '
+            'reloading data.',
+            style: bodyStyle,
+          ),
+          const SizedBox(height: 16),
+
+          Text(
+            'Diagnostics (Firebase Crashlytics — opt-in)',
+            style: subheadingStyle,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'LoadOut includes Firebase Crashlytics to record crash and '
+            'error reports. Collection is off by default. You can turn '
+            'it on at any time from Settings → Send crash reports.',
+            style: bodyStyle,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'When you opt in, crash reports include:',
+            style: bodyStyle,
+          ),
+          const SizedBox(height: 8),
+          _BulletList(
+            style: bodyStyle,
+            items: const [
+              'Technical metadata Crashlytics needs to diagnose the '
+                  'crash (device model, OS version, app version, stack '
+                  'traces, Firebase UID).',
+              'Non-fatal errors the app catches and reports for '
+                  'diagnostic purposes.',
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Crash reports do not include your reloading data or any '
+            'user-typed text. If you turn the toggle off again, '
+            'collection stops immediately.',
+            style: bodyStyle,
+          ),
+          const SizedBox(height: 16),
+
+          Text(
+            'Data we download (read-only catalog updates)',
+            style: subheadingStyle,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'When the app starts, it makes a one-way read request to '
+            'Firebase Storage to check whether the bundled reference '
+            'catalog has been corrected or expanded since the version you '
+            'installed. If a newer catalog is available, we download and '
+            'cache it on your device. We do not upload anything about you, '
+            'your device, or your reloading data when this check runs. The '
+            'catalog files are identical for every user.',
             style: bodyStyle,
           ),
           const SizedBox(height: 24),
 
-          Text('Data we download from a server', style: headingStyle),
+          Text('What we don\'t collect', style: headingStyle),
+          const SizedBox(height: 8),
+          _BulletList(
+            style: bodyStyle,
+            items: const [
+              'Reloading data. Your loads, firearms, custom components, '
+                  'batches, brass lots, ballistic profiles, and shots-fired '
+                  'counts stay in the on-device SQLite database.',
+              'Photos. The photo-import feature reads images on-device so '
+                  'you can scan handwritten reloading notes. Images and '
+                  'parsed text never leave your device.',
+              'Location. We use your location only when you tap "Get '
+                  'current weather" inside the app. Your coordinates are '
+                  'sent to the weather provider for that single request '
+                  'and are not stored by us.',
+              'Microphone. The app does not request microphone access.',
+              'Bluetooth identifiers. Bluetooth is used only when you pair '
+                  'a chronograph (Garmin Xero) or weather meter (Kestrel). '
+                  'The pairing and the data they send are local to your '
+                  'device.',
+              'Contacts, calendar, health, advertising IDs, browsing '
+                  'history. The app does not request any of these.',
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          Text('Device permissions', style: headingStyle),
           const SizedBox(height: 8),
           Text(
-            'When the app starts, it makes a one-way read request to Firebase '
-            'Storage to check whether the bundled reference catalog '
-            '(cartridges, powders, bullets, primers, brass, firearms, parts) '
-            'has been corrected or expanded since the version of the app you '
-            'installed. If a newer version is available, the updated catalog '
-            'file is downloaded and cached on your device. This is a '
-            'download-only, server-to-device flow — we do not upload anything '
-            'about you, your device, or your reloading data when this check '
-            'runs. The catalog files are the same for every user and contain '
-            'no personal information. The check happens in the background '
-            'and is skipped silently if you are offline.',
+            'LoadOut asks for the following device permissions only when '
+            'you use the relevant feature. You can decline any of them and '
+            'continue using the rest of the app.',
             style: bodyStyle,
+          ),
+          const SizedBox(height: 8),
+          _BulletList(
+            style: bodyStyle,
+            items: const [
+              'Camera — to photograph handwritten reloading notes for the '
+                  'photo-import feature. The image stays on-device.',
+              'Photo library — to choose an existing photo of reloading '
+                  'notes to import. The image stays on-device.',
+              'Location (when in use) — to fetch current weather for '
+                  'ballistics calculations when you tap "Get current '
+                  'weather". Your coordinates are sent only to the weather '
+                  'provider for that request.',
+              'Bluetooth — to pair with a chronograph or weather meter. '
+                  'The connection is local to your device.',
+            ],
           ),
           const SizedBox(height: 24),
 
@@ -214,8 +315,7 @@ class PrivacyScreen extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             'You have two ways to get your data off your device. Both are '
-            'designed so that LoadOut never sees the contents of your '
-            'reloading data.',
+            'designed so we never see the contents.',
             style: bodyStyle,
           ),
           const SizedBox(height: 16),
@@ -224,149 +324,241 @@ class PrivacyScreen extends StatelessWidget {
           Text(
             'You can export your full reloading database to a JSON file '
             'using the in-app export action. The file is written to your '
-            'device\'s Files / Downloads area. From there you control where '
-            'it goes — you can keep it locally, AirDrop it, email it, or '
-            'copy it to any storage you choose.',
+            'device\'s Files / Downloads area and from there you control '
+            'where it goes. Our infrastructure is not involved.',
             style: bodyStyle,
-          ),
-          const SizedBox(height: 8),
-          _BulletList(
-            style: bodyStyle,
-            items: const [
-              'The export is a plain JSON file. You are responsible for '
-                  'protecting it if you store it somewhere unencrypted.',
-              'LoadOut servers are not involved. The file never touches our '
-                  'infrastructure.',
-            ],
           ),
           const SizedBox(height: 16),
-          Text('Cloud backup (Pro, opt-in)', style: subheadingStyle),
+          Text(
+            'End-to-end encrypted cloud backup (Pro, opt-in)',
+            style: subheadingStyle,
+          ),
           const SizedBox(height: 8),
           Text(
-            'If you have LoadOut Pro and choose to enable cloud backup, the '
-            'app will:',
+            'If you have LoadOut Pro and you turn on cloud backup, the app:',
             style: bodyStyle,
           ),
-          const SizedBox(height: 8),
-          _NumberedList(
-            style: bodyStyle,
-            items: const [
-              'Ask you to set a passphrase. This passphrase is used to '
-                  'encrypt your backup on your device, before any upload '
-                  'happens.',
-              'Upload the encrypted backup to your own cloud account — '
-                  'iCloud Drive on iOS, Google Drive on Android (or iOS, if '
-                  'you prefer). You sign in to your cloud provider '
-                  'directly; LoadOut does not handle your cloud credentials.',
-              'Store nothing on LoadOut servers. There is no LoadOut backend '
-                  'involved in cloud backup. The encrypted blob is between '
-                  'your device and your cloud provider.',
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text('What this means in practice:', style: bodyStyle),
           const SizedBox(height: 8),
           _BulletList(
             style: bodyStyle,
             items: const [
-              'Your passphrase never leaves your device. We can\'t read '
-                  'your backup, and neither can your cloud provider.',
-              'We can\'t recover a lost passphrase. If you forget it, the '
-                  'backup is unrecoverable. Write it down somewhere safe.',
-              'Your cloud provider\'s privacy policy applies to the '
-                  'encrypted blob while it\'s stored in your iCloud Drive '
-                  'or Google Drive. Apple and Google see an opaque '
-                  'encrypted file; they do not see your reloading data.',
-              'Cloud backup is opt-in. If you don\'t enable it, nothing '
-                  'about your reloading data leaves your device.',
+              'Asks you to set a passphrase. Your data is encrypted on the '
+                  'device, with that passphrase, before any upload.',
+              'Uploads the encrypted backup to your own iCloud Drive (iOS) '
+                  'or Google Drive (Android, or iOS if you prefer). You '
+                  'sign in to your cloud provider directly — we never '
+                  'handle your cloud credentials.',
+              'Stores nothing on LoadOut servers. There is no LoadOut '
+                  'backend in this flow.',
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'We can\'t read your backup, and we can\'t recover a lost '
+            'passphrase. If you forget it, the backup is unrecoverable. '
+            'Write the passphrase down somewhere safe.',
+            style: bodyStyle,
+          ),
+          const SizedBox(height: 24),
+
+          Text('Sub-processors and third parties', style: headingStyle),
+          const SizedBox(height: 8),
+          Text(
+            'We use the following third-party services to operate LoadOut. '
+            'Each has its own privacy policy that governs how they handle '
+            'the data we send them.',
+            style: bodyStyle,
+          ),
+          const SizedBox(height: 8),
+          _BulletList(
+            style: bodyStyle,
+            items: const [
+              'Google Cloud / Firebase (Authentication, Hosting, Storage '
+                  'for catalog updates) — '
+                  'https://firebase.google.com/support/privacy',
+              'RevenueCat (in-app purchase verification and entitlement) — '
+                  'https://www.revenuecat.com/privacy',
+              'Apple App Store and Google Play for purchase processing — '
+                  'https://www.apple.com/legal/privacy/ and '
+                  'https://play.google.com/about/play-terms/',
+              'Sign-in providers if you use them: Google, Apple, '
+                  'Microsoft, Yahoo. Each has its own privacy policy.',
             ],
           ),
           const SizedBox(height: 24),
 
-          Text('What we don\'t do', style: headingStyle),
+          Text('How long we keep data', style: headingStyle),
           const SizedBox(height: 8),
           _BulletList(
             style: bodyStyle,
             items: const [
-              'No analytics. We don\'t track your in-app behavior.',
-              'No advertising. The app shows no ads.',
-              'No third-party data sharing or selling.',
-              'No location collection.',
-              'No microphone or camera access (the app doesn\'t request '
-                  'these).',
-              'No contacts, photos, or other personal device data is '
-                  'collected.',
-              'No LoadOut-operated cloud storage of your reloading data — '
-                  'ever.',
+              'Reloading data: we don\'t have it — it lives on your device '
+                  'for as long as you keep it there.',
+              'Account record (Firebase Authentication): kept until you '
+                  'ask us to delete it, or until the account is inactive '
+                  'for an extended period.',
+              'Purchase records (RevenueCat / the stores): kept as long '
+                  'as the subscription or lifetime entitlement is active '
+                  'and as required by Apple, Google, and applicable tax '
+                  'law.',
             ],
           ),
           const SizedBox(height: 24),
 
-          Text('Sign-in providers', style: headingStyle),
+          Text('How to delete your data', style: headingStyle),
+          const SizedBox(height: 8),
+          _BulletList(
+            style: bodyStyle,
+            items: const [
+              'On-device data: open Settings → Delete my data in the app '
+                  'to wipe every load, firearm, batch, brass lot, and '
+                  'ballistic profile from your device. This action is '
+                  'final.',
+              'Account: email support@johnsondigital.com from the email '
+                  'tied to your account and ask us to delete the Firebase '
+                  'Authentication record. We will also ask RevenueCat to '
+                  'delete the linked entitlement record.',
+              'Cloud backup: delete the encrypted backup file from your '
+                  'iCloud Drive or Google Drive. We can\'t see or delete '
+                  'it for you.',
+              'Uninstalling the app removes the local database and clears '
+                  'any cached catalog updates.',
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          Text('Your privacy rights', style: headingStyle),
           const SizedBox(height: 8),
           Text(
-            'If you sign in with a third-party provider (Google, Apple, '
-            'Microsoft, Yahoo), that provider\'s privacy policy also '
-            'applies to your relationship with them. We only request the '
-            'minimum scope needed to identify you (typically email and '
-            'name).',
+            'Depending on where you live, you may have additional rights '
+            'over your personal information.',
             style: bodyStyle,
           ),
           const SizedBox(height: 8),
           _BulletList(
             style: bodyStyle,
             items: const [
-              'Google: https://policies.google.com/privacy',
-              'Apple: https://www.apple.com/legal/privacy/',
-              'Microsoft: https://privacy.microsoft.com/privacystatement',
-              'Yahoo: https://legal.yahoo.com/us/en/yahoo/privacy/',
+              'European Economic Area / United Kingdom (GDPR / UK GDPR): '
+                  'you have the right to access, correct, delete, '
+                  'restrict, port, and object to processing of your '
+                  'personal data. The lawful bases we rely on are '
+                  'contract, consent (for any optional telemetry we add '
+                  'later), and legitimate interest (for security and '
+                  'abuse prevention). You may also lodge a complaint with '
+                  'your supervisory authority.',
+              'California (CCPA / CPRA): we do not sell or share your '
+                  'personal information for cross-context behavioral '
+                  'advertising. You have the right to know, delete, '
+                  'correct, and limit use of sensitive personal '
+                  'information.',
+              'Other US states (CO, CT, VA, UT, etc.): we honor analogous '
+                  'consumer rights to access, delete, correct, and opt '
+                  'out, where applicable.',
             ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'To exercise any right, email support@johnsondigital.com from '
+            'the address tied to your account. We will respond within the '
+            'legally required window for your jurisdiction.',
+            style: bodyStyle,
           ),
           const SizedBox(height: 24),
 
           Text('Children', style: headingStyle),
           const SizedBox(height: 8),
           Text(
-            'LoadOut is not directed at children under 13 (or 17, given '
-            'the subject matter). We do not knowingly collect data from '
-            'minors. Reloading is for adults — see the app\'s disclaimer.',
+            'LoadOut is not directed at children. We do not knowingly '
+            'collect personal information from anyone under 18. Reloading '
+            'is for adults only — see the in-app safety disclaimer.',
             style: bodyStyle,
           ),
           const SizedBox(height: 24),
 
-          Text('Your rights', style: headingStyle),
+          Text('International data transfers', style: headingStyle),
           const SizedBox(height: 8),
-          _BulletList(
+          Text(
+            'Firebase Authentication and RevenueCat may process your data '
+            'in the United States and other countries. Where required, we '
+            'rely on Standard Contractual Clauses or equivalent mechanisms '
+            'to safeguard cross-border transfers.',
             style: bodyStyle,
-            items: const [
-              'Delete your account: sign out and delete the app. To remove '
-                  'your auth record from Firebase, request account deletion '
-                  'via the contact below.',
-              'Export your data: use the in-app local export to get a JSON '
-                  'copy of your reloading database. This is free for all '
-                  'users.',
-              'EU/UK/CA residents (GDPR / UK GDPR / CCPA): you have rights '
-                  'to access, correct, delete, and port your data. Contact '
-                  'us using the address below.',
-            ],
+          ),
+          const SizedBox(height: 24),
+
+          Text('Security', style: headingStyle),
+          const SizedBox(height: 8),
+          Text(
+            'We use TLS for any data in transit between the app and our '
+            'service providers. Cloud backups are encrypted on your device '
+            'with your passphrase before upload, using authenticated '
+            'encryption. We do not, however, guarantee absolute security — '
+            'no system is invulnerable. If we discover a breach affecting '
+            'your personal information, we will notify you as required by '
+            'law.',
+            style: bodyStyle,
           ),
           const SizedBox(height: 24),
 
           Text('Changes to this policy', style: headingStyle),
           const SizedBox(height: 8),
           Text(
-            'We will update the effective date and notify you in-app (via '
-            'a re-prompt of the disclaimer / privacy dialog) if we make '
-            'material changes.',
+            'If we make material changes, we will update the effective '
+            'date and surface the change in-app (typically via a re-prompt '
+            'of the disclaimer / privacy dialog).',
             style: bodyStyle,
           ),
           const SizedBox(height: 24),
 
           Text('Contact', style: headingStyle),
           const SizedBox(height: 8),
-          Text('Johnson Digital Systems', style: bodyStyle),
-          Text('info@johnsondigitalsystems.com', style: bodyStyle),
+          Text('Johnson Digital Systems — LoadOut', style: bodyStyle),
+          Text('support@johnsondigital.com', style: bodyStyle),
           const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+}
+
+/// Yellow draft banner shown until counsel has approved the policy.
+/// Remove this widget when the legal review is complete.
+class _DraftBanner extends StatelessWidget {
+  const _DraftBanner({required this.theme});
+
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final bg = isDark
+        ? scheme.tertiaryContainer.withValues(alpha: 0.4)
+        : const Color(0xFFFEF3C7);
+    final fg = isDark ? scheme.onTertiaryContainer : const Color(0xFF78350F);
+    final border = isDark ? scheme.tertiary : const Color(0xFFF59E0B);
+    return Container(
+      decoration: BoxDecoration(
+        color: bg,
+        border: Border.all(color: border),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.gavel_outlined, color: fg, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Draft — review with counsel before publication. This policy '
+              'has not yet been approved by an attorney.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: fg,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -394,35 +586,6 @@ class _BulletList extends StatelessWidget {
               children: [
                 Text('•  ', style: style),
                 Expanded(child: Text(item, style: style)),
-              ],
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-/// Renders a list of strings as `1. `-prefixed lines. Each item is its own
-/// `Text` so long items wrap correctly under the number.
-class _NumberedList extends StatelessWidget {
-  const _NumberedList({required this.items, required this.style});
-
-  final List<String> items;
-  final TextStyle? style;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (var i = 0; i < items.length; i++)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('${i + 1}.  ', style: style),
-                Expanded(child: Text(items[i], style: style)),
               ],
             ),
           ),

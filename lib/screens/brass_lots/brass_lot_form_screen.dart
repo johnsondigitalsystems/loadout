@@ -64,6 +64,7 @@ import '../../database/database.dart';
 import '../../repositories/brass_lot_repository.dart';
 import '../../repositories/component_repository.dart';
 import '../../services/auto_save_service.dart';
+import '../../services/unit_service.dart';
 import '../../widgets/auto_save_banner.dart';
 import '../../widgets/auto_save_first_time_hint.dart';
 import '../../widgets/component_field.dart';
@@ -565,63 +566,74 @@ class _BrassLotFormScreenState extends State<BrassLotFormScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            // TODO(units): expose UnitService for display labels
-            // (bullet weight / smallLength). Persisted columns stay
-            // canonical so the migration is display-only.
-            _Section(
-              title: 'Measurements',
-              children: [
-                TextFormField(
-                  controller: _avgWeight,
-                  decoration: const InputDecoration(
-                    labelText: 'Avg Brass Weight (gr)',
-                    suffixText: 'gr',
+            // Unit suffixes (`gr`/`g`, `in`/`cm`) are display-only —
+            // persisted columns stay canonical so the migration is
+            // safe across unit changes. Case Capacity stays "gr H2O"
+            // regardless of the selected mass unit because grains-of-
+            // water-displaced is a domain term tied to the imperial
+            // capacity convention; reloaders cross-reference it that
+            // way against load manuals.
+            Builder(builder: (ctx) {
+              final units = ctx.watch<UnitService>();
+              final wt =
+                  unitDisplayLabel(units.unitFor(UnitCategory.bulletWeight));
+              final smallLen =
+                  unitDisplayLabel(units.unitFor(UnitCategory.smallLength));
+              return _Section(
+                title: 'Measurements',
+                children: [
+                  TextFormField(
+                    controller: _avgWeight,
+                    decoration: InputDecoration(
+                      labelText: 'Avg Brass Weight ($wt)',
+                      suffixText: wt,
+                    ),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                   ),
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _caseCapacity,
-                  decoration: const InputDecoration(
-                    labelText: 'Case Capacity (gr H2O)',
-                    suffixText: 'gr H2O',
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _caseCapacity,
+                    decoration: const InputDecoration(
+                      labelText: 'Case Capacity (gr H2O)',
+                      suffixText: 'gr H2O',
+                    ),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                   ),
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _trimToLength,
-                  decoration: const InputDecoration(
-                    labelText: 'Trim-To Length (in)',
-                    suffixText: 'in',
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _trimToLength,
+                    decoration: InputDecoration(
+                      labelText: 'Trim-To Length ($smallLen)',
+                      suffixText: smallLen,
+                    ),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                   ),
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _lastTrimLength,
-                  decoration: const InputDecoration(
-                    labelText: 'Last Trim Length Measured (in)',
-                    suffixText: 'in',
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _lastTrimLength,
+                    decoration: InputDecoration(
+                      labelText: 'Last Trim Length Measured ($smallLen)',
+                      suffixText: smallLen,
+                    ),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                   ),
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _neckWallThickness,
-                  decoration: const InputDecoration(
-                    labelText: 'Neck Wall Thickness (in)',
-                    suffixText: 'in',
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _neckWallThickness,
+                    decoration: InputDecoration(
+                      labelText: 'Neck Wall Thickness ($smallLen)',
+                      suffixText: smallLen,
+                    ),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                   ),
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                ),
-              ],
-            ),
+                ],
+              );
+            }),
             const SizedBox(height: 16),
             _Section(
               title: 'Prep Flags',
@@ -638,16 +650,21 @@ class _BrassLotFormScreenState extends State<BrassLotFormScreen> {
                 if (_neckTurned)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
-                    child: TextFormField(
-                      controller: _neckTurnDepth,
-                      decoration: const InputDecoration(
-                        labelText: 'Neck Turn Depth (in)',
-                        suffixText: 'in',
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                    ),
+                    child: Builder(builder: (ctx) {
+                      final smallLen = unitDisplayLabel(ctx
+                          .watch<UnitService>()
+                          .unitFor(UnitCategory.smallLength));
+                      return TextFormField(
+                        controller: _neckTurnDepth,
+                        decoration: InputDecoration(
+                          labelText: 'Neck Turn Depth ($smallLen)',
+                          suffixText: smallLen,
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                      );
+                    }),
                   ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,

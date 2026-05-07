@@ -1,0 +1,9 @@
+# Copy this file to `android/key.properties` and fill in real values.
+# DO NOT COMMIT key.properties — it is in .gitignore.
+#
+# storeFile is resolved relative to android/app/ by build.gradle.kts.
+
+storePassword=<store-password>
+keyPassword=<key-password>
+keyAlias=loadout
+storeFile=loadout_release.keystore

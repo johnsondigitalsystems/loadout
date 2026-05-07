@@ -201,6 +201,7 @@ library;
 
 import 'dart:math' as math;
 
+import 'custom_drag.dart';
 import 'drag_functions.dart';
 import 'units.dart';
 
@@ -213,6 +214,7 @@ class Projectile {
     required this.dragModel,
     this.lengthIn,
     this.twistInches,
+    this.customDragCurve,
   });
 
   /// Bullet diameter, inches.
@@ -221,13 +223,18 @@ class Projectile {
   /// Bullet weight, grains.
   final double weightGr;
 
-  /// Ballistic coefficient in the [dragModel] family.
+  /// Ballistic coefficient in the [dragModel] family. Ignored when
+  /// [customDragCurve] is non-null because the custom curve already
+  /// expresses the bullet's actual Cd-vs-Mach relationship and there is
+  /// no reference projectile to scale against.
+  ///
   /// Typical values:
   ///   * G1: 0.3–0.7 for hunting bullets, up to ~0.8 for VLDs.
   ///   * G7: 0.15–0.4 — roughly half the G1 number for the same bullet.
   final double bc;
 
-  /// Drag function family the [bc] is referenced against.
+  /// Drag function family the [bc] is referenced against. Ignored when
+  /// [customDragCurve] is non-null.
   final DragModel dragModel;
 
   /// Bullet length, inches. Optional — used only for the Miller spin
@@ -240,6 +247,16 @@ class Projectile {
   /// Required for spin drift.
   final double? twistInches;
 
+  /// Optional custom drag curve (CDM / DSF). When non-null the solver
+  /// uses this curve instead of the [dragModel] G-table, and treats
+  /// [formFactor] as 1.0 (the curve already captures the bullet's
+  /// real shape, so there is no reference projectile to scale against).
+  final CustomDragCurve? customDragCurve;
+
+  /// True when this projectile is configured with a custom drag curve.
+  /// Convenience flag for the solver and UI.
+  bool get hasCustomDrag => customDragCurve != null;
+
   // ─────────────────────── SI projections ───────────────────────
 
   double get diameterM => inchesToMeters(diameterIn);
@@ -251,9 +268,22 @@ class Projectile {
     return mLb / (diameterIn * diameterIn);
   }
 
-  /// Form factor i = SD / BC. Useful in calculations and as a sanity
-  /// check (typical i ≈ 1.0 for the matching drag family).
-  double get formFactor => sectionalDensity / bc;
+  /// Form factor `i` used by the drag-equation literature.
+  ///
+  /// For the standard G1/G7-style path: `i = SD / BC` — the BC is
+  /// referenced against a reference projectile, and `i` scales the
+  /// reference Cd up or down to fit the real bullet.
+  ///
+  /// For a custom drag curve there is no reference projectile (the
+  /// curve already represents the actual bullet), so the form-factor
+  /// scaling collapses to 1.0. The drag-constant arithmetic in
+  /// `solver.dart` treats `i = 1` correctly: `dragK = (π/8)·i·D²/m`,
+  /// and the Cd value coming from the custom curve is the bullet's
+  /// own Cd, not a scaled reference value.
+  double get formFactor {
+    if (customDragCurve != null) return 1.0;
+    return sectionalDensity / bc;
+  }
 
   /// Initial spin rate at the muzzle (rad/s) given [muzzleVelocityFps].
   /// Returns 0 if [twistInches] is null (we have no twist information).

@@ -263,3 +263,11 @@ double inchesToMilAtYards(double inches, double yards) {
 /// the solver wants the other.
 double bcG1ToG7(double bcG1) => bcG1 * 0.512;
 double bcG7ToG1(double bcG7) => bcG7 / 0.512;
+
+// ─────────────────────── Knots / wind ───────────────────────
+
+/// 1 knot = 0.514444 m/s exactly.
+double knotsToMps(double kt) => kt * 0.514444;
+double mpsToKnots(double mps) => mps / 0.514444;
+double mphToKnots(double mph) => mph / 1.150779;
+double knotsToMph(double kt) => kt * 1.150779;

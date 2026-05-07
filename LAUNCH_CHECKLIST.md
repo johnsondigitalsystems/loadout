@@ -52,22 +52,24 @@ this updated as new items come up.
 
 ## Authentication
 
-- [ ] **Enable Associated Domains capability on the iOS App ID** —
+- [ ] **Enable Associated Domains capability on the App ID** —
   developer.apple.com → Identifiers → `com.johnsondigital.loadout` →
-  check **Associated Domains** → Save. Required because the entitlements
-  file now claims `applinks:loadout-precision-reloading.web.app` /
-  `.firebaseapp.com`. Without this, iOS code signing will reject the
-  build.
+  check **Associated Domains** → Save. Required because the iOS *and*
+  macOS entitlements files claim
+  `applinks:loadout-precision-reloading.web.app` /
+  `.firebaseapp.com`. Without this, code signing will reject the build
+  on both platforms. The bundle ID is shared between iOS and macOS, so
+  one capability toggle covers both.
 - [ ] **Add release keystore SHA-256 to `public/.well-known/assetlinks.json`**
   once a Play Store upload key (or Play App Signing fingerprint) exists.
   Currently only the debug SHA is in the file, which means email-link
   sign-in won't auto-verify on Play Store builds. After updating, run
   `firebase deploy --only hosting`.
-- [ ] **Cross-device email-link UX.** When the user opens the sign-in
+- [x] **Cross-device email-link UX.** When the user opens the sign-in
   link on a different device than the one that requested it,
-  `tryCompleteEmailLink` returns null because the pending email isn't
-  in local storage. Add a prompt for the user to enter their email in
-  that case.
+  `tryCompleteEmailLink` returns `EmailLinkOutcome.needsEmail`. The
+  `_AuthGate` in `lib/app.dart` shows a "Confirm your email" dialog
+  and finishes sign-in via `completeEmailLinkWithEmail`.
 - [ ] Decide on anonymous → permanent account linking UX
   (`linkWithCredential`).
 - [ ] Add a "Verify your email" banner / gate on the home screen for

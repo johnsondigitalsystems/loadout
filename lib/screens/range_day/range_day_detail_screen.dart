@@ -37,6 +37,7 @@ import '../../data/reticle_library.dart';
 import '../../database/database.dart';
 import '../../repositories/ballistic_profile_repository.dart';
 import '../../repositories/firearm_repository.dart';
+import '../../repositories/optics_repository.dart';
 import '../../repositories/range_day_repository.dart';
 import '../../repositories/recipe_repository.dart';
 import '../../repositories/reticle_repository.dart';
@@ -48,15 +49,23 @@ import '../../services/ballistics/projectile.dart';
 import '../../services/ballistics/solver.dart';
 import '../../services/ballistics/units.dart' as bu;
 import '../../services/ble/ble_service.dart';
+import '../../services/ble/bushnell_rangefinder_service.dart';
 import '../../services/ble/garmin_xero_service.dart';
 import '../../services/ble/kestrel_service.dart';
+import '../../services/ble/leica_geovid_service.dart';
+import '../../services/ble/rangefinder_reading.dart';
+import '../../services/ble/sig_kilo_service.dart';
+import '../../services/ble/vortex_rangefinder_service.dart';
+import '../../services/entitlement_notifier.dart';
 import '../../services/hit_probability_service.dart';
+import '../../services/sensors/cant_service.dart';
+import '../../services/sensors/magnetometer_service.dart';
 import '../../services/unit_service.dart';
 import '../../services/weather_service.dart';
 import '../../utils/responsive.dart';
 import '../../widgets/pro_gate.dart';
 import '../../widgets/reticle_picker.dart';
-import '../../widgets/reticle_renderer.dart';
+import 'scope_view_screen.dart';
 import 'widgets/target_plot.dart';
 
 class RangeDayDetailScreen extends StatefulWidget {
@@ -100,6 +109,22 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
 
   // ─────────────────────── Distance / range ───────────────────────
   final _distanceCtrl = TextEditingController(text: '500');
+
+  // ─────────────────────── Shot azimuth ───────────────────────
+  /// Compass direction the rifle is pointing in degrees. 0 = N, 90 = E,
+  /// 180 = S, 270 = W. Fed to the ballistics solver as the
+  /// [Environment.shotAzimuthDegrees] for the Coriolis correction at
+  /// long range. Defaults to 0; users can either type a value or tap
+  /// "Use as shot azimuth" on the live magnetometer readout to copy
+  /// the current heading in.
+  final _shotAzimuthCtrl = TextEditingController(text: '0');
+
+  /// Whether to apply the live cant-correction term to the displayed
+  /// firing solution. Pro-gated. When true and the [CantService]
+  /// reports a non-zero cant, the solver's drop / wind values are
+  /// rotated by `cant_rad` so the sight picture the shooter has at
+  /// the target matches the displayed correction.
+  bool _applyCantCorrection = false;
 
   // ─────────────────────── Projectile / shot inputs ───────────────────────
   /// All of these are seeded by the active profile / load and can be
@@ -199,7 +224,6 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     _profilesStream = context.read<BallisticProfileRepository>().watchAll();
     _loadsFuture = _loadAllRecipes();
     _firearmsFuture = context.read<FirearmRepository>().allFirearms();
-    _reticlesFuture = context.read<ReticleRepository>().allReticles();
     // Default the per-session correction unit to the global angle pref.
     final units = context.read<UnitService>();
     _correctionUnit =
@@ -208,6 +232,13 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
             : (units.unitFor(UnitCategory.angle).toLowerCase() == 'moa'
                 ? 'moa'
                 : 'mil');
+    // Start the live cant + magnetometer sensors so the Setup section
+    // shows live data the moment it opens. start() is a graceful no-op
+    // on platforms (macOS / web) without these sensors.
+    // ignore: discarded_futures
+    context.read<CantService>().start();
+    // ignore: discarded_futures
+    context.read<MagnetometerService>().start();
     if (widget.sessionId != null) {
       _hydrateFromSession(widget.sessionId!);
     } else {
@@ -338,8 +369,16 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     _hitProbDebounce?.cancel();
     // ignore: discarded_futures
     _kestrelSub?.cancel();
+    // Stop the device sensors when leaving the screen so the OS can
+    // clock-gate the radio. Both services are app-singletons (provided
+    // in lib/app.dart) so we stop rather than dispose.
+    // ignore: discarded_futures
+    context.read<CantService>().stop();
+    // ignore: discarded_futures
+    context.read<MagnetometerService>().stop();
     for (final c in [
       _distanceCtrl,
+      _shotAzimuthCtrl,
       _bulletDiameterCtrl,
       _bulletWeightCtrl,
       _bulletLengthCtrl,
@@ -556,6 +595,8 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       final elevation = _parseAny(_elevationCtrl.text, 'Elevation');
       final windSpeed = double.tryParse(_windSpeedCtrl.text.trim()) ?? 0;
       final windDir = double.tryParse(_windDirCtrl.text.trim()) ?? 0;
+      final shotAzimuth =
+          double.tryParse(_shotAzimuthCtrl.text.trim()) ?? 0;
 
       final projectile = Projectile(
         diameterIn: bulletDiameter,
@@ -575,7 +616,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         atmosphere: atmosphere,
         windSpeedMph: windSpeed,
         windFromDegrees: windDir,
-        shotAzimuthDegrees: 0,
+        shotAzimuthDegrees: shotAzimuth,
         latitudeDegrees: 40,
         targetElevationFt: 0,
       );
@@ -592,12 +633,53 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         distance,
       }.toList()
         ..sort();
-      final samples = solveTrajectory(
+      var samples = solveTrajectory(
         projectile: projectile,
         environment: environment,
         shot: shot,
         sampleRangesYards: ladder,
       );
+
+      // Cant correction (Pro). The point-mass solver assumes the rifle
+      // is held level; if the shooter is canted, the sight picture is
+      // rotated against the impact. With cant angle θ:
+      //
+      //   drop'        = drop · cos(θ) + windDrift · sin(θ)
+      //   windDrift'   = windDrift · cos(θ) − drop · sin(θ)
+      //
+      // The spec's small-angle decomposition is the additive form of
+      // the same identity:
+      //
+      //   cant_correction_drop = sin(θ) · windDrift
+      //   cant_correction_wind = −sin(θ) · drop
+      //
+      // We use the full rotation here for correctness at large cant
+      // angles. Only applied when the toggle is on AND the user has
+      // Pro AND the cant service has produced a sample.
+      final cant = context.read<CantService>().cantDegrees;
+      final isPro = context.read<EntitlementNotifier>().isPro;
+      if (_applyCantCorrection &&
+          isPro &&
+          cant != null &&
+          cant.abs() > 0.05) {
+        final cantRad = cant * math.pi / 180.0;
+        final cosC = math.cos(cantRad);
+        final sinC = math.sin(cantRad);
+        samples = [
+          for (final s in samples)
+            TrajectorySample(
+              rangeYards: s.rangeYards,
+              timeSec: s.timeSec,
+              dropInches: s.dropInches * cosC + s.windDriftInches * sinC,
+              windDriftInches:
+                  s.windDriftInches * cosC - s.dropInches * sinC,
+              spinDriftInches: s.spinDriftInches,
+              velocityFps: s.velocityFps,
+              energyFtLb: s.energyFtLb,
+              machNumber: s.machNumber,
+            ),
+        ];
+      }
 
       // The active solution is the sample at the user's chosen distance.
       TrajectorySample? primary;
@@ -1196,6 +1278,10 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
           const SizedBox(height: 12),
           _reticlePicker(),
           const SizedBox(height: 12),
+          _shotAzimuthRow(),
+          const SizedBox(height: 12),
+          _orientationRows(),
+          const SizedBox(height: 12),
           _capabilityExpander(),
           const SizedBox(height: 16),
           FilledButton.icon(
@@ -1206,6 +1292,279 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         ],
       ),
     );
+  }
+
+  // ─────────────────────── Shot azimuth ───────────────────────
+
+  /// Number field for the rifle's compass direction. Used for the
+  /// long-range Coriolis correction in the firing solution. The
+  /// magnetometer "Use as shot azimuth" button (in [_orientationRows])
+  /// writes into this controller.
+  Widget _shotAzimuthRow() {
+    return TextField(
+      controller: _shotAzimuthCtrl,
+      keyboardType:
+          const TextInputType.numberWithOptions(decimal: true, signed: false),
+      decoration: const InputDecoration(
+        labelText: 'Shot azimuth (°)',
+        helperText:
+            'Compass direction of the shot — 0=N, 90=E, 180=S, 270=W. '
+            'Used for Coriolis at long range; leave 0 if unsure.',
+        helperMaxLines: 3,
+      ),
+      onChanged: (_) {
+        _scheduleSolve();
+        _scheduleAutoSave();
+      },
+    );
+  }
+
+  // ─────────────────────── Orientation (cant + heading) ───────────────────────
+
+  /// The cant (level) and magnetometer (heading) live-readout rows.
+  /// Both are sourced from device sensors via `Provider`-backed
+  /// services and re-render on every smoothed sample.
+  ///
+  /// On platforms without these sensors (macOS, web), the underlying
+  /// services report `isAvailable == false` and we render a single
+  /// "Sensors unavailable on this device" notice so the screen still
+  /// degrades gracefully.
+  Widget _orientationRows() {
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _cantRow(),
+          const Divider(height: 20),
+          _headingRow(),
+        ],
+      ),
+    );
+  }
+
+  /// Live cant (rifle level) row: readout + "Use phone level" button +
+  /// Pro-gated "Apply cant correction" toggle.
+  Widget _cantRow() {
+    final theme = Theme.of(context);
+    return Consumer<CantService>(
+      builder: (context, cantSvc, _) {
+        final available = cantSvc.isAvailable;
+        final cant = cantSvc.cantDegrees;
+        final readout = !available
+            ? 'Sensor unavailable'
+            : (cant == null
+                ? '—'
+                : '${cant >= 0 ? '+' : ''}${cant.toStringAsFixed(1)}°');
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.straighten,
+                    size: 18, color: theme.colorScheme.primary),
+                const SizedBox(width: 8),
+                Text('Cant', style: theme.textTheme.titleSmall),
+                const Spacer(),
+                Text(
+                  readout,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                    color: !available
+                        ? theme.colorScheme.outline
+                        : (cant != null && cant.abs() > 2
+                            ? theme.colorScheme.error
+                            : theme.colorScheme.onSurface),
+                  ),
+                ),
+              ],
+            ),
+            if (available) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: cant == null
+                          ? null
+                          : () {
+                              cantSvc.calibrateLevel();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                      'Cant calibration set to current pose.'),
+                                  duration: Duration(milliseconds: 1200),
+                                ),
+                              );
+                            },
+                      icon: const Icon(Icons.straighten, size: 18),
+                      label: const Text('Use phone level'),
+                    ),
+                  ),
+                  if (cantSvc.calibrationOffsetDeg.abs() > 0.05) ...[
+                    const SizedBox(width: 8),
+                    IconButton(
+                      tooltip: 'Clear calibration',
+                      icon: const Icon(Icons.refresh, size: 20),
+                      onPressed: cantSvc.clearCalibration,
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 4),
+              _cantCorrectionToggle(),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  /// Pro-gated toggle: when on, the cant correction is folded into the
+  /// displayed firing solution. Free users see a lock chip that opens
+  /// the paywall.
+  Widget _cantCorrectionToggle() {
+    final isPro = context.watch<EntitlementNotifier>().isPro;
+    final theme = Theme.of(context);
+    if (!isPro) {
+      return InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: () => ensurePro(context),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+          child: Row(
+            children: [
+              Icon(Icons.lock_outline,
+                  size: 16, color: theme.colorScheme.primary),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Apply cant correction (Pro)',
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ),
+              const Icon(Icons.chevron_right, size: 18),
+            ],
+          ),
+        ),
+      );
+    }
+    return SwitchListTile.adaptive(
+      contentPadding: EdgeInsets.zero,
+      dense: true,
+      title: const Text('Apply cant correction'),
+      subtitle: const Text(
+          'Rotates drop and wind by the live cant angle so the displayed '
+          'correction matches your sight picture.'),
+      value: _applyCantCorrection,
+      onChanged: (v) {
+        setState(() => _applyCantCorrection = v);
+        _scheduleSolve();
+      },
+    );
+  }
+
+  /// Live magnetometer (heading) row: readout + "Use as shot azimuth"
+  /// button. Free-tier feature — the readout is just a sensor read
+  /// and the auto-fill is a one-tap convenience.
+  Widget _headingRow() {
+    final theme = Theme.of(context);
+    return Consumer<MagnetometerService>(
+      builder: (context, mag, _) {
+        final available = mag.isAvailable;
+        final heading = mag.headingDegrees;
+        final readout = !available
+            ? 'Sensor unavailable'
+            : (heading == null
+                ? '—'
+                : '${heading.toStringAsFixed(0)}°  ${_compassLabel(heading)}'
+                    '${mag.isTrueNorth ? ' · true' : ' · mag'}');
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.explore,
+                    size: 18, color: theme.colorScheme.primary),
+                const SizedBox(width: 8),
+                Text('Heading', style: theme.textTheme.titleSmall),
+                const Spacer(),
+                Text(
+                  readout,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                    color: available
+                        ? theme.colorScheme.onSurface
+                        : theme.colorScheme.outline,
+                  ),
+                ),
+              ],
+            ),
+            if (available) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: heading == null
+                          ? null
+                          : () {
+                              _shotAzimuthCtrl.text =
+                                  heading.toStringAsFixed(0);
+                              _scheduleSolve();
+                              _scheduleAutoSave();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                      'Shot azimuth set from compass.'),
+                                  duration: Duration(milliseconds: 1200),
+                                ),
+                              );
+                            },
+                      icon: const Icon(Icons.explore_outlined, size: 18),
+                      label: const Text('Use as shot azimuth'),
+                    ),
+                  ),
+                ],
+              ),
+              if (!mag.isTrueNorth)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    'Showing magnetic heading. True heading requires a '
+                    'magnetic-declination value for your location — set '
+                    'one once GPS is available.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.outline,
+                    ),
+                  ),
+                ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  /// Map a heading in degrees to the closest 8-point compass label.
+  String _compassLabel(double deg) {
+    const points = [
+      'N',
+      'NE',
+      'E',
+      'SE',
+      'S',
+      'SW',
+      'W',
+      'NW',
+    ];
+    final idx = (((deg % 360) + 22.5) ~/ 45) % 8;
+    return points[idx];
   }
 
   // ─────────────────────── Reticle picker ───────────────────────
@@ -1492,7 +1851,86 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
               ),
           ],
         ),
+        _rangefinderQuickFill(),
       ],
+    );
+  }
+
+  /// "Use last reading" affordance — if any of the four supported BLE
+  /// rangefinder adapters is connected and has a recent measurement,
+  /// surface a button to drop that value into the distance input.
+  ///
+  /// Picks the freshest reading across all connected rangefinders so a
+  /// user with two paired devices still gets a sensible default. Hidden
+  /// entirely when no rangefinder is connected — the picker has plenty
+  /// of clutter without an always-on disabled button.
+  Widget _rangefinderQuickFill() {
+    final theme = Theme.of(context);
+    final candidates = <_RangefinderCandidate>[
+      _RangefinderCandidate(
+        label: 'Sig KILO',
+        reading: context.watch<SigKiloService>().lastReading,
+      ),
+      _RangefinderCandidate(
+        label: 'Bushnell',
+        reading: context.watch<BushnellRangefinderService>().lastReading,
+      ),
+      _RangefinderCandidate(
+        label: 'Vortex',
+        reading: context.watch<VortexRangefinderService>().lastReading,
+      ),
+      _RangefinderCandidate(
+        label: 'Leica',
+        reading: context.watch<LeicaGeovidService>().lastReading,
+      ),
+    ].where((c) => c.reading != null).toList()
+      ..sort((a, b) =>
+          b.reading!.receivedAt.compareTo(a.reading!.receivedAt));
+    if (candidates.isEmpty) return const SizedBox.shrink();
+    final freshest = candidates.first;
+    final r = freshest.reading!;
+    // Prefer the incline-corrected ("shoot-to") range when the device
+    // computed it; fall back to the line-of-sight range otherwise. The
+    // ballistics solver wants the actual horizontal distance to the
+    // target, which the shoot-to value approximates.
+    final yards = r.inclineCorrectedRangeYd ?? r.rangeYd;
+    final freshenSeconds =
+        DateTime.now().difference(r.receivedAt).inSeconds;
+    final freshLabel = freshenSeconds < 60
+        ? '${freshenSeconds}s ago'
+        : '${(freshenSeconds / 60).round()} min ago';
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Row(
+        children: [
+          Icon(
+            Icons.gps_fixed,
+            size: 16,
+            color: theme.colorScheme.primary,
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              '${freshest.label}: ${yards.toStringAsFixed(0)} yd · $freshLabel',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _distanceCtrl.text = yards.round().toString();
+              });
+              _scheduleSolve();
+              _scheduleAutoSave();
+            },
+            child: const Text('Use last reading'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1946,7 +2384,84 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
             ),
           ],
         ),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          onPressed: () => _openScopeView(s),
+          // Material doesn't ship a `target_rounded` glyph in this
+          // Flutter version; `crisis_alert` is the standard
+          // concentric-rings target icon and is the closest semantic
+          // match for a scope-view affordance.
+          icon: const Icon(Icons.crisis_alert),
+          label: const Text('Scope View'),
+        ),
       ],
+    );
+  }
+
+  /// Pro-gated: opens the [ScopeViewScreen] visualizer with the current
+  /// firing solution + reticle + target. Surfaces a snackbar if a
+  /// reticle hasn't been picked yet, since the visualizer needs one.
+  Future<void> _openScopeView(TrajectorySample s) async {
+    if (!await ensurePro(context)) return;
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final reticle = _selectedReticle;
+    if (reticle == null) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content:
+              Text('Pick a reticle in Setup to use Scope View.'),
+        ),
+      );
+      return;
+    }
+    // Latest impact (the most-recent shot on the target plot, if any).
+    double? latestImpactX;
+    double? latestImpactY;
+    if (_shots.isNotEmpty) {
+      final latest = _shots.last;
+      latestImpactX = latest.impactX;
+      latestImpactY = latest.impactY;
+    }
+    // Resolve optic so we can default magnification, focal plane,
+    // adjustment unit. Falls back to safe defaults when the user
+    // hasn't linked an optic to the firearm.
+    OpticRow? optic;
+    String? opticName;
+    final opticsId = _selectedFirearm?.opticsId;
+    if (opticsId != null) {
+      try {
+        optic = await context.read<OpticsRepository>().byId(opticsId);
+        if (optic != null) {
+          opticName = optic.model;
+        }
+      } catch (_) {
+        // Non-fatal — we just render with defaults.
+      }
+    }
+    if (!mounted) return;
+    final spec = _selectedTarget == null
+        ? TargetSpec.defaultPaper()
+        : TargetSpec.fromRow(_selectedTarget!);
+    final inputs = buildScopeViewInputs(
+      reticle: reticle,
+      targetSpec: spec,
+      dropInches: s.dropInches,
+      windDriftInches: s.windDriftInches,
+      rangeYards: s.rangeYards,
+      aimPointX: _aimPointX,
+      aimPointY: _aimPointY,
+      latestImpactX: latestImpactX,
+      latestImpactY: latestImpactY,
+      hitProb: _hitProb,
+      optic: optic,
+      opticName: opticName,
+    );
+    if (!mounted) return;
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ScopeViewScreen(inputs: inputs),
+      ),
     );
   }
 
@@ -2831,4 +3346,14 @@ class _GroupStats {
   const _GroupStats({required this.groupIn, required this.groupMoa});
   final double groupIn;
   final double groupMoa;
+}
+
+/// Small bag of "this device gave us this reading" used by the
+/// _rangefinderQuickFill picker to find the freshest reading across
+/// all connected rangefinders. The reading is nullable so we can build
+/// the candidate list without first filtering — a tiny convenience.
+class _RangefinderCandidate {
+  const _RangefinderCandidate({required this.label, required this.reading});
+  final String label;
+  final RangefinderReading? reading;
 }

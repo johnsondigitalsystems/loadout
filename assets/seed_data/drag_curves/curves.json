@@ -1,0 +1,5 @@
+{
+  "_comment": "Custom drag curves (CDMs / DSFs) for specific bullets. Each entry maps one bullet to a Doppler-radar-measured Cd-vs-Mach table. The ballistics solver uses these in place of the standard G1/G7 curve + BC fit when the user picks one in the calculator. To add a curve, append an entry to `curves` with the shape shown in `_template.json`. Datapoints must be sorted ascending by mach.",
+  "_source_documentation": "Curves should be sourced from the manufacturer's published ballistic-tool data: Berger publishes 'Custom Drag Model' (CDM) files for download for use with the Applied Ballistics solver; Hornady publishes 'Drag Scale Factor' (DSF) tables and 4DOF tables alongside their ELD-class bullets in the Hornady 4DOF tool. Always cite the source date in the `source` field — manufacturers occasionally revise CDMs as Doppler test data improves.",
+  "curves": []
+}

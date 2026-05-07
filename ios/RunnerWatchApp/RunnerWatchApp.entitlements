@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- App Group is optional today, but declared so future feature work
+	     can share a SQLite snapshot or last-shot cache between the iPhone
+	     app and the watch via a shared container. Replace the suite name
+	     with the App Group ID you provision in Apple Developer (it must
+	     also be enabled on the iPhone target's entitlements file). -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.johnsondigital.loadout</string>
+	</array>
+</dict>
+</plist>

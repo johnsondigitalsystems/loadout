@@ -51,9 +51,11 @@
 // before sending. When the user opens the email on the same device, the
 // `app_links` deep-link handler in `lib/app.dart` reads the pending email
 // and calls `AuthService.tryCompleteEmailLink`. If they open the email on
-// a different device the prefs entry won't exist there, and the link
-// completion currently fails — that's tracked as a known gap in
-// `LAUNCH_CHECKLIST.md`.
+// a different device the prefs entry won't exist there, and
+// `tryCompleteEmailLink` returns `EmailLinkOutcome.needsEmail`. The
+// `_AuthGate` in `lib/app.dart` shows an `AlertDialog` asking for the
+// email and then calls `AuthService.completeEmailLinkWithEmail` to finish
+// sign-in.
 //
 // `_isCancellation` is also non-obvious: the three providers each surface
 // "user dismissed the platform sheet" through a different exception type,

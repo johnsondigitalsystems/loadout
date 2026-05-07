@@ -320,61 +320,117 @@ class _DisclaimerBody extends StatelessWidget {
       fontWeight: FontWeight.w600,
     );
     final body = theme.textTheme.bodyMedium;
+    final boldBody = body?.copyWith(fontWeight: FontWeight.w700);
 
     return DefaultTextStyle.merge(
       style: body,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Draft banner — review with counsel before launch. Remove
+          // this widget once the disclaimer is signed off.
+          _DraftBanner(theme: theme),
+          const SizedBox(height: 12),
           Text(
-            'Important: This is reference information, not professional '
-            'advice.',
+            'Read this carefully. Reloading is dangerous.',
             style: heading,
           ),
           const SizedBox(height: 16),
+          Text(
+            'Reloading ammunition can cause serious injury or death.',
+            style: boldBody,
+          ),
+          const SizedBox(height: 8),
           const Text(
-            'LoadOut helps you organize and reference data about reloading '
-            'components, firearms, and cartridges. The information in this '
-            'app — including reference catalogs of powders, bullets, primers, '
-            'brass, firearms, and SAAMI cartridge specifications — is '
-            'provided for informational and organizational purposes only.',
+            'Hand-loaded ammunition that is over-charged, double-charged, '
+            'under-charged, mis-seated, or assembled with incompatible '
+            'components can detonate inside your firearm. The result can '
+            'include a destroyed firearm, lost fingers, blinded eyes, '
+            'severe burns, hearing loss, and death. These outcomes are '
+            'not abstract risks — they happen to experienced reloaders.',
           ),
           const SizedBox(height: 16),
-          Text('Reloading ammunition is inherently dangerous.',
-              style: subheading),
+          Text('What LoadOut is — and isn\'t.', style: subheading),
           const SizedBox(height: 4),
           const Text(
-            'Improper handloads can cause catastrophic firearm failure '
-            'resulting in serious injury or death.',
+            'LoadOut is a reference and tracking app. It helps you '
+            'organize reloading recipes, firearms, components, batches, '
+            'brass lots, and ballistic profiles. The reference catalogs '
+            'inside the app — powders, bullets, primers, brass, '
+            'firearms, parts, and SAAMI cartridge specifications — are '
+            'provided for informational and organizational purposes '
+            'only.',
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'LoadOut is not a reloading manual. It is not a replacement '
+            'for one. The data inside it has not been independently '
+            'pressure-tested by us. Treat every entry as reference, not '
+            'instruction.',
+            style: boldBody,
           ),
           const SizedBox(height: 16),
-          Text('You are responsible for verifying every recipe.',
-              style: subheading),
+          Text(
+            'Verify every load against a current published manual.',
+            style: subheading,
+          ),
           const SizedBox(height: 4),
           const Text(
-            'Always cross-reference any recipe data against current published '
-            'manuals from the powder, bullet, and firearm manufacturers '
-            '(Hodgdon, Sierra, Hornady, Berger, etc.). Manufacturers update '
-            'recipe data over time as components and testing equipment change.',
+            'Before you load a single round, cross-reference your recipe '
+            'against the current edition of the relevant published '
+            'manual from the powder, bullet, and firearm manufacturers — '
+            'for example Hodgdon, IMR, Alliant, Vihtavuori, Sierra, '
+            'Hornady, Berger, Speer, Nosler, Lyman, and the firearm '
+            'manufacturer for your specific platform.',
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Component lots change. Powder lot variation alone can shift '
+            'pressure meaningfully. Manuals are updated as testing data '
+            'changes. A recipe that was published as safe a decade ago '
+            'may no longer be considered safe today, or may not be safe '
+            'with your current lot of powder, primer, or bullet.',
           ),
           const SizedBox(height: 16),
-          Text('No warranty.', style: subheading),
+          Text('Never start at maximum charge.', style: subheading),
           const SizedBox(height: 4),
           const Text(
-            'LoadOut provides no warranty as to the accuracy, completeness, '
-            'or safety of any data shown. Component lots vary, firearm '
-            'chambers vary, and conditions vary.',
+            'Always begin at the published starting charge for your '
+            'cartridge, bullet, and powder combination. Work up in small '
+            'increments toward — but not exceeding — the published '
+            'maximum, watching for pressure signs (flattened or pierced '
+            'primers, ejector marks, sticky bolt lift, case head '
+            'expansion). Stop and back off the moment you see them.',
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Pressure signs are not a green light to keep going. They '
+            'are a warning that you are at or beyond the safe pressure '
+            'envelope for your firearm with your specific components on '
+            'this specific day. Atmospheric conditions, bore condition, '
+            'chamber dimensions, brass condition, and primer cup '
+            'thickness all matter.',
           ),
           const SizedBox(height: 16),
-          Text('Your data stays yours.', style: subheading),
+          Text('Use proper equipment and technique.', style: subheading),
           const SizedBox(height: 4),
           const Text(
-            'Your reloading data — recipes, firearms, custom components, and '
-            'inventory — is stored on this device by default. LoadOut does '
-            'not run a backend that receives or stores it. With Pro, you can '
-            'optionally back up an end-to-end encrypted copy to your own '
-            'iCloud Drive or Google Drive, using a passphrase only you know. '
-            'LoadOut never sees the encrypted backup.',
+            'Use a calibrated scale that you have verified against check '
+            'weights. Inspect every case for cracks, web separation, or '
+            'unusual head-to-shoulder dimension. Wear eye and ear '
+            'protection during load development. Do not work near '
+            'distractions or under the influence of anything that '
+            'impairs judgment.',
+          ),
+          const SizedBox(height: 16),
+          Text('No professional relationship.', style: subheading),
+          const SizedBox(height: 4),
+          const Text(
+            'LoadOut is not a substitute for instruction from a '
+            'qualified handloader, gunsmith, or competition coach. If '
+            'you are new to reloading, take a class, read at least one '
+            'current published manual cover-to-cover, and work with '
+            'someone experienced before producing live ammunition.',
           ),
           const SizedBox(height: 16),
           Text('Your responsibility.', style: subheading),
@@ -382,38 +438,111 @@ class _DisclaimerBody extends StatelessWidget {
           const Text('By using this app you agree that you:'),
           const SizedBox(height: 8),
           const _Bullet(
-            'Are of legal age to handle firearms and reloading components in '
-            'your jurisdiction.',
+            'Are of legal age to handle firearms and reloading '
+            'components in your jurisdiction.',
           ),
-          const _Bullet('Will follow all applicable federal, state, and '
-              'local laws.'),
-          const _Bullet('Will use proper safety equipment and procedures.'),
-          const _Bullet('Will not rely on this app as your sole source of '
-              'recipe data.'),
-          const _Bullet('Accept all risk associated with reloading and '
-              'shooting.'),
+          const _Bullet(
+            'Will follow all applicable federal, state, provincial, '
+            'and local laws.',
+          ),
+          const _Bullet(
+            'Will use proper safety equipment and procedures.',
+          ),
+          const _Bullet(
+            'Will not rely on this app as your sole or primary source '
+            'of recipe data.',
+          ),
+          const _Bullet(
+            'Will verify every load against a current published manual '
+            'before loading.',
+          ),
+          const _Bullet(
+            'Accept all risk associated with reloading and shooting.',
+          ),
           const SizedBox(height: 16),
-          Text('No professional relationship.', style: subheading),
+          Text('No warranty.', style: subheading),
           const SizedBox(height: 4),
           const Text(
-            'LoadOut is not a substitute for instruction from a qualified '
-            'handloader or gunsmith. If you are new to reloading, take a '
-            'class or work with someone experienced before producing live '
-            'ammunition.',
+            'LoadOut is provided "as is" with no warranty of any kind. '
+            'We do not warrant that the data shown is accurate, '
+            'complete, current, or safe to act on. Errors in reference '
+            'data, in your own data entry, or in the app itself are '
+            'possible. Component lots vary, firearm chambers vary, and '
+            'conditions vary.',
+          ),
+          const SizedBox(height: 16),
+          Text('Your data stays yours.', style: subheading),
+          const SizedBox(height: 4),
+          const Text(
+            'Your reloading data — recipes, firearms, custom '
+            'components, and inventory — is stored on this device by '
+            'default. LoadOut does not run a backend that receives or '
+            'stores it. With Pro, you can optionally back up an '
+            'end-to-end encrypted copy to your own iCloud Drive or '
+            'Google Drive, using a passphrase only you know. LoadOut '
+            'never sees the encrypted backup.',
           ),
           const SizedBox(height: 16),
           Text('Liability.', style: subheading),
           const SizedBox(height: 4),
           const Text(
-            'To the fullest extent permitted by law, the developer of '
-            'LoadOut disclaims all liability for any damages arising from '
-            'use of this app, including but not limited to property damage, '
-            'personal injury, or death.',
+            'To the fullest extent permitted by law, Johnson Digital '
+            'Systems and the developers of LoadOut disclaim all '
+            'liability for any damages arising from use of this app, '
+            'including but not limited to property damage, personal '
+            'injury, or death. The decision to load and fire any '
+            'ammunition is yours, and the consequences of that decision '
+            'are also yours.',
           ),
           const SizedBox(height: 24),
           Text(
             'If you do not accept these terms, do not use this app.',
-            style: body?.copyWith(fontWeight: FontWeight.w600),
+            style: body?.copyWith(fontWeight: FontWeight.w700),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Yellow draft banner shown until counsel has approved the disclaimer
+/// language. Remove this widget once the legal review is complete.
+class _DraftBanner extends StatelessWidget {
+  const _DraftBanner({required this.theme});
+
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final bg = isDark
+        ? scheme.tertiaryContainer.withValues(alpha: 0.4)
+        : const Color(0xFFFEF3C7);
+    final fg = isDark ? scheme.onTertiaryContainer : const Color(0xFF78350F);
+    final border = isDark ? scheme.tertiary : const Color(0xFFF59E0B);
+    return Container(
+      decoration: BoxDecoration(
+        color: bg,
+        border: Border.all(color: border),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.gavel_outlined, color: fg, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Draft — review with counsel before publication. This '
+              'safety disclaimer language has not yet been approved by '
+              'an attorney.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: fg,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
         ],
       ),

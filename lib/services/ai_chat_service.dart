@@ -70,11 +70,26 @@
 // Anthropic's API is the kind of dependency we want firewalled behind one
 // file. `ai_chat_screen.dart` should not know what the response shape
 // looks like, what the auth header is, or how the safety filter is
-// implemented. Concentrating all of that here means we can later replace
-// the in-app HTTP call with a backend proxy (Firebase ID token + RevenueCat
-// entitlement check + server-side Anthropic forwarder) by editing this one
-// file — the screen keeps calling `service.sendMessage(...)` and
-// everything still works.
+// implemented. Concentrating all of that here means we can swap between
+// the legacy "Anthropic key in the binary" path and the future LoadOut
+// proxy backend without the screen ever noticing.
+//
+// Two delivery modes coexist in this file:
+//
+//   - PROXY MODE — preferred. Activated when `AiProxyConfig.isPlaceholder`
+//     is false. The conversation is POSTed to the LoadOut backend; the
+//     server checks the caller's RevenueCat entitlement and quota, then
+//     forwards to Anthropic on a server-side key. Implemented by
+//     `_sendViaProxy` in this file plus `AiProxyClient` /
+//     `AiProxyConfig`.
+//   - DIRECT-ANTHROPIC MODE — legacy. Used when the proxy URL is still a
+//     placeholder but `AiChatConfig.anthropicApiKey` is real. Lets us
+//     run the chat locally during development by dropping a key into
+//     `ai_chat_config.dart`.
+//
+// Both modes share the same `looksLikeLoadData` regex backstop and the
+// same SharedPreferences quota counter so quota state is consistent
+// across mode swaps.
 //
 // The third liability rail — the visible italic disclaimer banner the
 // user sees above the message list — lives in the screen file. Together
@@ -119,21 +134,27 @@
 // ============================================================================
 // SIDE EFFECTS
 // ============================================================================
-// - HTTPS POST to `api.anthropic.com` from `sendMessage` (via the
-//   injectable `http.Client`).
+// - In proxy mode: HTTPS POST to `${AiProxyConfig.backendUrl}/v1/chat`
+//   via `AiProxyClient`. Reads `Purchases.appUserID` from the RevenueCat
+//   SDK so the proxy can authorise the call.
+// - In direct-Anthropic mode: HTTPS POST to `api.anthropic.com`.
 // - Reads/writes two `SharedPreferences` keys (period tag + count) for
 //   quota tracking.
 // - `debugPrint` on network/parse errors and on safety-filter trips, for
 //   developer console diagnostics. No PII or load-recipe content is ever
-//   sent off-device by this file beyond the Anthropic API call itself.
+//   sent off-device by this file beyond the configured API call itself.
 
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'ai_chat_config.dart';
+import 'ai_proxy_client.dart';
+import 'ai_proxy_config.dart';
+import 'revenue_cat_config.dart';
 
 /// System prompt for the LoadOut Reloading Assistant.
 ///
@@ -234,10 +255,29 @@ class AiChatResult {
 /// Handles HTTP, quota tracking, and the output safety filter for the
 /// Reloading Assistant chat. Stateless across instances apart from the
 /// SharedPreferences-backed quota counter.
+///
+/// Two modes, decided per-call by [AiProxyConfig.isPlaceholder]:
+///
+/// 1. **Proxy mode** — preferred. POSTs the conversation to the
+///    LoadOut backend via [AiProxyClient]; the backend validates the
+///    caller's RevenueCat entitlement and forwards to Anthropic on a
+///    server-side key. The Anthropic key never ships in the binary.
+/// 2. **Direct-Anthropic mode** — legacy. Still in the file so the
+///    chat can run locally during development by dropping a real key
+///    into [AiChatConfig.anthropicApiKey]. Activated when the proxy
+///    URL is still a placeholder but the Anthropic key is real.
+///
+/// Both modes share the same [SharedPreferences] quota counter and the
+/// same [looksLikeLoadData] safety filter.
 class AiChatService {
-  AiChatService({http.Client? client}) : _client = client ?? http.Client();
+  AiChatService({
+    http.Client? client,
+    AiProxyClient? proxyClient,
+  })  : _client = client ?? http.Client(),
+        _proxyClient = proxyClient ?? AiProxyClient(client: client);
 
   final http.Client _client;
+  final AiProxyClient _proxyClient;
 
   // ─────────────────────────── Quota ───────────────────────────
 
@@ -302,7 +342,10 @@ class AiChatService {
     required String userText,
     required List<ChatMessage> history,
   }) async {
-    if (AiChatConfig.isPlaceholder) {
+    // Both routes need a real backend somewhere. If neither the proxy
+    // URL nor the embedded Anthropic key is configured, surface the
+    // pre-launch "Coming soon" state.
+    if (AiProxyConfig.isPlaceholder && AiChatConfig.isPlaceholder) {
       return const AiChatResult.error(
         'AI Chat is in beta — coming soon.',
       );
@@ -312,6 +355,11 @@ class AiChatService {
     final used = await getQuestionsUsedThisMonth();
     if (used >= AiChatConfig.monthlyQuestionQuota) {
       return AiChatResult.quotaExceeded(questionsUsedThisMonth: used);
+    }
+
+    // Proxy path takes precedence once configured.
+    if (!AiProxyConfig.isPlaceholder) {
+      return _sendViaProxy(userText: userText, history: history);
     }
 
     final messages = [
@@ -402,6 +450,109 @@ class AiChatService {
       message: ChatMessage(role: 'assistant', content: text),
       questionsUsedThisMonth: usedAfter,
     );
+  }
+
+  // ─────────────────────────── Proxy path ───────────────────────────
+
+  /// Send via the LoadOut AI proxy (`AiProxyClient`). The proxy enforces
+  /// the RevenueCat entitlement + quota server-side; we still pass the
+  /// reply through [looksLikeLoadData] as a defence-in-depth backstop
+  /// and still maintain a local quota counter so the UI's
+  /// "questions remaining" pill works even if the proxy doesn't echo
+  /// the count back.
+  Future<AiChatResult> _sendViaProxy({
+    required String userText,
+    required List<ChatMessage> history,
+  }) async {
+    String? userId;
+    if (!RevenueCatConfig.isPlaceholder) {
+      try {
+        userId = await Purchases.appUserID;
+      } on Object catch (e) {
+        debugPrint(
+          'AiChatService: could not read RevenueCat appUserID: $e',
+        );
+      }
+    }
+    // Fall back to a sentinel if RevenueCat hasn't been initialised
+    // yet (e.g. desktop builds, placeholder keys). The proxy can choose
+    // to reject these or treat them as anonymous.
+    userId ??= 'anonymous';
+
+    final messages = <AiProxyMessage>[
+      for (final m in history)
+        AiProxyMessage(role: m.role, content: m.content),
+      AiProxyMessage(role: 'user', content: userText),
+    ];
+
+    AiProxyResponse response;
+    try {
+      response = await _proxyClient.sendMessage(
+        messages: messages,
+        userId: userId,
+      );
+    } on AiProxyQuotaException catch (e) {
+      // Server says quota exhausted. Mirror the count locally so the UI
+      // pill matches if the proxy returned one.
+      if (e.questionsUsedThisMonth != null) {
+        await _setCount(e.questionsUsedThisMonth!);
+      }
+      return AiChatResult.quotaExceeded(
+        questionsUsedThisMonth: e.questionsUsedThisMonth ??
+            await getQuestionsUsedThisMonth(),
+      );
+    } on AiProxyForbiddenException catch (e) {
+      return AiChatResult.error(e.message);
+    } on AiProxyException catch (e) {
+      debugPrint('AiChatService: proxy error: $e');
+      return AiChatResult.error(e.message);
+    } catch (e) {
+      debugPrint('AiChatService: unexpected proxy failure: $e');
+      return const AiChatResult.error(
+        'Network error. Check your connection and try again.',
+      );
+    }
+
+    final text = response.text;
+
+    if (looksLikeLoadData(text)) {
+      debugPrint(
+        'AiChatService: safety filter tripped on proxy response: $text',
+      );
+      final usedAfter = response.questionsUsedThisMonth ??
+          await _incrementCount();
+      if (response.questionsUsedThisMonth != null) {
+        await _setCount(usedAfter);
+      }
+      return AiChatResult.success(
+        message: const ChatMessage(
+          role: 'assistant',
+          content: kSafetyRefusal,
+          isError: true,
+        ),
+        questionsUsedThisMonth: usedAfter,
+      );
+    }
+
+    final usedAfter = response.questionsUsedThisMonth ??
+        await _incrementCount();
+    if (response.questionsUsedThisMonth != null) {
+      await _setCount(usedAfter);
+    }
+    return AiChatResult.success(
+      message: ChatMessage(role: 'assistant', content: text),
+      questionsUsedThisMonth: usedAfter,
+    );
+  }
+
+  /// Persist [count] as the current month's used-questions counter.
+  /// Used to keep the local copy in sync with whatever the proxy
+  /// reports.
+  Future<void> _setCount(int count) async {
+    final prefs = await SharedPreferences.getInstance();
+    final period = _currentPeriod();
+    await prefs.setString(_periodPrefKey, period);
+    await prefs.setInt(_countKeyForPeriod(period), count);
   }
 
   // ─────────────────────────── Output safety filter ───────────────────────────
@@ -495,5 +646,6 @@ class AiChatService {
 
   void dispose() {
     _client.close();
+    _proxyClient.dispose();
   }
 }
