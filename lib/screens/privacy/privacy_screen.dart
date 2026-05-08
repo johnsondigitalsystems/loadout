@@ -387,6 +387,44 @@ class PrivacyScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
+          Text(
+            'AI Smart Import (Pro, opt-in per use)',
+            style: headingStyle,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Pro users can opt in to AI Smart Import to improve the parse '
+            'of messy handwriting on photo-imported recipes. The feature '
+            'is off by default. When you turn it on, the OCR\'d text from '
+            'the photo (and only that) is sent to a thin LoadOut-operated '
+            'proxy server, which forwards the request to Anthropic\'s API '
+            'on a LoadOut-held key.',
+            style: bodyStyle,
+          ),
+          const SizedBox(height: 8),
+          _BulletList(
+            style: bodyStyle,
+            items: const [
+              'Only the OCR\'d text from the specific photo you import is '
+                  'sent. We never see your saved recipes, firearms, '
+                  'batches, brass lots, or any other reloading data.',
+              'The LoadOut proxy logs only timestamp, a short anonymous '
+                  'identifier, response status, and token counts. The '
+                  'request body (your OCR text) is not logged by us.',
+              'Anthropic does not train on API requests. This is part of '
+                  'their API terms.',
+              'You can override the hosted proxy by entering your own '
+                  'Anthropic API key in Settings → AI. When you do, the '
+                  'request goes directly from your device to Anthropic; '
+                  'the LoadOut proxy is not involved. Your key is stored '
+                  'on this device only, in the iOS Keychain or Android '
+                  'Keystore.',
+              'A monthly cap of 20 imports per Pro user keeps the feature '
+                  'cost-bounded for hosted-mode users.',
+            ],
+          ),
+          const SizedBox(height: 24),
+
           Text('Sub-processors and third parties', style: headingStyle),
           const SizedBox(height: 8),
           Text(
@@ -404,6 +442,14 @@ class PrivacyScreen extends StatelessWidget {
                   'https://firebase.google.com/support/privacy',
               'RevenueCat (in-app purchase verification and entitlement) — '
                   'https://www.revenuecat.com/privacy',
+              'Cloudflare (the AI Smart Import proxy runs on Cloudflare '
+                  'Workers + KV; only relevant when you opt in to AI '
+                  'Smart Import in hosted mode) — '
+                  'https://www.cloudflare.com/privacypolicy/',
+              'Anthropic (the AI Smart Import feature, when enabled, '
+                  'forwards your OCR\'d text to Anthropic\'s Messages '
+                  'API; either via our proxy or directly using your own '
+                  'API key) — https://www.anthropic.com/legal/privacy',
               'Apple App Store and Google Play for purchase processing — '
                   'https://www.apple.com/legal/privacy/ and '
                   'https://play.google.com/about/play-terms/',

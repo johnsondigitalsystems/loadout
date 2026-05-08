@@ -191,11 +191,44 @@ class ScopeViewScreen extends StatefulWidget {
   State<ScopeViewScreen> createState() => _ScopeViewScreenState();
 }
 
-class _ScopeViewScreenState extends State<ScopeViewScreen> {
+class _ScopeViewScreenState extends State<ScopeViewScreen>
+    with SingleTickerProviderStateMixin {
   late double _magnification;
   late double _rangeYards;
   late ScopeSubtensionUnit _displayUnit;
   late TextEditingController _rangeCtrl;
+
+  // ─── Animated mover state ───────────────────────────────────────────
+  //
+  // The animated mover (Pro feature) sweeps the target horizontally
+  // across the FOV at a user-chosen speed. The slider runs from 0.1×
+  // to 4.0× — wide enough that the user can demo at 0.1× ("move the
+  // reticle by hand") OR train at 4× ("Race"). The named presets are
+  // anchor points along the slider so the user can quickly snap to a
+  // remembered cadence.
+  //
+  // The actual sweep duration scales inversely with the multiplier:
+  // `Duration(milliseconds: (kBaseSweepMs / _moverSpeedMultiplier).round())`
+  // At 0.1× the sweep takes 50 seconds; at 1× a familiar 5 seconds; at
+  // 4× a fast 1.25 seconds.
+  static const double _moverSpeedMin = 0.1;
+  static const double _moverSpeedMax = 4.0;
+  static const int _kBaseSweepMs = 5000; // 1× sweep duration
+
+  /// Named presets shown as tick marks along the slider track.
+  /// Editing this list also moves the labeled positions, so keep them
+  /// in ascending order.
+  static const List<_MoverSpeedPreset> _moverSpeedPresets = [
+    _MoverSpeedPreset(value: 0.1, label: 'Demo'),
+    _MoverSpeedPreset(value: 0.5, label: 'Slow'),
+    _MoverSpeedPreset(value: 1.0, label: 'Normal'),
+    _MoverSpeedPreset(value: 2.0, label: 'Fast'),
+    _MoverSpeedPreset(value: 4.0, label: 'Race'),
+  ];
+
+  bool _animateMover = false;
+  double _moverSpeedMultiplier = 1.0;
+  late AnimationController _moverController;
 
   /// Solver bisection range — most consumer scopes peak at 30x; we cap
   /// the slider at the optic's spec max if higher. Always 4.5x as a
@@ -217,12 +250,46 @@ class _ScopeViewScreenState extends State<ScopeViewScreen> {
         : ScopeSubtensionUnit.mil;
     _rangeCtrl =
         TextEditingController(text: _rangeYards.toStringAsFixed(0));
+    _moverController = AnimationController(
+      vsync: this,
+      duration: _moverDuration(_moverSpeedMultiplier),
+    );
   }
 
   @override
   void dispose() {
     _rangeCtrl.dispose();
+    _moverController.dispose();
     super.dispose();
+  }
+
+  /// Sweep duration for [multiplier]. At 1× the sweep takes 5 seconds;
+  /// at 0.1× it takes 50 seconds (slow enough to drag the reticle by
+  /// hand for a demo).
+  Duration _moverDuration(double multiplier) {
+    final clamped = multiplier.clamp(_moverSpeedMin, _moverSpeedMax);
+    final ms = (_kBaseSweepMs / clamped).round();
+    return Duration(milliseconds: ms);
+  }
+
+  void _setMoverSpeedMultiplier(double value) {
+    final clamped = value.clamp(_moverSpeedMin, _moverSpeedMax);
+    setState(() => _moverSpeedMultiplier = clamped);
+    final wasAnimating = _moverController.isAnimating;
+    _moverController.duration = _moverDuration(clamped);
+    if (wasAnimating) {
+      _moverController.repeat(reverse: true);
+    }
+  }
+
+  void _toggleAnimateMover(bool on) {
+    setState(() => _animateMover = on);
+    if (on) {
+      _moverController.repeat(reverse: true);
+    } else {
+      _moverController.stop();
+      _moverController.value = 0.5;
+    }
   }
 
   void _cycleDisplayUnit() {
@@ -336,6 +403,7 @@ class _ScopeViewScreenState extends State<ScopeViewScreen> {
                 children: [
                   _scopeFovCard(constraints.maxWidth),
                   _controlsCard(),
+                  _animatedMoverCard(),
                   _adjustmentsTable(),
                 ],
               ),
@@ -357,7 +425,10 @@ class _ScopeViewScreenState extends State<ScopeViewScreen> {
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
       child: Stack(
         children: [
-          // The black FOV circle.
+          // The black FOV circle. Wrapped in AnimatedBuilder so the
+          // mover animation re-paints every frame while it's running.
+          // When the animation is stopped the controller's value is
+          // `0.5` (centered) and the painter renders the static frame.
           Center(
             child: SizedBox(
               width: fovSide,
@@ -365,23 +436,36 @@ class _ScopeViewScreenState extends State<ScopeViewScreen> {
               child: ClipOval(
                 child: Container(
                   color: Colors.black,
-                  child: CustomPaint(
-                    painter: _ScopeFovPainter(
-                      reticle: widget.inputs.reticle,
-                      reticleRenderScale: _reticleRenderScale(),
-                      reticleColor: Colors.greenAccent,
-                      targetSpec: widget.inputs.targetSpec,
-                      rangeYards: _rangeYards,
-                      magnification: _magnification,
-                      fovHalfMil: _fovHalfMil(),
-                      dropMil: _dropMil(),
-                      windMil: _windMil(),
-                      aimPointNormX: widget.inputs.aimPointX,
-                      aimPointNormY: widget.inputs.aimPointY,
-                      latestHitNormX: widget.inputs.latestImpactX,
-                      latestHitNormY: widget.inputs.latestImpactY,
-                      displayUnit: _displayUnit,
-                    ),
+                  child: AnimatedBuilder(
+                    animation: _moverController,
+                    builder: (context, _) {
+                      // Map controller [0..1] to a sweep [-1..+1] so the
+                      // target travels left-to-right across the FOV
+                      // (`reverse: true` gives us right-to-left on the
+                      // return trip without extra math).
+                      final phase = _animateMover
+                          ? (_moverController.value * 2.0 - 1.0)
+                          : 0.0;
+                      return CustomPaint(
+                        painter: _ScopeFovPainter(
+                          reticle: widget.inputs.reticle,
+                          reticleRenderScale: _reticleRenderScale(),
+                          reticleColor: Colors.greenAccent,
+                          targetSpec: widget.inputs.targetSpec,
+                          rangeYards: _rangeYards,
+                          magnification: _magnification,
+                          fovHalfMil: _fovHalfMil(),
+                          dropMil: _dropMil(),
+                          windMil: _windMil(),
+                          aimPointNormX: widget.inputs.aimPointX,
+                          aimPointNormY: widget.inputs.aimPointY,
+                          latestHitNormX: widget.inputs.latestImpactX,
+                          latestHitNormY: widget.inputs.latestImpactY,
+                          displayUnit: _displayUnit,
+                          targetSweepPhase: phase,
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
@@ -563,6 +647,108 @@ class _ScopeViewScreenState extends State<ScopeViewScreen> {
                   ),
                 ],
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────── Animated mover (Pro) ───────────────────────
+  //
+  // Sweeps the target horizontally across the FOV at a user-chosen
+  // speed. Useful for two distinct flows:
+  //   1. Demo / teaching — at 0.1× the sweep takes 50 seconds, slow
+  //      enough that the user can drag the reticle by hand to track
+  //      the target while explaining lead concepts.
+  //   2. Mover practice — at 4× the target races the FOV in 1.25 s,
+  //      matching real PRS / 3-Gun mover stage cadence.
+  //
+  // The slider is continuous; the named presets show as labels under
+  // the track at fixed positions so the user can snap to a remembered
+  // cadence.
+
+  Widget _animatedMoverCard() {
+    final theme = Theme.of(context);
+    final isSlowMode = _moverSpeedMultiplier <= 0.5;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Card(
+        color: theme.colorScheme.surface,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.directions_run,
+                      color: theme.colorScheme.primary),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Animated mover',
+                    style: theme.textTheme.titleSmall,
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary
+                          .withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text('Pro',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        )),
+                  ),
+                  const Spacer(),
+                  Switch(
+                    value: _animateMover,
+                    onChanged: _toggleAnimateMover,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Slider(
+                min: _moverSpeedMin,
+                max: _moverSpeedMax,
+                value: _moverSpeedMultiplier,
+                label: '${_moverSpeedMultiplier.toStringAsFixed(2)}×',
+                onChanged: _setMoverSpeedMultiplier,
+              ),
+              // Preset tick labels — Demo / Slow / Normal / Fast / Race.
+              // Tappable so the user can snap to a remembered cadence.
+              _MoverSpeedPresetRow(
+                presets: _moverSpeedPresets,
+                min: _moverSpeedMin,
+                max: _moverSpeedMax,
+                current: _moverSpeedMultiplier,
+                onPick: _setMoverSpeedMultiplier,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                isSlowMode
+                    ? '${_moverSpeedMultiplier.toStringAsFixed(2)}× '
+                        '(slow demo mode)'
+                    : '${_moverSpeedMultiplier.toStringAsFixed(2)}× speed',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              if (isSlowMode)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(
+                    'Slow enough to move the reticle by hand.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -806,6 +992,7 @@ class _ScopeFovPainter extends CustomPainter {
     required this.latestHitNormX,
     required this.latestHitNormY,
     required this.displayUnit,
+    this.targetSweepPhase = 0.0,
   });
 
   final ReticleDefinition reticle;
@@ -824,6 +1011,12 @@ class _ScopeFovPainter extends CustomPainter {
   final double? latestHitNormX;
   final double? latestHitNormY;
   final ScopeSubtensionUnit displayUnit;
+
+  /// Animated-mover phase, [-1, +1]. 0 = target dead-center; -1 = far
+  /// left of FOV; +1 = far right. The painter scales the offset to
+  /// `0.7 × fovHalfMil` so the target always stays visible inside the
+  /// circle.
+  final double targetSweepPhase;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -913,8 +1106,17 @@ class _ScopeFovPainter extends CustomPainter {
         targetSpec.heightIn / (rangeYards * 36.0) * 1000.0;
     final wPx = widthMil * pxPerMil;
     final hPx = heightMil * pxPerMil;
+
+    // When the animated mover is running, slide the target left/right
+    // by `targetSweepPhase × 0.7 × fovHalfMil`. The 0.7 factor leaves a
+    // visible margin so the target shape doesn't disappear behind the
+    // FOV ring at the extremes.
+    final sweepOffsetMil = targetSweepPhase * 0.7 * fovHalfMil;
+    final sweepOffsetPx = sweepOffsetMil * pxPerMil;
+    final movingCenter = Offset(center.dx + sweepOffsetPx, center.dy);
+
     final rect = Rect.fromCenter(
-      center: center,
+      center: movingCenter,
       width: math.max(2, wPx),
       height: math.max(2, hPx),
     );
@@ -926,8 +1128,8 @@ class _ScopeFovPainter extends CustomPainter {
       ..strokeWidth = 1.5;
     switch (targetSpec.shape) {
       case 'circle':
-        canvas.drawCircle(center, math.min(wPx, hPx) / 2, fill);
-        canvas.drawCircle(center, math.min(wPx, hPx) / 2, outline);
+        canvas.drawCircle(movingCenter, math.min(wPx, hPx) / 2, fill);
+        canvas.drawCircle(movingCenter, math.min(wPx, hPx) / 2, outline);
         break;
       case 'silhouette':
         // Approximate as a rounded rectangle so the shape reads as a
@@ -950,11 +1152,15 @@ class _ScopeFovPainter extends CustomPainter {
         targetSpec.widthIn / (rangeYards * 36.0) * 1000.0;
     final heightMil =
         targetSpec.heightIn / (rangeYards * 36.0) * 1000.0;
+    // Aim point + impact markers are stored relative to the target
+    // shape, so they have to follow the target when the mover sweeps.
+    final sweepOffsetPx =
+        targetSweepPhase * 0.7 * fovHalfMil * pxPerMil;
     Offset normToPx(double nx, double ny) {
       // Norm (-1..1) maps to half-width × pxPerMil in each direction.
       // +y in normalized = up; canvas +y = down, so flip.
       return Offset(
-        center.dx + nx * (widthMil / 2) * pxPerMil,
+        center.dx + sweepOffsetPx + nx * (widthMil / 2) * pxPerMil,
         center.dy - ny * (heightMil / 2) * pxPerMil,
       );
     }
@@ -1144,7 +1350,8 @@ class _ScopeFovPainter extends CustomPainter {
         old.aimPointNormY != aimPointNormY ||
         old.latestHitNormX != latestHitNormX ||
         old.latestHitNormY != latestHitNormY ||
-        old.displayUnit != displayUnit;
+        old.displayUnit != displayUnit ||
+        old.targetSweepPhase != targetSweepPhase;
   }
 }
 
@@ -1215,4 +1422,92 @@ double? _parseMaxMag(String s) {
   if (m.isEmpty) return null;
   // Last numeric "Xx" token is the high end of the range.
   return double.tryParse(m.last.group(1) ?? '');
+}
+
+/// One named preset along the animated-mover speed slider. Holds the
+/// multiplier value and the user-facing label ("Demo", "Slow", …). The
+/// label is rendered under the slider track at the value's relative
+/// position, and tapping the label snaps the slider to that value.
+class _MoverSpeedPreset {
+  const _MoverSpeedPreset({required this.value, required this.label});
+  final double value;
+  final String label;
+}
+
+/// Renders the named-preset labels under the animated-mover slider.
+/// Each label is a small `TextButton` that snaps the slider to the
+/// preset's multiplier when tapped.
+class _MoverSpeedPresetRow extends StatelessWidget {
+  const _MoverSpeedPresetRow({
+    required this.presets,
+    required this.min,
+    required this.max,
+    required this.current,
+    required this.onPick,
+  });
+
+  final List<_MoverSpeedPreset> presets;
+  final double min;
+  final double max;
+  final double current;
+  final void Function(double) onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SizedBox(
+          height: 24,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              for (final p in presets) _label(theme, p, constraints.maxWidth),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _label(
+    ThemeData theme,
+    _MoverSpeedPreset preset,
+    double trackWidth,
+  ) {
+    // Linear position on the slider track. The Slider widget's track
+    // padding is roughly 24 px each side; we approximate by leaving
+    // 12 px of margin so the labels visually line up with the thumb
+    // positions. Off-by-a-few px under typical font metrics is fine —
+    // the labels are advisory.
+    const double trackPad = 12.0;
+    final usable = (trackWidth - trackPad * 2).clamp(1.0, double.infinity);
+    final t = ((preset.value - min) / (max - min)).clamp(0.0, 1.0);
+    final left = trackPad + t * usable;
+    final selected = (preset.value - current).abs() < 0.001;
+    return Positioned(
+      left: left - 28,
+      child: SizedBox(
+        width: 56,
+        child: TextButton(
+          style: TextButton.styleFrom(
+            padding: EdgeInsets.zero,
+            minimumSize: const Size(0, 0),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          onPressed: () => onPick(preset.value),
+          child: Text(
+            preset.label,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: selected
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.onSurfaceVariant,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

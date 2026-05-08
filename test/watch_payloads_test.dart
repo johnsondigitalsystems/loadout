@@ -119,6 +119,7 @@ void main() {
       expect(WatchPaths.firearmGlance, 'firearm_glance');
       expect(WatchPaths.logShot, 'log_shot');
       expect(WatchPaths.timerEvent, 'timer_event');
+      expect(WatchPaths.shotCaptureSensitivity, 'shot_capture_sensitivity');
     });
   });
 }

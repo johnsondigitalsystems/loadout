@@ -129,6 +129,16 @@ object WatchAppState {
     private val _shotCount = MutableStateFlow(0)
     val shotCount: StateFlow<Int> = _shotCount.asStateFlow()
 
+    /**
+     * Phone-pushed shot-capture sensitivity preset (`"off" | "low" |
+     * "medium" | "high"`). Drained by `MotionDetector.applySensitivity`
+     * the next time the StageLogScreen reads this StateFlow. Stored as
+     * a wire string here so this state holder doesn't drag in the
+     * `motion` package as a dependency.
+     */
+    private val _shotCaptureSensitivity = MutableStateFlow<String?>(null)
+    val shotCaptureSensitivity: StateFlow<String?> = _shotCaptureSensitivity.asStateFlow()
+
     fun setDope(snap: DopeSnapshot) {
         _dopeSnapshot.value = snap
         if (_rowCursor.value >= snap.rows.size) {
@@ -164,5 +174,17 @@ object WatchAppState {
 
     fun clearShotCount() {
         _shotCount.value = 0
+    }
+
+    /**
+     * Update the watch-side mirror of the user's chosen
+     * shot-capture sensitivity. Called from
+     * [com.johnsondigital.loadout.wear.bridge.PhoneDataLayerListener]
+     * whenever the phone pushes a new `shot_capture_sensitivity`
+     * payload. Consumers (today: the Stage Log composable) collect the
+     * StateFlow and forward the value to their `MotionDetector`.
+     */
+    fun setShotCaptureSensitivity(value: String) {
+        _shotCaptureSensitivity.value = value
     }
 }

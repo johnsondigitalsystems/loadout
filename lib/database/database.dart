@@ -36,7 +36,7 @@
 // methods plus generated companions like `UserLoadsCompanion` for
 // constructing rows.
 //
-// `schemaVersion` is currently 14. The `MigrationStrategy` defines two
+// `schemaVersion` is currently 16. The `MigrationStrategy` defines two
 // callbacks: `onCreate` runs on a fresh install (creates every table, then
 // seeds the 8 standard reloading process steps), and `onUpgrade` runs
 // when an installed user opens a build with a newer `schemaVersion`. The
@@ -1069,6 +1069,14 @@ class RangeDaySessions extends Table {
   /// rule (drop scaled by `cos(angle)^1.5`) when this field is non-null.
   /// Null means "level shot" — no correction.
   RealColumn get inclineAngleDeg => real().nullable()();
+
+  // ── Atmosphere preset (added schema v17) ──
+  /// Optional FK to the saved [AtmospherePresets] row that pre-filled this
+  /// session's environment fields. Purely a UX hint — the actual solver
+  /// inputs come from the four atmosphere columns above. When the user
+  /// loads a preset on the Range Day screen, this id is captured so
+  /// reopening the session shows which preset was active in the picker.
+  IntColumn get atmospherePresetId => integer().nullable()();
 }
 
 /// One row per shot recorded during a range-day session. Impact coordinates
@@ -1093,6 +1101,194 @@ class ShotImpacts extends Table {
   TextColumn get notes => text().nullable()();
   RealColumn get velocityFps => real().nullable()();
   DateTimeColumn get recordedAt =>
+      dateTime().withDefault(currentDateAndTime)();
+}
+
+// ─────────────────────── Bryan Litz / Applied Ballistics parity (schema v16) ───────────────────────
+//
+// Three additive tables that turn LoadOut into a peer of Applied Ballistics on
+// math depth without giving up the local-first storage model. All three are
+// purely persistent records of analysis the solver could re-derive from the
+// raw inputs — we save them so the user can come back to a particular WEZ
+// curve, trued BC, or scope-tracking calibration without re-running the math
+// each launch. None of these tables are required by the solver; the solver
+// keeps using the load's nominal BC and the firearm's static sight-scale
+// fields when no override row exists.
+
+/// One saved Weapon Employment Zone (WEZ) profile. A WEZ profile is the
+/// (load, firearm, target, uncertainty inputs) → hit-probability-vs-range
+/// curve described in Bryan Litz's *Modern Advancements in Long Range
+/// Shooting Vol 1*. The user runs the WEZ analysis screen, tunes the
+/// inputs, and saves the result with a name so they can pull it back up
+/// later or compare two WEZ profiles side-by-side.
+///
+/// `curveJson` stores the computed `[(rangeYd, hitPct)]` pairs as a JSON
+/// array of `{"r": <yd>, "p": <0..1>}` objects. We persist the curve
+/// itself rather than re-running the solver every time the user opens
+/// the row because a 60-point curve takes ~150ms on a phone — fine
+/// inline, but a noticeable thump on a list / grid view.
+@DataClassName('WezProfileRow')
+class WezProfiles extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+  /// Optional FK to UserLoads. Null means the profile was built ad-hoc
+  /// from a manually-entered projectile + MV.
+  IntColumn get loadId => integer().nullable().references(UserLoads, #id)();
+  /// Optional FK to UserFirearms. Null = ad-hoc rifle parameters.
+  IntColumn get firearmId =>
+      integer().nullable().references(UserFirearms, #id)();
+  /// Target geometry — copy of the inputs at compute time.
+  RealColumn get targetWidthIn => real()();
+  RealColumn get targetHeightIn => real()();
+  /// 'circle' | 'rectangle' | 'silhouette' — matches `Targets.shape`.
+  TextColumn get targetShape => text()();
+  /// Uncertainty inputs — the four sliders on the WEZ screen.
+  RealColumn get groupMoa => real()();
+  RealColumn get windUncertaintyMph => real()();
+  RealColumn get rangeUncertaintyYd => real()();
+  RealColumn get mvSdFps => real()();
+  /// JSON array of `{"r": rangeYd, "p": hitProb0to1}`. Sorted ascending
+  /// by range. Decoded by the WEZ screen on open to redraw the curve
+  /// without re-running the solver.
+  TextColumn get curveJson => text()();
+  /// Wall-clock when the curve was computed. Distinct from `createdAt`
+  /// (the row insert) because a future "Recompute" button updates the
+  /// curve without inserting a new row.
+  DateTimeColumn get computedAt => dateTime()();
+  TextColumn get notes => text().nullable()();
+  DateTimeColumn get createdAt =>
+      dateTime().withDefault(currentDateAndTime)();
+}
+
+/// One BC-truing override. Litz's BC truing methodology takes an observed
+/// shot impact at a known range and back-solves the effective BC that
+/// reproduces the observation. The result is a load-specific, firearm-
+/// specific, drag-model-specific override that the solver consults
+/// before falling back to the load's nominal BC.
+///
+/// `observationJson` stores the (range, observed-drop) pairs the truing
+/// was derived from, as a JSON array of `{"rangeYd": x, "observedDropMil":
+/// y, "predictedDropMil": z}` objects. Single-distance truing is one
+/// element; multi-distance truing (Litz's preferred form) has N elements.
+///
+/// `(loadId, firearmId, dragModel)` is the natural unique key — at any
+/// time a particular (recipe × rifle × drag family) has at most one
+/// active override. The repository enforces "upsert on this triple"
+/// semantics; the unique index here is belt-and-suspenders.
+@DataClassName('TruedBcOverrideRow')
+class TruedBcOverrides extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get loadId => integer().references(UserLoads, #id)();
+  IntColumn get firearmId => integer().references(UserFirearms, #id)();
+  /// 'g1' | 'g7' | 'cdm'. Matches DragModel string values; 'cdm' is
+  /// reserved for custom-drag-curve loads where the truing scales the
+  /// curve rather than a single-number BC.
+  TextColumn get dragModel => text()();
+  /// The catalog BC the load was using before truing. Recorded so the
+  /// UI can show "trued from 0.326 to 0.314" without consulting the
+  /// load row's current BC (which the user might have edited in the
+  /// meantime).
+  RealColumn get nominalBc => real()();
+  /// The trued / effective BC the solver should use for this
+  /// (load, firearm, dragModel) combination.
+  RealColumn get truedBc => real()();
+  /// Distance the truing observation was taken at. For multi-distance
+  /// truing this is the longest distance in the observation set
+  /// (the most informative point).
+  RealColumn get truingDistanceYd => real()();
+  /// JSON array of observations. See class docstring for shape.
+  TextColumn get observationJson => text()();
+  TextColumn get notes => text().nullable()();
+  DateTimeColumn get truedAt => dateTime()();
+  DateTimeColumn get createdAt =>
+      dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {loadId, firearmId, dragModel},
+      ];
+}
+
+/// One sight-scale calibration (Drop-Per-Click / DPC). Records the
+/// outcome of running the DPC wizard against a particular firearm:
+/// the user dialed a known elevation or windage amount, fired a small
+/// group, and the wizard derived a "true mil-per-click" ratio. The
+/// derived ratio is also written to `UserFirearms.sightScaleVertical`
+/// or `sightScaleHorizontal` so the solver picks it up immediately;
+/// this table preserves the calibration history so the user can see
+/// which session each scale factor came from.
+///
+/// `axis` distinguishes vertical / horizontal calibration runs — they
+/// can produce different scale factors and live as separate rows on
+/// the firearm.
+@DataClassName('SightCalibrationRow')
+// ─────────────────────── Atmosphere presets (schema v17) ───────────────────────
+//
+// User-saved atmospheric profiles. Bryan Litz's "Applied Ballistics" methodology
+// recommends keeping multiple named profiles (e.g. "Camp Atterbury summer",
+// "Big Sandy", "Cold dry day") so the shooter can quickly switch between them
+// rather than re-typing pressure / temperature / humidity / altitude every
+// time. The picker appears at the top of the Environment section on both the
+// Ballistics screen and the Range Day Setup card; selecting a preset auto-fills
+// the four core atmosphere fields and the optional altitude.
+//
+// The `latitudeDeg` / `longitudeDeg` columns are optional metadata — the user
+// can capture GPS at the time the preset is created so they remember where the
+// readings came from, but the values are not used by the solver. Notes is a
+// freeform text field for "morning vs afternoon", "front-of-firing-line", etc.
+//
+// Additive migration only. Adding a row never affects existing rows; deleting
+// one only nullifies the FK on `RangeDaySessions.atmospherePresetId`.
+@DataClassName('AtmospherePresetRow')
+class AtmospherePresets extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  /// User-facing name. Free-form; uniqueness enforced by the picker (case
+  /// folded) rather than by the schema so renames don't trip a UNIQUE
+  /// constraint mid-edit.
+  TextColumn get name => text()();
+  /// Station pressure (NOT sea-level / altimeter setting). Same canonical
+  /// units as `RangeDaySessions.pressureInHg` and the solver's
+  /// `Atmosphere.station(stationPressureInHg: ...)` argument.
+  RealColumn get stationPressureInHg => real()();
+  RealColumn get temperatureF => real()();
+  RealColumn get humidityPct => real()();
+  /// Optional capture-site altitude (feet). The solver doesn't consume this
+  /// directly — the Environment section's Elevation field is what it reads —
+  /// but auto-filled into the Elevation control when the user picks a preset.
+  RealColumn get altitudeFt => real().nullable()();
+  /// Optional GPS latitude at capture time. Display only; the solver's
+  /// Coriolis correction reads its own `latitudeDeg` field.
+  RealColumn get latitudeDeg => real().nullable()();
+  /// Optional GPS longitude at capture time. Display only.
+  RealColumn get longitudeDeg => real().nullable()();
+  TextColumn get notes => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+class SightCalibrations extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get firearmId => integer().references(UserFirearms, #id)();
+  /// 'vertical' | 'horizontal'.
+  TextColumn get axis => text()();
+  /// What the scope's turret claims to move per click, in mil. e.g. 0.1
+  /// for a "0.1 mil per click" advertised scope. Stored to preserve
+  /// the original advertised value even if the user later edits the
+  /// firearm row.
+  RealColumn get advertisedClickMil => real()();
+  /// What the scope actually moved per click, in mil, derived from the
+  /// observed centroid offset.
+  RealColumn get observedClickMil => real()();
+  /// The derived sight scale factor: observed / advertised. e.g. 0.973
+  /// for a scope tracking 2.7% short. This is the value written to
+  /// `UserFirearms.sightScaleVertical` or `sightScaleHorizontal`.
+  RealColumn get derivedScale => real()();
+  /// JSON array of the `(impactX, impactY)` observations used. Same
+  /// shape as `ShotImpacts` rows — normalized [-1, 1] coords.
+  TextColumn get observationJson => text()();
+  TextColumn get notes => text().nullable()();
+  DateTimeColumn get calibratedAt => dateTime()();
+  DateTimeColumn get createdAt =>
       dateTime().withDefault(currentDateAndTime)();
 }
 
@@ -1174,6 +1370,12 @@ class UserCustomFieldValues extends Table {
     DragCurves,
     // Schema v14 additions.
     FactoryLoads,
+    // Schema v16 additions (Bryan Litz / Applied Ballistics parity features).
+    WezProfiles,
+    TruedBcOverrides,
+    SightCalibrations,
+    // Schema v17 additions (user-saved atmospheric profiles).
+    AtmospherePresets,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -1182,7 +1384,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 15;
+  int get schemaVersion => 17;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1467,6 +1669,29 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(
                 rangeDaySessions, rangeDaySessions.inclineAngleDeg);
           }
+          if (from < 16) {
+            // v16 — Bryan Litz / Applied Ballistics parity. Three purely
+            // additive tables that record the outputs of the new analysis
+            // features: WEZ profiles, BC truing overrides, and sight-scale
+            // (DPC) calibrations. The solver does not require any of these
+            // rows to exist — when they don't, the legacy behaviour kicks
+            // in (load's nominal BC, firearm's static `sightScale*`
+            // fields). User data is preserved.
+            await m.createTable(wezProfiles);
+            await m.createTable(truedBcOverrides);
+            await m.createTable(sightCalibrations);
+          }
+          if (from < 17) {
+            // v17 — Atmosphere presets. Adds the [AtmospherePresets] table
+            // and a nullable FK column on [RangeDaySessions] linking back
+            // to the active preset (if any). Both are additive only; the
+            // solver doesn't change behaviour because the existing
+            // atmosphere fields on `RangeDaySessions` continue to be the
+            // authoritative source of inputs. User data is preserved.
+            await m.createTable(atmospherePresets);
+            await m.addColumn(
+                rangeDaySessions, rangeDaySessions.atmospherePresetId);
+          }
         },
       );
 
@@ -1565,8 +1790,16 @@ class AppDatabase extends _$AppDatabase {
       // Children first (foreign-key safety even though we don't enforce
       // FK constraints in drift). Order chosen to mirror typical
       // dependency direction.
+      // v16 user-data tables — drop before their parents (UserLoads,
+      // UserFirearms) so foreign-key references stay consistent even if
+      // we ever switch on FK enforcement.
+      await delete(wezProfiles).go();
+      await delete(truedBcOverrides).go();
+      await delete(sightCalibrations).go();
       await delete(shotImpacts).go();
       await delete(rangeDaySessions).go();
+      // v17 — atmosphere presets are user-data; wipe them too.
+      await delete(atmospherePresets).go();
       await delete(userCustomFieldValues).go();
       await delete(userCustomFields).go();
       await delete(loadDevelopmentSessions).go();

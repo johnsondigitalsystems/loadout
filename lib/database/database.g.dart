@@ -21451,6 +21451,16 @@ class $RangeDaySessionsTable extends RangeDaySessions
     type: DriftSqlType.double,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _atmospherePresetIdMeta =
+      const VerificationMeta('atmospherePresetId');
+  @override
+  late final GeneratedColumn<int> atmospherePresetId = GeneratedColumn<int>(
+    'atmosphere_preset_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -21480,6 +21490,7 @@ class $RangeDaySessionsTable extends RangeDaySessions
     cantDegrees,
     shotAzimuthDegrees,
     inclineAngleDeg,
+    atmospherePresetId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -21700,6 +21711,15 @@ class $RangeDaySessionsTable extends RangeDaySessions
         ),
       );
     }
+    if (data.containsKey('atmosphere_preset_id')) {
+      context.handle(
+        _atmospherePresetIdMeta,
+        atmospherePresetId.isAcceptableOrUnknown(
+          data['atmosphere_preset_id']!,
+          _atmospherePresetIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -21817,6 +21837,10 @@ class $RangeDaySessionsTable extends RangeDaySessions
         DriftSqlType.double,
         data['${effectivePrefix}incline_angle_deg'],
       ),
+      atmospherePresetId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}atmosphere_preset_id'],
+      ),
     );
   }
 
@@ -21908,6 +21932,13 @@ class RangeDaySessionRow extends DataClass
   /// rule (drop scaled by `cos(angle)^1.5`) when this field is non-null.
   /// Null means "level shot" — no correction.
   final double? inclineAngleDeg;
+
+  /// Optional FK to the saved [AtmospherePresets] row that pre-filled this
+  /// session's environment fields. Purely a UX hint — the actual solver
+  /// inputs come from the four atmosphere columns above. When the user
+  /// loads a preset on the Range Day screen, this id is captured so
+  /// reopening the session shows which preset was active in the picker.
+  final int? atmospherePresetId;
   const RangeDaySessionRow({
     required this.id,
     required this.name,
@@ -21936,6 +21967,7 @@ class RangeDaySessionRow extends DataClass
     this.cantDegrees,
     this.shotAzimuthDegrees,
     this.inclineAngleDeg,
+    this.atmospherePresetId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -22006,6 +22038,9 @@ class RangeDaySessionRow extends DataClass
     }
     if (!nullToAbsent || inclineAngleDeg != null) {
       map['incline_angle_deg'] = Variable<double>(inclineAngleDeg);
+    }
+    if (!nullToAbsent || atmospherePresetId != null) {
+      map['atmosphere_preset_id'] = Variable<int>(atmospherePresetId);
     }
     return map;
   }
@@ -22079,6 +22114,9 @@ class RangeDaySessionRow extends DataClass
       inclineAngleDeg: inclineAngleDeg == null && nullToAbsent
           ? const Value.absent()
           : Value(inclineAngleDeg),
+      atmospherePresetId: atmospherePresetId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(atmospherePresetId),
     );
   }
 
@@ -22121,6 +22159,7 @@ class RangeDaySessionRow extends DataClass
         json['shotAzimuthDegrees'],
       ),
       inclineAngleDeg: serializer.fromJson<double?>(json['inclineAngleDeg']),
+      atmospherePresetId: serializer.fromJson<int?>(json['atmospherePresetId']),
     );
   }
   @override
@@ -22154,6 +22193,7 @@ class RangeDaySessionRow extends DataClass
       'cantDegrees': serializer.toJson<double?>(cantDegrees),
       'shotAzimuthDegrees': serializer.toJson<double?>(shotAzimuthDegrees),
       'inclineAngleDeg': serializer.toJson<double?>(inclineAngleDeg),
+      'atmospherePresetId': serializer.toJson<int?>(atmospherePresetId),
     };
   }
 
@@ -22185,6 +22225,7 @@ class RangeDaySessionRow extends DataClass
     Value<double?> cantDegrees = const Value.absent(),
     Value<double?> shotAzimuthDegrees = const Value.absent(),
     Value<double?> inclineAngleDeg = const Value.absent(),
+    Value<int?> atmospherePresetId = const Value.absent(),
   }) => RangeDaySessionRow(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -22227,6 +22268,9 @@ class RangeDaySessionRow extends DataClass
     inclineAngleDeg: inclineAngleDeg.present
         ? inclineAngleDeg.value
         : this.inclineAngleDeg,
+    atmospherePresetId: atmospherePresetId.present
+        ? atmospherePresetId.value
+        : this.atmospherePresetId,
   );
   RangeDaySessionRow copyWithCompanion(RangeDaySessionsCompanion data) {
     return RangeDaySessionRow(
@@ -22287,6 +22331,9 @@ class RangeDaySessionRow extends DataClass
       inclineAngleDeg: data.inclineAngleDeg.present
           ? data.inclineAngleDeg.value
           : this.inclineAngleDeg,
+      atmospherePresetId: data.atmospherePresetId.present
+          ? data.atmospherePresetId.value
+          : this.atmospherePresetId,
     );
   }
 
@@ -22319,7 +22366,8 @@ class RangeDaySessionRow extends DataClass
           ..write('correctionUnit: $correctionUnit, ')
           ..write('cantDegrees: $cantDegrees, ')
           ..write('shotAzimuthDegrees: $shotAzimuthDegrees, ')
-          ..write('inclineAngleDeg: $inclineAngleDeg')
+          ..write('inclineAngleDeg: $inclineAngleDeg, ')
+          ..write('atmospherePresetId: $atmospherePresetId')
           ..write(')'))
         .toString();
   }
@@ -22353,6 +22401,7 @@ class RangeDaySessionRow extends DataClass
     cantDegrees,
     shotAzimuthDegrees,
     inclineAngleDeg,
+    atmospherePresetId,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -22384,7 +22433,8 @@ class RangeDaySessionRow extends DataClass
           other.correctionUnit == this.correctionUnit &&
           other.cantDegrees == this.cantDegrees &&
           other.shotAzimuthDegrees == this.shotAzimuthDegrees &&
-          other.inclineAngleDeg == this.inclineAngleDeg);
+          other.inclineAngleDeg == this.inclineAngleDeg &&
+          other.atmospherePresetId == this.atmospherePresetId);
 }
 
 class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
@@ -22415,6 +22465,7 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
   final Value<double?> cantDegrees;
   final Value<double?> shotAzimuthDegrees;
   final Value<double?> inclineAngleDeg;
+  final Value<int?> atmospherePresetId;
   const RangeDaySessionsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -22443,6 +22494,7 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
     this.cantDegrees = const Value.absent(),
     this.shotAzimuthDegrees = const Value.absent(),
     this.inclineAngleDeg = const Value.absent(),
+    this.atmospherePresetId = const Value.absent(),
   });
   RangeDaySessionsCompanion.insert({
     this.id = const Value.absent(),
@@ -22472,6 +22524,7 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
     this.cantDegrees = const Value.absent(),
     this.shotAzimuthDegrees = const Value.absent(),
     this.inclineAngleDeg = const Value.absent(),
+    this.atmospherePresetId = const Value.absent(),
   }) : name = Value(name),
        date = Value(date),
        distanceYd = Value(distanceYd);
@@ -22503,6 +22556,7 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
     Expression<double>? cantDegrees,
     Expression<double>? shotAzimuthDegrees,
     Expression<double>? inclineAngleDeg,
+    Expression<int>? atmospherePresetId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -22536,6 +22590,8 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
       if (shotAzimuthDegrees != null)
         'shot_azimuth_degrees': shotAzimuthDegrees,
       if (inclineAngleDeg != null) 'incline_angle_deg': inclineAngleDeg,
+      if (atmospherePresetId != null)
+        'atmosphere_preset_id': atmospherePresetId,
     });
   }
 
@@ -22567,6 +22623,7 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
     Value<double?>? cantDegrees,
     Value<double?>? shotAzimuthDegrees,
     Value<double?>? inclineAngleDeg,
+    Value<int?>? atmospherePresetId,
   }) {
     return RangeDaySessionsCompanion(
       id: id ?? this.id,
@@ -22596,6 +22653,7 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
       cantDegrees: cantDegrees ?? this.cantDegrees,
       shotAzimuthDegrees: shotAzimuthDegrees ?? this.shotAzimuthDegrees,
       inclineAngleDeg: inclineAngleDeg ?? this.inclineAngleDeg,
+      atmospherePresetId: atmospherePresetId ?? this.atmospherePresetId,
     );
   }
 
@@ -22683,6 +22741,9 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
     if (inclineAngleDeg.present) {
       map['incline_angle_deg'] = Variable<double>(inclineAngleDeg.value);
     }
+    if (atmospherePresetId.present) {
+      map['atmosphere_preset_id'] = Variable<int>(atmospherePresetId.value);
+    }
     return map;
   }
 
@@ -22715,7 +22776,8 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
           ..write('correctionUnit: $correctionUnit, ')
           ..write('cantDegrees: $cantDegrees, ')
           ..write('shotAzimuthDegrees: $shotAzimuthDegrees, ')
-          ..write('inclineAngleDeg: $inclineAngleDeg')
+          ..write('inclineAngleDeg: $inclineAngleDeg, ')
+          ..write('atmospherePresetId: $atmospherePresetId')
           ..write(')'))
         .toString();
   }
@@ -25303,6 +25365,2911 @@ class FactoryLoadsCompanion extends UpdateCompanion<FactoryLoadRow> {
   }
 }
 
+class $WezProfilesTable extends WezProfiles
+    with TableInfo<$WezProfilesTable, WezProfileRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WezProfilesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _loadIdMeta = const VerificationMeta('loadId');
+  @override
+  late final GeneratedColumn<int> loadId = GeneratedColumn<int>(
+    'load_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES user_loads (id)',
+    ),
+  );
+  static const VerificationMeta _firearmIdMeta = const VerificationMeta(
+    'firearmId',
+  );
+  @override
+  late final GeneratedColumn<int> firearmId = GeneratedColumn<int>(
+    'firearm_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES user_firearms (id)',
+    ),
+  );
+  static const VerificationMeta _targetWidthInMeta = const VerificationMeta(
+    'targetWidthIn',
+  );
+  @override
+  late final GeneratedColumn<double> targetWidthIn = GeneratedColumn<double>(
+    'target_width_in',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _targetHeightInMeta = const VerificationMeta(
+    'targetHeightIn',
+  );
+  @override
+  late final GeneratedColumn<double> targetHeightIn = GeneratedColumn<double>(
+    'target_height_in',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _targetShapeMeta = const VerificationMeta(
+    'targetShape',
+  );
+  @override
+  late final GeneratedColumn<String> targetShape = GeneratedColumn<String>(
+    'target_shape',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _groupMoaMeta = const VerificationMeta(
+    'groupMoa',
+  );
+  @override
+  late final GeneratedColumn<double> groupMoa = GeneratedColumn<double>(
+    'group_moa',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _windUncertaintyMphMeta =
+      const VerificationMeta('windUncertaintyMph');
+  @override
+  late final GeneratedColumn<double> windUncertaintyMph =
+      GeneratedColumn<double>(
+        'wind_uncertainty_mph',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _rangeUncertaintyYdMeta =
+      const VerificationMeta('rangeUncertaintyYd');
+  @override
+  late final GeneratedColumn<double> rangeUncertaintyYd =
+      GeneratedColumn<double>(
+        'range_uncertainty_yd',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _mvSdFpsMeta = const VerificationMeta(
+    'mvSdFps',
+  );
+  @override
+  late final GeneratedColumn<double> mvSdFps = GeneratedColumn<double>(
+    'mv_sd_fps',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _curveJsonMeta = const VerificationMeta(
+    'curveJson',
+  );
+  @override
+  late final GeneratedColumn<String> curveJson = GeneratedColumn<String>(
+    'curve_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _computedAtMeta = const VerificationMeta(
+    'computedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> computedAt = GeneratedColumn<DateTime>(
+    'computed_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    loadId,
+    firearmId,
+    targetWidthIn,
+    targetHeightIn,
+    targetShape,
+    groupMoa,
+    windUncertaintyMph,
+    rangeUncertaintyYd,
+    mvSdFps,
+    curveJson,
+    computedAt,
+    notes,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'wez_profiles';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WezProfileRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('load_id')) {
+      context.handle(
+        _loadIdMeta,
+        loadId.isAcceptableOrUnknown(data['load_id']!, _loadIdMeta),
+      );
+    }
+    if (data.containsKey('firearm_id')) {
+      context.handle(
+        _firearmIdMeta,
+        firearmId.isAcceptableOrUnknown(data['firearm_id']!, _firearmIdMeta),
+      );
+    }
+    if (data.containsKey('target_width_in')) {
+      context.handle(
+        _targetWidthInMeta,
+        targetWidthIn.isAcceptableOrUnknown(
+          data['target_width_in']!,
+          _targetWidthInMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_targetWidthInMeta);
+    }
+    if (data.containsKey('target_height_in')) {
+      context.handle(
+        _targetHeightInMeta,
+        targetHeightIn.isAcceptableOrUnknown(
+          data['target_height_in']!,
+          _targetHeightInMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_targetHeightInMeta);
+    }
+    if (data.containsKey('target_shape')) {
+      context.handle(
+        _targetShapeMeta,
+        targetShape.isAcceptableOrUnknown(
+          data['target_shape']!,
+          _targetShapeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_targetShapeMeta);
+    }
+    if (data.containsKey('group_moa')) {
+      context.handle(
+        _groupMoaMeta,
+        groupMoa.isAcceptableOrUnknown(data['group_moa']!, _groupMoaMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_groupMoaMeta);
+    }
+    if (data.containsKey('wind_uncertainty_mph')) {
+      context.handle(
+        _windUncertaintyMphMeta,
+        windUncertaintyMph.isAcceptableOrUnknown(
+          data['wind_uncertainty_mph']!,
+          _windUncertaintyMphMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_windUncertaintyMphMeta);
+    }
+    if (data.containsKey('range_uncertainty_yd')) {
+      context.handle(
+        _rangeUncertaintyYdMeta,
+        rangeUncertaintyYd.isAcceptableOrUnknown(
+          data['range_uncertainty_yd']!,
+          _rangeUncertaintyYdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_rangeUncertaintyYdMeta);
+    }
+    if (data.containsKey('mv_sd_fps')) {
+      context.handle(
+        _mvSdFpsMeta,
+        mvSdFps.isAcceptableOrUnknown(data['mv_sd_fps']!, _mvSdFpsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_mvSdFpsMeta);
+    }
+    if (data.containsKey('curve_json')) {
+      context.handle(
+        _curveJsonMeta,
+        curveJson.isAcceptableOrUnknown(data['curve_json']!, _curveJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_curveJsonMeta);
+    }
+    if (data.containsKey('computed_at')) {
+      context.handle(
+        _computedAtMeta,
+        computedAt.isAcceptableOrUnknown(data['computed_at']!, _computedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_computedAtMeta);
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  WezProfileRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WezProfileRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      loadId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}load_id'],
+      ),
+      firearmId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}firearm_id'],
+      ),
+      targetWidthIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}target_width_in'],
+      )!,
+      targetHeightIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}target_height_in'],
+      )!,
+      targetShape: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}target_shape'],
+      )!,
+      groupMoa: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}group_moa'],
+      )!,
+      windUncertaintyMph: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}wind_uncertainty_mph'],
+      )!,
+      rangeUncertaintyYd: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}range_uncertainty_yd'],
+      )!,
+      mvSdFps: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}mv_sd_fps'],
+      )!,
+      curveJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}curve_json'],
+      )!,
+      computedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}computed_at'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $WezProfilesTable createAlias(String alias) {
+    return $WezProfilesTable(attachedDatabase, alias);
+  }
+}
+
+class WezProfileRow extends DataClass implements Insertable<WezProfileRow> {
+  final int id;
+  final String name;
+
+  /// Optional FK to UserLoads. Null means the profile was built ad-hoc
+  /// from a manually-entered projectile + MV.
+  final int? loadId;
+
+  /// Optional FK to UserFirearms. Null = ad-hoc rifle parameters.
+  final int? firearmId;
+
+  /// Target geometry — copy of the inputs at compute time.
+  final double targetWidthIn;
+  final double targetHeightIn;
+
+  /// 'circle' | 'rectangle' | 'silhouette' — matches `Targets.shape`.
+  final String targetShape;
+
+  /// Uncertainty inputs — the four sliders on the WEZ screen.
+  final double groupMoa;
+  final double windUncertaintyMph;
+  final double rangeUncertaintyYd;
+  final double mvSdFps;
+
+  /// JSON array of `{"r": rangeYd, "p": hitProb0to1}`. Sorted ascending
+  /// by range. Decoded by the WEZ screen on open to redraw the curve
+  /// without re-running the solver.
+  final String curveJson;
+
+  /// Wall-clock when the curve was computed. Distinct from `createdAt`
+  /// (the row insert) because a future "Recompute" button updates the
+  /// curve without inserting a new row.
+  final DateTime computedAt;
+  final String? notes;
+  final DateTime createdAt;
+  const WezProfileRow({
+    required this.id,
+    required this.name,
+    this.loadId,
+    this.firearmId,
+    required this.targetWidthIn,
+    required this.targetHeightIn,
+    required this.targetShape,
+    required this.groupMoa,
+    required this.windUncertaintyMph,
+    required this.rangeUncertaintyYd,
+    required this.mvSdFps,
+    required this.curveJson,
+    required this.computedAt,
+    this.notes,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || loadId != null) {
+      map['load_id'] = Variable<int>(loadId);
+    }
+    if (!nullToAbsent || firearmId != null) {
+      map['firearm_id'] = Variable<int>(firearmId);
+    }
+    map['target_width_in'] = Variable<double>(targetWidthIn);
+    map['target_height_in'] = Variable<double>(targetHeightIn);
+    map['target_shape'] = Variable<String>(targetShape);
+    map['group_moa'] = Variable<double>(groupMoa);
+    map['wind_uncertainty_mph'] = Variable<double>(windUncertaintyMph);
+    map['range_uncertainty_yd'] = Variable<double>(rangeUncertaintyYd);
+    map['mv_sd_fps'] = Variable<double>(mvSdFps);
+    map['curve_json'] = Variable<String>(curveJson);
+    map['computed_at'] = Variable<DateTime>(computedAt);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  WezProfilesCompanion toCompanion(bool nullToAbsent) {
+    return WezProfilesCompanion(
+      id: Value(id),
+      name: Value(name),
+      loadId: loadId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(loadId),
+      firearmId: firearmId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(firearmId),
+      targetWidthIn: Value(targetWidthIn),
+      targetHeightIn: Value(targetHeightIn),
+      targetShape: Value(targetShape),
+      groupMoa: Value(groupMoa),
+      windUncertaintyMph: Value(windUncertaintyMph),
+      rangeUncertaintyYd: Value(rangeUncertaintyYd),
+      mvSdFps: Value(mvSdFps),
+      curveJson: Value(curveJson),
+      computedAt: Value(computedAt),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory WezProfileRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WezProfileRow(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      loadId: serializer.fromJson<int?>(json['loadId']),
+      firearmId: serializer.fromJson<int?>(json['firearmId']),
+      targetWidthIn: serializer.fromJson<double>(json['targetWidthIn']),
+      targetHeightIn: serializer.fromJson<double>(json['targetHeightIn']),
+      targetShape: serializer.fromJson<String>(json['targetShape']),
+      groupMoa: serializer.fromJson<double>(json['groupMoa']),
+      windUncertaintyMph: serializer.fromJson<double>(
+        json['windUncertaintyMph'],
+      ),
+      rangeUncertaintyYd: serializer.fromJson<double>(
+        json['rangeUncertaintyYd'],
+      ),
+      mvSdFps: serializer.fromJson<double>(json['mvSdFps']),
+      curveJson: serializer.fromJson<String>(json['curveJson']),
+      computedAt: serializer.fromJson<DateTime>(json['computedAt']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'loadId': serializer.toJson<int?>(loadId),
+      'firearmId': serializer.toJson<int?>(firearmId),
+      'targetWidthIn': serializer.toJson<double>(targetWidthIn),
+      'targetHeightIn': serializer.toJson<double>(targetHeightIn),
+      'targetShape': serializer.toJson<String>(targetShape),
+      'groupMoa': serializer.toJson<double>(groupMoa),
+      'windUncertaintyMph': serializer.toJson<double>(windUncertaintyMph),
+      'rangeUncertaintyYd': serializer.toJson<double>(rangeUncertaintyYd),
+      'mvSdFps': serializer.toJson<double>(mvSdFps),
+      'curveJson': serializer.toJson<String>(curveJson),
+      'computedAt': serializer.toJson<DateTime>(computedAt),
+      'notes': serializer.toJson<String?>(notes),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  WezProfileRow copyWith({
+    int? id,
+    String? name,
+    Value<int?> loadId = const Value.absent(),
+    Value<int?> firearmId = const Value.absent(),
+    double? targetWidthIn,
+    double? targetHeightIn,
+    String? targetShape,
+    double? groupMoa,
+    double? windUncertaintyMph,
+    double? rangeUncertaintyYd,
+    double? mvSdFps,
+    String? curveJson,
+    DateTime? computedAt,
+    Value<String?> notes = const Value.absent(),
+    DateTime? createdAt,
+  }) => WezProfileRow(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    loadId: loadId.present ? loadId.value : this.loadId,
+    firearmId: firearmId.present ? firearmId.value : this.firearmId,
+    targetWidthIn: targetWidthIn ?? this.targetWidthIn,
+    targetHeightIn: targetHeightIn ?? this.targetHeightIn,
+    targetShape: targetShape ?? this.targetShape,
+    groupMoa: groupMoa ?? this.groupMoa,
+    windUncertaintyMph: windUncertaintyMph ?? this.windUncertaintyMph,
+    rangeUncertaintyYd: rangeUncertaintyYd ?? this.rangeUncertaintyYd,
+    mvSdFps: mvSdFps ?? this.mvSdFps,
+    curveJson: curveJson ?? this.curveJson,
+    computedAt: computedAt ?? this.computedAt,
+    notes: notes.present ? notes.value : this.notes,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  WezProfileRow copyWithCompanion(WezProfilesCompanion data) {
+    return WezProfileRow(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      loadId: data.loadId.present ? data.loadId.value : this.loadId,
+      firearmId: data.firearmId.present ? data.firearmId.value : this.firearmId,
+      targetWidthIn: data.targetWidthIn.present
+          ? data.targetWidthIn.value
+          : this.targetWidthIn,
+      targetHeightIn: data.targetHeightIn.present
+          ? data.targetHeightIn.value
+          : this.targetHeightIn,
+      targetShape: data.targetShape.present
+          ? data.targetShape.value
+          : this.targetShape,
+      groupMoa: data.groupMoa.present ? data.groupMoa.value : this.groupMoa,
+      windUncertaintyMph: data.windUncertaintyMph.present
+          ? data.windUncertaintyMph.value
+          : this.windUncertaintyMph,
+      rangeUncertaintyYd: data.rangeUncertaintyYd.present
+          ? data.rangeUncertaintyYd.value
+          : this.rangeUncertaintyYd,
+      mvSdFps: data.mvSdFps.present ? data.mvSdFps.value : this.mvSdFps,
+      curveJson: data.curveJson.present ? data.curveJson.value : this.curveJson,
+      computedAt: data.computedAt.present
+          ? data.computedAt.value
+          : this.computedAt,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WezProfileRow(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('loadId: $loadId, ')
+          ..write('firearmId: $firearmId, ')
+          ..write('targetWidthIn: $targetWidthIn, ')
+          ..write('targetHeightIn: $targetHeightIn, ')
+          ..write('targetShape: $targetShape, ')
+          ..write('groupMoa: $groupMoa, ')
+          ..write('windUncertaintyMph: $windUncertaintyMph, ')
+          ..write('rangeUncertaintyYd: $rangeUncertaintyYd, ')
+          ..write('mvSdFps: $mvSdFps, ')
+          ..write('curveJson: $curveJson, ')
+          ..write('computedAt: $computedAt, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    loadId,
+    firearmId,
+    targetWidthIn,
+    targetHeightIn,
+    targetShape,
+    groupMoa,
+    windUncertaintyMph,
+    rangeUncertaintyYd,
+    mvSdFps,
+    curveJson,
+    computedAt,
+    notes,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WezProfileRow &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.loadId == this.loadId &&
+          other.firearmId == this.firearmId &&
+          other.targetWidthIn == this.targetWidthIn &&
+          other.targetHeightIn == this.targetHeightIn &&
+          other.targetShape == this.targetShape &&
+          other.groupMoa == this.groupMoa &&
+          other.windUncertaintyMph == this.windUncertaintyMph &&
+          other.rangeUncertaintyYd == this.rangeUncertaintyYd &&
+          other.mvSdFps == this.mvSdFps &&
+          other.curveJson == this.curveJson &&
+          other.computedAt == this.computedAt &&
+          other.notes == this.notes &&
+          other.createdAt == this.createdAt);
+}
+
+class WezProfilesCompanion extends UpdateCompanion<WezProfileRow> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<int?> loadId;
+  final Value<int?> firearmId;
+  final Value<double> targetWidthIn;
+  final Value<double> targetHeightIn;
+  final Value<String> targetShape;
+  final Value<double> groupMoa;
+  final Value<double> windUncertaintyMph;
+  final Value<double> rangeUncertaintyYd;
+  final Value<double> mvSdFps;
+  final Value<String> curveJson;
+  final Value<DateTime> computedAt;
+  final Value<String?> notes;
+  final Value<DateTime> createdAt;
+  const WezProfilesCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.loadId = const Value.absent(),
+    this.firearmId = const Value.absent(),
+    this.targetWidthIn = const Value.absent(),
+    this.targetHeightIn = const Value.absent(),
+    this.targetShape = const Value.absent(),
+    this.groupMoa = const Value.absent(),
+    this.windUncertaintyMph = const Value.absent(),
+    this.rangeUncertaintyYd = const Value.absent(),
+    this.mvSdFps = const Value.absent(),
+    this.curveJson = const Value.absent(),
+    this.computedAt = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  WezProfilesCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    this.loadId = const Value.absent(),
+    this.firearmId = const Value.absent(),
+    required double targetWidthIn,
+    required double targetHeightIn,
+    required String targetShape,
+    required double groupMoa,
+    required double windUncertaintyMph,
+    required double rangeUncertaintyYd,
+    required double mvSdFps,
+    required String curveJson,
+    required DateTime computedAt,
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : name = Value(name),
+       targetWidthIn = Value(targetWidthIn),
+       targetHeightIn = Value(targetHeightIn),
+       targetShape = Value(targetShape),
+       groupMoa = Value(groupMoa),
+       windUncertaintyMph = Value(windUncertaintyMph),
+       rangeUncertaintyYd = Value(rangeUncertaintyYd),
+       mvSdFps = Value(mvSdFps),
+       curveJson = Value(curveJson),
+       computedAt = Value(computedAt);
+  static Insertable<WezProfileRow> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<int>? loadId,
+    Expression<int>? firearmId,
+    Expression<double>? targetWidthIn,
+    Expression<double>? targetHeightIn,
+    Expression<String>? targetShape,
+    Expression<double>? groupMoa,
+    Expression<double>? windUncertaintyMph,
+    Expression<double>? rangeUncertaintyYd,
+    Expression<double>? mvSdFps,
+    Expression<String>? curveJson,
+    Expression<DateTime>? computedAt,
+    Expression<String>? notes,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (loadId != null) 'load_id': loadId,
+      if (firearmId != null) 'firearm_id': firearmId,
+      if (targetWidthIn != null) 'target_width_in': targetWidthIn,
+      if (targetHeightIn != null) 'target_height_in': targetHeightIn,
+      if (targetShape != null) 'target_shape': targetShape,
+      if (groupMoa != null) 'group_moa': groupMoa,
+      if (windUncertaintyMph != null)
+        'wind_uncertainty_mph': windUncertaintyMph,
+      if (rangeUncertaintyYd != null)
+        'range_uncertainty_yd': rangeUncertaintyYd,
+      if (mvSdFps != null) 'mv_sd_fps': mvSdFps,
+      if (curveJson != null) 'curve_json': curveJson,
+      if (computedAt != null) 'computed_at': computedAt,
+      if (notes != null) 'notes': notes,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  WezProfilesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<int?>? loadId,
+    Value<int?>? firearmId,
+    Value<double>? targetWidthIn,
+    Value<double>? targetHeightIn,
+    Value<String>? targetShape,
+    Value<double>? groupMoa,
+    Value<double>? windUncertaintyMph,
+    Value<double>? rangeUncertaintyYd,
+    Value<double>? mvSdFps,
+    Value<String>? curveJson,
+    Value<DateTime>? computedAt,
+    Value<String?>? notes,
+    Value<DateTime>? createdAt,
+  }) {
+    return WezProfilesCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      loadId: loadId ?? this.loadId,
+      firearmId: firearmId ?? this.firearmId,
+      targetWidthIn: targetWidthIn ?? this.targetWidthIn,
+      targetHeightIn: targetHeightIn ?? this.targetHeightIn,
+      targetShape: targetShape ?? this.targetShape,
+      groupMoa: groupMoa ?? this.groupMoa,
+      windUncertaintyMph: windUncertaintyMph ?? this.windUncertaintyMph,
+      rangeUncertaintyYd: rangeUncertaintyYd ?? this.rangeUncertaintyYd,
+      mvSdFps: mvSdFps ?? this.mvSdFps,
+      curveJson: curveJson ?? this.curveJson,
+      computedAt: computedAt ?? this.computedAt,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (loadId.present) {
+      map['load_id'] = Variable<int>(loadId.value);
+    }
+    if (firearmId.present) {
+      map['firearm_id'] = Variable<int>(firearmId.value);
+    }
+    if (targetWidthIn.present) {
+      map['target_width_in'] = Variable<double>(targetWidthIn.value);
+    }
+    if (targetHeightIn.present) {
+      map['target_height_in'] = Variable<double>(targetHeightIn.value);
+    }
+    if (targetShape.present) {
+      map['target_shape'] = Variable<String>(targetShape.value);
+    }
+    if (groupMoa.present) {
+      map['group_moa'] = Variable<double>(groupMoa.value);
+    }
+    if (windUncertaintyMph.present) {
+      map['wind_uncertainty_mph'] = Variable<double>(windUncertaintyMph.value);
+    }
+    if (rangeUncertaintyYd.present) {
+      map['range_uncertainty_yd'] = Variable<double>(rangeUncertaintyYd.value);
+    }
+    if (mvSdFps.present) {
+      map['mv_sd_fps'] = Variable<double>(mvSdFps.value);
+    }
+    if (curveJson.present) {
+      map['curve_json'] = Variable<String>(curveJson.value);
+    }
+    if (computedAt.present) {
+      map['computed_at'] = Variable<DateTime>(computedAt.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WezProfilesCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('loadId: $loadId, ')
+          ..write('firearmId: $firearmId, ')
+          ..write('targetWidthIn: $targetWidthIn, ')
+          ..write('targetHeightIn: $targetHeightIn, ')
+          ..write('targetShape: $targetShape, ')
+          ..write('groupMoa: $groupMoa, ')
+          ..write('windUncertaintyMph: $windUncertaintyMph, ')
+          ..write('rangeUncertaintyYd: $rangeUncertaintyYd, ')
+          ..write('mvSdFps: $mvSdFps, ')
+          ..write('curveJson: $curveJson, ')
+          ..write('computedAt: $computedAt, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $TruedBcOverridesTable extends TruedBcOverrides
+    with TableInfo<$TruedBcOverridesTable, TruedBcOverrideRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TruedBcOverridesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _loadIdMeta = const VerificationMeta('loadId');
+  @override
+  late final GeneratedColumn<int> loadId = GeneratedColumn<int>(
+    'load_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES user_loads (id)',
+    ),
+  );
+  static const VerificationMeta _firearmIdMeta = const VerificationMeta(
+    'firearmId',
+  );
+  @override
+  late final GeneratedColumn<int> firearmId = GeneratedColumn<int>(
+    'firearm_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES user_firearms (id)',
+    ),
+  );
+  static const VerificationMeta _dragModelMeta = const VerificationMeta(
+    'dragModel',
+  );
+  @override
+  late final GeneratedColumn<String> dragModel = GeneratedColumn<String>(
+    'drag_model',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nominalBcMeta = const VerificationMeta(
+    'nominalBc',
+  );
+  @override
+  late final GeneratedColumn<double> nominalBc = GeneratedColumn<double>(
+    'nominal_bc',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _truedBcMeta = const VerificationMeta(
+    'truedBc',
+  );
+  @override
+  late final GeneratedColumn<double> truedBc = GeneratedColumn<double>(
+    'trued_bc',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _truingDistanceYdMeta = const VerificationMeta(
+    'truingDistanceYd',
+  );
+  @override
+  late final GeneratedColumn<double> truingDistanceYd = GeneratedColumn<double>(
+    'truing_distance_yd',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _observationJsonMeta = const VerificationMeta(
+    'observationJson',
+  );
+  @override
+  late final GeneratedColumn<String> observationJson = GeneratedColumn<String>(
+    'observation_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _truedAtMeta = const VerificationMeta(
+    'truedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> truedAt = GeneratedColumn<DateTime>(
+    'trued_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    loadId,
+    firearmId,
+    dragModel,
+    nominalBc,
+    truedBc,
+    truingDistanceYd,
+    observationJson,
+    notes,
+    truedAt,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'trued_bc_overrides';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TruedBcOverrideRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('load_id')) {
+      context.handle(
+        _loadIdMeta,
+        loadId.isAcceptableOrUnknown(data['load_id']!, _loadIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_loadIdMeta);
+    }
+    if (data.containsKey('firearm_id')) {
+      context.handle(
+        _firearmIdMeta,
+        firearmId.isAcceptableOrUnknown(data['firearm_id']!, _firearmIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_firearmIdMeta);
+    }
+    if (data.containsKey('drag_model')) {
+      context.handle(
+        _dragModelMeta,
+        dragModel.isAcceptableOrUnknown(data['drag_model']!, _dragModelMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dragModelMeta);
+    }
+    if (data.containsKey('nominal_bc')) {
+      context.handle(
+        _nominalBcMeta,
+        nominalBc.isAcceptableOrUnknown(data['nominal_bc']!, _nominalBcMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nominalBcMeta);
+    }
+    if (data.containsKey('trued_bc')) {
+      context.handle(
+        _truedBcMeta,
+        truedBc.isAcceptableOrUnknown(data['trued_bc']!, _truedBcMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_truedBcMeta);
+    }
+    if (data.containsKey('truing_distance_yd')) {
+      context.handle(
+        _truingDistanceYdMeta,
+        truingDistanceYd.isAcceptableOrUnknown(
+          data['truing_distance_yd']!,
+          _truingDistanceYdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_truingDistanceYdMeta);
+    }
+    if (data.containsKey('observation_json')) {
+      context.handle(
+        _observationJsonMeta,
+        observationJson.isAcceptableOrUnknown(
+          data['observation_json']!,
+          _observationJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_observationJsonMeta);
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('trued_at')) {
+      context.handle(
+        _truedAtMeta,
+        truedAt.isAcceptableOrUnknown(data['trued_at']!, _truedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_truedAtMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {loadId, firearmId, dragModel},
+  ];
+  @override
+  TruedBcOverrideRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TruedBcOverrideRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      loadId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}load_id'],
+      )!,
+      firearmId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}firearm_id'],
+      )!,
+      dragModel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}drag_model'],
+      )!,
+      nominalBc: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}nominal_bc'],
+      )!,
+      truedBc: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}trued_bc'],
+      )!,
+      truingDistanceYd: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}truing_distance_yd'],
+      )!,
+      observationJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}observation_json'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      truedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}trued_at'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $TruedBcOverridesTable createAlias(String alias) {
+    return $TruedBcOverridesTable(attachedDatabase, alias);
+  }
+}
+
+class TruedBcOverrideRow extends DataClass
+    implements Insertable<TruedBcOverrideRow> {
+  final int id;
+  final int loadId;
+  final int firearmId;
+
+  /// 'g1' | 'g7' | 'cdm'. Matches DragModel string values; 'cdm' is
+  /// reserved for custom-drag-curve loads where the truing scales the
+  /// curve rather than a single-number BC.
+  final String dragModel;
+
+  /// The catalog BC the load was using before truing. Recorded so the
+  /// UI can show "trued from 0.326 to 0.314" without consulting the
+  /// load row's current BC (which the user might have edited in the
+  /// meantime).
+  final double nominalBc;
+
+  /// The trued / effective BC the solver should use for this
+  /// (load, firearm, dragModel) combination.
+  final double truedBc;
+
+  /// Distance the truing observation was taken at. For multi-distance
+  /// truing this is the longest distance in the observation set
+  /// (the most informative point).
+  final double truingDistanceYd;
+
+  /// JSON array of observations. See class docstring for shape.
+  final String observationJson;
+  final String? notes;
+  final DateTime truedAt;
+  final DateTime createdAt;
+  const TruedBcOverrideRow({
+    required this.id,
+    required this.loadId,
+    required this.firearmId,
+    required this.dragModel,
+    required this.nominalBc,
+    required this.truedBc,
+    required this.truingDistanceYd,
+    required this.observationJson,
+    this.notes,
+    required this.truedAt,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['load_id'] = Variable<int>(loadId);
+    map['firearm_id'] = Variable<int>(firearmId);
+    map['drag_model'] = Variable<String>(dragModel);
+    map['nominal_bc'] = Variable<double>(nominalBc);
+    map['trued_bc'] = Variable<double>(truedBc);
+    map['truing_distance_yd'] = Variable<double>(truingDistanceYd);
+    map['observation_json'] = Variable<String>(observationJson);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['trued_at'] = Variable<DateTime>(truedAt);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  TruedBcOverridesCompanion toCompanion(bool nullToAbsent) {
+    return TruedBcOverridesCompanion(
+      id: Value(id),
+      loadId: Value(loadId),
+      firearmId: Value(firearmId),
+      dragModel: Value(dragModel),
+      nominalBc: Value(nominalBc),
+      truedBc: Value(truedBc),
+      truingDistanceYd: Value(truingDistanceYd),
+      observationJson: Value(observationJson),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      truedAt: Value(truedAt),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory TruedBcOverrideRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TruedBcOverrideRow(
+      id: serializer.fromJson<int>(json['id']),
+      loadId: serializer.fromJson<int>(json['loadId']),
+      firearmId: serializer.fromJson<int>(json['firearmId']),
+      dragModel: serializer.fromJson<String>(json['dragModel']),
+      nominalBc: serializer.fromJson<double>(json['nominalBc']),
+      truedBc: serializer.fromJson<double>(json['truedBc']),
+      truingDistanceYd: serializer.fromJson<double>(json['truingDistanceYd']),
+      observationJson: serializer.fromJson<String>(json['observationJson']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      truedAt: serializer.fromJson<DateTime>(json['truedAt']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'loadId': serializer.toJson<int>(loadId),
+      'firearmId': serializer.toJson<int>(firearmId),
+      'dragModel': serializer.toJson<String>(dragModel),
+      'nominalBc': serializer.toJson<double>(nominalBc),
+      'truedBc': serializer.toJson<double>(truedBc),
+      'truingDistanceYd': serializer.toJson<double>(truingDistanceYd),
+      'observationJson': serializer.toJson<String>(observationJson),
+      'notes': serializer.toJson<String?>(notes),
+      'truedAt': serializer.toJson<DateTime>(truedAt),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  TruedBcOverrideRow copyWith({
+    int? id,
+    int? loadId,
+    int? firearmId,
+    String? dragModel,
+    double? nominalBc,
+    double? truedBc,
+    double? truingDistanceYd,
+    String? observationJson,
+    Value<String?> notes = const Value.absent(),
+    DateTime? truedAt,
+    DateTime? createdAt,
+  }) => TruedBcOverrideRow(
+    id: id ?? this.id,
+    loadId: loadId ?? this.loadId,
+    firearmId: firearmId ?? this.firearmId,
+    dragModel: dragModel ?? this.dragModel,
+    nominalBc: nominalBc ?? this.nominalBc,
+    truedBc: truedBc ?? this.truedBc,
+    truingDistanceYd: truingDistanceYd ?? this.truingDistanceYd,
+    observationJson: observationJson ?? this.observationJson,
+    notes: notes.present ? notes.value : this.notes,
+    truedAt: truedAt ?? this.truedAt,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  TruedBcOverrideRow copyWithCompanion(TruedBcOverridesCompanion data) {
+    return TruedBcOverrideRow(
+      id: data.id.present ? data.id.value : this.id,
+      loadId: data.loadId.present ? data.loadId.value : this.loadId,
+      firearmId: data.firearmId.present ? data.firearmId.value : this.firearmId,
+      dragModel: data.dragModel.present ? data.dragModel.value : this.dragModel,
+      nominalBc: data.nominalBc.present ? data.nominalBc.value : this.nominalBc,
+      truedBc: data.truedBc.present ? data.truedBc.value : this.truedBc,
+      truingDistanceYd: data.truingDistanceYd.present
+          ? data.truingDistanceYd.value
+          : this.truingDistanceYd,
+      observationJson: data.observationJson.present
+          ? data.observationJson.value
+          : this.observationJson,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      truedAt: data.truedAt.present ? data.truedAt.value : this.truedAt,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TruedBcOverrideRow(')
+          ..write('id: $id, ')
+          ..write('loadId: $loadId, ')
+          ..write('firearmId: $firearmId, ')
+          ..write('dragModel: $dragModel, ')
+          ..write('nominalBc: $nominalBc, ')
+          ..write('truedBc: $truedBc, ')
+          ..write('truingDistanceYd: $truingDistanceYd, ')
+          ..write('observationJson: $observationJson, ')
+          ..write('notes: $notes, ')
+          ..write('truedAt: $truedAt, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    loadId,
+    firearmId,
+    dragModel,
+    nominalBc,
+    truedBc,
+    truingDistanceYd,
+    observationJson,
+    notes,
+    truedAt,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TruedBcOverrideRow &&
+          other.id == this.id &&
+          other.loadId == this.loadId &&
+          other.firearmId == this.firearmId &&
+          other.dragModel == this.dragModel &&
+          other.nominalBc == this.nominalBc &&
+          other.truedBc == this.truedBc &&
+          other.truingDistanceYd == this.truingDistanceYd &&
+          other.observationJson == this.observationJson &&
+          other.notes == this.notes &&
+          other.truedAt == this.truedAt &&
+          other.createdAt == this.createdAt);
+}
+
+class TruedBcOverridesCompanion extends UpdateCompanion<TruedBcOverrideRow> {
+  final Value<int> id;
+  final Value<int> loadId;
+  final Value<int> firearmId;
+  final Value<String> dragModel;
+  final Value<double> nominalBc;
+  final Value<double> truedBc;
+  final Value<double> truingDistanceYd;
+  final Value<String> observationJson;
+  final Value<String?> notes;
+  final Value<DateTime> truedAt;
+  final Value<DateTime> createdAt;
+  const TruedBcOverridesCompanion({
+    this.id = const Value.absent(),
+    this.loadId = const Value.absent(),
+    this.firearmId = const Value.absent(),
+    this.dragModel = const Value.absent(),
+    this.nominalBc = const Value.absent(),
+    this.truedBc = const Value.absent(),
+    this.truingDistanceYd = const Value.absent(),
+    this.observationJson = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.truedAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  TruedBcOverridesCompanion.insert({
+    this.id = const Value.absent(),
+    required int loadId,
+    required int firearmId,
+    required String dragModel,
+    required double nominalBc,
+    required double truedBc,
+    required double truingDistanceYd,
+    required String observationJson,
+    this.notes = const Value.absent(),
+    required DateTime truedAt,
+    this.createdAt = const Value.absent(),
+  }) : loadId = Value(loadId),
+       firearmId = Value(firearmId),
+       dragModel = Value(dragModel),
+       nominalBc = Value(nominalBc),
+       truedBc = Value(truedBc),
+       truingDistanceYd = Value(truingDistanceYd),
+       observationJson = Value(observationJson),
+       truedAt = Value(truedAt);
+  static Insertable<TruedBcOverrideRow> custom({
+    Expression<int>? id,
+    Expression<int>? loadId,
+    Expression<int>? firearmId,
+    Expression<String>? dragModel,
+    Expression<double>? nominalBc,
+    Expression<double>? truedBc,
+    Expression<double>? truingDistanceYd,
+    Expression<String>? observationJson,
+    Expression<String>? notes,
+    Expression<DateTime>? truedAt,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (loadId != null) 'load_id': loadId,
+      if (firearmId != null) 'firearm_id': firearmId,
+      if (dragModel != null) 'drag_model': dragModel,
+      if (nominalBc != null) 'nominal_bc': nominalBc,
+      if (truedBc != null) 'trued_bc': truedBc,
+      if (truingDistanceYd != null) 'truing_distance_yd': truingDistanceYd,
+      if (observationJson != null) 'observation_json': observationJson,
+      if (notes != null) 'notes': notes,
+      if (truedAt != null) 'trued_at': truedAt,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  TruedBcOverridesCompanion copyWith({
+    Value<int>? id,
+    Value<int>? loadId,
+    Value<int>? firearmId,
+    Value<String>? dragModel,
+    Value<double>? nominalBc,
+    Value<double>? truedBc,
+    Value<double>? truingDistanceYd,
+    Value<String>? observationJson,
+    Value<String?>? notes,
+    Value<DateTime>? truedAt,
+    Value<DateTime>? createdAt,
+  }) {
+    return TruedBcOverridesCompanion(
+      id: id ?? this.id,
+      loadId: loadId ?? this.loadId,
+      firearmId: firearmId ?? this.firearmId,
+      dragModel: dragModel ?? this.dragModel,
+      nominalBc: nominalBc ?? this.nominalBc,
+      truedBc: truedBc ?? this.truedBc,
+      truingDistanceYd: truingDistanceYd ?? this.truingDistanceYd,
+      observationJson: observationJson ?? this.observationJson,
+      notes: notes ?? this.notes,
+      truedAt: truedAt ?? this.truedAt,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (loadId.present) {
+      map['load_id'] = Variable<int>(loadId.value);
+    }
+    if (firearmId.present) {
+      map['firearm_id'] = Variable<int>(firearmId.value);
+    }
+    if (dragModel.present) {
+      map['drag_model'] = Variable<String>(dragModel.value);
+    }
+    if (nominalBc.present) {
+      map['nominal_bc'] = Variable<double>(nominalBc.value);
+    }
+    if (truedBc.present) {
+      map['trued_bc'] = Variable<double>(truedBc.value);
+    }
+    if (truingDistanceYd.present) {
+      map['truing_distance_yd'] = Variable<double>(truingDistanceYd.value);
+    }
+    if (observationJson.present) {
+      map['observation_json'] = Variable<String>(observationJson.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (truedAt.present) {
+      map['trued_at'] = Variable<DateTime>(truedAt.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TruedBcOverridesCompanion(')
+          ..write('id: $id, ')
+          ..write('loadId: $loadId, ')
+          ..write('firearmId: $firearmId, ')
+          ..write('dragModel: $dragModel, ')
+          ..write('nominalBc: $nominalBc, ')
+          ..write('truedBc: $truedBc, ')
+          ..write('truingDistanceYd: $truingDistanceYd, ')
+          ..write('observationJson: $observationJson, ')
+          ..write('notes: $notes, ')
+          ..write('truedAt: $truedAt, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SightCalibrationsTable extends SightCalibrations
+    with TableInfo<$SightCalibrationsTable, SightCalibration> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SightCalibrationsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _firearmIdMeta = const VerificationMeta(
+    'firearmId',
+  );
+  @override
+  late final GeneratedColumn<int> firearmId = GeneratedColumn<int>(
+    'firearm_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES user_firearms (id)',
+    ),
+  );
+  static const VerificationMeta _axisMeta = const VerificationMeta('axis');
+  @override
+  late final GeneratedColumn<String> axis = GeneratedColumn<String>(
+    'axis',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _advertisedClickMilMeta =
+      const VerificationMeta('advertisedClickMil');
+  @override
+  late final GeneratedColumn<double> advertisedClickMil =
+      GeneratedColumn<double>(
+        'advertised_click_mil',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _observedClickMilMeta = const VerificationMeta(
+    'observedClickMil',
+  );
+  @override
+  late final GeneratedColumn<double> observedClickMil = GeneratedColumn<double>(
+    'observed_click_mil',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _derivedScaleMeta = const VerificationMeta(
+    'derivedScale',
+  );
+  @override
+  late final GeneratedColumn<double> derivedScale = GeneratedColumn<double>(
+    'derived_scale',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _observationJsonMeta = const VerificationMeta(
+    'observationJson',
+  );
+  @override
+  late final GeneratedColumn<String> observationJson = GeneratedColumn<String>(
+    'observation_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _calibratedAtMeta = const VerificationMeta(
+    'calibratedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> calibratedAt = GeneratedColumn<DateTime>(
+    'calibrated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    firearmId,
+    axis,
+    advertisedClickMil,
+    observedClickMil,
+    derivedScale,
+    observationJson,
+    notes,
+    calibratedAt,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sight_calibrations';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SightCalibration> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('firearm_id')) {
+      context.handle(
+        _firearmIdMeta,
+        firearmId.isAcceptableOrUnknown(data['firearm_id']!, _firearmIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_firearmIdMeta);
+    }
+    if (data.containsKey('axis')) {
+      context.handle(
+        _axisMeta,
+        axis.isAcceptableOrUnknown(data['axis']!, _axisMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_axisMeta);
+    }
+    if (data.containsKey('advertised_click_mil')) {
+      context.handle(
+        _advertisedClickMilMeta,
+        advertisedClickMil.isAcceptableOrUnknown(
+          data['advertised_click_mil']!,
+          _advertisedClickMilMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_advertisedClickMilMeta);
+    }
+    if (data.containsKey('observed_click_mil')) {
+      context.handle(
+        _observedClickMilMeta,
+        observedClickMil.isAcceptableOrUnknown(
+          data['observed_click_mil']!,
+          _observedClickMilMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_observedClickMilMeta);
+    }
+    if (data.containsKey('derived_scale')) {
+      context.handle(
+        _derivedScaleMeta,
+        derivedScale.isAcceptableOrUnknown(
+          data['derived_scale']!,
+          _derivedScaleMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_derivedScaleMeta);
+    }
+    if (data.containsKey('observation_json')) {
+      context.handle(
+        _observationJsonMeta,
+        observationJson.isAcceptableOrUnknown(
+          data['observation_json']!,
+          _observationJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_observationJsonMeta);
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('calibrated_at')) {
+      context.handle(
+        _calibratedAtMeta,
+        calibratedAt.isAcceptableOrUnknown(
+          data['calibrated_at']!,
+          _calibratedAtMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_calibratedAtMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SightCalibration map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SightCalibration(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      firearmId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}firearm_id'],
+      )!,
+      axis: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}axis'],
+      )!,
+      advertisedClickMil: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}advertised_click_mil'],
+      )!,
+      observedClickMil: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}observed_click_mil'],
+      )!,
+      derivedScale: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}derived_scale'],
+      )!,
+      observationJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}observation_json'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      calibratedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}calibrated_at'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $SightCalibrationsTable createAlias(String alias) {
+    return $SightCalibrationsTable(attachedDatabase, alias);
+  }
+}
+
+class SightCalibration extends DataClass
+    implements Insertable<SightCalibration> {
+  final int id;
+  final int firearmId;
+
+  /// 'vertical' | 'horizontal'.
+  final String axis;
+
+  /// What the scope's turret claims to move per click, in mil. e.g. 0.1
+  /// for a "0.1 mil per click" advertised scope. Stored to preserve
+  /// the original advertised value even if the user later edits the
+  /// firearm row.
+  final double advertisedClickMil;
+
+  /// What the scope actually moved per click, in mil, derived from the
+  /// observed centroid offset.
+  final double observedClickMil;
+
+  /// The derived sight scale factor: observed / advertised. e.g. 0.973
+  /// for a scope tracking 2.7% short. This is the value written to
+  /// `UserFirearms.sightScaleVertical` or `sightScaleHorizontal`.
+  final double derivedScale;
+
+  /// JSON array of the `(impactX, impactY)` observations used. Same
+  /// shape as `ShotImpacts` rows — normalized [-1, 1] coords.
+  final String observationJson;
+  final String? notes;
+  final DateTime calibratedAt;
+  final DateTime createdAt;
+  const SightCalibration({
+    required this.id,
+    required this.firearmId,
+    required this.axis,
+    required this.advertisedClickMil,
+    required this.observedClickMil,
+    required this.derivedScale,
+    required this.observationJson,
+    this.notes,
+    required this.calibratedAt,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['firearm_id'] = Variable<int>(firearmId);
+    map['axis'] = Variable<String>(axis);
+    map['advertised_click_mil'] = Variable<double>(advertisedClickMil);
+    map['observed_click_mil'] = Variable<double>(observedClickMil);
+    map['derived_scale'] = Variable<double>(derivedScale);
+    map['observation_json'] = Variable<String>(observationJson);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['calibrated_at'] = Variable<DateTime>(calibratedAt);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  SightCalibrationsCompanion toCompanion(bool nullToAbsent) {
+    return SightCalibrationsCompanion(
+      id: Value(id),
+      firearmId: Value(firearmId),
+      axis: Value(axis),
+      advertisedClickMil: Value(advertisedClickMil),
+      observedClickMil: Value(observedClickMil),
+      derivedScale: Value(derivedScale),
+      observationJson: Value(observationJson),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      calibratedAt: Value(calibratedAt),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory SightCalibration.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SightCalibration(
+      id: serializer.fromJson<int>(json['id']),
+      firearmId: serializer.fromJson<int>(json['firearmId']),
+      axis: serializer.fromJson<String>(json['axis']),
+      advertisedClickMil: serializer.fromJson<double>(
+        json['advertisedClickMil'],
+      ),
+      observedClickMil: serializer.fromJson<double>(json['observedClickMil']),
+      derivedScale: serializer.fromJson<double>(json['derivedScale']),
+      observationJson: serializer.fromJson<String>(json['observationJson']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      calibratedAt: serializer.fromJson<DateTime>(json['calibratedAt']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'firearmId': serializer.toJson<int>(firearmId),
+      'axis': serializer.toJson<String>(axis),
+      'advertisedClickMil': serializer.toJson<double>(advertisedClickMil),
+      'observedClickMil': serializer.toJson<double>(observedClickMil),
+      'derivedScale': serializer.toJson<double>(derivedScale),
+      'observationJson': serializer.toJson<String>(observationJson),
+      'notes': serializer.toJson<String?>(notes),
+      'calibratedAt': serializer.toJson<DateTime>(calibratedAt),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  SightCalibration copyWith({
+    int? id,
+    int? firearmId,
+    String? axis,
+    double? advertisedClickMil,
+    double? observedClickMil,
+    double? derivedScale,
+    String? observationJson,
+    Value<String?> notes = const Value.absent(),
+    DateTime? calibratedAt,
+    DateTime? createdAt,
+  }) => SightCalibration(
+    id: id ?? this.id,
+    firearmId: firearmId ?? this.firearmId,
+    axis: axis ?? this.axis,
+    advertisedClickMil: advertisedClickMil ?? this.advertisedClickMil,
+    observedClickMil: observedClickMil ?? this.observedClickMil,
+    derivedScale: derivedScale ?? this.derivedScale,
+    observationJson: observationJson ?? this.observationJson,
+    notes: notes.present ? notes.value : this.notes,
+    calibratedAt: calibratedAt ?? this.calibratedAt,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  SightCalibration copyWithCompanion(SightCalibrationsCompanion data) {
+    return SightCalibration(
+      id: data.id.present ? data.id.value : this.id,
+      firearmId: data.firearmId.present ? data.firearmId.value : this.firearmId,
+      axis: data.axis.present ? data.axis.value : this.axis,
+      advertisedClickMil: data.advertisedClickMil.present
+          ? data.advertisedClickMil.value
+          : this.advertisedClickMil,
+      observedClickMil: data.observedClickMil.present
+          ? data.observedClickMil.value
+          : this.observedClickMil,
+      derivedScale: data.derivedScale.present
+          ? data.derivedScale.value
+          : this.derivedScale,
+      observationJson: data.observationJson.present
+          ? data.observationJson.value
+          : this.observationJson,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      calibratedAt: data.calibratedAt.present
+          ? data.calibratedAt.value
+          : this.calibratedAt,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SightCalibration(')
+          ..write('id: $id, ')
+          ..write('firearmId: $firearmId, ')
+          ..write('axis: $axis, ')
+          ..write('advertisedClickMil: $advertisedClickMil, ')
+          ..write('observedClickMil: $observedClickMil, ')
+          ..write('derivedScale: $derivedScale, ')
+          ..write('observationJson: $observationJson, ')
+          ..write('notes: $notes, ')
+          ..write('calibratedAt: $calibratedAt, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    firearmId,
+    axis,
+    advertisedClickMil,
+    observedClickMil,
+    derivedScale,
+    observationJson,
+    notes,
+    calibratedAt,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SightCalibration &&
+          other.id == this.id &&
+          other.firearmId == this.firearmId &&
+          other.axis == this.axis &&
+          other.advertisedClickMil == this.advertisedClickMil &&
+          other.observedClickMil == this.observedClickMil &&
+          other.derivedScale == this.derivedScale &&
+          other.observationJson == this.observationJson &&
+          other.notes == this.notes &&
+          other.calibratedAt == this.calibratedAt &&
+          other.createdAt == this.createdAt);
+}
+
+class SightCalibrationsCompanion extends UpdateCompanion<SightCalibration> {
+  final Value<int> id;
+  final Value<int> firearmId;
+  final Value<String> axis;
+  final Value<double> advertisedClickMil;
+  final Value<double> observedClickMil;
+  final Value<double> derivedScale;
+  final Value<String> observationJson;
+  final Value<String?> notes;
+  final Value<DateTime> calibratedAt;
+  final Value<DateTime> createdAt;
+  const SightCalibrationsCompanion({
+    this.id = const Value.absent(),
+    this.firearmId = const Value.absent(),
+    this.axis = const Value.absent(),
+    this.advertisedClickMil = const Value.absent(),
+    this.observedClickMil = const Value.absent(),
+    this.derivedScale = const Value.absent(),
+    this.observationJson = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.calibratedAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  SightCalibrationsCompanion.insert({
+    this.id = const Value.absent(),
+    required int firearmId,
+    required String axis,
+    required double advertisedClickMil,
+    required double observedClickMil,
+    required double derivedScale,
+    required String observationJson,
+    this.notes = const Value.absent(),
+    required DateTime calibratedAt,
+    this.createdAt = const Value.absent(),
+  }) : firearmId = Value(firearmId),
+       axis = Value(axis),
+       advertisedClickMil = Value(advertisedClickMil),
+       observedClickMil = Value(observedClickMil),
+       derivedScale = Value(derivedScale),
+       observationJson = Value(observationJson),
+       calibratedAt = Value(calibratedAt);
+  static Insertable<SightCalibration> custom({
+    Expression<int>? id,
+    Expression<int>? firearmId,
+    Expression<String>? axis,
+    Expression<double>? advertisedClickMil,
+    Expression<double>? observedClickMil,
+    Expression<double>? derivedScale,
+    Expression<String>? observationJson,
+    Expression<String>? notes,
+    Expression<DateTime>? calibratedAt,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (firearmId != null) 'firearm_id': firearmId,
+      if (axis != null) 'axis': axis,
+      if (advertisedClickMil != null)
+        'advertised_click_mil': advertisedClickMil,
+      if (observedClickMil != null) 'observed_click_mil': observedClickMil,
+      if (derivedScale != null) 'derived_scale': derivedScale,
+      if (observationJson != null) 'observation_json': observationJson,
+      if (notes != null) 'notes': notes,
+      if (calibratedAt != null) 'calibrated_at': calibratedAt,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  SightCalibrationsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? firearmId,
+    Value<String>? axis,
+    Value<double>? advertisedClickMil,
+    Value<double>? observedClickMil,
+    Value<double>? derivedScale,
+    Value<String>? observationJson,
+    Value<String?>? notes,
+    Value<DateTime>? calibratedAt,
+    Value<DateTime>? createdAt,
+  }) {
+    return SightCalibrationsCompanion(
+      id: id ?? this.id,
+      firearmId: firearmId ?? this.firearmId,
+      axis: axis ?? this.axis,
+      advertisedClickMil: advertisedClickMil ?? this.advertisedClickMil,
+      observedClickMil: observedClickMil ?? this.observedClickMil,
+      derivedScale: derivedScale ?? this.derivedScale,
+      observationJson: observationJson ?? this.observationJson,
+      notes: notes ?? this.notes,
+      calibratedAt: calibratedAt ?? this.calibratedAt,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (firearmId.present) {
+      map['firearm_id'] = Variable<int>(firearmId.value);
+    }
+    if (axis.present) {
+      map['axis'] = Variable<String>(axis.value);
+    }
+    if (advertisedClickMil.present) {
+      map['advertised_click_mil'] = Variable<double>(advertisedClickMil.value);
+    }
+    if (observedClickMil.present) {
+      map['observed_click_mil'] = Variable<double>(observedClickMil.value);
+    }
+    if (derivedScale.present) {
+      map['derived_scale'] = Variable<double>(derivedScale.value);
+    }
+    if (observationJson.present) {
+      map['observation_json'] = Variable<String>(observationJson.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (calibratedAt.present) {
+      map['calibrated_at'] = Variable<DateTime>(calibratedAt.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SightCalibrationsCompanion(')
+          ..write('id: $id, ')
+          ..write('firearmId: $firearmId, ')
+          ..write('axis: $axis, ')
+          ..write('advertisedClickMil: $advertisedClickMil, ')
+          ..write('observedClickMil: $observedClickMil, ')
+          ..write('derivedScale: $derivedScale, ')
+          ..write('observationJson: $observationJson, ')
+          ..write('notes: $notes, ')
+          ..write('calibratedAt: $calibratedAt, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $AtmospherePresetsTable extends AtmospherePresets
+    with TableInfo<$AtmospherePresetsTable, AtmospherePresetRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AtmospherePresetsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _stationPressureInHgMeta =
+      const VerificationMeta('stationPressureInHg');
+  @override
+  late final GeneratedColumn<double> stationPressureInHg =
+      GeneratedColumn<double>(
+        'station_pressure_in_hg',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _temperatureFMeta = const VerificationMeta(
+    'temperatureF',
+  );
+  @override
+  late final GeneratedColumn<double> temperatureF = GeneratedColumn<double>(
+    'temperature_f',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _humidityPctMeta = const VerificationMeta(
+    'humidityPct',
+  );
+  @override
+  late final GeneratedColumn<double> humidityPct = GeneratedColumn<double>(
+    'humidity_pct',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _altitudeFtMeta = const VerificationMeta(
+    'altitudeFt',
+  );
+  @override
+  late final GeneratedColumn<double> altitudeFt = GeneratedColumn<double>(
+    'altitude_ft',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _latitudeDegMeta = const VerificationMeta(
+    'latitudeDeg',
+  );
+  @override
+  late final GeneratedColumn<double> latitudeDeg = GeneratedColumn<double>(
+    'latitude_deg',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _longitudeDegMeta = const VerificationMeta(
+    'longitudeDeg',
+  );
+  @override
+  late final GeneratedColumn<double> longitudeDeg = GeneratedColumn<double>(
+    'longitude_deg',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    stationPressureInHg,
+    temperatureF,
+    humidityPct,
+    altitudeFt,
+    latitudeDeg,
+    longitudeDeg,
+    notes,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'atmosphere_presets';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AtmospherePresetRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('station_pressure_in_hg')) {
+      context.handle(
+        _stationPressureInHgMeta,
+        stationPressureInHg.isAcceptableOrUnknown(
+          data['station_pressure_in_hg']!,
+          _stationPressureInHgMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_stationPressureInHgMeta);
+    }
+    if (data.containsKey('temperature_f')) {
+      context.handle(
+        _temperatureFMeta,
+        temperatureF.isAcceptableOrUnknown(
+          data['temperature_f']!,
+          _temperatureFMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_temperatureFMeta);
+    }
+    if (data.containsKey('humidity_pct')) {
+      context.handle(
+        _humidityPctMeta,
+        humidityPct.isAcceptableOrUnknown(
+          data['humidity_pct']!,
+          _humidityPctMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_humidityPctMeta);
+    }
+    if (data.containsKey('altitude_ft')) {
+      context.handle(
+        _altitudeFtMeta,
+        altitudeFt.isAcceptableOrUnknown(data['altitude_ft']!, _altitudeFtMeta),
+      );
+    }
+    if (data.containsKey('latitude_deg')) {
+      context.handle(
+        _latitudeDegMeta,
+        latitudeDeg.isAcceptableOrUnknown(
+          data['latitude_deg']!,
+          _latitudeDegMeta,
+        ),
+      );
+    }
+    if (data.containsKey('longitude_deg')) {
+      context.handle(
+        _longitudeDegMeta,
+        longitudeDeg.isAcceptableOrUnknown(
+          data['longitude_deg']!,
+          _longitudeDegMeta,
+        ),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  AtmospherePresetRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AtmospherePresetRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      stationPressureInHg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}station_pressure_in_hg'],
+      )!,
+      temperatureF: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}temperature_f'],
+      )!,
+      humidityPct: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}humidity_pct'],
+      )!,
+      altitudeFt: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}altitude_ft'],
+      ),
+      latitudeDeg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}latitude_deg'],
+      ),
+      longitudeDeg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}longitude_deg'],
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $AtmospherePresetsTable createAlias(String alias) {
+    return $AtmospherePresetsTable(attachedDatabase, alias);
+  }
+}
+
+class AtmospherePresetRow extends DataClass
+    implements Insertable<AtmospherePresetRow> {
+  final int id;
+
+  /// User-facing name. Free-form; uniqueness enforced by the picker (case
+  /// folded) rather than by the schema so renames don't trip a UNIQUE
+  /// constraint mid-edit.
+  final String name;
+
+  /// Station pressure (NOT sea-level / altimeter setting). Same canonical
+  /// units as `RangeDaySessions.pressureInHg` and the solver's
+  /// `Atmosphere.station(stationPressureInHg: ...)` argument.
+  final double stationPressureInHg;
+  final double temperatureF;
+  final double humidityPct;
+
+  /// Optional capture-site altitude (feet). The solver doesn't consume this
+  /// directly — the Environment section's Elevation field is what it reads —
+  /// but auto-filled into the Elevation control when the user picks a preset.
+  final double? altitudeFt;
+
+  /// Optional GPS latitude at capture time. Display only; the solver's
+  /// Coriolis correction reads its own `latitudeDeg` field.
+  final double? latitudeDeg;
+
+  /// Optional GPS longitude at capture time. Display only.
+  final double? longitudeDeg;
+  final String? notes;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const AtmospherePresetRow({
+    required this.id,
+    required this.name,
+    required this.stationPressureInHg,
+    required this.temperatureF,
+    required this.humidityPct,
+    this.altitudeFt,
+    this.latitudeDeg,
+    this.longitudeDeg,
+    this.notes,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    map['station_pressure_in_hg'] = Variable<double>(stationPressureInHg);
+    map['temperature_f'] = Variable<double>(temperatureF);
+    map['humidity_pct'] = Variable<double>(humidityPct);
+    if (!nullToAbsent || altitudeFt != null) {
+      map['altitude_ft'] = Variable<double>(altitudeFt);
+    }
+    if (!nullToAbsent || latitudeDeg != null) {
+      map['latitude_deg'] = Variable<double>(latitudeDeg);
+    }
+    if (!nullToAbsent || longitudeDeg != null) {
+      map['longitude_deg'] = Variable<double>(longitudeDeg);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  AtmospherePresetsCompanion toCompanion(bool nullToAbsent) {
+    return AtmospherePresetsCompanion(
+      id: Value(id),
+      name: Value(name),
+      stationPressureInHg: Value(stationPressureInHg),
+      temperatureF: Value(temperatureF),
+      humidityPct: Value(humidityPct),
+      altitudeFt: altitudeFt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(altitudeFt),
+      latitudeDeg: latitudeDeg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(latitudeDeg),
+      longitudeDeg: longitudeDeg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(longitudeDeg),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory AtmospherePresetRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AtmospherePresetRow(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      stationPressureInHg: serializer.fromJson<double>(
+        json['stationPressureInHg'],
+      ),
+      temperatureF: serializer.fromJson<double>(json['temperatureF']),
+      humidityPct: serializer.fromJson<double>(json['humidityPct']),
+      altitudeFt: serializer.fromJson<double?>(json['altitudeFt']),
+      latitudeDeg: serializer.fromJson<double?>(json['latitudeDeg']),
+      longitudeDeg: serializer.fromJson<double?>(json['longitudeDeg']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'stationPressureInHg': serializer.toJson<double>(stationPressureInHg),
+      'temperatureF': serializer.toJson<double>(temperatureF),
+      'humidityPct': serializer.toJson<double>(humidityPct),
+      'altitudeFt': serializer.toJson<double?>(altitudeFt),
+      'latitudeDeg': serializer.toJson<double?>(latitudeDeg),
+      'longitudeDeg': serializer.toJson<double?>(longitudeDeg),
+      'notes': serializer.toJson<String?>(notes),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  AtmospherePresetRow copyWith({
+    int? id,
+    String? name,
+    double? stationPressureInHg,
+    double? temperatureF,
+    double? humidityPct,
+    Value<double?> altitudeFt = const Value.absent(),
+    Value<double?> latitudeDeg = const Value.absent(),
+    Value<double?> longitudeDeg = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => AtmospherePresetRow(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    stationPressureInHg: stationPressureInHg ?? this.stationPressureInHg,
+    temperatureF: temperatureF ?? this.temperatureF,
+    humidityPct: humidityPct ?? this.humidityPct,
+    altitudeFt: altitudeFt.present ? altitudeFt.value : this.altitudeFt,
+    latitudeDeg: latitudeDeg.present ? latitudeDeg.value : this.latitudeDeg,
+    longitudeDeg: longitudeDeg.present ? longitudeDeg.value : this.longitudeDeg,
+    notes: notes.present ? notes.value : this.notes,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  AtmospherePresetRow copyWithCompanion(AtmospherePresetsCompanion data) {
+    return AtmospherePresetRow(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      stationPressureInHg: data.stationPressureInHg.present
+          ? data.stationPressureInHg.value
+          : this.stationPressureInHg,
+      temperatureF: data.temperatureF.present
+          ? data.temperatureF.value
+          : this.temperatureF,
+      humidityPct: data.humidityPct.present
+          ? data.humidityPct.value
+          : this.humidityPct,
+      altitudeFt: data.altitudeFt.present
+          ? data.altitudeFt.value
+          : this.altitudeFt,
+      latitudeDeg: data.latitudeDeg.present
+          ? data.latitudeDeg.value
+          : this.latitudeDeg,
+      longitudeDeg: data.longitudeDeg.present
+          ? data.longitudeDeg.value
+          : this.longitudeDeg,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AtmospherePresetRow(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('stationPressureInHg: $stationPressureInHg, ')
+          ..write('temperatureF: $temperatureF, ')
+          ..write('humidityPct: $humidityPct, ')
+          ..write('altitudeFt: $altitudeFt, ')
+          ..write('latitudeDeg: $latitudeDeg, ')
+          ..write('longitudeDeg: $longitudeDeg, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    stationPressureInHg,
+    temperatureF,
+    humidityPct,
+    altitudeFt,
+    latitudeDeg,
+    longitudeDeg,
+    notes,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AtmospherePresetRow &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.stationPressureInHg == this.stationPressureInHg &&
+          other.temperatureF == this.temperatureF &&
+          other.humidityPct == this.humidityPct &&
+          other.altitudeFt == this.altitudeFt &&
+          other.latitudeDeg == this.latitudeDeg &&
+          other.longitudeDeg == this.longitudeDeg &&
+          other.notes == this.notes &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class AtmospherePresetsCompanion extends UpdateCompanion<AtmospherePresetRow> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<double> stationPressureInHg;
+  final Value<double> temperatureF;
+  final Value<double> humidityPct;
+  final Value<double?> altitudeFt;
+  final Value<double?> latitudeDeg;
+  final Value<double?> longitudeDeg;
+  final Value<String?> notes;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  const AtmospherePresetsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.stationPressureInHg = const Value.absent(),
+    this.temperatureF = const Value.absent(),
+    this.humidityPct = const Value.absent(),
+    this.altitudeFt = const Value.absent(),
+    this.latitudeDeg = const Value.absent(),
+    this.longitudeDeg = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  AtmospherePresetsCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    required double stationPressureInHg,
+    required double temperatureF,
+    required double humidityPct,
+    this.altitudeFt = const Value.absent(),
+    this.latitudeDeg = const Value.absent(),
+    this.longitudeDeg = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  }) : name = Value(name),
+       stationPressureInHg = Value(stationPressureInHg),
+       temperatureF = Value(temperatureF),
+       humidityPct = Value(humidityPct);
+  static Insertable<AtmospherePresetRow> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<double>? stationPressureInHg,
+    Expression<double>? temperatureF,
+    Expression<double>? humidityPct,
+    Expression<double>? altitudeFt,
+    Expression<double>? latitudeDeg,
+    Expression<double>? longitudeDeg,
+    Expression<String>? notes,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (stationPressureInHg != null)
+        'station_pressure_in_hg': stationPressureInHg,
+      if (temperatureF != null) 'temperature_f': temperatureF,
+      if (humidityPct != null) 'humidity_pct': humidityPct,
+      if (altitudeFt != null) 'altitude_ft': altitudeFt,
+      if (latitudeDeg != null) 'latitude_deg': latitudeDeg,
+      if (longitudeDeg != null) 'longitude_deg': longitudeDeg,
+      if (notes != null) 'notes': notes,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  AtmospherePresetsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<double>? stationPressureInHg,
+    Value<double>? temperatureF,
+    Value<double>? humidityPct,
+    Value<double?>? altitudeFt,
+    Value<double?>? latitudeDeg,
+    Value<double?>? longitudeDeg,
+    Value<String?>? notes,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+  }) {
+    return AtmospherePresetsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      stationPressureInHg: stationPressureInHg ?? this.stationPressureInHg,
+      temperatureF: temperatureF ?? this.temperatureF,
+      humidityPct: humidityPct ?? this.humidityPct,
+      altitudeFt: altitudeFt ?? this.altitudeFt,
+      latitudeDeg: latitudeDeg ?? this.latitudeDeg,
+      longitudeDeg: longitudeDeg ?? this.longitudeDeg,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (stationPressureInHg.present) {
+      map['station_pressure_in_hg'] = Variable<double>(
+        stationPressureInHg.value,
+      );
+    }
+    if (temperatureF.present) {
+      map['temperature_f'] = Variable<double>(temperatureF.value);
+    }
+    if (humidityPct.present) {
+      map['humidity_pct'] = Variable<double>(humidityPct.value);
+    }
+    if (altitudeFt.present) {
+      map['altitude_ft'] = Variable<double>(altitudeFt.value);
+    }
+    if (latitudeDeg.present) {
+      map['latitude_deg'] = Variable<double>(latitudeDeg.value);
+    }
+    if (longitudeDeg.present) {
+      map['longitude_deg'] = Variable<double>(longitudeDeg.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AtmospherePresetsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('stationPressureInHg: $stationPressureInHg, ')
+          ..write('temperatureF: $temperatureF, ')
+          ..write('humidityPct: $humidityPct, ')
+          ..write('altitudeFt: $altitudeFt, ')
+          ..write('latitudeDeg: $latitudeDeg, ')
+          ..write('longitudeDeg: $longitudeDeg, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -25346,6 +28313,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ReticlesTable reticles = $ReticlesTable(this);
   late final $DragCurvesTable dragCurves = $DragCurvesTable(this);
   late final $FactoryLoadsTable factoryLoads = $FactoryLoadsTable(this);
+  late final $WezProfilesTable wezProfiles = $WezProfilesTable(this);
+  late final $TruedBcOverridesTable truedBcOverrides = $TruedBcOverridesTable(
+    this,
+  );
+  late final $SightCalibrationsTable sightCalibrations =
+      $SightCalibrationsTable(this);
+  late final $AtmospherePresetsTable atmospherePresets =
+      $AtmospherePresetsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -25380,6 +28355,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     reticles,
     dragCurves,
     factoryLoads,
+    wezProfiles,
+    truedBcOverrides,
+    sightCalibrations,
+    atmospherePresets,
   ];
 }
 
@@ -31548,6 +34527,47 @@ final class $$UserLoadsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$WezProfilesTable, List<WezProfileRow>>
+  _wezProfilesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.wezProfiles,
+    aliasName: $_aliasNameGenerator(db.userLoads.id, db.wezProfiles.loadId),
+  );
+
+  $$WezProfilesTableProcessedTableManager get wezProfilesRefs {
+    final manager = $$WezProfilesTableTableManager(
+      $_db,
+      $_db.wezProfiles,
+    ).filter((f) => f.loadId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_wezProfilesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$TruedBcOverridesTable, List<TruedBcOverrideRow>>
+  _truedBcOverridesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.truedBcOverrides,
+    aliasName: $_aliasNameGenerator(
+      db.userLoads.id,
+      db.truedBcOverrides.loadId,
+    ),
+  );
+
+  $$TruedBcOverridesTableProcessedTableManager get truedBcOverridesRefs {
+    final manager = $$TruedBcOverridesTableTableManager(
+      $_db,
+      $_db.truedBcOverrides,
+    ).filter((f) => f.loadId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _truedBcOverridesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$UserLoadsTableFilterComposer
@@ -32010,6 +35030,56 @@ class $$UserLoadsTableFilterComposer
                     $removeJoinBuilderFromRootComposer,
               ),
         );
+    return f(composer);
+  }
+
+  Expression<bool> wezProfilesRefs(
+    Expression<bool> Function($$WezProfilesTableFilterComposer f) f,
+  ) {
+    final $$WezProfilesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.wezProfiles,
+      getReferencedColumn: (t) => t.loadId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WezProfilesTableFilterComposer(
+            $db: $db,
+            $table: $db.wezProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> truedBcOverridesRefs(
+    Expression<bool> Function($$TruedBcOverridesTableFilterComposer f) f,
+  ) {
+    final $$TruedBcOverridesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.truedBcOverrides,
+      getReferencedColumn: (t) => t.loadId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TruedBcOverridesTableFilterComposer(
+            $db: $db,
+            $table: $db.truedBcOverrides,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
     return f(composer);
   }
 }
@@ -32827,6 +35897,56 @@ class $$UserLoadsTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> wezProfilesRefs<T extends Object>(
+    Expression<T> Function($$WezProfilesTableAnnotationComposer a) f,
+  ) {
+    final $$WezProfilesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.wezProfiles,
+      getReferencedColumn: (t) => t.loadId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WezProfilesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.wezProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> truedBcOverridesRefs<T extends Object>(
+    Expression<T> Function($$TruedBcOverridesTableAnnotationComposer a) f,
+  ) {
+    final $$TruedBcOverridesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.truedBcOverrides,
+      getReferencedColumn: (t) => t.loadId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TruedBcOverridesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.truedBcOverrides,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$UserLoadsTableTableManager
@@ -32850,6 +35970,8 @@ class $$UserLoadsTableTableManager
             bool batchesRefs,
             bool testSessionsRefs,
             bool loadDevelopmentSessionsRefs,
+            bool wezProfilesRefs,
+            bool truedBcOverridesRefs,
           })
         > {
   $$UserLoadsTableTableManager(_$AppDatabase db, $UserLoadsTable table)
@@ -33136,6 +36258,8 @@ class $$UserLoadsTableTableManager
                 batchesRefs = false,
                 testSessionsRefs = false,
                 loadDevelopmentSessionsRefs = false,
+                wezProfilesRefs = false,
+                truedBcOverridesRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -33143,6 +36267,8 @@ class $$UserLoadsTableTableManager
                     if (batchesRefs) db.batches,
                     if (testSessionsRefs) db.testSessions,
                     if (loadDevelopmentSessionsRefs) db.loadDevelopmentSessions,
+                    if (wezProfilesRefs) db.wezProfiles,
+                    if (truedBcOverridesRefs) db.truedBcOverrides,
                   ],
                   addJoins:
                       <
@@ -33280,6 +36406,48 @@ class $$UserLoadsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (wezProfilesRefs)
+                        await $_getPrefetchedData<
+                          UserLoadRow,
+                          $UserLoadsTable,
+                          WezProfileRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$UserLoadsTableReferences
+                              ._wezProfilesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$UserLoadsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).wezProfilesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.loadId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (truedBcOverridesRefs)
+                        await $_getPrefetchedData<
+                          UserLoadRow,
+                          $UserLoadsTable,
+                          TruedBcOverrideRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$UserLoadsTableReferences
+                              ._truedBcOverridesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$UserLoadsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).truedBcOverridesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.loadId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -33308,6 +36476,8 @@ typedef $$UserLoadsTableProcessedTableManager =
         bool batchesRefs,
         bool testSessionsRefs,
         bool loadDevelopmentSessionsRefs,
+        bool wezProfilesRefs,
+        bool truedBcOverridesRefs,
       })
     >;
 typedef $$UserFirearmsTableCreateCompanionBuilder =
@@ -33445,6 +36615,74 @@ final class $$UserFirearmsTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _loadDevelopmentSessionsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$WezProfilesTable, List<WezProfileRow>>
+  _wezProfilesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.wezProfiles,
+    aliasName: $_aliasNameGenerator(
+      db.userFirearms.id,
+      db.wezProfiles.firearmId,
+    ),
+  );
+
+  $$WezProfilesTableProcessedTableManager get wezProfilesRefs {
+    final manager = $$WezProfilesTableTableManager(
+      $_db,
+      $_db.wezProfiles,
+    ).filter((f) => f.firearmId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_wezProfilesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$TruedBcOverridesTable, List<TruedBcOverrideRow>>
+  _truedBcOverridesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.truedBcOverrides,
+    aliasName: $_aliasNameGenerator(
+      db.userFirearms.id,
+      db.truedBcOverrides.firearmId,
+    ),
+  );
+
+  $$TruedBcOverridesTableProcessedTableManager get truedBcOverridesRefs {
+    final manager = $$TruedBcOverridesTableTableManager(
+      $_db,
+      $_db.truedBcOverrides,
+    ).filter((f) => f.firearmId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _truedBcOverridesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$SightCalibrationsTable, List<SightCalibration>>
+  _sightCalibrationsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.sightCalibrations,
+        aliasName: $_aliasNameGenerator(
+          db.userFirearms.id,
+          db.sightCalibrations.firearmId,
+        ),
+      );
+
+  $$SightCalibrationsTableProcessedTableManager get sightCalibrationsRefs {
+    final manager = $$SightCalibrationsTableTableManager(
+      $_db,
+      $_db.sightCalibrations,
+    ).filter((f) => f.firearmId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _sightCalibrationsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -33689,6 +36927,81 @@ class $$UserFirearmsTableFilterComposer
                     $removeJoinBuilderFromRootComposer,
               ),
         );
+    return f(composer);
+  }
+
+  Expression<bool> wezProfilesRefs(
+    Expression<bool> Function($$WezProfilesTableFilterComposer f) f,
+  ) {
+    final $$WezProfilesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.wezProfiles,
+      getReferencedColumn: (t) => t.firearmId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WezProfilesTableFilterComposer(
+            $db: $db,
+            $table: $db.wezProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> truedBcOverridesRefs(
+    Expression<bool> Function($$TruedBcOverridesTableFilterComposer f) f,
+  ) {
+    final $$TruedBcOverridesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.truedBcOverrides,
+      getReferencedColumn: (t) => t.firearmId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TruedBcOverridesTableFilterComposer(
+            $db: $db,
+            $table: $db.truedBcOverrides,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> sightCalibrationsRefs(
+    Expression<bool> Function($$SightCalibrationsTableFilterComposer f) f,
+  ) {
+    final $$SightCalibrationsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.sightCalibrations,
+      getReferencedColumn: (t) => t.firearmId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SightCalibrationsTableFilterComposer(
+            $db: $db,
+            $table: $db.sightCalibrations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
     return f(composer);
   }
 }
@@ -34074,6 +37387,82 @@ class $$UserFirearmsTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> wezProfilesRefs<T extends Object>(
+    Expression<T> Function($$WezProfilesTableAnnotationComposer a) f,
+  ) {
+    final $$WezProfilesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.wezProfiles,
+      getReferencedColumn: (t) => t.firearmId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WezProfilesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.wezProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> truedBcOverridesRefs<T extends Object>(
+    Expression<T> Function($$TruedBcOverridesTableAnnotationComposer a) f,
+  ) {
+    final $$TruedBcOverridesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.truedBcOverrides,
+      getReferencedColumn: (t) => t.firearmId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TruedBcOverridesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.truedBcOverrides,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> sightCalibrationsRefs<T extends Object>(
+    Expression<T> Function($$SightCalibrationsTableAnnotationComposer a) f,
+  ) {
+    final $$SightCalibrationsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.sightCalibrations,
+          getReferencedColumn: (t) => t.firearmId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$SightCalibrationsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.sightCalibrations,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$UserFirearmsTableTableManager
@@ -34093,6 +37482,9 @@ class $$UserFirearmsTableTableManager
             bool batchesRefs,
             bool testSessionsRefs,
             bool loadDevelopmentSessionsRefs,
+            bool wezProfilesRefs,
+            bool truedBcOverridesRefs,
+            bool sightCalibrationsRefs,
           })
         > {
   $$UserFirearmsTableTableManager(_$AppDatabase db, $UserFirearmsTable table)
@@ -34253,6 +37645,9 @@ class $$UserFirearmsTableTableManager
                 batchesRefs = false,
                 testSessionsRefs = false,
                 loadDevelopmentSessionsRefs = false,
+                wezProfilesRefs = false,
+                truedBcOverridesRefs = false,
+                sightCalibrationsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -34260,6 +37655,9 @@ class $$UserFirearmsTableTableManager
                     if (batchesRefs) db.batches,
                     if (testSessionsRefs) db.testSessions,
                     if (loadDevelopmentSessionsRefs) db.loadDevelopmentSessions,
+                    if (wezProfilesRefs) db.wezProfiles,
+                    if (truedBcOverridesRefs) db.truedBcOverrides,
+                    if (sightCalibrationsRefs) db.sightCalibrations,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -34327,6 +37725,69 @@ class $$UserFirearmsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (wezProfilesRefs)
+                        await $_getPrefetchedData<
+                          UserFirearmRow,
+                          $UserFirearmsTable,
+                          WezProfileRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$UserFirearmsTableReferences
+                              ._wezProfilesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$UserFirearmsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).wezProfilesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.firearmId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (truedBcOverridesRefs)
+                        await $_getPrefetchedData<
+                          UserFirearmRow,
+                          $UserFirearmsTable,
+                          TruedBcOverrideRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$UserFirearmsTableReferences
+                              ._truedBcOverridesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$UserFirearmsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).truedBcOverridesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.firearmId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (sightCalibrationsRefs)
+                        await $_getPrefetchedData<
+                          UserFirearmRow,
+                          $UserFirearmsTable,
+                          SightCalibration
+                        >(
+                          currentTable: table,
+                          referencedTable: $$UserFirearmsTableReferences
+                              ._sightCalibrationsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$UserFirearmsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).sightCalibrationsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.firearmId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -34351,6 +37812,9 @@ typedef $$UserFirearmsTableProcessedTableManager =
         bool batchesRefs,
         bool testSessionsRefs,
         bool loadDevelopmentSessionsRefs,
+        bool wezProfilesRefs,
+        bool truedBcOverridesRefs,
+        bool sightCalibrationsRefs,
       })
     >;
 typedef $$UserProcessStepsTableCreateCompanionBuilder =
@@ -39408,6 +42872,7 @@ typedef $$RangeDaySessionsTableCreateCompanionBuilder =
       Value<double?> cantDegrees,
       Value<double?> shotAzimuthDegrees,
       Value<double?> inclineAngleDeg,
+      Value<int?> atmospherePresetId,
     });
 typedef $$RangeDaySessionsTableUpdateCompanionBuilder =
     RangeDaySessionsCompanion Function({
@@ -39438,6 +42903,7 @@ typedef $$RangeDaySessionsTableUpdateCompanionBuilder =
       Value<double?> cantDegrees,
       Value<double?> shotAzimuthDegrees,
       Value<double?> inclineAngleDeg,
+      Value<int?> atmospherePresetId,
     });
 
 final class $$RangeDaySessionsTableReferences
@@ -39619,6 +43085,11 @@ class $$RangeDaySessionsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get atmospherePresetId => $composableBuilder(
+    column: $table.atmospherePresetId,
+    builder: (column) => ColumnFilters(column),
+  );
+
   Expression<bool> shotImpactsRefs(
     Expression<bool> Function($$ShotImpactsTableFilterComposer f) f,
   ) {
@@ -39788,6 +43259,11 @@ class $$RangeDaySessionsTableOrderingComposer
     column: $table.inclineAngleDeg,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get atmospherePresetId => $composableBuilder(
+    column: $table.atmospherePresetId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$RangeDaySessionsTableAnnotationComposer
@@ -39910,6 +43386,11 @@ class $$RangeDaySessionsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get atmospherePresetId => $composableBuilder(
+    column: $table.atmospherePresetId,
+    builder: (column) => column,
+  );
+
   Expression<T> shotImpactsRefs<T extends Object>(
     Expression<T> Function($$ShotImpactsTableAnnotationComposer a) f,
   ) {
@@ -39993,6 +43474,7 @@ class $$RangeDaySessionsTableTableManager
                 Value<double?> cantDegrees = const Value.absent(),
                 Value<double?> shotAzimuthDegrees = const Value.absent(),
                 Value<double?> inclineAngleDeg = const Value.absent(),
+                Value<int?> atmospherePresetId = const Value.absent(),
               }) => RangeDaySessionsCompanion(
                 id: id,
                 name: name,
@@ -40021,6 +43503,7 @@ class $$RangeDaySessionsTableTableManager
                 cantDegrees: cantDegrees,
                 shotAzimuthDegrees: shotAzimuthDegrees,
                 inclineAngleDeg: inclineAngleDeg,
+                atmospherePresetId: atmospherePresetId,
               ),
           createCompanionCallback:
               ({
@@ -40051,6 +43534,7 @@ class $$RangeDaySessionsTableTableManager
                 Value<double?> cantDegrees = const Value.absent(),
                 Value<double?> shotAzimuthDegrees = const Value.absent(),
                 Value<double?> inclineAngleDeg = const Value.absent(),
+                Value<int?> atmospherePresetId = const Value.absent(),
               }) => RangeDaySessionsCompanion.insert(
                 id: id,
                 name: name,
@@ -40079,6 +43563,7 @@ class $$RangeDaySessionsTableTableManager
                 cantDegrees: cantDegrees,
                 shotAzimuthDegrees: shotAzimuthDegrees,
                 inclineAngleDeg: inclineAngleDeg,
+                atmospherePresetId: atmospherePresetId,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -41588,6 +45073,1913 @@ typedef $$FactoryLoadsTableProcessedTableManager =
       FactoryLoadRow,
       PrefetchHooks Function({bool manufacturerId})
     >;
+typedef $$WezProfilesTableCreateCompanionBuilder =
+    WezProfilesCompanion Function({
+      Value<int> id,
+      required String name,
+      Value<int?> loadId,
+      Value<int?> firearmId,
+      required double targetWidthIn,
+      required double targetHeightIn,
+      required String targetShape,
+      required double groupMoa,
+      required double windUncertaintyMph,
+      required double rangeUncertaintyYd,
+      required double mvSdFps,
+      required String curveJson,
+      required DateTime computedAt,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+    });
+typedef $$WezProfilesTableUpdateCompanionBuilder =
+    WezProfilesCompanion Function({
+      Value<int> id,
+      Value<String> name,
+      Value<int?> loadId,
+      Value<int?> firearmId,
+      Value<double> targetWidthIn,
+      Value<double> targetHeightIn,
+      Value<String> targetShape,
+      Value<double> groupMoa,
+      Value<double> windUncertaintyMph,
+      Value<double> rangeUncertaintyYd,
+      Value<double> mvSdFps,
+      Value<String> curveJson,
+      Value<DateTime> computedAt,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+    });
+
+final class $$WezProfilesTableReferences
+    extends BaseReferences<_$AppDatabase, $WezProfilesTable, WezProfileRow> {
+  $$WezProfilesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $UserLoadsTable _loadIdTable(_$AppDatabase db) =>
+      db.userLoads.createAlias(
+        $_aliasNameGenerator(db.wezProfiles.loadId, db.userLoads.id),
+      );
+
+  $$UserLoadsTableProcessedTableManager? get loadId {
+    final $_column = $_itemColumn<int>('load_id');
+    if ($_column == null) return null;
+    final manager = $$UserLoadsTableTableManager(
+      $_db,
+      $_db.userLoads,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_loadIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $UserFirearmsTable _firearmIdTable(_$AppDatabase db) =>
+      db.userFirearms.createAlias(
+        $_aliasNameGenerator(db.wezProfiles.firearmId, db.userFirearms.id),
+      );
+
+  $$UserFirearmsTableProcessedTableManager? get firearmId {
+    final $_column = $_itemColumn<int>('firearm_id');
+    if ($_column == null) return null;
+    final manager = $$UserFirearmsTableTableManager(
+      $_db,
+      $_db.userFirearms,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_firearmIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$WezProfilesTableFilterComposer
+    extends Composer<_$AppDatabase, $WezProfilesTable> {
+  $$WezProfilesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get targetWidthIn => $composableBuilder(
+    column: $table.targetWidthIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get targetHeightIn => $composableBuilder(
+    column: $table.targetHeightIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get targetShape => $composableBuilder(
+    column: $table.targetShape,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get groupMoa => $composableBuilder(
+    column: $table.groupMoa,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get windUncertaintyMph => $composableBuilder(
+    column: $table.windUncertaintyMph,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get rangeUncertaintyYd => $composableBuilder(
+    column: $table.rangeUncertaintyYd,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get mvSdFps => $composableBuilder(
+    column: $table.mvSdFps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get curveJson => $composableBuilder(
+    column: $table.curveJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get computedAt => $composableBuilder(
+    column: $table.computedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$UserLoadsTableFilterComposer get loadId {
+    final $$UserLoadsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.loadId,
+      referencedTable: $db.userLoads,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserLoadsTableFilterComposer(
+            $db: $db,
+            $table: $db.userLoads,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UserFirearmsTableFilterComposer get firearmId {
+    final $$UserFirearmsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.firearmId,
+      referencedTable: $db.userFirearms,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserFirearmsTableFilterComposer(
+            $db: $db,
+            $table: $db.userFirearms,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WezProfilesTableOrderingComposer
+    extends Composer<_$AppDatabase, $WezProfilesTable> {
+  $$WezProfilesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get targetWidthIn => $composableBuilder(
+    column: $table.targetWidthIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get targetHeightIn => $composableBuilder(
+    column: $table.targetHeightIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get targetShape => $composableBuilder(
+    column: $table.targetShape,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get groupMoa => $composableBuilder(
+    column: $table.groupMoa,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get windUncertaintyMph => $composableBuilder(
+    column: $table.windUncertaintyMph,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get rangeUncertaintyYd => $composableBuilder(
+    column: $table.rangeUncertaintyYd,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get mvSdFps => $composableBuilder(
+    column: $table.mvSdFps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get curveJson => $composableBuilder(
+    column: $table.curveJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get computedAt => $composableBuilder(
+    column: $table.computedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$UserLoadsTableOrderingComposer get loadId {
+    final $$UserLoadsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.loadId,
+      referencedTable: $db.userLoads,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserLoadsTableOrderingComposer(
+            $db: $db,
+            $table: $db.userLoads,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UserFirearmsTableOrderingComposer get firearmId {
+    final $$UserFirearmsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.firearmId,
+      referencedTable: $db.userFirearms,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserFirearmsTableOrderingComposer(
+            $db: $db,
+            $table: $db.userFirearms,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WezProfilesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WezProfilesTable> {
+  $$WezProfilesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<double> get targetWidthIn => $composableBuilder(
+    column: $table.targetWidthIn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get targetHeightIn => $composableBuilder(
+    column: $table.targetHeightIn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get targetShape => $composableBuilder(
+    column: $table.targetShape,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get groupMoa =>
+      $composableBuilder(column: $table.groupMoa, builder: (column) => column);
+
+  GeneratedColumn<double> get windUncertaintyMph => $composableBuilder(
+    column: $table.windUncertaintyMph,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get rangeUncertaintyYd => $composableBuilder(
+    column: $table.rangeUncertaintyYd,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get mvSdFps =>
+      $composableBuilder(column: $table.mvSdFps, builder: (column) => column);
+
+  GeneratedColumn<String> get curveJson =>
+      $composableBuilder(column: $table.curveJson, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get computedAt => $composableBuilder(
+    column: $table.computedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$UserLoadsTableAnnotationComposer get loadId {
+    final $$UserLoadsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.loadId,
+      referencedTable: $db.userLoads,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserLoadsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.userLoads,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UserFirearmsTableAnnotationComposer get firearmId {
+    final $$UserFirearmsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.firearmId,
+      referencedTable: $db.userFirearms,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserFirearmsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.userFirearms,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WezProfilesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WezProfilesTable,
+          WezProfileRow,
+          $$WezProfilesTableFilterComposer,
+          $$WezProfilesTableOrderingComposer,
+          $$WezProfilesTableAnnotationComposer,
+          $$WezProfilesTableCreateCompanionBuilder,
+          $$WezProfilesTableUpdateCompanionBuilder,
+          (WezProfileRow, $$WezProfilesTableReferences),
+          WezProfileRow,
+          PrefetchHooks Function({bool loadId, bool firearmId})
+        > {
+  $$WezProfilesTableTableManager(_$AppDatabase db, $WezProfilesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WezProfilesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$WezProfilesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$WezProfilesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<int?> loadId = const Value.absent(),
+                Value<int?> firearmId = const Value.absent(),
+                Value<double> targetWidthIn = const Value.absent(),
+                Value<double> targetHeightIn = const Value.absent(),
+                Value<String> targetShape = const Value.absent(),
+                Value<double> groupMoa = const Value.absent(),
+                Value<double> windUncertaintyMph = const Value.absent(),
+                Value<double> rangeUncertaintyYd = const Value.absent(),
+                Value<double> mvSdFps = const Value.absent(),
+                Value<String> curveJson = const Value.absent(),
+                Value<DateTime> computedAt = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => WezProfilesCompanion(
+                id: id,
+                name: name,
+                loadId: loadId,
+                firearmId: firearmId,
+                targetWidthIn: targetWidthIn,
+                targetHeightIn: targetHeightIn,
+                targetShape: targetShape,
+                groupMoa: groupMoa,
+                windUncertaintyMph: windUncertaintyMph,
+                rangeUncertaintyYd: rangeUncertaintyYd,
+                mvSdFps: mvSdFps,
+                curveJson: curveJson,
+                computedAt: computedAt,
+                notes: notes,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                Value<int?> loadId = const Value.absent(),
+                Value<int?> firearmId = const Value.absent(),
+                required double targetWidthIn,
+                required double targetHeightIn,
+                required String targetShape,
+                required double groupMoa,
+                required double windUncertaintyMph,
+                required double rangeUncertaintyYd,
+                required double mvSdFps,
+                required String curveJson,
+                required DateTime computedAt,
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => WezProfilesCompanion.insert(
+                id: id,
+                name: name,
+                loadId: loadId,
+                firearmId: firearmId,
+                targetWidthIn: targetWidthIn,
+                targetHeightIn: targetHeightIn,
+                targetShape: targetShape,
+                groupMoa: groupMoa,
+                windUncertaintyMph: windUncertaintyMph,
+                rangeUncertaintyYd: rangeUncertaintyYd,
+                mvSdFps: mvSdFps,
+                curveJson: curveJson,
+                computedAt: computedAt,
+                notes: notes,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$WezProfilesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({loadId = false, firearmId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (loadId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.loadId,
+                                referencedTable: $$WezProfilesTableReferences
+                                    ._loadIdTable(db),
+                                referencedColumn: $$WezProfilesTableReferences
+                                    ._loadIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+                    if (firearmId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.firearmId,
+                                referencedTable: $$WezProfilesTableReferences
+                                    ._firearmIdTable(db),
+                                referencedColumn: $$WezProfilesTableReferences
+                                    ._firearmIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$WezProfilesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WezProfilesTable,
+      WezProfileRow,
+      $$WezProfilesTableFilterComposer,
+      $$WezProfilesTableOrderingComposer,
+      $$WezProfilesTableAnnotationComposer,
+      $$WezProfilesTableCreateCompanionBuilder,
+      $$WezProfilesTableUpdateCompanionBuilder,
+      (WezProfileRow, $$WezProfilesTableReferences),
+      WezProfileRow,
+      PrefetchHooks Function({bool loadId, bool firearmId})
+    >;
+typedef $$TruedBcOverridesTableCreateCompanionBuilder =
+    TruedBcOverridesCompanion Function({
+      Value<int> id,
+      required int loadId,
+      required int firearmId,
+      required String dragModel,
+      required double nominalBc,
+      required double truedBc,
+      required double truingDistanceYd,
+      required String observationJson,
+      Value<String?> notes,
+      required DateTime truedAt,
+      Value<DateTime> createdAt,
+    });
+typedef $$TruedBcOverridesTableUpdateCompanionBuilder =
+    TruedBcOverridesCompanion Function({
+      Value<int> id,
+      Value<int> loadId,
+      Value<int> firearmId,
+      Value<String> dragModel,
+      Value<double> nominalBc,
+      Value<double> truedBc,
+      Value<double> truingDistanceYd,
+      Value<String> observationJson,
+      Value<String?> notes,
+      Value<DateTime> truedAt,
+      Value<DateTime> createdAt,
+    });
+
+final class $$TruedBcOverridesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $TruedBcOverridesTable,
+          TruedBcOverrideRow
+        > {
+  $$TruedBcOverridesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $UserLoadsTable _loadIdTable(_$AppDatabase db) =>
+      db.userLoads.createAlias(
+        $_aliasNameGenerator(db.truedBcOverrides.loadId, db.userLoads.id),
+      );
+
+  $$UserLoadsTableProcessedTableManager get loadId {
+    final $_column = $_itemColumn<int>('load_id')!;
+
+    final manager = $$UserLoadsTableTableManager(
+      $_db,
+      $_db.userLoads,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_loadIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $UserFirearmsTable _firearmIdTable(_$AppDatabase db) =>
+      db.userFirearms.createAlias(
+        $_aliasNameGenerator(db.truedBcOverrides.firearmId, db.userFirearms.id),
+      );
+
+  $$UserFirearmsTableProcessedTableManager get firearmId {
+    final $_column = $_itemColumn<int>('firearm_id')!;
+
+    final manager = $$UserFirearmsTableTableManager(
+      $_db,
+      $_db.userFirearms,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_firearmIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$TruedBcOverridesTableFilterComposer
+    extends Composer<_$AppDatabase, $TruedBcOverridesTable> {
+  $$TruedBcOverridesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get dragModel => $composableBuilder(
+    column: $table.dragModel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get nominalBc => $composableBuilder(
+    column: $table.nominalBc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get truedBc => $composableBuilder(
+    column: $table.truedBc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get truingDistanceYd => $composableBuilder(
+    column: $table.truingDistanceYd,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get observationJson => $composableBuilder(
+    column: $table.observationJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get truedAt => $composableBuilder(
+    column: $table.truedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$UserLoadsTableFilterComposer get loadId {
+    final $$UserLoadsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.loadId,
+      referencedTable: $db.userLoads,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserLoadsTableFilterComposer(
+            $db: $db,
+            $table: $db.userLoads,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UserFirearmsTableFilterComposer get firearmId {
+    final $$UserFirearmsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.firearmId,
+      referencedTable: $db.userFirearms,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserFirearmsTableFilterComposer(
+            $db: $db,
+            $table: $db.userFirearms,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TruedBcOverridesTableOrderingComposer
+    extends Composer<_$AppDatabase, $TruedBcOverridesTable> {
+  $$TruedBcOverridesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dragModel => $composableBuilder(
+    column: $table.dragModel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get nominalBc => $composableBuilder(
+    column: $table.nominalBc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get truedBc => $composableBuilder(
+    column: $table.truedBc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get truingDistanceYd => $composableBuilder(
+    column: $table.truingDistanceYd,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get observationJson => $composableBuilder(
+    column: $table.observationJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get truedAt => $composableBuilder(
+    column: $table.truedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$UserLoadsTableOrderingComposer get loadId {
+    final $$UserLoadsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.loadId,
+      referencedTable: $db.userLoads,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserLoadsTableOrderingComposer(
+            $db: $db,
+            $table: $db.userLoads,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UserFirearmsTableOrderingComposer get firearmId {
+    final $$UserFirearmsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.firearmId,
+      referencedTable: $db.userFirearms,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserFirearmsTableOrderingComposer(
+            $db: $db,
+            $table: $db.userFirearms,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TruedBcOverridesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TruedBcOverridesTable> {
+  $$TruedBcOverridesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get dragModel =>
+      $composableBuilder(column: $table.dragModel, builder: (column) => column);
+
+  GeneratedColumn<double> get nominalBc =>
+      $composableBuilder(column: $table.nominalBc, builder: (column) => column);
+
+  GeneratedColumn<double> get truedBc =>
+      $composableBuilder(column: $table.truedBc, builder: (column) => column);
+
+  GeneratedColumn<double> get truingDistanceYd => $composableBuilder(
+    column: $table.truingDistanceYd,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get observationJson => $composableBuilder(
+    column: $table.observationJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get truedAt =>
+      $composableBuilder(column: $table.truedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$UserLoadsTableAnnotationComposer get loadId {
+    final $$UserLoadsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.loadId,
+      referencedTable: $db.userLoads,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserLoadsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.userLoads,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UserFirearmsTableAnnotationComposer get firearmId {
+    final $$UserFirearmsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.firearmId,
+      referencedTable: $db.userFirearms,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserFirearmsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.userFirearms,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TruedBcOverridesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TruedBcOverridesTable,
+          TruedBcOverrideRow,
+          $$TruedBcOverridesTableFilterComposer,
+          $$TruedBcOverridesTableOrderingComposer,
+          $$TruedBcOverridesTableAnnotationComposer,
+          $$TruedBcOverridesTableCreateCompanionBuilder,
+          $$TruedBcOverridesTableUpdateCompanionBuilder,
+          (TruedBcOverrideRow, $$TruedBcOverridesTableReferences),
+          TruedBcOverrideRow,
+          PrefetchHooks Function({bool loadId, bool firearmId})
+        > {
+  $$TruedBcOverridesTableTableManager(
+    _$AppDatabase db,
+    $TruedBcOverridesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TruedBcOverridesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TruedBcOverridesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TruedBcOverridesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> loadId = const Value.absent(),
+                Value<int> firearmId = const Value.absent(),
+                Value<String> dragModel = const Value.absent(),
+                Value<double> nominalBc = const Value.absent(),
+                Value<double> truedBc = const Value.absent(),
+                Value<double> truingDistanceYd = const Value.absent(),
+                Value<String> observationJson = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> truedAt = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => TruedBcOverridesCompanion(
+                id: id,
+                loadId: loadId,
+                firearmId: firearmId,
+                dragModel: dragModel,
+                nominalBc: nominalBc,
+                truedBc: truedBc,
+                truingDistanceYd: truingDistanceYd,
+                observationJson: observationJson,
+                notes: notes,
+                truedAt: truedAt,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int loadId,
+                required int firearmId,
+                required String dragModel,
+                required double nominalBc,
+                required double truedBc,
+                required double truingDistanceYd,
+                required String observationJson,
+                Value<String?> notes = const Value.absent(),
+                required DateTime truedAt,
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => TruedBcOverridesCompanion.insert(
+                id: id,
+                loadId: loadId,
+                firearmId: firearmId,
+                dragModel: dragModel,
+                nominalBc: nominalBc,
+                truedBc: truedBc,
+                truingDistanceYd: truingDistanceYd,
+                observationJson: observationJson,
+                notes: notes,
+                truedAt: truedAt,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$TruedBcOverridesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({loadId = false, firearmId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (loadId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.loadId,
+                                referencedTable:
+                                    $$TruedBcOverridesTableReferences
+                                        ._loadIdTable(db),
+                                referencedColumn:
+                                    $$TruedBcOverridesTableReferences
+                                        ._loadIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+                    if (firearmId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.firearmId,
+                                referencedTable:
+                                    $$TruedBcOverridesTableReferences
+                                        ._firearmIdTable(db),
+                                referencedColumn:
+                                    $$TruedBcOverridesTableReferences
+                                        ._firearmIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$TruedBcOverridesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TruedBcOverridesTable,
+      TruedBcOverrideRow,
+      $$TruedBcOverridesTableFilterComposer,
+      $$TruedBcOverridesTableOrderingComposer,
+      $$TruedBcOverridesTableAnnotationComposer,
+      $$TruedBcOverridesTableCreateCompanionBuilder,
+      $$TruedBcOverridesTableUpdateCompanionBuilder,
+      (TruedBcOverrideRow, $$TruedBcOverridesTableReferences),
+      TruedBcOverrideRow,
+      PrefetchHooks Function({bool loadId, bool firearmId})
+    >;
+typedef $$SightCalibrationsTableCreateCompanionBuilder =
+    SightCalibrationsCompanion Function({
+      Value<int> id,
+      required int firearmId,
+      required String axis,
+      required double advertisedClickMil,
+      required double observedClickMil,
+      required double derivedScale,
+      required String observationJson,
+      Value<String?> notes,
+      required DateTime calibratedAt,
+      Value<DateTime> createdAt,
+    });
+typedef $$SightCalibrationsTableUpdateCompanionBuilder =
+    SightCalibrationsCompanion Function({
+      Value<int> id,
+      Value<int> firearmId,
+      Value<String> axis,
+      Value<double> advertisedClickMil,
+      Value<double> observedClickMil,
+      Value<double> derivedScale,
+      Value<String> observationJson,
+      Value<String?> notes,
+      Value<DateTime> calibratedAt,
+      Value<DateTime> createdAt,
+    });
+
+final class $$SightCalibrationsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $SightCalibrationsTable,
+          SightCalibration
+        > {
+  $$SightCalibrationsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $UserFirearmsTable _firearmIdTable(_$AppDatabase db) =>
+      db.userFirearms.createAlias(
+        $_aliasNameGenerator(
+          db.sightCalibrations.firearmId,
+          db.userFirearms.id,
+        ),
+      );
+
+  $$UserFirearmsTableProcessedTableManager get firearmId {
+    final $_column = $_itemColumn<int>('firearm_id')!;
+
+    final manager = $$UserFirearmsTableTableManager(
+      $_db,
+      $_db.userFirearms,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_firearmIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$SightCalibrationsTableFilterComposer
+    extends Composer<_$AppDatabase, $SightCalibrationsTable> {
+  $$SightCalibrationsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get axis => $composableBuilder(
+    column: $table.axis,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get advertisedClickMil => $composableBuilder(
+    column: $table.advertisedClickMil,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get observedClickMil => $composableBuilder(
+    column: $table.observedClickMil,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get derivedScale => $composableBuilder(
+    column: $table.derivedScale,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get observationJson => $composableBuilder(
+    column: $table.observationJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get calibratedAt => $composableBuilder(
+    column: $table.calibratedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$UserFirearmsTableFilterComposer get firearmId {
+    final $$UserFirearmsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.firearmId,
+      referencedTable: $db.userFirearms,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserFirearmsTableFilterComposer(
+            $db: $db,
+            $table: $db.userFirearms,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SightCalibrationsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SightCalibrationsTable> {
+  $$SightCalibrationsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get axis => $composableBuilder(
+    column: $table.axis,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get advertisedClickMil => $composableBuilder(
+    column: $table.advertisedClickMil,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get observedClickMil => $composableBuilder(
+    column: $table.observedClickMil,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get derivedScale => $composableBuilder(
+    column: $table.derivedScale,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get observationJson => $composableBuilder(
+    column: $table.observationJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get calibratedAt => $composableBuilder(
+    column: $table.calibratedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$UserFirearmsTableOrderingComposer get firearmId {
+    final $$UserFirearmsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.firearmId,
+      referencedTable: $db.userFirearms,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserFirearmsTableOrderingComposer(
+            $db: $db,
+            $table: $db.userFirearms,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SightCalibrationsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SightCalibrationsTable> {
+  $$SightCalibrationsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get axis =>
+      $composableBuilder(column: $table.axis, builder: (column) => column);
+
+  GeneratedColumn<double> get advertisedClickMil => $composableBuilder(
+    column: $table.advertisedClickMil,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get observedClickMil => $composableBuilder(
+    column: $table.observedClickMil,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get derivedScale => $composableBuilder(
+    column: $table.derivedScale,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get observationJson => $composableBuilder(
+    column: $table.observationJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get calibratedAt => $composableBuilder(
+    column: $table.calibratedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$UserFirearmsTableAnnotationComposer get firearmId {
+    final $$UserFirearmsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.firearmId,
+      referencedTable: $db.userFirearms,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserFirearmsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.userFirearms,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SightCalibrationsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SightCalibrationsTable,
+          SightCalibration,
+          $$SightCalibrationsTableFilterComposer,
+          $$SightCalibrationsTableOrderingComposer,
+          $$SightCalibrationsTableAnnotationComposer,
+          $$SightCalibrationsTableCreateCompanionBuilder,
+          $$SightCalibrationsTableUpdateCompanionBuilder,
+          (SightCalibration, $$SightCalibrationsTableReferences),
+          SightCalibration,
+          PrefetchHooks Function({bool firearmId})
+        > {
+  $$SightCalibrationsTableTableManager(
+    _$AppDatabase db,
+    $SightCalibrationsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SightCalibrationsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SightCalibrationsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SightCalibrationsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> firearmId = const Value.absent(),
+                Value<String> axis = const Value.absent(),
+                Value<double> advertisedClickMil = const Value.absent(),
+                Value<double> observedClickMil = const Value.absent(),
+                Value<double> derivedScale = const Value.absent(),
+                Value<String> observationJson = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> calibratedAt = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => SightCalibrationsCompanion(
+                id: id,
+                firearmId: firearmId,
+                axis: axis,
+                advertisedClickMil: advertisedClickMil,
+                observedClickMil: observedClickMil,
+                derivedScale: derivedScale,
+                observationJson: observationJson,
+                notes: notes,
+                calibratedAt: calibratedAt,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int firearmId,
+                required String axis,
+                required double advertisedClickMil,
+                required double observedClickMil,
+                required double derivedScale,
+                required String observationJson,
+                Value<String?> notes = const Value.absent(),
+                required DateTime calibratedAt,
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => SightCalibrationsCompanion.insert(
+                id: id,
+                firearmId: firearmId,
+                axis: axis,
+                advertisedClickMil: advertisedClickMil,
+                observedClickMil: observedClickMil,
+                derivedScale: derivedScale,
+                observationJson: observationJson,
+                notes: notes,
+                calibratedAt: calibratedAt,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$SightCalibrationsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({firearmId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (firearmId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.firearmId,
+                                referencedTable:
+                                    $$SightCalibrationsTableReferences
+                                        ._firearmIdTable(db),
+                                referencedColumn:
+                                    $$SightCalibrationsTableReferences
+                                        ._firearmIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$SightCalibrationsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SightCalibrationsTable,
+      SightCalibration,
+      $$SightCalibrationsTableFilterComposer,
+      $$SightCalibrationsTableOrderingComposer,
+      $$SightCalibrationsTableAnnotationComposer,
+      $$SightCalibrationsTableCreateCompanionBuilder,
+      $$SightCalibrationsTableUpdateCompanionBuilder,
+      (SightCalibration, $$SightCalibrationsTableReferences),
+      SightCalibration,
+      PrefetchHooks Function({bool firearmId})
+    >;
+typedef $$AtmospherePresetsTableCreateCompanionBuilder =
+    AtmospherePresetsCompanion Function({
+      Value<int> id,
+      required String name,
+      required double stationPressureInHg,
+      required double temperatureF,
+      required double humidityPct,
+      Value<double?> altitudeFt,
+      Value<double?> latitudeDeg,
+      Value<double?> longitudeDeg,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+typedef $$AtmospherePresetsTableUpdateCompanionBuilder =
+    AtmospherePresetsCompanion Function({
+      Value<int> id,
+      Value<String> name,
+      Value<double> stationPressureInHg,
+      Value<double> temperatureF,
+      Value<double> humidityPct,
+      Value<double?> altitudeFt,
+      Value<double?> latitudeDeg,
+      Value<double?> longitudeDeg,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+
+class $$AtmospherePresetsTableFilterComposer
+    extends Composer<_$AppDatabase, $AtmospherePresetsTable> {
+  $$AtmospherePresetsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get stationPressureInHg => $composableBuilder(
+    column: $table.stationPressureInHg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get temperatureF => $composableBuilder(
+    column: $table.temperatureF,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get humidityPct => $composableBuilder(
+    column: $table.humidityPct,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get altitudeFt => $composableBuilder(
+    column: $table.altitudeFt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get latitudeDeg => $composableBuilder(
+    column: $table.latitudeDeg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get longitudeDeg => $composableBuilder(
+    column: $table.longitudeDeg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$AtmospherePresetsTableOrderingComposer
+    extends Composer<_$AppDatabase, $AtmospherePresetsTable> {
+  $$AtmospherePresetsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get stationPressureInHg => $composableBuilder(
+    column: $table.stationPressureInHg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get temperatureF => $composableBuilder(
+    column: $table.temperatureF,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get humidityPct => $composableBuilder(
+    column: $table.humidityPct,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get altitudeFt => $composableBuilder(
+    column: $table.altitudeFt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get latitudeDeg => $composableBuilder(
+    column: $table.latitudeDeg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get longitudeDeg => $composableBuilder(
+    column: $table.longitudeDeg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$AtmospherePresetsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AtmospherePresetsTable> {
+  $$AtmospherePresetsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<double> get stationPressureInHg => $composableBuilder(
+    column: $table.stationPressureInHg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get temperatureF => $composableBuilder(
+    column: $table.temperatureF,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get humidityPct => $composableBuilder(
+    column: $table.humidityPct,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get altitudeFt => $composableBuilder(
+    column: $table.altitudeFt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get latitudeDeg => $composableBuilder(
+    column: $table.latitudeDeg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get longitudeDeg => $composableBuilder(
+    column: $table.longitudeDeg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$AtmospherePresetsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AtmospherePresetsTable,
+          AtmospherePresetRow,
+          $$AtmospherePresetsTableFilterComposer,
+          $$AtmospherePresetsTableOrderingComposer,
+          $$AtmospherePresetsTableAnnotationComposer,
+          $$AtmospherePresetsTableCreateCompanionBuilder,
+          $$AtmospherePresetsTableUpdateCompanionBuilder,
+          (
+            AtmospherePresetRow,
+            BaseReferences<
+              _$AppDatabase,
+              $AtmospherePresetsTable,
+              AtmospherePresetRow
+            >,
+          ),
+          AtmospherePresetRow,
+          PrefetchHooks Function()
+        > {
+  $$AtmospherePresetsTableTableManager(
+    _$AppDatabase db,
+    $AtmospherePresetsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AtmospherePresetsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AtmospherePresetsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AtmospherePresetsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<double> stationPressureInHg = const Value.absent(),
+                Value<double> temperatureF = const Value.absent(),
+                Value<double> humidityPct = const Value.absent(),
+                Value<double?> altitudeFt = const Value.absent(),
+                Value<double?> latitudeDeg = const Value.absent(),
+                Value<double?> longitudeDeg = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => AtmospherePresetsCompanion(
+                id: id,
+                name: name,
+                stationPressureInHg: stationPressureInHg,
+                temperatureF: temperatureF,
+                humidityPct: humidityPct,
+                altitudeFt: altitudeFt,
+                latitudeDeg: latitudeDeg,
+                longitudeDeg: longitudeDeg,
+                notes: notes,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                required double stationPressureInHg,
+                required double temperatureF,
+                required double humidityPct,
+                Value<double?> altitudeFt = const Value.absent(),
+                Value<double?> latitudeDeg = const Value.absent(),
+                Value<double?> longitudeDeg = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => AtmospherePresetsCompanion.insert(
+                id: id,
+                name: name,
+                stationPressureInHg: stationPressureInHg,
+                temperatureF: temperatureF,
+                humidityPct: humidityPct,
+                altitudeFt: altitudeFt,
+                latitudeDeg: latitudeDeg,
+                longitudeDeg: longitudeDeg,
+                notes: notes,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$AtmospherePresetsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AtmospherePresetsTable,
+      AtmospherePresetRow,
+      $$AtmospherePresetsTableFilterComposer,
+      $$AtmospherePresetsTableOrderingComposer,
+      $$AtmospherePresetsTableAnnotationComposer,
+      $$AtmospherePresetsTableCreateCompanionBuilder,
+      $$AtmospherePresetsTableUpdateCompanionBuilder,
+      (
+        AtmospherePresetRow,
+        BaseReferences<
+          _$AppDatabase,
+          $AtmospherePresetsTable,
+          AtmospherePresetRow
+        >,
+      ),
+      AtmospherePresetRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -41653,4 +47045,12 @@ class $AppDatabaseManager {
       $$DragCurvesTableTableManager(_db, _db.dragCurves);
   $$FactoryLoadsTableTableManager get factoryLoads =>
       $$FactoryLoadsTableTableManager(_db, _db.factoryLoads);
+  $$WezProfilesTableTableManager get wezProfiles =>
+      $$WezProfilesTableTableManager(_db, _db.wezProfiles);
+  $$TruedBcOverridesTableTableManager get truedBcOverrides =>
+      $$TruedBcOverridesTableTableManager(_db, _db.truedBcOverrides);
+  $$SightCalibrationsTableTableManager get sightCalibrations =>
+      $$SightCalibrationsTableTableManager(_db, _db.sightCalibrations);
+  $$AtmospherePresetsTableTableManager get atmospherePresets =>
+      $$AtmospherePresetsTableTableManager(_db, _db.atmospherePresets);
 }

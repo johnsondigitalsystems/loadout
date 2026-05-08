@@ -163,7 +163,16 @@ fun StageLogScreen(
     val shotCount by WatchAppState.shotCount.collectAsState()
     val cursor by WatchAppState.rowCursor.collectAsState()
     val snapshot by WatchAppState.dopeSnapshot.collectAsState()
+    val sensitivity by WatchAppState.shotCaptureSensitivity.collectAsState()
     val pendingPeak = motion.pendingShotPeakG
+
+    // Apply any phone-pushed sensitivity preset. Re-runs whenever the
+    // phone publishes a new value; idempotent against the same value
+    // because `applySensitivity` early-returns when the threshold is
+    // already at the requested level.
+    LaunchedEffect(sensitivity) {
+        sensitivity?.let { motion.applySensitivity(it) }
+    }
 
     DisposableEffect(Unit) {
         motion.start()

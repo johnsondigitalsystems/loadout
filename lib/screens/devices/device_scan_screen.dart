@@ -12,6 +12,7 @@
 //   - Bushnell rangefinders (Forge / Prime / Phantom 2 / Engage / Elite)
 //   - Vortex Razor HD 4000 / Fury HD AB
 //   - Leica Geovid Pro
+//   - Vectronix Terrapin X (mil/LE-grade LRF, magnetometer)
 //
 // The kind enum carries the per-brand service UUID, friendly title, and
 // "looks like" matcher used for fallback name-based discovery (some
@@ -51,6 +52,7 @@ import '../../services/ble/bushnell_rangefinder_service.dart';
 import '../../services/ble/kestrel_service.dart';
 import '../../services/ble/leica_geovid_service.dart';
 import '../../services/ble/sig_kilo_service.dart';
+import '../../services/ble/vectronix_terrapin_service.dart';
 import '../../services/ble/vortex_rangefinder_service.dart';
 
 /// What kind of device this scan-and-connect flow is for. Each kind
@@ -61,6 +63,7 @@ enum DeviceScanKind {
   bushnell,
   vortex,
   leicaGeovid,
+  vectronixTerrapin,
 }
 
 extension _DeviceScanKindCopy on DeviceScanKind {
@@ -77,6 +80,8 @@ extension _DeviceScanKindCopy on DeviceScanKind {
         return 'Scan for Vortex';
       case DeviceScanKind.leicaGeovid:
         return 'Scan for Leica';
+      case DeviceScanKind.vectronixTerrapin:
+        return 'Scan for Vectronix Terrapin';
     }
   }
 
@@ -93,6 +98,8 @@ extension _DeviceScanKindCopy on DeviceScanKind {
         return 'No Vortex devices found.';
       case DeviceScanKind.leicaGeovid:
         return 'No Leica devices found.';
+      case DeviceScanKind.vectronixTerrapin:
+        return 'No Vectronix Terrapin devices found.';
     }
   }
 
@@ -109,6 +116,8 @@ extension _DeviceScanKindCopy on DeviceScanKind {
         return 'Connected to Vortex rangefinder.';
       case DeviceScanKind.leicaGeovid:
         return 'Connected to Leica Geovid.';
+      case DeviceScanKind.vectronixTerrapin:
+        return 'Connected to Vectronix Terrapin X.';
     }
   }
 
@@ -125,6 +134,8 @@ extension _DeviceScanKindCopy on DeviceScanKind {
         return [kVortexServiceUuid];
       case DeviceScanKind.leicaGeovid:
         return [kLeicaGeovidServiceUuid];
+      case DeviceScanKind.vectronixTerrapin:
+        return [kVectronixTerrapinServiceUuid];
     }
   }
 
@@ -143,6 +154,8 @@ extension _DeviceScanKindCopy on DeviceScanKind {
         return VortexRangefinderService.looksLikeVortex(r);
       case DeviceScanKind.leicaGeovid:
         return LeicaGeovidService.looksLikeLeica(r);
+      case DeviceScanKind.vectronixTerrapin:
+        return VectronixTerrapinService.looksLikeTerrapin(r);
     }
   }
 
@@ -155,6 +168,7 @@ extension _DeviceScanKindCopy on DeviceScanKind {
       case DeviceScanKind.bushnell:
       case DeviceScanKind.vortex:
       case DeviceScanKind.leicaGeovid:
+      case DeviceScanKind.vectronixTerrapin:
         return Icons.gps_fixed;
     }
   }
@@ -176,6 +190,9 @@ extension _DeviceScanKindCopy on DeviceScanKind {
             'Bluetooth enabled, and within about 30 ft of this device.';
       case DeviceScanKind.leicaGeovid:
         return 'Make sure the Geovid Pro is powered on with Bluetooth '
+            'enabled, and within about 30 ft of this device.';
+      case DeviceScanKind.vectronixTerrapin:
+        return 'Make sure the Terrapin X is powered on with Bluetooth '
             'enabled, and within about 30 ft of this device.';
     }
   }
@@ -425,6 +442,9 @@ class _DeviceScanScreenState extends State<DeviceScanScreen> {
         return svc.connect;
       case DeviceScanKind.leicaGeovid:
         final svc = context.read<LeicaGeovidService>();
+        return svc.connect;
+      case DeviceScanKind.vectronixTerrapin:
+        final svc = context.read<VectronixTerrapinService>();
         return svc.connect;
     }
   }

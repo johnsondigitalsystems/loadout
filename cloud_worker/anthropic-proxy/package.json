@@ -1,0 +1,19 @@
+{
+  "name": "loadout-anthropic-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloudflare Worker that fronts Anthropic for LoadOut AI Smart Import.",
+  "main": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test --experimental-strip-types test/*.test.ts"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240614.0",
+    "typescript": "^5.4.0",
+    "wrangler": "^3.60.0"
+  }
+}

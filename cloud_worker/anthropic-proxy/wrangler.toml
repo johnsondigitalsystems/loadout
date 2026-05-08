@@ -1,0 +1,158 @@
+# =============================================================================
+# Cloudflare Worker config for the LoadOut AI Smart Import proxy.
+#
+# Operator deploy steps:
+#   1. `npm install -g wrangler` (or `npx wrangler ...`)
+#   2. `wrangler login`
+#   3. Create the KV namespace (Wrangler 4+ syntax — no colon):
+#        wrangler kv namespace create LOADOUT_QUOTAS
+#      (On pre-v4 Wrangler the legacy form `wrangler kv:namespace create
+#      LOADOUT_QUOTAS` still works.)
+#      Paste the returned `id` into the [[kv_namespaces]] block below.
+#   4. Set secrets:
+#        wrangler secret put ANTHROPIC_API_KEY
+#        wrangler secret put FIREBASE_PROJECT_ID    # 'loadout-precision-reloading'
+#        # Optional but recommended for production — server-side
+#        # verification of the caller's RevenueCat `pro` entitlement.
+#        # Without it the Worker trusts the Flutter client's ensurePro
+#        # gate (current behavior, fine for dev/CI). With it, every
+#        # request is verified against RevenueCat directly. NEVER put
+#        # this value in a committed file — secret-only.
+#        wrangler secret put REVENUECAT_SECRET_API_KEY
+#   5. `wrangler deploy`
+#
+# After deploy:
+#   - The Worker is reachable at the URL Wrangler prints (typically
+#     https://anthropic-proxy.<account>.workers.dev). If it differs from
+#     `https://anthropic-proxy.loadout.workers.dev`, edit
+#     `lib/services/ai_smart_import_config.dart` to match — the client
+#     treats that exact host as a placeholder.
+#   - Quota state lives in the KV namespace, keyed `user:<uid>:smart_import:<YYYY-MM>`.
+#     Old months auto-disappear after the calendar rolls over.
+# =============================================================================
+
+name = "anthropic-proxy"
+main = "src/index.ts"
+compatibility_date = "2024-08-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Disable per-version Preview URLs.
+#
+# Wrangler's default-enabled behavior would publish a `<version>-anthropic-
+# proxy.loadout-precision-reloading.workers.dev` URL for every deploy
+# (e.g. `ef99aed5-anthropic-proxy.loadout-precision-reloading.workers.dev`).
+# We don't use that pattern — our deploy flow is atomic, every version
+# becomes the live one — and each preview URL is an additional reachable
+# surface that an attacker could probe with stolen Firebase tokens. The
+# auth gate covers them either way, but every reachable surface adds
+# attack-surface management overhead.
+#
+# We disabled Preview URLs through the dashboard during initial setup;
+# this line locks that decision into config so future `wrangler deploy`
+# runs don't silently re-enable them. Flip to `true` only if we ever
+# want gradual-rollout / canary deploys that work via per-version URLs.
+preview_urls = false
+
+# KV namespace for the per-user monthly counter.
+#
+# ⚠️  REQUIRED FIRST-TIME SETUP — replace the `id` below before deploy.
+#
+# 1. Run:
+#        wrangler kv namespace create LOADOUT_QUOTAS   # Wrangler 4+
+#        # (or `wrangler kv:namespace create LOADOUT_QUOTAS` on v3)
+# 2. Wrangler prints a hex `id` string. Paste it into the line below.
+# 3. `wrangler deploy` will then succeed. Until you do this, deploy
+#    fails with: `KV namespace 'REPLACE_WITH_KV_NAMESPACE_ID' is not
+#    valid. [code: 10042]`
+#
+# This is a one-time step — the namespace persists across deploys and
+# is shared across the Worker's lifetime.
+[[kv_namespaces]]
+binding = "LOADOUT_QUOTAS"
+id = "47eaf6131e184ea8bf9399669818bad7"
+
+# Workers Rate Limiting bindings.
+#
+# Why these aren't in the Cloudflare dashboard's "Rate Limits" tab:
+# the dashboard's WAF Rate Limiting feature is a *zone-level* setting,
+# which means it requires a custom domain bound to a Cloudflare zone.
+# workers.dev URLs aren't a customer zone — they're Cloudflare's own
+# infrastructure — so the only way to rate-limit a Worker on
+# workers.dev is via the Workers Rate Limiting API binding (this
+# block). Each binding is a separate keyed counter; we declare three.
+#
+# The `simple` block sets a sliding-window cap. `namespace_id` must
+# be a unique integer per binding within this Worker (Cloudflare uses
+# it to scope counters internally; the value is otherwise opaque).
+#
+# These bindings are CHARGEABLE on Workers Paid (a small fee per
+# 1M operations beyond the included quota). Our worst-case is
+# ~20 imports/Pro user/month × 1K users = 20K ops/month — well under
+# the included quota, so cost is effectively $0.
+#
+# How each rule maps to defense:
+#
+#   PER_IP_LIMITER       — caps a single IP at 30 req/min.
+#                          Defends against a single attacker hammering
+#                          from one machine. Real Pro users at one IP
+#                          rarely fire >5/min in practice; 30/min is
+#                          permissive enough for corporate NAT
+#                          collisions but tight enough to interrupt
+#                          automation.
+#   PER_TOKEN_LIMITER    — caps a single Authorization header at 5/min.
+#                          Defends against a stolen Firebase token
+#                          being used from many IPs (a botnet). 5/min
+#                          is a comfortable ceiling for the slowest
+#                          realistic human cadence (capture photo →
+#                          OCR → review → "Improve with AI" loop).
+#   ACCOUNT_LIMITER      — caps total Worker requests at 1000/min
+#                          across the account. Belt-and-suspenders
+#                          against any unexpected load pattern that
+#                          the per-key rules don't catch (e.g. a
+#                          coordinated attack across many fresh
+#                          Firebase signups). 1000/min ≫ peak normal
+#                          traffic at any plausible user count.
+[[unsafe.bindings]]
+name = "PER_IP_LIMITER"
+type = "ratelimit"
+namespace_id = "1001"
+simple = { limit = 30, period = 60 }
+
+[[unsafe.bindings]]
+name = "PER_TOKEN_LIMITER"
+type = "ratelimit"
+namespace_id = "1002"
+simple = { limit = 5, period = 60 }
+
+[[unsafe.bindings]]
+name = "ACCOUNT_LIMITER"
+type = "ratelimit"
+namespace_id = "1003"
+simple = { limit = 1000, period = 60 }
+
+# NOTE: We deliberately do NOT set `[limits] cpu_ms = ...`.
+#
+# Why: explicit `cpu_ms` is only honored on Cloudflare's "Standard"
+# pricing tier (not Free, not Bundled). Setting it on the wrong tier
+# fails deploy with: "CPU limits are not supported for the Free plan
+# [code: 100328]" — even immediately after upgrading to a paid tier,
+# because Cloudflare's pricing-model bit can lag the billing change
+# by minutes-to-hours.
+#
+# Our Worker doesn't need a custom CPU budget anyway. The CPU work
+# per request is:
+#
+#   - Verify a Firebase ID token (one ECDSA verify ≈ 1–2 ms)
+#   - Parse + serialize a small JSON body (<1 ms)
+#   - Read + write one KV counter (<1 ms of CPU; the rest is I/O)
+#
+# Total per-request CPU: under 5 ms. The 30-second wait for the
+# Anthropic API call is network I/O, which is NOT counted against
+# CPU limits. So Cloudflare's defaults — 10 ms on Free, 50 ms on
+# Bundled paid, 30 s on Standard paid — are all sufficient.
+#
+# If a future change pushes per-request CPU above 50 ms (e.g. a
+# bigger crypto op or in-Worker token counting), revisit this and
+# add `[limits] cpu_ms = N` — but only after confirming the
+# Cloudflare account is on Standard pricing
+# (https://developers.cloudflare.com/workers/platform/pricing/).

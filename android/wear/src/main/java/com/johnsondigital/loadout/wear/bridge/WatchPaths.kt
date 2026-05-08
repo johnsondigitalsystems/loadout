@@ -100,6 +100,13 @@ object WatchPaths {
     const val LOG_SHOT = "log_shot"
     const val TIMER_EVENT = "timer_event"
 
+    // Phone -> watch. The user's chosen shot-capture sensitivity
+    // ("off"/"low"/"medium"/"high"). The watch's MotionDetector reads
+    // the value, persists it locally, and re-tunes (or disables) the
+    // accelerometer threshold. See CLAUDE.md §15 and
+    // `motion/MotionDetector.kt`.
+    const val SHOT_CAPTURE_SENSITIVITY = "shot_capture_sensitivity"
+
     fun fullPath(shortPath: String): String = PATH_PREFIX + shortPath
 }
 

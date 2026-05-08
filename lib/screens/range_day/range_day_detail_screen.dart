@@ -49,6 +49,7 @@ import '../../services/ballistics/group_stats.dart';
 import '../../services/ballistics/projectile.dart';
 import '../../services/ballistics/solver.dart';
 import '../../services/ballistics/units.dart' as bu;
+import '../../services/ballistics/wind_bracket_service.dart';
 import '../../services/ble/ble_service.dart';
 import '../../services/ble/bushnell_rangefinder_service.dart';
 import '../../services/ble/garmin_xero_service.dart';
@@ -56,18 +57,24 @@ import '../../services/ble/kestrel_service.dart';
 import '../../services/ble/leica_geovid_service.dart';
 import '../../services/ble/rangefinder_reading.dart';
 import '../../services/ble/sig_kilo_service.dart';
+import '../../services/ble/vectronix_terrapin_service.dart';
 import '../../services/ble/vortex_rangefinder_service.dart';
 import '../../services/entitlement_notifier.dart';
 import '../../services/hit_probability_service.dart';
+import '../../screens/atmosphere/atmosphere_presets_screen.dart';
 import '../../services/sensors/cant_service.dart';
 import '../../services/sensors/inclinometer_service.dart';
 import '../../services/sensors/magnetometer_service.dart';
 import '../../services/unit_service.dart';
 import '../../services/weather_service.dart';
 import '../../utils/responsive.dart';
+import '../../widgets/atmosphere_preset_picker.dart';
 import '../../widgets/pro_gate.dart';
 import '../../widgets/reticle_picker.dart';
+import 'bc_truing_screen.dart';
 import 'scope_view_screen.dart';
+import 'sight_calibration_screen.dart';
+import 'wez_analysis_screen.dart';
 import 'widgets/target_plot.dart';
 
 class RangeDayDetailScreen extends StatefulWidget {
@@ -167,6 +174,12 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   bool _useKestrel = false;
   StreamSubscription<KestrelReading>? _kestrelSub;
 
+  /// Optional FK to the atmosphere preset that pre-filled the four core
+  /// environment fields. Mirrored onto [RangeDaySessions.atmospherePresetId]
+  /// at save time so reopening the session restores the picker selection.
+  /// Null when the user is in "Custom" (free-edited) mode.
+  int? _atmospherePresetId;
+
   // ─────────────────────── Moving target (Pro) ───────────────────────
   final _moverSpeedCtrl = TextEditingController(text: '3');
   /// 'rtl' (right-to-left), 'ltr' (left-to-right). Used to flip lead sign.
@@ -196,6 +209,15 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   List<TrajectorySample> _dopeRows = const [];
   /// Last solver error message, surfaced inline under the Solution card.
   String? _solveError;
+
+  /// Snapshot of the solver inputs that produced [_solution] — used
+  /// by the wind-bracket card so it can re-solve at low / mid / high
+  /// wind without re-parsing the controllers.
+  Projectile? _lastSolvedProjectile;
+  Environment? _lastSolvedEnvironment;
+  ShotInputs? _lastSolvedShot;
+  double? _lastSolvedDistanceYd;
+  double? _lastSolvedWindMph;
 
   /// Notes captured for the session.
   final _notesCtrl = TextEditingController();
@@ -358,6 +380,8 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       if (s.inclineAngleDeg != null) {
         _inclineAngleCtrl.text = s.inclineAngleDeg!.toStringAsFixed(1);
       }
+      // v17 — atmosphere preset selection.
+      _atmospherePresetId = s.atmospherePresetId;
       _setupExpanded = false;
       _environmentExpanded = false;
     });
@@ -511,6 +535,10 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         _bulletLengthCtrl.text = _trimZeros(r.bulletLengthIn!);
       }
     });
+    // Also pick up any trued BC override the user previously saved for
+    // this (load, firearm, drag model) triple.
+    // ignore: discarded_futures
+    _maybeApplyTruedBcOverride();
     _scheduleSolve();
   }
 
@@ -528,7 +556,45 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       final twist = _parseTwist(f.twistRate);
       if (twist != null) _twistCtrl.text = twist.toString();
     });
+    // Sight scale (DPC calibration) is consumed by the solver via
+    // [ShotInputs] in `_solve()`, so a re-solve picks it up. The trued
+    // BC override needs an active load too — try to pull it once both
+    // sides of the (load × firearm) key are known.
+    // ignore: discarded_futures
+    _maybeApplyTruedBcOverride();
     _scheduleSolve();
+  }
+
+  /// If the user has previously trued the BC for the active
+  /// (load × firearm × drag model) triple, replace the BC field with
+  /// the trued value and surface a brief snackbar so the user knows
+  /// the override is active.
+  Future<void> _maybeApplyTruedBcOverride() async {
+    final load = _selectedLoad;
+    final firearm = _selectedFirearm;
+    if (load == null || firearm == null) return;
+    final db = context.read<AppDatabase>();
+    final dragModelStr = _dragModel.short.toLowerCase();
+    final row = await (db.select(db.truedBcOverrides)
+          ..where((t) => t.loadId.equals(load.id))
+          ..where((t) => t.firearmId.equals(firearm.id))
+          ..where((t) => t.dragModel.equals(dragModelStr))
+          ..limit(1))
+        .getSingleOrNull();
+    if (row == null || !mounted) return;
+    setState(() {
+      _bcCtrl.text = row.truedBc.toStringAsFixed(3);
+    });
+    _scheduleSolve();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Applied trued BC ${row.truedBc.toStringAsFixed(3)} '
+          '(was ${row.nominalBc.toStringAsFixed(3)})',
+        ),
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   int? _parseTwist(String? raw) {
@@ -754,18 +820,33 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       setState(() {
         _solution = primary;
         _dopeRows = samples;
+        _lastSolvedProjectile = projectile;
+        _lastSolvedEnvironment = environment;
+        _lastSolvedShot = shot;
+        _lastSolvedDistanceYd = distance;
+        _lastSolvedWindMph = windSpeed;
       });
     } on FormatException catch (e) {
       setState(() {
         _solveError = e.message;
         _solution = null;
         _dopeRows = const [];
+        _lastSolvedProjectile = null;
+        _lastSolvedEnvironment = null;
+        _lastSolvedShot = null;
+        _lastSolvedDistanceYd = null;
+        _lastSolvedWindMph = null;
       });
     } catch (e) {
       setState(() {
         _solveError = 'Could not solve: $e';
         _solution = null;
         _dopeRows = const [];
+        _lastSolvedProjectile = null;
+        _lastSolvedEnvironment = null;
+        _lastSolvedShot = null;
+        _lastSolvedDistanceYd = null;
+        _lastSolvedWindMph = null;
       });
     }
   }
@@ -827,6 +908,12 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       correctionUnit: drift.Value(_correctionUnit),
       // v15 ballistic precision — incline / decline angle (slope of fire).
       inclineAngleDeg: drift.Value(double.tryParse(_inclineAngleCtrl.text)),
+      // v17 — link back to the atmosphere preset that pre-filled the
+      // environment fields, if any. The id is cleared eagerly by the
+      // picker / weather flows when the snapshot diverges so the FK
+      // honestly reflects "this session was last set from this preset"
+      // rather than going stale.
+      atmospherePresetId: drift.Value(_atmospherePresetId),
     );
   }
 
@@ -1030,9 +1117,36 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         _windSpeedCtrl.text = result.windSpeedMph.toStringAsFixed(0);
         _windDirCtrl.text = result.windDirectionDeg.toStringAsFixed(0);
         _weatherFetchedAt = result.fetchedAt;
+        // Live values now match a freshly-pulled reading rather than any
+        // saved preset, so clear the picker FK back to "Custom".
+        _atmospherePresetId = null;
       });
       _scheduleSolve();
       _scheduleAutoSave();
+      // Offer to capture this set of conditions as a saved preset so the
+      // user can switch back to it in one tap on a future range day.
+      messenger.showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 5),
+          content: const Text('Pulled current weather.'),
+          action: SnackBarAction(
+            label: 'Save as preset',
+            onPressed: () async {
+              final newId = await showSaveAtmospherePresetDialog(
+                context,
+                stationPressureInHg: result.stationPressureInHg,
+                temperatureF: result.tempF,
+                humidityPct: result.humidityPct,
+                altitudeFt: result.elevationFt,
+              );
+              if (newId != null && mounted) {
+                setState(() => _atmospherePresetId = newId);
+                _scheduleAutoSave();
+              }
+            },
+          ),
+        ),
+      );
     } on WeatherFetchException catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(SnackBar(content: Text(e.userMessage)));
@@ -1201,6 +1315,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                 const SizedBox(height: 12),
                 _solutionCard(),
                 const SizedBox(height: 12),
+                ..._windBracketSection(),
                 _hitProbCard(),
                 const SizedBox(height: 12),
                 _targetPlotCard(),
@@ -1248,6 +1363,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                       const SizedBox(height: 12),
                       _solutionCard(),
                       const SizedBox(height: 12),
+                      ..._windBracketSection(),
                       _groupStatsCard(),
                       const SizedBox(height: 12),
                       _hitProbCard(),
@@ -1359,6 +1475,12 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
           _loadPicker(),
           const SizedBox(height: 12),
           _firearmPicker(),
+          // Stability + form factor read-out — only renders when both
+          // a load and firearm have been picked (the Sg formulas need
+          // length and twist, which come from those rows). Uses a
+          // helper that returns SizedBox.shrink() when inputs are
+          // incomplete, so the surrounding layout stays clean.
+          _stabilityAndFormFactor(),
           const SizedBox(height: 12),
           _reticlePicker(),
           const SizedBox(height: 12),
@@ -1371,6 +1493,8 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
           _captureEnvironmentFromSensorsButton(),
           const SizedBox(height: 12),
           _capabilityExpander(),
+          const SizedBox(height: 12),
+          _litzAnalysisButtons(),
           const SizedBox(height: 16),
           FilledButton.icon(
             onPressed: () => _saveSession(collapseSetup: true),
@@ -1380,6 +1504,107 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         ],
       ),
     );
+  }
+
+  /// Three Pro-gated entries to the Bryan Litz / Applied Ballistics
+  /// parity features (schema v16). Each one routes to its own screen
+  /// after `ensurePro` clears.
+  Widget _litzAnalysisButtons() {
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(children: [
+            Icon(Icons.science_outlined,
+                color: theme.colorScheme.primary, size: 18),
+            const SizedBox(width: 6),
+            Text('Litz analysis (Pro)',
+                style: theme.textTheme.titleSmall),
+          ]),
+          const SizedBox(height: 4),
+          Text(
+            'Probability-based engagement modeling, observed-vs-predicted '
+            'BC truing, and tall-target sight calibration.',
+            style: theme.textTheme.bodySmall,
+          ),
+          const SizedBox(height: 8),
+          // Align(centerLeft) breaks the infinite-width inheritance from
+          // the parent `Column(crossAxisAlignment: stretch)`. Without it,
+          // Wrap is told it has infinite width, which it tries to honor —
+          // and Material's `OutlinedButton.icon` `_RenderInputPadding`
+          // immediately throws "BoxConstraints forces infinite width" at
+          // layout time, crashing the screen on first render. Align
+          // imposes no width constraint on its child, so the Wrap sizes
+          // to its children instead. This is the canonical fix for
+          // "Wrap inside a stretching Flex" — see Flutter issue #18781.
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.show_chart, size: 18),
+                  label: const Text('WEZ analysis'),
+                  onPressed: () => _openWezAnalysis(),
+                ),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.assessment_outlined, size: 18),
+                  label: const Text('BC truing'),
+                  onPressed: () => _openBcTruing(),
+                ),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.straighten, size: 18),
+                  label: const Text('Sight calibration'),
+                  onPressed: () => _openSightCalibration(),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openWezAnalysis() async {
+    if (!await ensurePro(context)) return;
+    final dist = double.tryParse(_distanceCtrl.text.trim());
+    if (!mounted) return;
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => WezAnalysisScreen(
+        initialLoadId: _selectedLoad?.id,
+        initialFirearmId: _selectedFirearm?.id,
+        initialTargetId: _selectedTarget?.id,
+        initialDistanceYd: dist,
+      ),
+    ));
+  }
+
+  Future<void> _openBcTruing() async {
+    if (!await ensurePro(context)) return;
+    if (!mounted) return;
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => BcTruingScreen(
+        initialLoadId: _selectedLoad?.id,
+        initialFirearmId: _selectedFirearm?.id,
+      ),
+    ));
+  }
+
+  Future<void> _openSightCalibration() async {
+    if (!await ensurePro(context)) return;
+    if (!mounted) return;
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => SightCalibrationScreen(
+        initialFirearmId: _selectedFirearm?.id,
+      ),
+    ));
   }
 
   // ─────────────────────── Shot azimuth ───────────────────────
@@ -1444,16 +1669,43 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
             if (available)
               Padding(
                 padding: const EdgeInsets.only(top: 6),
-                child: Row(
-                  children: [
-                    OutlinedButton.icon(
-                      onPressed: _captureInclineFromSensor,
-                      icon: const Icon(Icons.straighten, size: 16),
-                      label: const Text('Capture from sensor'),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Builder(builder: (ctx) {
+                // Layout fix: the parent is `Column(crossAxisAlignment:
+                // stretch)` (line ~1648), which forwards an infinite-
+                // width constraint down. We need to break that chain
+                // before reaching `OutlinedButton`, whose internal
+                // `RenderConstrainedBox` (the minimum tap-target
+                // enforcer at 48dp) would otherwise hand `w=Infinity`
+                // to the Material's `RenderPhysicalShape` (shadow
+                // renderer), which asserts.
+                //
+                // We previously tried `Align + Row(MainAxisSize.min) +
+                // Flexible`. That LOOKS right but `Align` only loosens
+                // its own constraints, and `Row` with the default
+                // cross-axis alignment passes `BoxConstraints(maxHeight:
+                // ...)` to non-flex children — which has implicit
+                // `maxWidth: Infinity`. So the OutlinedButton still
+                // received unbounded width and crashed.
+                //
+                // Canonical fix: `Align(centerLeft) + Wrap`. This is
+                // the same pattern `_litzAnalysisButtons` uses (line
+                // ~1546) and the chip Wraps elsewhere in this file.
+                // `Wrap` lays out children at their intrinsic widths
+                // and wraps to a new line if needed, so on a narrow
+                // device the live-readout falls below the button
+                // instead of crashing.
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: _captureInclineFromSensor,
+                        icon: const Icon(Icons.straighten, size: 16),
+                        label: const Text('Capture from sensor'),
+                      ),
+                      Builder(builder: (ctx) {
                         final inc = inclineSvc.inclineDegrees;
                         if (inc == null) {
                           return Text(
@@ -1474,8 +1726,8 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                           ),
                         );
                       }),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
           ],
@@ -1520,8 +1772,16 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   /// GPS lat/lon + altitude + station-pressure approximation, plus
   /// magnetometer azimuth, accelerometer cant, and inclinometer pitch.
   /// Surfaces a confirmation snackbar with the captured values.
+  ///
+  /// The button is free for everyone — the cant / heading / incline
+  /// pieces are pulled from on-device sensors that don't cost anything.
+  /// The GPS altitude / station-pressure derivation is the only
+  /// network-dependent part and is Pro-gated. Free users see a small
+  /// "Altitude requires Pro" caption under the title so they know
+  /// what's missing before they tap.
   Widget _captureEnvironmentFromSensorsButton() {
     final theme = Theme.of(context);
+    final isPro = context.watch<EntitlementNotifier>().isPro;
     return Card(
       margin: EdgeInsets.zero,
       color: theme.colorScheme.surfaceContainerHigh,
@@ -1548,9 +1808,13 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Pulls GPS lat/lon, altitude, station pressure, true '
-              'azimuth (compass), cant (rifle level), and incline (slope '
-              'of fire) into the session in one tap.',
+              isPro
+                  ? 'Pulls GPS lat/lon, altitude, station pressure, true '
+                      'azimuth (compass), cant (rifle level), and incline '
+                      '(slope of fire) into the session in one tap.'
+                  : 'Pulls true azimuth (compass), cant (rifle level), '
+                      'and incline (slope of fire) from device sensors. '
+                      'Altitude requires Pro.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -1570,8 +1834,18 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   /// Handler for the consolidated "Capture environment from sensors"
   /// button. Walks the live sensors + GPS handshake, then surfaces a
   /// detailed snackbar so the user sees what was captured.
+  ///
+  /// Pro-gating: the cant / heading / incline values come from the
+  /// device's free local sensors and stay free for everyone. The GPS
+  /// altitude → station-pressure derivation is a Pro feature (it
+  /// requires a network round trip to open-meteo for the surface
+  /// pressure correction). Free users still get cant / heading /
+  /// incline; the Altitude field stays at 0 ft (sea level) and the
+  /// snackbar adds an "Altitude requires Pro" caption explaining why
+  /// the elevation column wasn't filled in.
   Future<void> _captureEnvironmentFromSensors() async {
     final messenger = ScaffoldMessenger.of(context);
+    final isPro = context.read<EntitlementNotifier>().isPro;
     final cantSvc = context.read<CantService>();
     final magSvc = context.read<MagnetometerService>();
     final inclineSvc = context.read<InclinometerService>();
@@ -1580,16 +1854,20 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     final incline = inclineSvc.inclineDegrees;
     // Pull location-derived values via the existing weather service —
     // it already wraps the geolocator handshake AND reports station
-    // pressure + altitude in one round trip.
+    // pressure + altitude in one round trip. Pro-only — free users
+    // keep the cant / azimuth / incline fields and skip the network
+    // call entirely.
     WeatherFetchResult? weather;
-    try {
-      weather = await WeatherService().fetchForCurrentLocation();
-    } on WeatherFetchException catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text(e.userMessage)));
-    } catch (_) {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Couldn\'t fetch weather.')),
-      );
+    if (isPro) {
+      try {
+        weather = await WeatherService().fetchForCurrentLocation();
+      } on WeatherFetchException catch (e) {
+        messenger.showSnackBar(SnackBar(content: Text(e.userMessage)));
+      } catch (_) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Couldn\'t fetch weather.')),
+        );
+      }
     }
     if (!mounted) return;
     setState(() {
@@ -1612,6 +1890,13 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         _windDirCtrl.text =
             weather.windDirectionDeg.toStringAsFixed(0);
         _weatherFetchedAt = weather.fetchedAt;
+      } else if (!isPro) {
+        // Default altitude to sea level for free users — the spec calls
+        // this out as the graceful fallback so the rest of the
+        // ballistics inputs still produce a sensible solution.
+        if (_elevationCtrl.text.trim().isEmpty) {
+          _elevationCtrl.text = '0';
+        }
       }
     });
     _scheduleSolve();
@@ -1640,10 +1925,36 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     final summary = parts.isEmpty
         ? 'No sensor data captured. Try again outdoors.'
         : '✓ Captured from your location\n  ${parts.join('  ·  ')}';
+    final paywallSuffix = isPro
+        ? ''
+        : '\nAltitude requires Pro — tap the cloud icon on Ballistics to upgrade.';
+    // Attach the "Save as preset" snackbar action only when we got at
+    // least the four core atmosphere fields (i.e. weather succeeded).
+    SnackBarAction? action;
+    if (weather != null) {
+      final w = weather;
+      action = SnackBarAction(
+        label: 'Save as preset',
+        onPressed: () async {
+          final newId = await showSaveAtmospherePresetDialog(
+            context,
+            stationPressureInHg: w.stationPressureInHg,
+            temperatureF: w.tempF,
+            humidityPct: w.humidityPct,
+            altitudeFt: w.elevationFt,
+          );
+          if (newId != null && mounted) {
+            setState(() => _atmospherePresetId = newId);
+            _scheduleAutoSave();
+          }
+        },
+      );
+    }
     messenger.showSnackBar(
       SnackBar(
         duration: const Duration(seconds: 6),
-        content: Text(summary),
+        content: Text('$summary$paywallSuffix'),
+        action: action,
       ),
     );
   }
@@ -1721,10 +2032,22 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         ],
       );
     }
-    final cant = context.watch<CantService>().cantDegrees;
-    final cantAvail = context.watch<CantService>().isAvailable;
-    final heading = context.watch<MagnetometerService>().headingDegrees;
-    final headingAvail = context.watch<MagnetometerService>().isAvailable;
+    // Read sensor values WITHOUT subscribing. Both CantService and
+    // MagnetometerService notify at ~50 Hz; subscribing via
+    // `context.watch<>` here triggered ~100 widget rebuilds/sec on the
+    // collapsed-header path, which tripped the `parentDataDirty` semantics
+    // assertion in the rendering layer (`object.dart:5493`) and crashed
+    // a fresh-session Range Day open. The `_liveUpdatesToggle` already
+    // owns refresh: when the user opts in, a 2 Hz `Timer.periodic` calls
+    // `setState({})` which re-runs this build at a sane rate. When the
+    // toggle is off, the chip stays static — that's the documented
+    // "off" semantics.
+    final cantSvc = context.read<CantService>();
+    final magSvc = context.read<MagnetometerService>();
+    final cant = cantSvc.cantDegrees;
+    final cantAvail = cantSvc.isAvailable;
+    final heading = magSvc.headingDegrees;
+    final headingAvail = magSvc.isAvailable;
     final cantStr = !cantAvail
         ? '—'
         : (cant == null
@@ -1842,10 +2165,24 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
             ),
             if (available) ...[
               const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
+              // `Align(centerLeft) + Wrap` — same pattern as
+              // `_litzAnalysisButtons`. The previous `Row(Expanded(
+              // OutlinedButton) + IconButton)` was vulnerable to the
+              // infinite-width crash chain that took down
+              // `_inclineAngleRow`: when the Row has two children, the
+              // non-flex IconButton receives the Row's `BoxConstraints
+              // (maxHeight: ..., maxWidth: Infinity)` cross-axis
+              // constraints, and any Material widget inside can blow
+              // up. Wrap passes bounded constraints to each child and
+              // gracefully falls to a new line on narrow widths.
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    OutlinedButton.icon(
                       onPressed: cant == null
                           ? null
                           : () {
@@ -1861,16 +2198,14 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                       icon: const Icon(Icons.straighten, size: 18),
                       label: const Text('Use phone level'),
                     ),
-                  ),
-                  if (cantSvc.calibrationOffsetDeg.abs() > 0.05) ...[
-                    const SizedBox(width: 8),
-                    IconButton(
-                      tooltip: 'Clear calibration',
-                      icon: const Icon(Icons.refresh, size: 20),
-                      onPressed: cantSvc.clearCalibration,
-                    ),
+                    if (cantSvc.calibrationOffsetDeg.abs() > 0.05)
+                      IconButton(
+                        tooltip: 'Clear calibration',
+                        icon: const Icon(Icons.refresh, size: 20),
+                        onPressed: cantSvc.clearCalibration,
+                      ),
                   ],
-                ],
+                ),
               ),
               const SizedBox(height: 4),
               _cantCorrectionToggle(),
@@ -1963,30 +2298,30 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
             ),
             if (available) ...[
               const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: heading == null
-                          ? null
-                          : () {
-                              _shotAzimuthCtrl.text =
-                                  heading.toStringAsFixed(0);
-                              _scheduleSolve();
-                              _scheduleAutoSave();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                      'Shot azimuth set from compass.'),
-                                  duration: Duration(milliseconds: 1200),
-                                ),
-                              );
-                            },
-                      icon: const Icon(Icons.explore_outlined, size: 18),
-                      label: const Text('Use as shot azimuth'),
-                    ),
-                  ),
-                ],
+              // Bare button — `_headingRow`'s outer Column has
+              // `crossAxisAlignment: stretch`, so the button fills the
+              // available width naturally. Dropping the redundant
+              // `Row > Expanded` wrapper avoids the brittle pattern
+              // where Expanded inside a non-flex Row can crash if any
+              // ancestor passes infinite-width constraints.
+              OutlinedButton.icon(
+                onPressed: heading == null
+                    ? null
+                    : () {
+                        _shotAzimuthCtrl.text =
+                            heading.toStringAsFixed(0);
+                        _scheduleSolve();
+                        _scheduleAutoSave();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                                'Shot azimuth set from compass.'),
+                            duration: Duration(milliseconds: 1200),
+                          ),
+                        );
+                      },
+                icon: const Icon(Icons.explore_outlined, size: 18),
+                label: const Text('Use as shot azimuth'),
               ),
               if (!mag.isTrueNorth)
                 Padding(
@@ -2171,23 +2506,31 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       children: [
         Text('Target', style: Theme.of(context).textTheme.labelLarge),
         const SizedBox(height: 6),
-        Wrap(
-          spacing: 6,
-          children: [
-            for (final cat in categories)
-              ChoiceChip(
-                label: Text(cat == 'all'
-                    ? 'All'
-                    : cat == 'game-silhouette'
-                        ? 'Game'
-                        : cat[0].toUpperCase() + cat.substring(1)),
-                selected: _targetCategoryFilter == cat,
-                onSelected: (v) {
-                  if (!v) return;
-                  setState(() => _targetCategoryFilter = cat);
-                },
-              ),
-          ],
+        // Align(centerLeft) to prevent the parent
+        // `Column(crossAxisAlignment: stretch)` from forcing infinite
+        // width onto the Wrap, which Material chips would propagate to
+        // their internal `_RenderInputPadding` and assert against. Same
+        // pattern as `_litzAnalysisButtons`.
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Wrap(
+            spacing: 6,
+            children: [
+              for (final cat in categories)
+                ChoiceChip(
+                  label: Text(cat == 'all'
+                      ? 'All'
+                      : cat == 'game-silhouette'
+                          ? 'Game'
+                          : cat[0].toUpperCase() + cat.substring(1)),
+                  selected: _targetCategoryFilter == cat,
+                  onSelected: (v) {
+                    if (!v) return;
+                    setState(() => _targetCategoryFilter = cat);
+                  },
+                ),
+            ],
+          ),
         ),
         const SizedBox(height: 8),
         FutureBuilder<List<TargetRow>>(
@@ -2291,28 +2634,34 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
           ],
         ),
         const SizedBox(height: 4),
-        Wrap(
-          spacing: 6,
-          children: [
-            for (final yd in const [100, 200, 300, 500, 1000])
-              ActionChip(
-                label: Text('$yd'),
-                onPressed: () {
-                  setState(() {
-                    _distanceCtrl.text = yd.toString();
-                  });
-                  _scheduleSolve();
-                  _scheduleAutoSave();
-                },
-              ),
-          ],
+        // Same Align(centerLeft) bulletproofing as the ChoiceChip Wrap
+        // above and `_litzAnalysisButtons` — protects against parent
+        // `Column.stretch` forcing infinite width onto chip children.
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Wrap(
+            spacing: 6,
+            children: [
+              for (final yd in const [100, 200, 300, 500, 1000])
+                ActionChip(
+                  label: Text('$yd'),
+                  onPressed: () {
+                    setState(() {
+                      _distanceCtrl.text = yd.toString();
+                    });
+                    _scheduleSolve();
+                    _scheduleAutoSave();
+                  },
+                ),
+            ],
+          ),
         ),
         _rangefinderQuickFill(),
       ],
     );
   }
 
-  /// "Use last reading" affordance — if any of the four supported BLE
+  /// "Use last reading" affordance — if any of the five supported BLE
   /// rangefinder adapters is connected and has a recent measurement,
   /// surface a button to drop that value into the distance input.
   ///
@@ -2320,6 +2669,13 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   /// user with two paired devices still gets a sensible default. Hidden
   /// entirely when no rangefinder is connected — the picker has plenty
   /// of clutter without an always-on disabled button.
+  ///
+  /// When the freshest reading is from a device that publishes a
+  /// magnetic azimuth (currently Vectronix Terrapin X only), the button
+  /// label switches to "Use distance + azimuth" and a single tap fills
+  /// in distance, incline-corrected range, AND the shot azimuth field.
+  /// This is the integration's headline feature versus the other four
+  /// rangefinders which only publish LOS / incline.
   Widget _rangefinderQuickFill() {
     final theme = Theme.of(context);
     final candidates = <_RangefinderCandidate>[
@@ -2339,6 +2695,10 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         label: 'Leica',
         reading: context.watch<LeicaGeovidService>().lastReading,
       ),
+      _RangefinderCandidate(
+        label: 'Vectronix Terrapin X',
+        reading: context.watch<VectronixTerrapinService>().lastReading,
+      ),
     ].where((c) => c.reading != null).toList()
       ..sort((a, b) =>
           b.reading!.receivedAt.compareTo(a.reading!.receivedAt));
@@ -2355,6 +2715,20 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     final freshLabel = freshenSeconds < 60
         ? '${freshenSeconds}s ago'
         : '${(freshenSeconds / 60).round()} min ago';
+    // Compose the readout line. When the device gave us a compass
+    // bearing (Vectronix Terrapin X), surface it inline so the user
+    // can sanity-check before tapping the combined-fill button.
+    final readoutPieces = <String>[
+      '${freshest.label}: ${yards.toStringAsFixed(0)} yd',
+    ];
+    if (r.azimuthDeg != null) {
+      readoutPieces.add('${r.azimuthDeg!.toStringAsFixed(0)}°');
+    }
+    readoutPieces.add(freshLabel);
+    final hasAzimuth = r.azimuthDeg != null;
+    final buttonLabel = hasAzimuth
+        ? 'Use distance + azimuth'
+        : 'Use last reading';
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: Row(
@@ -2367,7 +2741,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
           const SizedBox(width: 6),
           Expanded(
             child: Text(
-              '${freshest.label}: ${yards.toStringAsFixed(0)} yd · $freshLabel',
+              readoutPieces.join(' · '),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -2379,11 +2753,30 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
             onPressed: () {
               setState(() {
                 _distanceCtrl.text = yards.round().toString();
+                if (hasAzimuth) {
+                  // Vectronix Terrapin X is the only rangefinder we
+                  // support that emits a magnetic azimuth alongside the
+                  // distance. Mirror it into the shot azimuth field so
+                  // the Coriolis / wind-bearing math has the right
+                  // input without a second sensor capture.
+                  final az = r.azimuthDeg!;
+                  _shotAzimuthCtrl.text = az.toStringAsFixed(0);
+                  _capturedAzimuthDeg = az;
+                }
               });
               _scheduleSolve();
               _scheduleAutoSave();
+              if (hasAzimuth) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Distance and shot azimuth set from Vectronix Terrapin X.',
+                    ),
+                  ),
+                );
+              }
             },
-            child: const Text('Use last reading'),
+            child: Text(buttonLabel),
           ),
         ],
       ),
@@ -2531,6 +2924,75 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
 
   // ─────────────────────── Environment card ───────────────────────
 
+  // ─────────────────────── Atmosphere preset picker (v17) ───────────────────────
+
+  /// Build the [AtmosphereSnapshot] used by the inline picker to decide
+  /// whether the live env values match a saved preset. Range Day stores
+  /// atmosphere fields in canonical imperial (°F / inHg / % / ft) so no
+  /// unit conversion is required — same controllers, same units.
+  AtmosphereSnapshot _atmosphereSnapshotForPicker() {
+    return AtmosphereSnapshot(
+      stationPressureInHg: double.tryParse(_pressureCtrl.text.trim()),
+      temperatureF: double.tryParse(_tempCtrl.text.trim()),
+      humidityPct: double.tryParse(_humidityCtrl.text.trim()),
+      altitudeFt: double.tryParse(_elevationCtrl.text.trim()),
+    );
+  }
+
+  /// Apply the four core columns of [preset] to the Environment
+  /// controllers, captures the preset id so the session can persist it,
+  /// and triggers a re-solve / auto-save so the change propagates.
+  void _applyAtmospherePreset(AtmospherePresetRow preset) {
+    setState(() {
+      _atmospherePresetId = preset.id;
+      _pressureCtrl.text = preset.stationPressureInHg.toStringAsFixed(2);
+      _tempCtrl.text = preset.temperatureF.toStringAsFixed(0);
+      _humidityCtrl.text = preset.humidityPct.toStringAsFixed(0);
+      if (preset.altitudeFt != null) {
+        _elevationCtrl.text = preset.altitudeFt!.toStringAsFixed(0);
+      }
+    });
+    _scheduleSolve();
+    _scheduleAutoSave();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        duration: const Duration(seconds: 2),
+        content: Text('Loaded "${preset.name}"'),
+      ),
+    );
+  }
+
+  /// Reads the current Environment fields and opens the Save-as-preset
+  /// dialog with them pre-filled. The Range Day env fields are already
+  /// canonical imperial, so they pass straight through.
+  Future<void> _onSaveCurrentAsAtmospherePreset() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final pressure = double.tryParse(_pressureCtrl.text.trim());
+    final temp = double.tryParse(_tempCtrl.text.trim());
+    final humidity = double.tryParse(_humidityCtrl.text.trim());
+    if (pressure == null || temp == null || humidity == null) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Fill in pressure, temperature, and humidity before saving.'),
+        ),
+      );
+      return;
+    }
+    final altitude = double.tryParse(_elevationCtrl.text.trim());
+    final newId = await showSaveAtmospherePresetDialog(
+      context,
+      stationPressureInHg: pressure,
+      temperatureF: temp,
+      humidityPct: humidity,
+      altitudeFt: altitude,
+    );
+    if (newId != null && mounted) {
+      setState(() => _atmospherePresetId = newId);
+      _scheduleAutoSave();
+    }
+  }
+
   Widget _environmentCard() {
     final theme = Theme.of(context);
     final summary = _envSummary();
@@ -2600,6 +3062,13 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          AtmospherePresetPicker(
+            dense: true,
+            snapshot: _atmosphereSnapshotForPicker(),
+            onApplyPreset: _applyAtmospherePreset,
+            onSaveAsPreset: _onSaveCurrentAsAtmospherePreset,
+          ),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -2649,71 +3118,66 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
           // Live Kestrel banner / toggle. Hidden when no meter is paired.
           // Kestrel data is more accurate than open-meteo and updates ~1Hz,
           // so when one is available we surface it as the primary action.
+          // Bare buttons (no Row+Expanded) — the parent
+          // `_environmentBody` Column has `crossAxisAlignment: stretch`
+          // which makes the button fill the available width naturally.
+          // Earlier code wrapped each in `Row(Expanded(button))` which
+          // was redundant and brittle against unbounded-width
+          // ancestors.
           Consumer<KestrelService>(
             builder: (ctx, kestrel, _) {
               if (kestrel.device == null) return const SizedBox.shrink();
               if (_useKestrel) {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: _onStopUsingKestrel,
-                          icon: const Icon(Icons.bluetooth_connected),
-                          label: const Text('Stop using Kestrel'),
-                        ),
-                      ),
-                    ],
+                  child: OutlinedButton.icon(
+                    onPressed: _onStopUsingKestrel,
+                    icon: const Icon(Icons.bluetooth_connected),
+                    label: const Text('Stop using Kestrel'),
                   ),
                 );
               }
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: _onStartUsingKestrel,
-                        icon: const Icon(Icons.bluetooth),
-                        label: const Text('Use Kestrel readings'),
-                      ),
-                    ),
-                  ],
+                child: FilledButton.icon(
+                  onPressed: _onStartUsingKestrel,
+                  icon: const Icon(Icons.bluetooth),
+                  label: const Text('Use Kestrel readings'),
                 ),
               );
             },
           ),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: (_weatherFetching || _useKestrel)
-                      ? null
-                      : _onPullWeather,
-                  icon: _weatherFetching
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.cloud_download_outlined),
-                  label: const Text('Pull weather (Pro)'),
-                ),
-              ),
-            ],
+          // Bare button — see comment on the "Import Garmin" button
+          // below for the layout rationale. Column(stretch) gives this
+          // button tight bounded width naturally.
+          OutlinedButton.icon(
+            onPressed: (_weatherFetching || _useKestrel)
+                ? null
+                : _onPullWeather,
+            icon: _weatherFetching
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.cloud_download_outlined),
+            label: const Text('Pull weather (Pro)'),
           ),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _onImportGarminFit,
-                  icon: const Icon(Icons.speed),
-                  label: const Text('Import Garmin .fit (Pro)'),
-                ),
-              ),
-            ],
+          // Bare button — `_environmentBody`'s Column has
+          // `crossAxisAlignment: stretch`, so it sets a tight bounded
+          // width on its children. Wrapping in `Row > Expanded` was
+          // redundant (Expanded inside a Row that itself has bounded
+          // width works, but it's a brittle pattern: if any ancestor
+          // ever passes infinite-width constraints, Expanded can't
+          // resolve its share and the OutlinedButton's internal
+          // _RenderInputPadding crashes — the same shape that broke
+          // `_inclineAngleRow`). The bare button gets the tight
+          // bounded width naturally and renders identically.
+          OutlinedButton.icon(
+            onPressed: _onImportGarminFit,
+            icon: const Icon(Icons.speed),
+            label: const Text('Import Garmin .fit (Pro)'),
           ),
         ],
       ),
@@ -2785,6 +3249,376 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  /// Convenience that returns either an empty list (bracket hidden)
+  /// or a `[card, SizedBox]` pair so the surrounding layout never
+  /// produces double-spacing between cards regardless of whether the
+  /// bracket is shown.
+  List<Widget> _windBracketSection() {
+    if (!_canShowWindBracket()) return const <Widget>[];
+    return <Widget>[_windBracketCard(), const SizedBox(height: 12)];
+  }
+
+  /// Mirrors the conditions inside [_windBracketCard]; lets the
+  /// layout decide whether to allocate spacing without paying the
+  /// cost of running the bracket solver itself.
+  bool _canShowWindBracket() {
+    return _lastSolvedProjectile != null &&
+        _lastSolvedEnvironment != null &&
+        _lastSolvedShot != null &&
+        _lastSolvedDistanceYd != null &&
+        _lastSolvedWindMph != null &&
+        _windUncertaintyMph > 0;
+  }
+
+  /// Litz wind-bracket card. Anchored on the user's distance (not the
+  /// long range of the DOPE table) so the hold envelope is calibrated
+  /// to the shot the shooter is actually about to take. Hides cleanly
+  /// when [_windUncertaintyMph] is 0, the solution panel is in error,
+  /// or the bracket service can't produce a result.
+  ///
+  /// Reference: Litz, *Modern Advancements in Long-Range Shooting*
+  /// vol. 1 ch. 5 — the bracket method turns wind-call uncertainty
+  /// into a +/- hold the shooter can read off the screen instead of
+  /// pretending the wind reading is exact.
+  Widget _windBracketCard() {
+    final theme = Theme.of(context);
+    final projectile = _lastSolvedProjectile;
+    final environment = _lastSolvedEnvironment;
+    final shot = _lastSolvedShot;
+    final distance = _lastSolvedDistanceYd;
+    final wind = _lastSolvedWindMph;
+    if (projectile == null ||
+        environment == null ||
+        shot == null ||
+        distance == null ||
+        wind == null) {
+      return const SizedBox.shrink();
+    }
+    if (_windUncertaintyMph <= 0) return const SizedBox.shrink();
+    final result = computeWindBracket(
+      projectile: projectile,
+      environment: environment,
+      shot: shot,
+      rangeYards: distance,
+      windEstimateMph: wind,
+      windUncertaintyMph: _windUncertaintyMph,
+    );
+    if (result == null) return const SizedBox.shrink();
+
+    String fmtHold(double inches, double yd) {
+      final mil = bu.inchesToMilAtYards(inches, yd);
+      final moa = bu.inchesToMoaAtYards(inches, yd);
+      switch (_correctionUnit) {
+        case 'moa':
+          return '${moa.toStringAsFixed(1)} MOA · ${mil.toStringAsFixed(2)} mil';
+        case 'inches':
+          return '${inches.toStringAsFixed(1)} in · ${mil.toStringAsFixed(2)} mil';
+        default:
+          return '${mil.toStringAsFixed(2)} mil · ${moa.toStringAsFixed(1)} MOA';
+      }
+    }
+
+    String fmtWind(double mph) => '${mph.toStringAsFixed(1)} mph';
+
+    String windClock() {
+      final from = environment.windFromDegrees;
+      var raw = (6 - (from / 30.0).round()) % 12;
+      if (raw < 0) raw += 12;
+      final hour = raw == 0 ? 12 : raw;
+      return "$hour o'clock";
+    }
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.air,
+                    color: theme.colorScheme.primary, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  'Wind bracket',
+                  style: theme.textTheme.titleMedium,
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Estimated ${fmtWind(result.windMidMph)} @ ${windClock()} '
+              '· ± ${fmtWind(_windUncertaintyMph)}',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _wbRow('Low (${fmtWind(result.windLowMph)})',
+                fmtHold(result.low.windDriftInches, result.low.rangeYards),
+                emphasis: false),
+            const SizedBox(height: 6),
+            _wbRow('Mid (${fmtWind(result.windMidMph)})',
+                fmtHold(result.mid.windDriftInches, result.mid.rangeYards),
+                emphasis: true),
+            const SizedBox(height: 6),
+            _wbRow('High (${fmtWind(result.windHighMph)})',
+                fmtHold(result.high.windDriftInches, result.high.rangeYards),
+                emphasis: false),
+            const SizedBox(height: 10),
+            Text(
+              'Hold the mid; the bracket is your +/- bound if you '
+              'misjudge the wind.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _wbRow(String label, String value, {required bool emphasis}) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Expanded(
+          flex: 5,
+          child: Text(
+            label,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: emphasis ? FontWeight.w600 : FontWeight.w400,
+              color: emphasis
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.onSurface,
+            ),
+          ),
+        ),
+        Expanded(
+          flex: 6,
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: emphasis ? FontWeight.w700 : FontWeight.w500,
+              fontFeatures: const [FontFeature.tabularFigures()],
+              color: emphasis
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.onSurface,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Stability + form-factor read-out for the Range Day setup card.
+  /// Rendered when both a load and a firearm are selected (the
+  /// inputs needed for Sg). Free / informational.
+  Widget _stabilityAndFormFactor() {
+    if (_selectedLoad == null && _selectedFirearm == null) {
+      return const SizedBox.shrink();
+    }
+    final theme = Theme.of(context);
+    final diameter =
+        double.tryParse(_bulletDiameterCtrl.text.trim());
+    final weight = double.tryParse(_bulletWeightCtrl.text.trim());
+    final length = double.tryParse(_bulletLengthCtrl.text.trim());
+    final twist = double.tryParse(_twistCtrl.text.trim());
+    final bc = double.tryParse(_bcCtrl.text.trim());
+    final mv = double.tryParse(_muzzleVelCtrl.text.trim()) ?? 2800;
+    if (diameter == null ||
+        weight == null ||
+        diameter <= 0 ||
+        weight <= 0) {
+      return const SizedBox.shrink();
+    }
+    final projectile = Projectile(
+      diameterIn: diameter,
+      weightGr: weight,
+      bc: bc ?? 0.0,
+      dragModel: _dragModel,
+      lengthIn: length,
+      twistInches: twist,
+    );
+    final miller = projectile.millerStability(mv);
+    final pejsa = projectile.pejsaStability(mv);
+    final i7 = projectile.formFactorI7;
+    final hasStability = miller != null && pejsa != null;
+    final hasFormFactor = !i7.isNaN;
+    if (!hasStability && !hasFormFactor) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      margin: const EdgeInsets.only(top: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.flight_takeoff,
+                  size: 16, color: theme.colorScheme.primary),
+              const SizedBox(width: 6),
+              Text(
+                'Stability and form factor',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          if (hasStability) ...[
+            const SizedBox(height: 8),
+            _stabilityRow('Miller Sg', miller),
+            const SizedBox(height: 4),
+            _stabilityRow('Pejsa Sg', pejsa),
+            if (miller < 1.4 || pejsa < 1.4) ...[
+              const SizedBox(height: 6),
+              Text(
+                'Both Sg > 1.4 needed for reliable flight; below that '
+                'the bullet flies at marginal stability and BC degrades.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
+              ),
+            ],
+          ] else ...[
+            const SizedBox(height: 6),
+            Text(
+              'Add bullet length and twist rate to see stability factor.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+          if (hasFormFactor) ...[
+            const SizedBox(height: 10),
+            Tooltip(
+              message:
+                  "Form factor compares this bullet's drag to the G7 "
+                  'reference. Lower is better. <1.0 is more efficient '
+                  'than the reference.',
+              child: _formFactorRow(i7),
+            ),
+          ] else if (_dragModel != DragModel.g7) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Switch to G7 BC to see form factor (i7).',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _stabilityRow(String label, double sg) {
+    final theme = Theme.of(context);
+    final Color color;
+    final IconData icon;
+    final String verdict;
+    if (sg >= 1.5) {
+      color = const Color(0xFF2E7D32);
+      icon = Icons.check_circle;
+      verdict = 'Stable';
+    } else if (sg >= 1.0) {
+      color = const Color(0xFFEF6C00);
+      icon = Icons.warning_amber;
+      verdict = 'Marginal';
+    } else {
+      color = theme.colorScheme.error;
+      icon = Icons.error;
+      verdict = 'Unstable';
+    }
+    return Row(
+      children: [
+        SizedBox(
+          width: 110,
+          child: Text(label, style: theme.textTheme.bodyMedium),
+        ),
+        SizedBox(
+          width: 56,
+          child: Text(
+            sg.toStringAsFixed(2),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontFeatures: const [FontFeature.tabularFigures()],
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ),
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 4),
+        Text(
+          verdict,
+          style: theme.textTheme.bodySmall?.copyWith(color: color),
+        ),
+      ],
+    );
+  }
+
+  Widget _formFactorRow(double i7) {
+    final theme = Theme.of(context);
+    final Color color;
+    final IconData icon;
+    final String verdict;
+    if (i7 < 0.95) {
+      color = const Color(0xFF2E7D32);
+      icon = Icons.check_circle;
+      verdict = 'Efficient';
+    } else if (i7 <= 1.05) {
+      color = const Color(0xFFEF6C00);
+      icon = Icons.warning_amber;
+      verdict = 'Average';
+    } else {
+      color = theme.colorScheme.error;
+      icon = Icons.error;
+      verdict = 'High drag';
+    }
+    return Row(
+      children: [
+        SizedBox(
+          width: 110,
+          child: Text(
+            'Form factor (i7)',
+            style: theme.textTheme.bodyMedium,
+          ),
+        ),
+        SizedBox(
+          width: 56,
+          child: Text(
+            i7.toStringAsFixed(3),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontFeatures: const [FontFeature.tabularFigures()],
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ),
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 4),
+        Text(
+          verdict,
+          style: theme.textTheme.bodySmall?.copyWith(color: color),
+        ),
+      ],
     );
   }
 
@@ -3872,9 +4706,165 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
             ),
           ],
         ),
+        if (_showCiBlock(stats)) ...[
+          const SizedBox(height: 12),
+          _groupStatsCiBlock(stats, yards),
+        ],
         const SizedBox(height: 12),
         _zeroAdjustBlock(stats, yards),
       ],
+    );
+  }
+
+  /// True when the supplied stats include a 90% CI on the true group
+  /// size — i.e. the sample size is large enough that the Rayleigh
+  /// quantile table publishes a multiplier (N ≥ 3).
+  bool _showCiBlock(GroupStats stats) =>
+      stats.groupSizeCiLow90PctIn != null &&
+      stats.groupSizeCiHigh90PctIn != null;
+
+  /// Litz-style 90% confidence-interval block. Shows the user that the
+  /// observed group size has uncertainty bands that depend on sample
+  /// size, and adds a small coaching caption that gets less alarming
+  /// as N grows.
+  ///
+  /// Color coding (band + label):
+  ///   N=3..4   amber  — band is wide, treat with skepticism
+  ///   N=5..9   yellow — reasonable, but more shots tighten it fast
+  ///   N>=10    green  — solid, diminishing returns past ~20
+  ///
+  /// At N<3 the band is hidden entirely (no statistically meaningful
+  /// CI to publish).
+  Widget _groupStatsCiBlock(GroupStats stats, double yards) {
+    final theme = Theme.of(context);
+    final n = stats.shotCount;
+    final unit = _correctionUnit;
+
+    // Tier classification — drives both the color and the caption.
+    final ({Color band, Color text, String tier}) palette;
+    if (n <= 4) {
+      palette = (
+        band: Colors.amber.withValues(alpha: 0.18),
+        text: theme.brightness == Brightness.dark
+            ? Colors.amber.shade200
+            : Colors.amber.shade900,
+        tier: 'wide',
+      );
+    } else if (n <= 9) {
+      palette = (
+        band: Colors.yellow.withValues(alpha: 0.18),
+        text: theme.brightness == Brightness.dark
+            ? Colors.yellow.shade200
+            : Colors.yellow.shade900,
+        tier: 'medium',
+      );
+    } else {
+      palette = (
+        band: Colors.green.withValues(alpha: 0.18),
+        text: theme.brightness == Brightness.dark
+            ? Colors.green.shade200
+            : Colors.green.shade900,
+        tier: 'tight',
+      );
+    }
+
+    // Range string. If the unit toggle is "moa" or "mil" and we have a
+    // distance, prefer the angular form because that's how shooters
+    // discuss precision; fall back to inches otherwise.
+    String rangeStr;
+    if (unit == 'mil' && yards > 0) {
+      final lo = bu.inchesToMilAtYards(stats.groupSizeCiLow90PctIn!, yards);
+      final hi = bu.inchesToMilAtYards(stats.groupSizeCiHigh90PctIn!, yards);
+      rangeStr =
+          '${lo.toStringAsFixed(2)} – ${hi.toStringAsFixed(2)} mil';
+    } else if (unit != 'inches' &&
+        yards > 0 &&
+        stats.groupMoaCiLow90Pct != null &&
+        stats.groupMoaCiHigh90Pct != null) {
+      // Default angular path: MOA (covers `unit == 'moa'` and any
+      // future angular variant we add).
+      rangeStr =
+          '${stats.groupMoaCiLow90Pct!.toStringAsFixed(2)} – '
+          '${stats.groupMoaCiHigh90Pct!.toStringAsFixed(2)} MOA';
+    } else {
+      // Inches mode, or no distance: show inches.
+      rangeStr =
+          '${stats.groupSizeCiLow90PctIn!.toStringAsFixed(2)}" – '
+          '${stats.groupSizeCiHigh90PctIn!.toStringAsFixed(2)}"';
+    }
+
+    // Coaching caption tied to sample-size tier. Phrased as
+    // observation rather than nag — Litz's whole point is that the
+    // shooter should care, not that the app should hector.
+    String caption;
+    if (n == 3) {
+      caption = 'Three shots is enough to start tracking, but the '
+          'confidence band is wide. Shoot 2–7 more to halve the '
+          'uncertainty.';
+    } else if (n == 4) {
+      caption = 'Four shots — the band is still wide. One or two more '
+          'shots will tighten it noticeably.';
+    } else if (n <= 9) {
+      caption =
+          'Reasonable sample. The CI tightens fast as you add shots.';
+    } else if (n < 20) {
+      caption = 'Solid sample size.';
+    } else {
+      caption =
+          'Excellent sample size. Diminishing returns past here.';
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: palette.band,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.show_chart, size: 16, color: palette.text),
+              const SizedBox(width: 6),
+              Text(
+                '90% confidence interval',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: palette.text,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Tooltip(
+                message: 'Statistical confidence interval. The narrower '
+                    "this range, the more reliably your group size "
+                    "represents your rifle's true precision.",
+                child: Icon(
+                  Icons.info_outline,
+                  size: 14,
+                  color: palette.text.withValues(alpha: 0.8),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'True precision: $rangeStr',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontFeatures: const [FontFeature.tabularFigures()],
+              color: palette.text,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            caption,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: palette.text.withValues(alpha: 0.9),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -4041,7 +5031,10 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     final theme = Theme.of(context);
     final s = _solution;
     final dist = double.tryParse(_distanceCtrl.text.trim()) ?? 0;
-    final cant = context.watch<CantService>().cantDegrees;
+    // Read instead of watch — same reason as `_sensorsHeader`. The
+    // 2 Hz `_sensorsPulse` timer drives the chip refresh; subscribing
+    // here would cause ~50 Hz rebuilds + the `parentDataDirty` storm.
+    final cant = context.read<CantService>().cantDegrees;
     if (s == null) return const SizedBox.shrink();
     final loadLabel = _selectedLoad?.name ??
         _selectedProfile?.name ??

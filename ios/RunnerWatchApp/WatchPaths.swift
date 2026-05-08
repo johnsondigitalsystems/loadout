@@ -77,6 +77,13 @@ enum WatchPaths {
     static let firearmGlance = "firearm_glance"
     static let logShot = "log_shot"
     static let timerEvent = "timer_event"
+
+    /// Phone -> watch. Pushes the user's preferred shot-capture
+    /// sensitivity choice ("off" / "low" / "medium" / "high"). The
+    /// watch's MotionDetector reads the value and either disables
+    /// (`off`) or re-tunes its threshold + sustained-peak window.
+    /// See CLAUDE.md §15 and `MotionDetector.swift`.
+    static let shotCaptureSensitivity = "shot_capture_sensitivity"
 }
 
 enum ShotSource {

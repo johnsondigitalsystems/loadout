@@ -112,6 +112,30 @@ class CantService extends ChangeNotifier {
 
   StreamSubscription<AccelerometerEvent>? _sub;
 
+  /// Throttle floor for `notifyListeners()`. The accelerometer stream
+  /// arrives at `SensorInterval.uiInterval` which is ~60 Hz on iOS
+  /// (NOT the "~15 Hz" implied by the constant's name). Three sensor
+  /// services × 60 Hz = ~180 widget rebuilds/sec, which trips the
+  /// rendering layer's `parentDataDirty` semantics assertion every
+  /// time multiple Consumers/watches are mounted in the same tree
+  /// (e.g. the Range Day Setup expanded Sensors panel). 10 Hz is
+  /// far below the perceptual rate for a level readout and below
+  /// the framework's frame budget — safe.
+  static const Duration _notifyMinInterval = Duration(milliseconds: 100);
+  DateTime? _lastNotifyAt;
+
+  /// Calls [notifyListeners] only if [_notifyMinInterval] has elapsed
+  /// since the last fire. Use for high-frequency event streams; use
+  /// raw `notifyListeners()` for rare events (calibration, availability
+  /// changes) where the throttle would swallow important state.
+  void _notifyThrottled() {
+    final now = DateTime.now();
+    final last = _lastNotifyAt;
+    if (last != null && now.difference(last) < _notifyMinInterval) return;
+    _lastNotifyAt = now;
+    notifyListeners();
+  }
+
   /// Smoothed absolute roll angle of the phone (degrees). Null until
   /// the first sample has arrived.
   double? _smoothedDeg;
@@ -238,12 +262,15 @@ class CantService extends ChangeNotifier {
     final prev = _smoothedDeg;
     if (prev == null) {
       // Seed the EMA with the first sample so we don't render a stale
-      // zero for the first ~1 second after start().
+      // zero for the first ~1 second after start(). Force-notify on
+      // the first sample so listeners see "available" immediately.
       _smoothedDeg = rollDeg;
-    } else {
-      _smoothedDeg = prev + _emaAlpha * (rollDeg - prev);
+      _lastNotifyAt = DateTime.now();
+      notifyListeners();
+      return;
     }
-    notifyListeners();
+    _smoothedDeg = prev + _emaAlpha * (rollDeg - prev);
+    _notifyThrottled();
   }
 
   @override

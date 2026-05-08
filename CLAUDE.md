@@ -209,6 +209,29 @@ pre-launch — no monthly tier exists or ever existed in production.
   - For an action: `if (!await ensurePro(context)) return;` at the top
     of the handler.
 
+- **Pro-gated features (canonical list).** When you change which
+  bucket something lands in, also touch
+  `marketing/CLAUDE.md` § 7's pricing table and § 9's "Pro features
+  shipped" list — the in-app paywall pitch and the marketing copy
+  have to stay aligned with the actual gates.
+
+  | Feature | Gate call site |
+  |---|---|
+  | Cloud Sync | `lib/services/cloud_sync_service.dart` (gated via `EntitlementNotifier.isPro`) and `lib/screens/sync/cloud_sync_screen.dart` |
+  | Cloud Backup (manual) | `lib/screens/backup/backup_screen.dart` |
+  | Hornady 4DOF / custom drag curves | `lib/screens/ballistics/ballistics_screen.dart` `_dragFunctionSelector` (Custom CDM/DSF dropdown row) and `_customDragAvailableBadge` (per-bullet shortcut). Free users see G1/G7 + the bullet's BC. |
+  | Bluetooth devices (Kestrel, rangefinders, Garmin Xero) | `lib/screens/devices/*` and the BLE service constructors |
+  | Scope View Pro reticle visualization | `lib/screens/range_day/range_day_detail_screen.dart` Scope View entrypoint |
+  | Scope View training mode (free-aim, skill timing, animated mover, ambush guides) | helpers in `lib/screens/range_day/scope_training_models.dart` (`AimMode.requiresPro`, `TrainingOverlays.requiresPro`); the scope view panel UI is responsible for routing through `ensurePro` before flipping any of these. |
+  | Moving target lead | `lib/screens/range_day/range_day_detail_screen.dart` `_movingTargetCard` (`ProGate(feature: 'Moving target lead', ...)`) |
+  | Live weather pull (ballistics screen) | `lib/screens/ballistics/ballistics_screen.dart` `_onUseMyLocation` (`ensurePro` at the top of the handler) |
+  | Live weather pull (firearm form Zero Atmosphere) | `lib/screens/firearms/firearm_form_screen.dart` `_captureZeroFromWeather` (`ensurePro` at the top of the handler) |
+  | GPS altitude derivation (Range Day "Capture environment from sensors") | `lib/screens/range_day/range_day_detail_screen.dart` `_captureEnvironmentFromSensors` reads `EntitlementNotifier.isPro` and skips the open-meteo call for free users; cant / azimuth / incline stay free. |
+  | AI Smart Import (Tier 3 photo OCR for messy handwriting) | wired through `lib/services/photo_import_service.dart` and the recipe import flow; AI-proxy path Pro-gated. |
+  | AI Reloading Assistant chat | `lib/screens/ai_chat/*` — Coming Soon at v1.0; will be Pro when shipped. |
+  | Load development | `lib/screens/load_development/*` |
+  | Custom fields (unlimited) | recipe / firearm form custom-field affordances |
+
 - **Linking RevenueCat to Firebase Auth:** the auth-state listener
   in `_AuthGate` calls `PurchasesService.setAppUserId(user.uid)` on
   sign-in and `setAppUserId(null)` on sign-out. This means a user
@@ -525,6 +548,16 @@ Concretely:
 - Uninstalling the app or wiping the device deletes the on-device data. If
   the user enabled cloud backup or sync, restoring requires
   re-authenticating to their cloud provider and entering the passphrase.
+- **AI Smart Import (Pro, opt-in per use)** — see § 20. The only feature
+  in the app that sends user-provided text to a third party. Scoped
+  exclusively to OCR'd recipe text from the photo-import flow. The
+  hosted Cloudflare Worker proxy logs no request bodies; Anthropic's
+  API terms forbid training on API requests; Pro users can override
+  the proxy with their own Anthropic key (BYOK) for unlimited use.
+  The toggle is off by default. **The proxy never receives anything
+  besides the OCR'd text the user just produced + a Firebase ID
+  token**: no recipes, firearms, brass lots, or anything else from
+  the on-device DB.
 
 **Cloud backup and Cloud Sync are approved opt-in features, but only
 under the strict client-side encryption model described above.** Do not
@@ -534,6 +567,14 @@ weakens the passphrase-only key derivation. Any change to the storage /
 sync model has to revisit the in-app disclaimer copy, the privacy
 screen, the App Store / Play Store privacy disclosures, and any landing
 page copy.
+
+**AI Smart Import is the only AI feature in the app today.** The "AI
+Reloading Assistant" chat surface still ships its `Coming Soon`
+placeholder and is intentionally NOT wired to the new infrastructure.
+Do not extend the AI Smart Import service to cover chat — that's a
+separate decision with separate risk surface (multi-turn conversation,
+larger context, less constrained outputs). If chat lands later, it
+gets its own service / config / privacy section.
 
 ## 14. Open items / where to track work
 
@@ -677,6 +718,21 @@ iOS and Android):
 | `dope` | phone → watch | Drop / windage chart for active load |
 | `firearm_glance` | phone → watch | Active firearm + barrel-life summary |
 | `log_shot` | watch → phone | Time-stamped shot, queued by `transferUserInfo` (iOS) / Data Layer (Android) when the phone is asleep |
+| `timer_event` | bidirectional | Stage-timer start/pause/expired sync |
+| `shot_capture_sensitivity` | phone → watch | Watch-shot motion-detect preset (`off` / `low` / `medium` / `high`). The watch's `MotionDetector` decodes the wire string and re-tunes its threshold + sustained-peak window per the table below. |
+
+**Shot capture sensitivity table.** Both watch sides default to
+`medium` if the phone hasn't pushed a value. The `MotionDetector` on
+each platform persists the most-recent preset locally (`UserDefaults`
+on iOS, `SharedPreferences` on Wear OS) so the choice survives across
+watch reboots even before the next phone push lands.
+
+| Preset | Threshold (g) | Sustained-peak duration |
+|---|---|---|
+| Off | (motion detect disabled entirely) | n/a |
+| Low | 8.0 | 80 ms |
+| Medium | 5.0 | 50 ms |
+| High | 3.0 | 30 ms |
 
 ### Privacy posture for companion apps
 
@@ -1042,3 +1098,158 @@ Sync screen has a red warning to that effect.
   Export screen.
 - Pro users get the full enable / disable / reconcile flow, the
   AppBar indicator dot, and the "Sync Now" button.
+
+## 20. AI Smart Import (Pro, opt-in per use)
+
+The **only** Anthropic-using surface in the app today. Scoped
+exclusively to "improve a low-confidence parse from the on-device
+photo-import pipeline." Not a chatbot, not a load-development
+assistant, not a conversational AI — just a translation tool that
+takes the OCR'd text and returns a structured patch on the
+`RecipeDraft` shape.
+
+| | |
+|---|---|
+| Service | `lib/services/ai_smart_import_service.dart` |
+| Config  | `lib/services/ai_smart_import_config.dart` |
+| Settings UI | `lib/screens/settings/ai_settings_screen.dart` |
+| Caller | `lib/screens/recipes/photo_import_review_screen.dart` ("Improve with AI" card) |
+| Worker | `cloud_worker/anthropic-proxy/` (Cloudflare Workers + KV) |
+| Tests | `test/ai_smart_import_service_test.dart` |
+| Pro gate | yes — `ensurePro` routes to paywall for non-Pro non-BYOK users |
+| BYOK secure storage | `flutter_secure_storage` keyed `byok_anthropic_key` |
+| Master enable pref | `SharedPreferences` keyed `ai_smart_import_enabled`, default off |
+
+### Mode selection (inside the service)
+
+`AiSmartImportService.improveDraft(...)` resolves the mode every
+call:
+
+1. **BYOK** — if `flutter_secure_storage[byok_anthropic_key]` is
+   set, the request goes straight to `api.anthropic.com` with the
+   user's `x-api-key`. No proxy involvement.
+2. **Hosted** — else if `EntitlementNotifier.isPro` AND
+   `AiSmartImportConfig.isPlaceholder == false`, the request goes
+   to the Cloudflare Worker with a Firebase ID token in the
+   `Authorization: Bearer` header.
+3. **Throws** — else `ProRequiredException` (free user, no BYOK
+   key) or `SmartImportNotConfiguredException` (Worker URL is the
+   placeholder).
+
+The Worker validates the Firebase token against Firebase's public
+JWKs, increments a per-user-per-month counter in KV (default cap
+30), forwards to Anthropic on the LoadOut secret key, and returns
+`{ improved_draft, fields_changed, quota }`. Worker logs only
+timestamp, short UID prefix, status, latency, and token counts —
+**never the request body**.
+
+### Privacy contract
+
+Same as § 13. Specifically:
+
+- The hosted proxy receives **only** the OCR'd text the user just
+  imported, the on-device parser's draft, and (optionally) catalog
+  hints from the device's reference data. No saved recipes, no
+  firearms, no brass lots, no chat history. The Worker's request
+  log redacts request bodies.
+- BYOK mode skips the proxy entirely. The user's key lives in iOS
+  Keychain / Android Keystore, never in `SharedPreferences` or the
+  on-device SQLite DB.
+- Anthropic's API terms forbid training on API requests; verify
+  this before each renewal.
+- The master enable toggle in Settings → AI is **off by default**.
+  Each photo import requires an explicit per-import "Improve with
+  AI" button tap.
+
+### Reloader-skeptic framing
+
+- Settings copy: "AI Smart Import only reads OCR'd text from photos
+  you took. We never see your saved recipes, firearms, or chat.
+  Anthropic does not train on API requests."
+- Button label: "Improve with AI" — utility, not buzz.
+- No emoji on this surface. No "AI assistant" terminology.
+- Marketing should describe it as a "translation tool," not an
+  "assistant."
+
+### Operator deploy
+
+See `cloud_worker/anthropic-proxy/README.md`. Until the operator
+runs `wrangler deploy`, `AiSmartImportConfig.isPlaceholder` returns
+true and hosted-mode calls fail gracefully with "AI Smart Import
+is being set up — please try again later." Local export, on-device
+parse, and BYOK mode all keep working through that.
+
+### Hardening backlog
+
+- **Per-user RevenueCat entitlement check at the Worker.** Today
+  any signed-in Firebase user (including anonymous) passes auth
+  at the Worker; the client-side `ensurePro` is the entitlement
+  gate. Before scaling beyond a few thousand Pro users, the Worker
+  should call RevenueCat's REST API (cached per-UID for a few
+  minutes) and reject non-Pro callers server-side.
+- **Custom domain** — replace the default `*.workers.dev` host
+  once the marketing domain ships.
+- **Translator-review** — the marketing copy still calls AI Smart
+  Import "v1.1, Pro, frontend stub today" in some places; sweep
+  before launch.
+
+## 21. Bluetooth device compatibility
+
+LoadOut talks to seven BLE-enabled devices across three categories.
+All are gated behind the **Pro** entitlement (`EntitlementNotifier.isPro`)
+because manual entry is always free elsewhere in the app, and the
+firmware integrations cost real engineering time per brand. Each
+adapter lives at `lib/services/ble/<brand>_service.dart` and is
+provided once via `MultiProvider` in `lib/app.dart`.
+
+| Device | Protocol | UUIDs | Tier | Channels published |
+|---|---|---|---|---|
+| Kestrel 5xxx Link | proprietary | known-good (validated) | Pro | Live temperature, station pressure, humidity, wind speed/direction, density altitude |
+| Garmin Xero C1 Pro | `.fit` import | n/a (file parser, no BLE today) | Pro | Per-shot velocity, average FPS, ES, SD |
+| Sig Sauer KILO BDX | BDX | reverse-engineered, BETA | Pro | LOS distance + incline + shoot-to range |
+| Bushnell BDX (Forge / Prime / Phantom 2 / Engage / Elite 1 Mile) | proprietary | reverse-engineered, BETA | Pro | LOS distance + (some firmware) incline |
+| Vortex Razor HD 4000 / Fury HD AB | proprietary | reverse-engineered, BETA | Pro | LOS distance + incline + shoot-to range |
+| Leica Geovid Pro | proprietary | reverse-engineered, BETA | Pro | LOS distance + incline + shoot-to range |
+| Vectronix Terrapin X | proprietary | UUIDs flagged BETA (VERIFY-ON-DEVICE) | Pro | LOS distance + incline + azimuth (mil/LE-grade) |
+
+The Vectronix Terrapin X is unique: it's the only rangefinder
+LoadOut supports that publishes a magnetic azimuth (compass
+bearing) alongside the LOS distance. The Range Day distance
+quick-fill picker reads this and offers a single-tap "Use distance
++ azimuth" button that fills the distance field, the
+incline-corrected range, AND the shot azimuth field — saving the
+shooter from a separate compass-capture step.
+
+### Adding a new BLE rangefinder
+
+1. Create `lib/services/ble/<brand>_service.dart` mirroring the
+   existing adapters (`SigKiloService` is the canonical reference).
+   It must extend `ChangeNotifier`, expose `lastReading`, and have
+   a static `parse<Brand>Frame(...)` method visible for testing.
+2. If the device publishes a channel the existing
+   `RangefinderReading` shape doesn't cover, add a nullable field
+   to `lib/services/ble/rangefinder_reading.dart` rather than
+   inventing a per-brand subclass. (Vectronix added `azimuthDeg`.)
+3. Register `ChangeNotifierProvider<...Service>` in
+   `lib/app.dart`, ordered after the BleService it depends on.
+4. Add a `DeviceScanKind.<brand>` enum case in
+   `lib/screens/devices/device_scan_screen.dart` and fill in the
+   six switch arms (`title`, `emptyLabel`, `connectedMessage`,
+   `scanFilters`, `matches`, `listIcon`, `emptyHint`,
+   `_resolveConnect`).
+5. Add a `_RangefinderCard` to `lib/screens/devices/devices_screen.dart`.
+6. Extend `_rangefinderQuickFill()` in
+   `lib/screens/range_day/range_day_detail_screen.dart` so the
+   freshness sort sees the new device.
+7. Write an 8-test unit suite at `test/<brand>_test.dart` matching
+   the depth of the existing parsers (short-frame null,
+   wrong-marker null, out-of-range distance null, out-of-range
+   incline null, valid LOS-only, valid LOS+incline, valid
+   LOS+incline+aux, valid IC-range conversion).
+8. Update this section's compatibility table and the
+   `marketing/CLAUDE.md` Bluetooth ecosystem list.
+
+UUIDs and frame offsets for every reverse-engineered protocol are
+flagged with `// TODO(reverse-engineering): verify on device` or
+`// VERIFY-ON-DEVICE` in their service files. The BETA badge on
+the Devices card stays until real-device validation lands.

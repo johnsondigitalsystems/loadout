@@ -12,10 +12,11 @@
 // Layout (top → bottom):
 //
 //   1. `_FeaturesShowcase` — gradient-backed hero with the "LoadOut Pro"
-//      title, a short subtitle, and a frosted card listing the seven
-//      headline Pro features. This is the "what you get" upsell — the
-//      same surface the user always sees, regardless of whether
-//      RevenueCat has real keys configured yet.
+//      title, a short subtitle, and a stack of six bordered benefit
+//      cards (one per Pro pitch bucket — see `marketing/CLAUDE.md`
+//      § 7 for the canonical list). This is the "what you get"
+//      upsell — the same surface the user always sees, regardless of
+//      whether RevenueCat has real keys configured yet.
 //   2. Offerings — either `_PlaceholderState` (when keys are placeholder
 //      `REPLACE_ME_*` values), the loading spinner, the `_ErrorState`,
 //      or one `_PackageCard` per `Package` in the current offering.
@@ -84,10 +85,14 @@
 // The `_FeaturesShowcase` component fronts the offerings with concrete
 // "what you get" copy. App Store reviewers and conversion analytics both
 // dislike paywalls that show only price cards with no description of the
-// benefit. The seven feature rows correspond 1:1 to features that are
-// actually `ProGate`-wrapped in the app today (cartridge drawings, the
-// ballistics calculator, AI chat, load development, custom fields) plus
-// the two evergreen value props (cloud backup, future Pro features).
+// benefit. The six benefit cards mirror the marketing pitch in
+// `marketing/CLAUDE.md` § 7 — Cloud Sync, Hornady 4DOF curves,
+// Bluetooth devices, Scope View Pro + training mode, live weather +
+// GPS altitude, and AI Smart Import. Order matters: cloud sync first
+// because it's the cross-cutting value prop everyone benefits from.
+// AI Reloading Assistant deliberately stays off this list — it's
+// still Coming Soon, and our user-research framing is "reloaders are
+// skeptical of AI" so we lead with the concrete benefits.
 //
 // `_PlaceholderState` and `_ErrorState` are deliberately separate widgets
 // rather than ad-hoc inline blocks. Both render a centered card with an
@@ -325,58 +330,72 @@ class _PaywallScreenState extends State<PaywallScreen> {
 }
 
 /// Hero "what you get" surface. A vertical gradient backdrop holds the
-/// "LoadOut Pro" headline, a short two-plan subtitle, and a frosted
-/// card listing the seven Pro feature rows. Pure presentation — no
-/// interactivity, no purchase wiring. The feature list mirrors the
-/// `ProGate`-wrapped surfaces in the app today.
+/// "LoadOut Pro" headline, a short three-plan subtitle, and a column
+/// of six benefit cards. Pure presentation — no interactivity, no
+/// purchase wiring. The six buckets mirror the marketing pitch in
+/// `marketing/CLAUDE.md` § 7 and the gated surfaces in the app today.
 class _FeaturesShowcase extends StatelessWidget {
   const _FeaturesShowcase();
 
-  // Canonical seven features. Ordered roughly by how visible each one is
-  // in the existing app: the first three are gated surfaces a user can
-  // already see locked, then the cloud/dev/customization tier, then the
-  // forward-looking promise.
+  // Six clear feature buckets. Order matches `marketing/CLAUDE.md` so
+  // the in-app pitch and the marketing copy stay in lockstep:
+  //   1. Cross-device cloud sync
+  //   2. Real Hornady 4DOF + custom drag curves
+  //   3. Bluetooth devices
+  //   4. Scope View Pro + training mode
+  //   5. Live weather + GPS altitude
+  //   6. AI Smart Import (reading-only — recipes from photos)
+  //
+  // The AI Reloading Assistant deliberately stays out of this list —
+  // it's still Coming Soon at v1.0 and the user-research framing is
+  // "reloaders are skeptical of AI", so we lead with the concrete
+  // benefits instead of the chatbot.
   static const List<_FeatureSpec> _features = [
     _FeatureSpec(
-      icon: Icons.image_outlined,
-      title: 'Cartridge & Chamber Drawings',
+      icon: Icons.cloud_sync_outlined,
+      title: 'Cross-device cloud sync',
       description:
-          'Visual SAAMI/CIP technical drawings for every cartridge in the catalog.',
+          'iCloud, Google Drive, or OneDrive. Encrypted on device with '
+          'your passphrase. We never see the blob.',
     ),
     _FeatureSpec(
-      icon: Icons.calculate_outlined,
-      title: 'Ballistics Calculator',
+      icon: Icons.show_chart_outlined,
+      title: 'Real Hornady 4DOF + custom drag curves',
       description:
-          'Full 6-DOF solver — drop, wind, spin drift, transonic transition. Per-load DOPE charts.',
+          '300+ measured Cd-vs-Mach curves from Hornady\'s Doppler radar '
+          'dataset. More accurate than G7 BC alone in the transonic '
+          'region.',
     ),
     _FeatureSpec(
-      icon: Icons.smart_toy_outlined,
-      title: 'AI Reloading Assistant',
+      icon: Icons.bluetooth_searching_outlined,
+      title: 'Bluetooth devices',
       description:
-          'Ask reloading questions in plain English. 30 questions per month.',
+          'Kestrel 5xxx Link, Garmin Xero (.fit), Bushnell BDX, Sig KILO, '
+          'Vortex Razor, and Leica Geovid. Live data, no manual entry.',
     ),
     _FeatureSpec(
-      icon: Icons.cloud_upload_outlined,
-      title: 'Cloud Backup',
+      icon: Icons.center_focus_strong_outlined,
+      title: 'Scope View Pro + training mode',
       description:
-          'Encrypted, opt-in backup to your own iCloud or Google Drive.',
+          'Reticle hold-over visualization. Free-aim drag with predicted '
+          'impact. Skill-level timing for movers. Animated targets with '
+          'ambush guides.',
     ),
     _FeatureSpec(
-      icon: Icons.science_outlined,
-      title: 'Load Development',
+      icon: Icons.air_outlined,
+      title: 'Live weather + GPS altitude',
       description:
-          'Charge ladders + seating ladders with auto-node analysis.',
+          'Pull station pressure, temperature, humidity, wind, and '
+          'altitude from your location in one tap. Auto-fills your '
+          'firing solution.',
     ),
     _FeatureSpec(
-      icon: Icons.add_box_outlined,
-      title: 'Custom Fields',
-      description: 'Add unlimited custom fields to recipes and firearms.',
-    ),
-    _FeatureSpec(
-      icon: Icons.workspace_premium_outlined,
-      title: 'Future Pro Features',
+      icon: Icons.auto_fix_high_outlined,
+      title: 'AI Smart Import',
       description:
-          'Every Pro feature we ship is included — no upcharges.',
+          'Reads messy handwriting from your reloading notebook photos '
+          'and turns it into structured recipes. Reading-only — no '
+          'chat, no training.',
     ),
   ];
 
@@ -415,27 +434,35 @@ class _FeaturesShowcase extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Two simple plans. Yearly or lifetime.',
+            'Three plans. Quarterly, yearly, or lifetime — try Pro your '
+            'first year for less with the welcome offer.',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
             ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),
-          // Frosted feature card.
-          _FeaturesCard(features: _features),
+          // Six benefit cards stacked vertically. Each is its own
+          // bordered surface so the visual rhythm matches the
+          // proposal mock-ups (one card per benefit, not one
+          // mega-card with rows inside it).
+          for (var i = 0; i < _features.length; i++) ...[
+            _BenefitCard(spec: _features[i]),
+            if (i != _features.length - 1) const SizedBox(height: 12),
+          ],
         ],
       ),
     );
   }
 }
 
-/// Frosted-looking card holding the rows of features. Slightly lighter
-/// than the surrounding gradient so the card edge reads on the page.
-class _FeaturesCard extends StatelessWidget {
-  const _FeaturesCard({required this.features});
+/// One Pro benefit. A bordered surface with a brass-tinted icon disc,
+/// a brass title, and a body paragraph. Slightly lighter background
+/// than the gradient so the card edge reads on the page.
+class _BenefitCard extends StatelessWidget {
+  const _BenefitCard({required this.spec});
 
-  final List<_FeatureSpec> features;
+  final _FeatureSpec spec;
 
   @override
   Widget build(BuildContext context) {
@@ -445,75 +472,54 @@ class _FeaturesCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark
             ? AppTheme.gunmetalSurface.withValues(alpha: 0.85)
-            : Colors.white.withValues(alpha: 0.85),
-        borderRadius: BorderRadius.circular(16),
+            : Colors.white.withValues(alpha: 0.88),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: AppTheme.brass.withValues(alpha: 0.18),
+          color: AppTheme.brass.withValues(alpha: 0.22),
           width: 1,
         ),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-      child: Column(
+      padding: const EdgeInsets.fromLTRB(14, 14, 16, 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (var i = 0; i < features.length; i++) ...[
-            _FeatureRow(spec: features[i]),
-            if (i != features.length - 1) const SizedBox(height: 16),
-          ],
+          // Brass-tinted circular icon backdrop.
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: AppTheme.brass.withValues(alpha: 0.16),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(spec.icon, color: AppTheme.brass, size: 22),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  spec.title,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: AppTheme.brass,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    letterSpacing: 0.1,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  spec.description,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.78),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
-    );
-  }
-}
-
-/// A single row inside the features card: brass-tinted icon disc on the
-/// left, brass-colored bold title and a one-line plain-text description
-/// stacked on the right.
-class _FeatureRow extends StatelessWidget {
-  const _FeatureRow({required this.spec});
-
-  final _FeatureSpec spec;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Brass-tinted circular icon backdrop.
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: AppTheme.brass.withValues(alpha: 0.14),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(spec.icon, color: AppTheme.brass, size: 22),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                spec.title,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  color: AppTheme.brass,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 15,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                spec.description,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.75),
-                  height: 1.35,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }
@@ -688,7 +694,9 @@ class _PlaceholderState extends StatelessWidget {
             Text(
               "We're putting the finishing touches on subscriptions. "
               'Check back soon — when Pro launches, your purchase will '
-              'unlock cloud sync, photo backup, ballistics, and more.',
+              'unlock cloud sync, real Hornady 4DOF curves, Bluetooth '
+              'devices, Scope View Pro, live weather, and AI Smart '
+              'Import.',
               style: theme.textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),

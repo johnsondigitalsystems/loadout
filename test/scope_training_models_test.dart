@@ -64,6 +64,25 @@ void main() {
       expect(TrainingOverlays.fromJson('').predictedImpact, false);
       expect(TrainingOverlays.fromJson('{').predictedImpact, false);
     });
+
+    test('TrainingOverlays.requiresPro reflects any-flag-on', () {
+      // All-off → free.
+      expect(const TrainingOverlays().requiresPro, false);
+      // Any single flag on → Pro.
+      expect(
+          const TrainingOverlays(predictedImpact: true).requiresPro, true);
+      expect(
+          const TrainingOverlays(probabilityEllipse: true).requiresPro,
+          true);
+      expect(
+          const TrainingOverlays(ambushGuides: true).requiresPro, true);
+      expect(const TrainingOverlays(animation: true).requiresPro, true);
+    });
+
+    test('aimModeRequiresPro: free is Pro, auto is free', () {
+      expect(aimModeRequiresPro(AimMode.free), true);
+      expect(aimModeRequiresPro(AimMode.auto), false);
+    });
   });
 
   group('shooting window math', () {

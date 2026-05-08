@@ -19,6 +19,11 @@ final class WatchConnectivityManager: NSObject, ObservableObject {
     @Published private(set) var isReachable: Bool = false
     @Published private(set) var lastReceivedPayload: [String: Any] = [:]
 
+    /// Phone-pushed shot-capture sensitivity preset (`"off" | "low" |
+    /// "medium" | "high"`). Drained by `MotionDetector.applySensitivity`.
+    /// Persists across reboots via the detector's UserDefaults backing.
+    @Published private(set) var shotCaptureSensitivity: String?
+
     private let session: WCSession?
 
     override init() {
@@ -74,6 +79,7 @@ extension WatchConnectivityManager: WCSessionDelegate {
                  didReceiveMessage message: [String: Any]) {
         DispatchQueue.main.async { [weak self] in
             self?.lastReceivedPayload = message
+            self?.routeIncoming(message)
         }
     }
 
@@ -81,6 +87,25 @@ extension WatchConnectivityManager: WCSessionDelegate {
                  didReceiveUserInfo userInfo: [String: Any] = [:]) {
         DispatchQueue.main.async { [weak self] in
             self?.lastReceivedPayload = userInfo
+            self?.routeIncoming(userInfo)
+        }
+    }
+
+    /// Pull the path/payload envelope out of the WatchConnectivity dict
+    /// and update any per-path published state. The phone bridge wraps
+    /// every send in `{ "path": <short>, "payload": <map> }`; we mirror
+    /// that contract here. Adding a new published preference is
+    /// `case "<short>":` plus a `@Published` line above.
+    private func routeIncoming(_ envelope: [String: Any]) {
+        guard let path = envelope["path"] as? String else { return }
+        let payload = envelope["payload"] as? [String: Any] ?? [:]
+        switch path {
+        case WatchPaths.shotCaptureSensitivity:
+            if let value = payload["value"] as? String {
+                self.shotCaptureSensitivity = value
+            }
+        default:
+            break
         }
     }
 }

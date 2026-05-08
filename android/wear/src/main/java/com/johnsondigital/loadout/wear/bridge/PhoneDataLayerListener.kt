@@ -165,6 +165,14 @@ class PhoneDataLayerListener : WearableListenerService() {
             WatchPaths.FIREARM_GLANCE -> {
                 // Reserved for future tab — not consumed yet.
             }
+            WatchPaths.SHOT_CAPTURE_SENSITIVITY -> {
+                // Shape: { "value": "off|low|medium|high" }. Push the
+                // raw wire string into WatchAppState so the Stage Log
+                // composable can forward it to its MotionDetector.
+                obj.optString("value", null)
+                    ?.takeIf { it.isNotEmpty() }
+                    ?.let(WatchAppState::setShotCaptureSensitivity)
+            }
             else -> {
                 // Unknown path — ignore. Keeps forward-compatibility
                 // with future paths sent by newer phones.

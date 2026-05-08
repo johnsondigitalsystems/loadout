@@ -142,6 +142,24 @@ class MagnetometerService extends ChangeNotifier {
   StreamSubscription<MagnetometerEvent>? _magSub;
   StreamSubscription<AccelerometerEvent>? _accSub;
 
+  /// Throttle floor for `notifyListeners()`. See `CantService` for the
+  /// full rationale — `SensorInterval.uiInterval` is ~60 Hz on iOS,
+  /// and three sensor services × 60 Hz = ~180 widget rebuilds/sec
+  /// trips the rendering layer's `parentDataDirty` semantics
+  /// assertion. 10 Hz is far below the perceptual rate for a heading
+  /// readout (compasses typically display whole degrees, which 10 Hz
+  /// updates more than fast enough to track).
+  static const Duration _notifyMinInterval = Duration(milliseconds: 100);
+  DateTime? _lastNotifyAt;
+
+  void _notifyThrottled() {
+    final now = DateTime.now();
+    final last = _lastNotifyAt;
+    if (last != null && now.difference(last) < _notifyMinInterval) return;
+    _lastNotifyAt = now;
+    notifyListeners();
+  }
+
   /// Latest accelerometer sample, used as the "down" reference for
   /// tilt compensation. Kept as nullable doubles so the very first
   /// frame doesn't divide by zero.
@@ -299,22 +317,26 @@ class MagnetometerService extends ChangeNotifier {
 
     final prev = _smoothedDeg;
     if (prev == null) {
+      // Force-notify on the first sample so listeners see "available"
+      // immediately; throttle the steady-state stream after that.
       _smoothedDeg = headingDeg;
-    } else {
-      // Naive EMA fails across the 0/360 wraparound (interpolating from
-      // 359° to 1° produces 180° instead of 0°). Project both into a
-      // unit-circle representation, blend, then re-project.
-      final prevRad = prev * math.pi / 180.0;
-      final newRad = headingDeg * math.pi / 180.0;
-      final sx = (1 - _emaAlpha) * math.cos(prevRad) +
-          _emaAlpha * math.cos(newRad);
-      final sy = (1 - _emaAlpha) * math.sin(prevRad) +
-          _emaAlpha * math.sin(newRad);
-      var blended = math.atan2(sy, sx) * 180.0 / math.pi;
-      if (blended < 0) blended += 360.0;
-      _smoothedDeg = blended;
+      _lastNotifyAt = DateTime.now();
+      notifyListeners();
+      return;
     }
-    notifyListeners();
+    // Naive EMA fails across the 0/360 wraparound (interpolating from
+    // 359° to 1° produces 180° instead of 0°). Project both into a
+    // unit-circle representation, blend, then re-project.
+    final prevRad = prev * math.pi / 180.0;
+    final newRad = headingDeg * math.pi / 180.0;
+    final sx = (1 - _emaAlpha) * math.cos(prevRad) +
+        _emaAlpha * math.cos(newRad);
+    final sy = (1 - _emaAlpha) * math.sin(prevRad) +
+        _emaAlpha * math.sin(newRad);
+    var blended = math.atan2(sy, sx) * 180.0 / math.pi;
+    if (blended < 0) blended += 360.0;
+    _smoothedDeg = blended;
+    _notifyThrottled();
   }
 
   @override

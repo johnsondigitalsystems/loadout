@@ -171,6 +171,22 @@ class WatchBridgeService {
     );
   }
 
+  /// Push a phone-side preference value down the bridge using the
+  /// reserved [path]. Used today for `shot_capture_sensitivity`; future
+  /// settings (stage timer defaults, glance prefs) follow the same
+  /// pattern. Lossy because only the latest value matters.
+  ///
+  /// Public so service classes outside this file (notably
+  /// [WatchSettingsService]) can route through the same `_send`
+  /// envelope without exposing internal channel plumbing.
+  Future<void> sendRawForWatchSettings(
+    String path,
+    Map<String, Object?> payload,
+  ) async {
+    if (!_isSupported) return;
+    await _send(path, payload, lossy: true);
+  }
+
   /// Force a refresh of [connection]. Called automatically on
   /// construction; call again from app lifecycle observers if needed.
   Future<void> refreshConnectionState() => _refreshConnectionState();

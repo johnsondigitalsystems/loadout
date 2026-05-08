@@ -9,10 +9,20 @@
 // event when the magnitude stays above a user-configurable threshold
 // (default 5 g) for at least 50 ms.
 //
+// The threshold + sustained-peak duration are driven by a four-way
+// "shot-capture sensitivity" preference (off / low / medium / high)
+// that the phone pushes via the `shot_capture_sensitivity` bridge
+// path. The user can override the threshold inside the watch settings
+// sheet (legacy continuous-slider UI) too, but the phone setting
+// always wins on receipt.
+//
 // Public surface:
-//   * `@Published var thresholdG` — user-adjustable via the settings
-//     sheet on the Stage Log screen. Persists to `UserDefaults` under
-//     `motion.thresholdG`.
+//   * `@Published var sensitivity: ShotCaptureSensitivity` — current
+//     sensitivity preset. Persists to `UserDefaults` under
+//     `shot_capture_sensitivity`. Default `.medium`.
+//   * `@Published var thresholdG` — derived from the sensitivity
+//     preset (or set directly by the legacy slider). Persists to
+//     `UserDefaults` under `motion.thresholdG`.
 //   * `@Published var pendingShotPeakG: Double?` — non-nil after a
 //     candidate is detected. The Stage Log screen surfaces a 5-second
 //     confirm prompt when this changes.
@@ -23,6 +33,10 @@
 //   * `func start()`, `stop()`, `acknowledge()`, `dismiss()` — drive
 //     the lifecycle. `acknowledge` returns the captured peak and
 //     clears state; `dismiss` clears without returning.
+//   * `func applySensitivity(_ wireValue: String)` — phone-bridge
+//     entry point. Looks up the preset (off/low/medium/high), updates
+//     `thresholdG` + sustained-peak window, and pauses the
+//     accelerometer entirely when `off` is selected.
 //
 // ============================================================================
 // WHY IT EXISTS IN THE ARCHITECTURE
@@ -101,16 +115,70 @@ import Foundation
 import CoreMotion
 import Combine
 
+/// Four-way preset describing how aggressively the watch listens for
+/// shot impulses. Mirrors `ShotCaptureSensitivity` on the phone side
+/// (`lib/services/watch_settings_service.dart`). Wire form is the
+/// lowercased rawValue.
+enum ShotCaptureSensitivity: String {
+    case off
+    case low
+    case medium
+    case high
+
+    /// Threshold (g) the [MotionDetector] should compare each sample
+    /// magnitude against. Returns nil for `.off` — the caller is
+    /// expected to disable the detector entirely in that case.
+    var thresholdG: Double? {
+        switch self {
+        case .off: return nil
+        case .low: return 8.0
+        case .medium: return 5.0
+        case .high: return 3.0
+        }
+    }
+
+    /// Sustained-peak duration (seconds). Returns nil for `.off`.
+    var sustainedPeakSeconds: Double? {
+        switch self {
+        case .off: return nil
+        case .low: return 0.08
+        case .medium: return 0.05
+        case .high: return 0.03
+        }
+    }
+
+    /// Decode the wire-format string sent by the phone bridge. Falls
+    /// back to nil so the caller can keep its current preset.
+    static func fromWire(_ raw: String) -> ShotCaptureSensitivity? {
+        return ShotCaptureSensitivity(rawValue: raw)
+    }
+}
+
 final class MotionDetector: ObservableObject {
 
     // MARK: - Public
 
-    /// 1 magnitude unit = 1 g. Default 5 g; range 3.0 .. 10.0 in
-    /// settings. Stored in UserDefaults under
-    /// `motion.thresholdG` so user preference persists.
+    /// 1 magnitude unit = 1 g. Default 5 g; range 3.0 .. 10.0 in the
+    /// legacy slider settings. Stored in UserDefaults under
+    /// `motion.thresholdG` so user preference persists. Updated
+    /// automatically by [applySensitivity] when the phone pushes a
+    /// new preset.
     @Published var thresholdG: Double {
         didSet {
             UserDefaults.standard.set(thresholdG, forKey: kThresholdKey)
+        }
+    }
+
+    /// Currently-selected sensitivity preset. Set automatically by
+    /// [applySensitivity] when the phone pushes a new value, and
+    /// persisted under `kSensitivityKey` so the watch remembers the
+    /// preset across reboots even before the next phone push lands.
+    @Published var sensitivity: ShotCaptureSensitivity {
+        didSet {
+            UserDefaults.standard.set(
+                sensitivity.rawValue,
+                forKey: kSensitivityKey
+            )
         }
     }
 
@@ -128,9 +196,10 @@ final class MotionDetector: ObservableObject {
     // MARK: - Tunables
 
     private let kThresholdKey = "motion.thresholdG"
+    private let kSensitivityKey = "shot_capture_sensitivity"
     private let kSampleHz: Double = 50
     private let kSettleSeconds: Double = 0.4 // 400 ms quiet between events
-    private let kMinPeakSeconds: Double = 0.05 // sustained for >50 ms
+    private var minPeakSeconds: Double = 0.05 // sustained for >50 ms; mutated by sensitivity preset
 
     // MARK: - State
 
@@ -147,6 +216,40 @@ final class MotionDetector: ObservableObject {
         self.queue = q
         let stored = UserDefaults.standard.double(forKey: kThresholdKey)
         self.thresholdG = stored >= 3.0 && stored <= 10.0 ? stored : 5.0
+        // Sensitivity defaults to .medium (matches the phone-side
+        // default in `WatchSettingsService`). If a previous session
+        // persisted a different preset, restore it here.
+        let storedPreset = UserDefaults.standard.string(forKey: kSensitivityKey)
+        let resolved = storedPreset.flatMap(ShotCaptureSensitivity.init(rawValue:)) ?? .medium
+        self.sensitivity = resolved
+        if let secs = resolved.sustainedPeakSeconds {
+            self.minPeakSeconds = secs
+        }
+        if let g = resolved.thresholdG, !(stored >= 3.0 && stored <= 10.0) {
+            // No stored slider value — derive from the preset.
+            self.thresholdG = g
+        }
+    }
+
+    /// Phone-bridge entry point. Decodes the wire string into a preset
+    /// and updates the threshold + sustained-peak window. When the
+    /// preset is `.off`, also pauses the accelerometer immediately —
+    /// the user expects "Off" to mean no battery cost.
+    func applySensitivity(_ wireValue: String) {
+        guard let preset = ShotCaptureSensitivity.fromWire(wireValue) else {
+            return
+        }
+        sensitivity = preset
+        if preset == .off {
+            stop()
+            return
+        }
+        if let g = preset.thresholdG {
+            thresholdG = g
+        }
+        if let secs = preset.sustainedPeakSeconds {
+            minPeakSeconds = secs
+        }
     }
 
     // MARK: - Lifecycle
@@ -207,10 +310,10 @@ final class MotionDetector: ObservableObject {
             currentPeak = max(currentPeak, mag)
 
             // Sustained-peak rule: must remain above threshold for
-            // > kMinPeakSeconds. Filters out single high-frequency
-            // noise spikes.
+            // > minPeakSeconds. Filters out single high-frequency
+            // noise spikes. Window narrows under "high" sensitivity.
             if let since = aboveSince,
-               Date().timeIntervalSince(since) >= kMinPeakSeconds {
+               Date().timeIntervalSince(since) >= minPeakSeconds {
                 fireCandidate(peak: currentPeak)
             }
         } else {

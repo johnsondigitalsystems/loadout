@@ -114,12 +114,14 @@ import '../../repositories/optics_repository.dart';
 import '../../repositories/reticle_repository.dart';
 import '../../services/auto_save_service.dart';
 import '../../services/cloud_sync_service.dart';
+import '../../services/entitlement_notifier.dart';
 import '../../services/unit_service.dart';
 import '../../services/weather_service.dart';
 import '../../utils/responsive.dart';
 import '../../widgets/auto_save_banner.dart';
 import '../../widgets/auto_save_first_time_hint.dart';
 import '../../widgets/component_field.dart';
+import '../../widgets/pro_gate.dart';
 import '../../widgets/reticle_picker.dart';
 
 typedef _RefEntry = ({
@@ -1292,20 +1294,30 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
           // Capture from current weather button — pulls the user's
           // local pressure / temp / humidity via the existing
           // open-meteo handshake and writes them into the three
-          // fields above.
+          // fields above. Pro-gated; tapping a free user routes
+          // through `ensurePro` (paywall) before the network call.
           Align(
             alignment: Alignment.centerLeft,
-            child: OutlinedButton.icon(
-              onPressed:
-                  _zeroWeatherFetching ? null : _captureZeroFromWeather,
-              icon: _zeroWeatherFetching
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.cloud_outlined, size: 18),
-              label: const Text('Capture from current weather'),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                OutlinedButton.icon(
+                  onPressed:
+                      _zeroWeatherFetching ? null : _captureZeroFromWeather,
+                  icon: _zeroWeatherFetching
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.cloud_outlined, size: 18),
+                  label: const Text('Capture from current weather'),
+                ),
+                if (!context.watch<EntitlementNotifier>().isPro) ...[
+                  const SizedBox(width: 8),
+                  _zeroWeatherProBadge(),
+                ],
+              ],
             ),
           ),
         ],
@@ -1317,7 +1329,14 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
   /// into the Zero Conditions fields. Surfaces a snackbar with the
   /// captured values so the user sees what's happening rather than
   /// the fields silently filling. Failures show a friendly message.
+  ///
+  /// Pro-gated. The same open-meteo handshake powers the Pro
+  /// "Use my location" button on the ballistics screen and the GPS
+  /// altitude piece of Range Day's "Capture environment from sensors";
+  /// gating this keeps the live-weather pitch consistent across the
+  /// app.
   Future<void> _captureZeroFromWeather() async {
+    if (!await ensurePro(context)) return;
     if (!mounted) return;
     setState(() => _zeroWeatherFetching = true);
     final messenger = ScaffoldMessenger.of(context);
@@ -1354,6 +1373,33 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
     } finally {
       if (mounted) setState(() => _zeroWeatherFetching = false);
     }
+  }
+
+  /// Brass-tinted "Pro" pill rendered next to the Zero Conditions
+  /// "Capture from current weather" button so a free user can see at a
+  /// glance that tapping the button will route through the paywall.
+  Widget _zeroWeatherProBadge() {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: theme.colorScheme.primary.withValues(alpha: 0.55),
+          width: 0.8,
+        ),
+      ),
+      child: Text(
+        'Pro',
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: theme.colorScheme.primary,
+          fontWeight: FontWeight.w600,
+          fontSize: 10,
+          letterSpacing: 0.2,
+        ),
+      ),
+    );
   }
 }
 

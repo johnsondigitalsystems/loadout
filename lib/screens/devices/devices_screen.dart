@@ -12,6 +12,7 @@
 //   - Bushnell rangefinders (BLE range push, scan-and-display only)
 //   - Vortex Razor HD 4000 / Fury HD AB (BLE range push)
 //   - Leica Geovid Pro (BLE range push)
+//   - Vectronix Terrapin X (BLE range push, magnetometer-equipped)
 //
 // Reached from Settings → Devices.
 //
@@ -23,7 +24,7 @@
 //   4. Rangefinders section: one card per supported brand. Each card
 //      shows the connection state, a Scan button (Pro-gated), and a
 //      BETA badge so the user knows we expect to iterate. The same
-//      DeviceScanScreen handles all four — it's parameterized by
+//      DeviceScanScreen handles all five — it's parameterized by
 //      DeviceScanKind.
 //   5. System: deep-link to OS bluetooth permissions.
 //
@@ -54,6 +55,7 @@ import '../../services/ble/kestrel_service.dart';
 import '../../services/ble/leica_geovid_service.dart';
 import '../../services/ble/rangefinder_reading.dart';
 import '../../services/ble/sig_kilo_service.dart';
+import '../../services/ble/vectronix_terrapin_service.dart';
 import '../../services/ble/vortex_rangefinder_service.dart';
 import '../../widgets/pro_gate.dart';
 import 'device_scan_screen.dart';
@@ -89,6 +91,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
     final bushnell = context.watch<BushnellRangefinderService>();
     final vortex = context.watch<VortexRangefinderService>();
     final leica = context.watch<LeicaGeovidService>();
+    final vectronix = context.watch<VectronixTerrapinService>();
     return Scaffold(
       appBar: AppBar(title: const Text('Connected Devices')),
       body: ListView(
@@ -141,6 +144,26 @@ class _DevicesScreenState extends State<DevicesScreen> {
             onDisconnect: () => leica.disconnect(),
             footer: 'Scan-and-display only. The device pushes a value '
                 'each time you fire the laser.',
+          ),
+          _RangefinderCard(
+            kind: DeviceScanKind.vectronixTerrapin,
+            title: 'Vectronix Terrapin X',
+            subtitle:
+                'Terrapin X · TPX-series — mil/LE-grade laser rangefinder',
+            device: vectronix.device,
+            lastReading: vectronix.lastReading,
+            onDisconnect: () => vectronix.disconnect(),
+            // Vectronix is the only rangefinder we support that publishes
+            // magnetometer data — calling that out here doubles as
+            // marketing copy and a "what makes this brand worth pairing"
+            // hint when the user is on the Devices screen comparing
+            // options.
+            includes: 'LOS distance · incline · compass bearing',
+            footer: 'Beta — UUIDs flagged VERIFY-ON-DEVICE. Scan-and-display '
+                'only; the device pushes a value each time you fire the laser. '
+                'Magnetic azimuth (compass bearing) is unique to this device '
+                'in our supported set and can prefill the shot azimuth on '
+                'Range Day.',
           ),
           const SizedBox(height: 16),
           const _SectionHeader('System'),
@@ -503,7 +526,7 @@ class _KestrelCard extends StatelessWidget {
 // ─────────────────────── Generic rangefinder card ───────────────────────
 
 /// One card per supported rangefinder brand. Driven by [DeviceScanKind]
-/// so we don't repeat the same UI four times.
+/// so we don't repeat the same UI five times.
 class _RangefinderCard extends StatelessWidget {
   const _RangefinderCard({
     required this.kind,
@@ -513,6 +536,7 @@ class _RangefinderCard extends StatelessWidget {
     required this.lastReading,
     required this.onDisconnect,
     this.footer,
+    this.includes,
   });
 
   final DeviceScanKind kind;
@@ -524,6 +548,11 @@ class _RangefinderCard extends StatelessWidget {
   /// Optional small italic footer copy below the buttons. Falls back to
   /// the standard "Beta — feedback welcome" line.
   final String? footer;
+  /// Optional one-liner shown above the "Last reading" line that
+  /// summarises what the brand publishes — the differentiator between
+  /// "LOS-only" rangefinders and "LOS + incline + compass bearing"
+  /// (Vectronix Terrapin X).
+  final String? includes;
 
   @override
   Widget build(BuildContext context) {
@@ -591,6 +620,27 @@ class _RangefinderCard extends StatelessWidget {
                   ),
               ],
             ),
+            if (includes != null) ...[
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 14,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      'Includes: ${includes!}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 8),
             if (lastReading != null)
               Text(
@@ -631,6 +681,12 @@ class _RangefinderCard extends StatelessWidget {
     if (r.inclineCorrectedRangeYd != null) {
       pieces.add(
           'shoot-to ${r.inclineCorrectedRangeYd!.toStringAsFixed(0)} yd');
+    }
+    if (r.azimuthDeg != null) {
+      // Magnetic azimuth (compass bearing) is unique to the Vectronix
+      // Terrapin X among LoadOut's supported rangefinders. Surface it
+      // here so the user can confirm the magnetometer is calibrated.
+      pieces.add('bearing ${r.azimuthDeg!.toStringAsFixed(0)}°');
     }
     return pieces.join(' · ');
   }

@@ -123,6 +123,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'database/database.dart';
 import 'l10n/app_localizations.dart';
+import 'repositories/atmosphere_preset_repository.dart';
 import 'repositories/ballistic_profile_repository.dart';
 import 'repositories/batch_repository.dart';
 import 'repositories/brass_lot_repository.dart';
@@ -139,6 +140,7 @@ import 'repositories/target_repository.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/disclaimer/disclaimer_screen.dart';
 import 'screens/home/home_screen.dart';
+import 'services/ai_smart_import_service.dart';
 import 'services/auth_service.dart';
 import 'services/auto_save_service.dart';
 import 'services/beginner_mode_service.dart';
@@ -147,12 +149,16 @@ import 'services/ble/bushnell_rangefinder_service.dart';
 import 'services/ble/kestrel_service.dart';
 import 'services/ble/leica_geovid_service.dart';
 import 'services/ble/sig_kilo_service.dart';
+import 'services/ble/vectronix_terrapin_service.dart';
 import 'services/ble/vortex_rangefinder_service.dart';
 import 'services/cloud_backup.dart';
 import 'services/cloud_sync_service.dart';
 import 'services/drive_backup_service.dart';
 import 'services/entitlement_notifier.dart';
+import 'services/bc_truing_service.dart';
 import 'services/hit_probability_service.dart';
+import 'services/sight_calibration_service.dart';
+import 'services/wez_analysis_service.dart';
 import 'services/icloud_backup_service.dart';
 import 'services/locale_service.dart';
 import 'services/onedrive_backup_service.dart';
@@ -161,6 +167,8 @@ import 'services/sensors/cant_service.dart';
 import 'services/sensors/inclinometer_service.dart';
 import 'services/sensors/magnetometer_service.dart';
 import 'services/unit_service.dart';
+import 'services/watch_bridge_service.dart';
+import 'services/watch_settings_service.dart';
 import 'theme/app_theme.dart';
 import 'widgets/disclaimer_overlay.dart';
 
@@ -215,6 +223,9 @@ class LoadOutApp extends StatelessWidget {
         Provider<BallisticProfileRepository>(
           create: (_) => BallisticProfileRepository(database),
         ),
+        Provider<AtmospherePresetRepository>(
+          create: (_) => AtmospherePresetRepository(database),
+        ),
         Provider<TargetRepository>(
           create: (_) => TargetRepository(database),
         ),
@@ -226,6 +237,18 @@ class LoadOutApp extends StatelessWidget {
         // safe across the whole tree.
         Provider<HitProbabilityService>(
           create: (_) => const HitProbabilityService(),
+        ),
+        // Bryan Litz / Applied Ballistics parity services (schema v16).
+        // All three are stateless and pure-functional, same as
+        // HitProbabilityService — one instance per tree is fine.
+        Provider<WezAnalysisService>(
+          create: (_) => const WezAnalysisService(),
+        ),
+        Provider<BcTruingService>(
+          create: (_) => const BcTruingService(),
+        ),
+        Provider<SightCalibrationService>(
+          create: (_) => const SightCalibrationService(),
         ),
         ChangeNotifierProvider<AutoSaveService>(
           create: (_) => AutoSaveService(),
@@ -245,6 +268,20 @@ class LoadOutApp extends StatelessWidget {
         ),
         ChangeNotifierProvider<EntitlementNotifier>(
           create: (ctx) => EntitlementNotifier(ctx.read<PurchasesService>()),
+        ),
+        // AI Smart Import (Pro). Reads OCR'd recipe text the user just
+        // photographed and sends it to either LoadOut's hosted Cloudflare
+        // Worker proxy or the user's own Anthropic key (BYOK), then
+        // returns an improved RecipeDraft. CLAUDE.md §13 / §20 — this is
+        // the ONLY surface in the app that talks to Anthropic, and it
+        // sees only the OCR'd text the user opted into. Provided once
+        // here so PhotoImportReviewScreen and the AI Settings page
+        // share the same secure-storage cache + usage counters.
+        Provider<AiSmartImportService>(
+          create: (ctx) => AiSmartImportService(
+            entitlements: ctx.read<EntitlementNotifier>(),
+          ),
+          dispose: (_, svc) => svc.dispose(),
         ),
         // Cloud Sync (Pro). Continuous, end-to-end-encrypted sync of
         // the user's reloading data to the user's own iCloud / Google
@@ -284,7 +321,7 @@ class LoadOutApp extends StatelessWidget {
         // Bluetooth rangefinder adapters. One ChangeNotifier per brand so
         // the Devices screen can show per-brand connection state and the
         // Range Day distance picker can read the most recent value from
-        // whichever rangefinder the user has connected. All four are
+        // whichever rangefinder the user has connected. All five are
         // BETA — the protocols are reverse-engineered from public
         // sources and need real-device validation.
         ChangeNotifierProvider<SigKiloService>(
@@ -298,6 +335,9 @@ class LoadOutApp extends StatelessWidget {
         ),
         ChangeNotifierProvider<LeicaGeovidService>(
           create: (ctx) => LeicaGeovidService(ctx.read<BleService>()),
+        ),
+        ChangeNotifierProvider<VectronixTerrapinService>(
+          create: (ctx) => VectronixTerrapinService(ctx.read<BleService>()),
         ),
         // Live device-sensor services for the Range Day Setup section.
         // Provided once and shared so the underlying OS sensor streams
@@ -317,6 +357,20 @@ class LoadOutApp extends StatelessWidget {
         // incline/decline angle field.
         ChangeNotifierProvider<InclinometerService>(
           create: (_) => InclinometerService(),
+        ),
+        // Watch bridge + watch settings.
+        // The bridge is the transport facade (WatchConnectivity on
+        // iOS, Wearable Data Layer on Android). The settings service
+        // owns the phone-side preferences (today: shot-capture
+        // sensitivity) and pushes them down through the bridge.
+        // Provided in this order so the settings service can read the
+        // bridge out of context.
+        Provider<WatchBridgeService>(
+          create: (_) => WatchBridgeService(),
+        ),
+        ChangeNotifierProvider<WatchSettingsService>(
+          create: (ctx) =>
+              WatchSettingsService(bridge: ctx.read<WatchBridgeService>()),
         ),
         // Seed the auth-state stream with `FirebaseAuth.instance.currentUser`,
         // which is the SYNCHRONOUSLY-available cached user from the prior

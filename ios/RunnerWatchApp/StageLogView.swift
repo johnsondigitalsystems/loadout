@@ -106,6 +106,7 @@ import SwiftUI
 struct StageLogView: View {
     @EnvironmentObject private var logger: ShotLogger
     @EnvironmentObject private var dope: DopeViewModel
+    @EnvironmentObject private var connectivity: WatchConnectivityManager
     @StateObject private var motion = MotionDetector()
 
     @State private var autoConfirmTask: Task<Void, Never>?
@@ -119,6 +120,16 @@ struct StageLogView: View {
         }
         .padding(.horizontal, 6)
         .onAppear {
+            // Pull any sensitivity preset the phone pushed before the
+            // view became visible. The connectivity manager publishes
+            // the wire string; the detector decodes + applies.
+            if let preset = connectivity.shotCaptureSensitivity {
+                motion.applySensitivity(preset)
+            }
+            // Mirror the detector's preset into the local
+            // `motionEnabled` toggle so the legacy slider sheet stays
+            // truthful (Off preset disables the detector entirely).
+            motionEnabled = motion.sensitivity != .off
             if motionEnabled { motion.start() }
         }
         .onDisappear {
@@ -130,6 +141,14 @@ struct StageLogView: View {
         }
         .onChange(of: motionEnabled) { _, on in
             if on { motion.start() } else { motion.stop() }
+        }
+        .onChange(of: connectivity.shotCaptureSensitivity) { _, value in
+            // Phone pushed a new preset while the screen is visible.
+            // Apply immediately so the user doesn't have to bounce
+            // back to the home pager.
+            guard let value else { return }
+            motion.applySensitivity(value)
+            motionEnabled = motion.sensitivity != .off
         }
         .sheet(isPresented: $showSettings) {
             settingsSheet

@@ -126,11 +126,14 @@ import '../../services/ballistics/environment.dart';
 import '../../services/ballistics/projectile.dart';
 import '../../services/ballistics/solver.dart';
 import '../../services/ballistics/units.dart';
+import '../../services/ballistics/wind_bracket_service.dart';
 import '../../services/ble/kestrel_service.dart';
 import '../../services/entitlement_notifier.dart';
 import '../../services/unit_service.dart';
 import '../../services/weather_service.dart';
 import '../../utils/responsive.dart';
+import '../../screens/atmosphere/atmosphere_presets_screen.dart';
+import '../../widgets/atmosphere_preset_picker.dart';
 import '../../widgets/pro_gate.dart';
 import 'widgets/contribution_breakdown.dart';
 import 'widgets/trajectory_chart.dart';
@@ -253,6 +256,12 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   final _altitudeCtrl = TextEditingController(text: '0');
   final _windSpeedCtrl = TextEditingController(text: '10');
   final _windDirCtrl = TextEditingController(text: '90');
+  /// Litz wind-bracket uncertainty (mph) — see § wind bracket card.
+  /// Empty / 0 hides the bracket card. Default 2 mph: most field
+  /// shooters can call wind to within ±2 mph after a couple
+  /// observations, and the bracket card itself teaches the user that
+  /// the bracket envelope shrinks as their reading sharpens.
+  final _windUncertaintyCtrl = TextEditingController(text: '2');
   final _latitudeCtrl = TextEditingController(text: '40');
 
   // ─────────────────────── Advanced (v16) ───────────────────────
@@ -296,6 +305,12 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   Environment? _lastSolvedEnvironment;
   ShotInputs? _lastSolvedShot;
   List<double>? _lastSolvedRanges;
+
+  /// Wind speed (mph) and uncertainty (mph) captured at the time of
+  /// the most recent solve — drives the wind-bracket card. Cleared
+  /// alongside `_samples`.
+  double? _lastSolvedWindMph;
+  double? _lastSolvedWindUncertaintyMph;
 
   String? _error;
 
@@ -834,6 +849,7 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
       _altitudeCtrl,
       _windSpeedCtrl,
       _windDirCtrl,
+      _windUncertaintyCtrl,
       _latitudeCtrl,
       _rangeMinCtrl,
       _rangeMaxCtrl,
@@ -917,6 +933,17 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
         units.unitFor(UnitCategory.windSpeed),
       );
       final windDir = double.tryParse(_windDirCtrl.text.trim()) ?? 0;
+      // Wind uncertainty stays in the user's chosen wind-speed unit;
+      // the wind-bracket card consumes it in mph after the same
+      // conversion the solver applies to wind speed.
+      final windUncRaw =
+          double.tryParse(_windUncertaintyCtrl.text.trim()) ?? 0;
+      final windUncMph = windUncRaw <= 0
+          ? 0.0
+          : _windToCanonical(
+              windUncRaw,
+              units.unitFor(UnitCategory.windSpeed),
+            );
       final latitude = double.tryParse(_latitudeCtrl.text.trim()) ?? 0;
       final tgtElev = double.tryParse(_targetElevationCtrl.text.trim()) ?? 0;
 
@@ -1004,6 +1031,8 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
         _lastSolvedEnvironment = environment;
         _lastSolvedShot = shot;
         _lastSolvedRanges = ranges;
+        _lastSolvedWindMph = windSpeed;
+        _lastSolvedWindUncertaintyMph = windUncMph > 0 ? windUncMph : null;
       });
     } on FormatException catch (e) {
       setState(() {
@@ -1013,6 +1042,8 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
         _lastSolvedEnvironment = null;
         _lastSolvedShot = null;
         _lastSolvedRanges = null;
+        _lastSolvedWindMph = null;
+        _lastSolvedWindUncertaintyMph = null;
       });
     } catch (e) {
       setState(() {
@@ -1022,6 +1053,8 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
         _lastSolvedEnvironment = null;
         _lastSolvedShot = null;
         _lastSolvedRanges = null;
+        _lastSolvedWindMph = null;
+        _lastSolvedWindUncertaintyMph = null;
       });
     }
   }
@@ -1834,11 +1867,17 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   /// CDM/DSF curve from the seeded catalog. We model "Custom" as a
   /// nullable sentinel because Dart enums don't allow us to extend
   /// [DragModel] without breaking the solver.
+  ///
+  /// The "Custom (CDM / DSF)" entry is Pro-only — the catalog ships 300
+  /// measured Hornady 4DOF curves and gating those is one of the named
+  /// Pro pitch buckets. Free users see the row labelled "Pro"; tapping
+  /// it routes through `ensurePro` to the paywall.
   Widget _dragFunctionSelector() {
     // Sentinel value the dropdown exposes for the "Custom" entry.
     // Kept inside the closure so it doesn't leak into other call
     // sites — the toggle is private to this widget.
     const customSentinel = -1;
+    final isPro = context.watch<EntitlementNotifier>().isPro;
     final currentValue =
         _useCustomDragCurve ? customSentinel : _dragModel.index;
     return DropdownButtonFormField<int>(
@@ -1853,23 +1892,71 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
             value: m.index,
             child: Text(m.label, overflow: TextOverflow.ellipsis),
           ),
-        const DropdownMenuItem(
+        DropdownMenuItem(
           value: customSentinel,
-          child: Text('Custom (CDM / DSF)'),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Flexible(
+                child: Text(
+                  'Custom (CDM / DSF)',
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (!isPro) ...[
+                const SizedBox(width: 6),
+                _proBadge(),
+              ],
+            ],
+          ),
         ),
       ],
-      onChanged: (v) {
+      onChanged: (v) async {
         if (v == null) return;
-        setState(() {
-          if (v == customSentinel) {
+        if (v == customSentinel) {
+          // Pro-gate: free users see the paywall; if they upgrade we
+          // continue into custom-drag mode, otherwise we bail without
+          // changing state.
+          if (!await ensurePro(context)) return;
+          if (!mounted) return;
+          setState(() {
             _useCustomDragCurve = true;
-          } else {
-            _useCustomDragCurve = false;
-            _selectedDragCurve = null;
-            _dragModel = DragModel.values[v];
-          }
+          });
+          return;
+        }
+        setState(() {
+          _useCustomDragCurve = false;
+          _selectedDragCurve = null;
+          _dragModel = DragModel.values[v];
         });
       },
+    );
+  }
+
+  /// Compact "Pro" pill rendered next to gated entries in dropdowns and
+  /// inline rows on the ballistics screen. Brass-tinted to match the
+  /// rest of the app's monetization affordances.
+  Widget _proBadge() {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: theme.colorScheme.primary.withValues(alpha: 0.55),
+          width: 0.8,
+        ),
+      ),
+      child: Text(
+        'Pro',
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: theme.colorScheme.primary,
+          fontWeight: FontWeight.w600,
+          fontSize: 10,
+          letterSpacing: 0.2,
+        ),
+      ),
     );
   }
 
@@ -2070,12 +2157,24 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   /// selected bullet has a matching custom drag curve in the catalog.
   /// Tapping it auto-applies the matching curve and switches the
   /// drag-function selector to "Custom".
+  ///
+  /// The catalog ships measured Hornady 4DOF curves and is Pro-only.
+  /// Free users see the same "Custom drag available" affordance, but
+  /// with a "Pro" badge appended; tapping routes through `ensurePro`.
   Widget _customDragAvailableBadge() {
+    final theme = Theme.of(context);
+    final isPro = context.watch<EntitlementNotifier>().isPro;
     return InkWell(
       borderRadius: BorderRadius.circular(8),
       onTap: () async {
         final sel = _selectedBullet;
         if (sel == null) return;
+        // Pro-gate: free users get the paywall before we apply the
+        // measured curve. If they upgrade we continue; otherwise bail
+        // (the bullet's G7 BC stays on the row, which is the documented
+        // graceful fallback).
+        if (!await ensurePro(context)) return;
+        if (!mounted) return;
         final repo = context.read<DragCurveRepository>();
         final match = await repo.findCurveForBullet(
           manufacturer: sel.mfg.name,
@@ -2092,13 +2191,10 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: Theme.of(context)
-              .colorScheme
-              .primaryContainer
-              .withAlpha(120),
+          color: theme.colorScheme.primaryContainer.withAlpha(120),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: Theme.of(context).colorScheme.primary.withAlpha(80),
+            color: theme.colorScheme.primary.withAlpha(80),
           ),
         ),
         child: Row(
@@ -2107,15 +2203,21 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
             Icon(
               Icons.show_chart,
               size: 16,
-              color: Theme.of(context).colorScheme.primary,
+              color: theme.colorScheme.primary,
             ),
             const SizedBox(width: 6),
             Text(
-              'Custom drag available — tap to apply',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
+              isPro
+                  ? 'Custom drag available — tap to apply'
+                  : 'Hornady 4DOF curve available — tap to upgrade',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.primary,
+              ),
             ),
+            if (!isPro) ...[
+              const SizedBox(width: 6),
+              _proBadge(),
+            ],
           ],
         ),
       ),
@@ -2209,6 +2311,100 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
     );
   }
 
+  // ─────────────────────── Atmosphere preset picker ───────────────────────
+
+  /// Build the [AtmosphereSnapshot] used by the inline picker to
+  /// determine whether the live values match a saved preset. The
+  /// controllers hold values in the user's chosen display unit, so we
+  /// convert each one back to canonical (inHg / °F / %) before passing
+  /// to the picker. Any field that fails to parse becomes null on the
+  /// snapshot — `AtmosphereSnapshot.matches` treats that as "won't
+  /// match anything".
+  AtmosphereSnapshot _atmosphereSnapshotForPicker(UnitService units) {
+    double? toCanonicalPressure(String s) {
+      final v = double.tryParse(s.trim());
+      if (v == null) return null;
+      return _pressureToCanonical(
+          v, units.unitFor(UnitCategory.pressure));
+    }
+
+    double? toCanonicalTemp(String s) {
+      final v = double.tryParse(s.trim());
+      if (v == null) return null;
+      return _tempToCanonical(
+          v, units.unitFor(UnitCategory.temperature));
+    }
+
+    return AtmosphereSnapshot(
+      stationPressureInHg: toCanonicalPressure(_pressureCtrl.text),
+      temperatureF: toCanonicalTemp(_tempCtrl.text),
+      humidityPct: double.tryParse(_humidityCtrl.text.trim()),
+      altitudeFt: double.tryParse(_altitudeCtrl.text.trim()),
+    );
+  }
+
+  /// Apply a saved atmosphere preset to the four Environment controllers.
+  /// Values stored on `AtmospherePresetRow` are canonical imperial; we
+  /// convert each one to the user's current display unit before writing
+  /// back to the controllers. Triggers a recompute so the trajectory
+  /// chart updates immediately.
+  void _applyAtmospherePreset(AtmospherePresetRow preset) {
+    final units = context.read<UnitService>();
+    setState(() {
+      _pressureCtrl.text = _formatNumber(_pressureFromCanonical(
+          preset.stationPressureInHg,
+          units.unitFor(UnitCategory.pressure)));
+      _tempCtrl.text = _formatNumber(_tempFromCanonical(
+          preset.temperatureF, units.unitFor(UnitCategory.temperature)));
+      _humidityCtrl.text = preset.humidityPct.toStringAsFixed(0);
+      if (preset.altitudeFt != null) {
+        _altitudeCtrl.text = preset.altitudeFt!.toStringAsFixed(0);
+      }
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        duration: const Duration(seconds: 2),
+        content: Text('Loaded "${preset.name}"'),
+      ),
+    );
+  }
+
+  /// Captures the live atmosphere fields into a new
+  /// [AtmospherePresetRow]. Reads each field, converts back to
+  /// canonical imperial, and opens the Save-as-preset dialog with the
+  /// values pre-filled.
+  Future<void> _onSaveCurrentAsAtmospherePreset() async {
+    final units = context.read<UnitService>();
+    final messenger = ScaffoldMessenger.of(context);
+    final pressureText = _pressureCtrl.text.trim();
+    final tempText = _tempCtrl.text.trim();
+    final humidityText = _humidityCtrl.text.trim();
+    final pressure = double.tryParse(pressureText);
+    final temp = double.tryParse(tempText);
+    final humidity = double.tryParse(humidityText);
+    if (pressure == null || temp == null || humidity == null) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Fill in pressure, temperature, and humidity before saving.'),
+        ),
+      );
+      return;
+    }
+    final pressureInHg = _pressureToCanonical(
+        pressure, units.unitFor(UnitCategory.pressure));
+    final tempF = _tempToCanonical(
+        temp, units.unitFor(UnitCategory.temperature));
+    final altitudeFt = double.tryParse(_altitudeCtrl.text.trim());
+    await showSaveAtmospherePresetDialog(
+      context,
+      stationPressureInHg: pressureInHg,
+      temperatureF: tempF,
+      humidityPct: humidity,
+      altitudeFt: altitudeFt,
+    );
+  }
+
   // ─────────────────────── Weather fetch ───────────────────────
 
   /// Pro-gated handler wired to the cloud icon on the Environment
@@ -2257,6 +2453,19 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
             'Humidity: ${result.humidityPct.toStringAsFixed(0)}%  ·  '
             'Wind: ${result.windSpeedMph.toStringAsFixed(0)} mph @ '
             '${result.windDirectionDeg.toStringAsFixed(0)}°',
+          ),
+          action: SnackBarAction(
+            label: 'Save as preset',
+            onPressed: () {
+              // ignore: discarded_futures
+              showSaveAtmospherePresetDialog(
+                context,
+                stationPressureInHg: result.stationPressureInHg,
+                temperatureF: result.tempF,
+                humidityPct: result.humidityPct,
+                altitudeFt: result.elevationFt,
+              );
+            },
           ),
         ),
       );
@@ -2482,6 +2691,12 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
       trailing: _environmentTrailing(),
       child: Column(
         children: [
+          AtmospherePresetPicker(
+            snapshot: _atmosphereSnapshotForPicker(units),
+            onApplyPreset: _applyAtmospherePreset,
+            onSaveAsPreset: _onSaveCurrentAsAtmospherePreset,
+          ),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -2568,6 +2783,22 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
             ],
           ),
           const SizedBox(height: 12),
+          // Litz wind-bracket uncertainty input. Drives the wind-bracket
+          // card in the Output section; setting it to 0 hides the card.
+          TextField(
+            controller: _windUncertaintyCtrl,
+            keyboardType: const TextInputType.numberWithOptions(
+                decimal: true),
+            decoration: InputDecoration(
+              labelText: 'Wind uncertainty (± $windLabel)',
+              helperText:
+                  'How sure are you of the wind speed? Drives the Litz '
+                  'wind-bracket card. Set to 0 to hide.',
+              helperMaxLines: 2,
+              suffixText: windLabel,
+            ),
+          ),
+          const SizedBox(height: 12),
           TextField(
             controller: _latitudeCtrl,
             keyboardType: const TextInputType.numberWithOptions(
@@ -2615,13 +2846,18 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
             style: theme.textTheme.titleMedium,
           ),
           subtitle: Text(
-            'Aerodynamic jump, twist direction, sight scale, '
-            'powder temp sensitivity, zero atmosphere, incline.',
+            'Stability and form factor, aerodynamic jump, twist '
+            'direction, sight scale, powder temp sensitivity, zero '
+            'atmosphere, incline.',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
           children: [
+            // Stability + form factor read-out (free / informational).
+            // Hides cleanly when bullet inputs aren't sufficient yet.
+            _stabilityAndFormFactor(),
+            const SizedBox(height: 12),
             // Twist direction.
             Row(
               children: [
@@ -2932,6 +3168,25 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
               TrajectoryChart(samples: _samples),
             ],
             const SizedBox(height: 16),
+            // Litz wind-bracket card. Hides when uncertainty is 0 /
+            // null. Anchored on the longest range in the ladder so
+            // the bracket envelope is meaningful (long range is
+            // where wind error matters).
+            if (_lastSolvedProjectile != null &&
+                _lastSolvedEnvironment != null &&
+                _lastSolvedShot != null &&
+                _lastSolvedRanges != null &&
+                _lastSolvedWindMph != null &&
+                _lastSolvedWindUncertaintyMph != null)
+              _windBracketCard(
+                projectile: _lastSolvedProjectile!,
+                environment: _lastSolvedEnvironment!,
+                shot: _lastSolvedShot!,
+                rangeYards: _lastSolvedRanges!.last,
+                windMph: _lastSolvedWindMph!,
+                windUncertaintyMph: _lastSolvedWindUncertaintyMph!,
+              ),
+            const SizedBox(height: 16),
             // Per-effect contribution breakdown for the DOPE row the
             // user picks. Default-collapsed because the full solve
             // already answers the everyday question; this is the
@@ -2957,6 +3212,381 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
           ],
         ],
       ),
+    );
+  }
+
+  /// Litz wind-bracket card. Computes the windage hold at three wind
+  /// speeds — `wind − uncertainty`, `wind`, `wind + uncertainty` — and
+  /// renders all three so the shooter can see the +/- envelope of
+  /// their wind hold given how unsure they are of the wind speed. Per
+  /// Litz (*Modern Advancements in Long-Range Shooting* vol. 1, ch. 5
+  /// and *Applied Ballistics* 3rd ed., ch. 11), the shooter dials the
+  /// MID hold; LOW and HIGH are the boundaries the bullet will fall
+  /// within if the wind reading is off. Returns a `SizedBox.shrink()`
+  /// when the bracket service can't produce a result (uncertainty 0,
+  /// solver error, etc.).
+  Widget _windBracketCard({
+    required Projectile projectile,
+    required Environment environment,
+    required ShotInputs shot,
+    required double rangeYards,
+    required double windMph,
+    required double windUncertaintyMph,
+  }) {
+    final theme = Theme.of(context);
+    final result = computeWindBracket(
+      projectile: projectile,
+      environment: environment,
+      shot: shot,
+      rangeYards: rangeYards,
+      windEstimateMph: windMph,
+      windUncertaintyMph: windUncertaintyMph,
+    );
+    if (result == null) return const SizedBox.shrink();
+    final units = context.watch<UnitService>();
+    final windUnit = unitDisplayLabel(units.unitFor(UnitCategory.windSpeed));
+    final rangeUnit = unitDisplayLabel(units.unitFor(UnitCategory.range));
+    String fmtWind(double mph) {
+      final disp = _windFromCanonical(mph, units.unitFor(UnitCategory.windSpeed));
+      return '${disp.toStringAsFixed(1)} $windUnit';
+    }
+
+    String fmtRange(double yd) {
+      final disp = _rangeFromCanonical(yd, units.unitFor(UnitCategory.range));
+      return '${disp.toStringAsFixed(0)} $rangeUnit';
+    }
+
+    String fmtHold(double inches, double yd) {
+      switch (_unit) {
+        case AngleUnit.inches:
+          final disp = units.convertSmallLength(inches);
+          final lbl = unitDisplayLabel(
+              units.unitFor(UnitCategory.smallLength));
+          return '${disp.toStringAsFixed(1)} $lbl';
+        case AngleUnit.moa:
+          if (yd <= 0) return '—';
+          return '${inchesToMoaAtYards(inches, yd).toStringAsFixed(1)} MOA';
+        case AngleUnit.mil:
+          if (yd <= 0) return '—';
+          return '${inchesToMilAtYards(inches, yd).toStringAsFixed(2)} mil';
+      }
+    }
+
+    // Wind-direction "o'clock" hint — converts windFromDegrees in the
+    // shooter-relative frame (0 = behind, 90 = right) to a clock face
+    // (6 = behind, 3 = right, 12 = front, 9 = left). The shooter
+    // visualizes the wind on a clock the way the target visualizes it,
+    // so 0° (wind from behind) reads as "6 o'clock wind".
+    String windClock() {
+      final from = environment.windFromDegrees;
+      var raw = (6 - (from / 30.0).round()) % 12;
+      if (raw < 0) raw += 12;
+      final hour = raw == 0 ? 12 : raw;
+      return "$hour o'clock";
+    }
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.air,
+                    color: theme.colorScheme.primary, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  'Wind bracket · ${fmtRange(rangeYards)}',
+                  style: theme.textTheme.titleMedium,
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Estimated ${fmtWind(result.windMidMph)} @ ${windClock()} '
+              '· ± ${fmtWind(windUncertaintyMph)}',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _windBracketRow(
+                label: 'Low (${fmtWind(result.windLowMph)})',
+                value: fmtHold(result.low.windDriftInches,
+                    result.low.rangeYards),
+                emphasis: false),
+            const SizedBox(height: 6),
+            _windBracketRow(
+                label: 'Mid (${fmtWind(result.windMidMph)})',
+                value: fmtHold(result.mid.windDriftInches,
+                    result.mid.rangeYards),
+                emphasis: true),
+            const SizedBox(height: 6),
+            _windBracketRow(
+                label: 'High (${fmtWind(result.windHighMph)})',
+                value: fmtHold(result.high.windDriftInches,
+                    result.high.rangeYards),
+                emphasis: false),
+            const SizedBox(height: 10),
+            Text(
+              'Hold the mid; the bracket is your +/- bound if you '
+              'misjudge the wind.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Single line in the wind-bracket card: "Low (6 mph) ← 0.55 mil".
+  /// `emphasis = true` for the Mid row gets the primary color.
+  Widget _windBracketRow({
+    required String label,
+    required String value,
+    required bool emphasis,
+  }) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Expanded(
+          flex: 5,
+          child: Text(
+            label,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: emphasis ? FontWeight.w600 : FontWeight.w400,
+              color: emphasis
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.onSurface,
+            ),
+          ),
+        ),
+        Expanded(
+          flex: 4,
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: emphasis ? FontWeight.w700 : FontWeight.w500,
+              fontFeatures: const [FontFeature.tabularFigures()],
+              color: emphasis
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.onSurface,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Stability + form-factor read-out shown inside the Advanced
+  /// section. Free, informational. Hides cleanly when the user
+  /// hasn't entered the inputs needed to compute Sg (length / twist).
+  Widget _stabilityAndFormFactor() {
+    final theme = Theme.of(context);
+    final diameter = double.tryParse(_diameterCtrl.text.trim());
+    final weight = double.tryParse(_weightCtrl.text.trim());
+    final length = double.tryParse(_lengthCtrl.text.trim());
+    final twist = double.tryParse(_twistCtrl.text.trim());
+    final bc = double.tryParse(_bcCtrl.text.trim());
+    final mv = double.tryParse(_muzzleVelCtrl.text.trim());
+    if (diameter == null ||
+        weight == null ||
+        diameter <= 0 ||
+        weight <= 0) {
+      return const SizedBox.shrink();
+    }
+    final projectile = Projectile(
+      diameterIn: diameter,
+      weightGr: weight,
+      bc: bc ?? 0.0,
+      dragModel: _dragModel,
+      lengthIn: length,
+      twistInches: twist,
+    );
+
+    final mvFps = mv ?? 2800;
+    final miller = projectile.millerStability(mvFps);
+    final pejsa = projectile.pejsaStability(mvFps);
+    final i7 = projectile.formFactorI7;
+
+    final hasStability = miller != null && pejsa != null;
+    final hasFormFactor = !i7.isNaN;
+    if (!hasStability && !hasFormFactor) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.flight_takeoff,
+                  size: 16, color: theme.colorScheme.primary),
+              const SizedBox(width: 6),
+              Text(
+                'Stability and form factor',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          if (hasStability) ...[
+            const SizedBox(height: 8),
+            _stabilityRow('Miller Sg', miller),
+            const SizedBox(height: 4),
+            _stabilityRow('Pejsa Sg', pejsa),
+            if (miller < 1.4 || pejsa < 1.4) ...[
+              const SizedBox(height: 6),
+              Text(
+                'Both Sg > 1.4 needed for reliable flight; below that '
+                'the bullet flies at marginal stability and BC degrades.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
+              ),
+            ],
+          ] else ...[
+            const SizedBox(height: 6),
+            Text(
+              'Add bullet length and twist rate to see stability factor.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+          if (hasFormFactor) ...[
+            const SizedBox(height: 10),
+            Tooltip(
+              message:
+                  "Form factor compares this bullet's drag to the G7 "
+                  'reference. Lower is better. <1.0 is more efficient '
+                  'than the reference.',
+              child: _formFactorRow(i7),
+            ),
+          ] else if (_dragModel == DragModel.g7 &&
+              (bc ?? 0) > 0 &&
+              !hasFormFactor) ...[
+            const SizedBox(height: 6),
+          ] else if (_dragModel != DragModel.g7) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Switch to G7 BC to see form factor (i7).',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _stabilityRow(String label, double sg) {
+    final theme = Theme.of(context);
+    final Color color;
+    final IconData icon;
+    final String verdict;
+    if (sg >= 1.5) {
+      color = const Color(0xFF2E7D32); // green
+      icon = Icons.check_circle;
+      verdict = 'Stable';
+    } else if (sg >= 1.0) {
+      color = const Color(0xFFEF6C00); // amber
+      icon = Icons.warning_amber;
+      verdict = 'Marginal';
+    } else {
+      color = theme.colorScheme.error;
+      icon = Icons.error;
+      verdict = 'Unstable';
+    }
+    return Row(
+      children: [
+        SizedBox(
+          width: 110,
+          child: Text(label, style: theme.textTheme.bodyMedium),
+        ),
+        SizedBox(
+          width: 56,
+          child: Text(
+            sg.toStringAsFixed(2),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontFeatures: const [FontFeature.tabularFigures()],
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ),
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 4),
+        Text(
+          verdict,
+          style: theme.textTheme.bodySmall?.copyWith(color: color),
+        ),
+      ],
+    );
+  }
+
+  Widget _formFactorRow(double i7) {
+    final theme = Theme.of(context);
+    final Color color;
+    final IconData icon;
+    final String verdict;
+    if (i7 < 0.95) {
+      color = const Color(0xFF2E7D32);
+      icon = Icons.check_circle;
+      verdict = 'Efficient';
+    } else if (i7 <= 1.05) {
+      color = const Color(0xFFEF6C00);
+      icon = Icons.warning_amber;
+      verdict = 'Average';
+    } else {
+      color = theme.colorScheme.error;
+      icon = Icons.error;
+      verdict = 'High drag';
+    }
+    return Row(
+      children: [
+        SizedBox(
+          width: 110,
+          child: Text(
+            'Form factor (i7)',
+            style: theme.textTheme.bodyMedium,
+          ),
+        ),
+        SizedBox(
+          width: 56,
+          child: Text(
+            i7.toStringAsFixed(3),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontFeatures: const [FontFeature.tabularFigures()],
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ),
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 4),
+        Text(
+          verdict,
+          style: theme.textTheme.bodySmall?.copyWith(color: color),
+        ),
+      ],
     );
   }
 

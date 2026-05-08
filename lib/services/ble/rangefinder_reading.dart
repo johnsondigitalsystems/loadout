@@ -4,12 +4,13 @@
 // WHAT THIS FILE DOES
 // ============================================================================
 // Shared types for every BLE rangefinder adapter LoadOut talks to. We have
-// four brands today:
+// five brands today:
 //
 //   - Sig Sauer KILO BDX (Bluetooth Smart, BDX protocol)
 //   - Bushnell Elite 1 Mile / Forge / Prime / Phantom 2 / Engage
 //   - Vortex Razor HD 4000 (Fury HD AB ballistic version)
 //   - Leica Geovid Pro
+//   - Vectronix Terrapin X (mil/LE-grade laser rangefinder, magnetometer)
 //
 // Rather than each adapter inventing its own reading struct, every adapter
 // emits a [RangefinderReading]. The Range Day distance picker reads the
@@ -28,6 +29,7 @@
 // - lib/services/ble/bushnell_rangefinder_service.dart
 // - lib/services/ble/vortex_rangefinder_service.dart
 // - lib/services/ble/leica_geovid_service.dart
+// - lib/services/ble/vectronix_terrapin_service.dart
 // - lib/screens/devices/devices_screen.dart
 // - lib/screens/range_day/range_day_detail_screen.dart
 
@@ -42,6 +44,8 @@ class RangefinderReading {
     this.signalStrengthRssi,
     this.angleDeg,
     this.inclineCorrectedRangeYd,
+    this.azimuthDeg,
+    this.vendor,
   });
 
   /// Range to target, yards.
@@ -67,9 +71,28 @@ class RangefinderReading {
   /// Pro all do; older Bushnells often don't.
   final double? inclineCorrectedRangeYd;
 
+  /// Optional magnetic azimuth (compass bearing) the device pointed at
+  /// when the laser fired, degrees clockwise from magnetic north,
+  /// 0–360°. Only the Vectronix Terrapin X among the supported
+  /// rangefinders has a built-in magnetometer that publishes this in the
+  /// live frame; for the other adapters this is always null. Consumers
+  /// (Range Day quick-fill) can use it to set the shot azimuth field in
+  /// the same tap that fills the distance.
+  final double? azimuthDeg;
+
+  /// Optional vendor identifier (e.g. `'sig'`, `'bushnell'`, `'vortex'`,
+  /// `'leica'`, `'vectronix'`). Allows downstream consumers to surface
+  /// vendor-specific UI hints (e.g. "compass bearing also available")
+  /// without keeping a separate reverse-lookup table. May be null on
+  /// adapters that haven't been updated to set it.
+  final String? vendor;
+
   /// True when the device included a usable angle field. Convenience for
   /// UIs that want to show an "ABS" badge.
   bool get hasIncline => angleDeg != null;
+
+  /// True when the device included a usable magnetic-azimuth field.
+  bool get hasAzimuth => azimuthDeg != null;
 }
 
 /// Small unit-conversion helpers used by every adapter. Centralized

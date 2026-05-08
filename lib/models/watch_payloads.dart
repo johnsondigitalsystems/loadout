@@ -9,10 +9,11 @@
 // `fromWatchJson()` factory) so the same shape is used in both directions.
 //
 // Public surface:
-//   * `WatchPaths` — string constants for the five reserved bridge paths
-//     (`active_load`, `dope`, `firearm_glance`, `log_shot`, `timer_event`).
-//     The native iOS/Android sides have mirror copies (`WatchPaths.swift`,
-//     `wear/bridge/WatchPaths.kt`); keep all three in sync.
+//   * `WatchPaths` — string constants for the six reserved bridge paths
+//     (`active_load`, `dope`, `firearm_glance`, `log_shot`, `timer_event`,
+//     `shot_capture_sensitivity`). The native iOS/Android sides have mirror
+//     copies (`WatchPaths.swift`, `wear/bridge/WatchPaths.kt`); keep all
+//     three in sync.
 //   * `ShotSource` — string constants describing how the watch detected
 //     a shot (`motion`, `swipe`, `manual`).
 //   * `DopeRow`, `DopeSnapshot` — phone → watch ballistic solution.
@@ -106,6 +107,13 @@ class WatchPaths {
   static const String firearmGlance = 'firearm_glance';
   static const String logShot = 'log_shot';
   static const String timerEvent = 'timer_event';
+
+  /// Phone → watch. Pushes the user's preferred shot-capture sensitivity
+  /// (`'off' | 'low' | 'medium' | 'high'`) so the watch's MotionDetector
+  /// can re-tune its threshold + sustained-peak window without the user
+  /// touching the watch settings sheet. See § 15 in CLAUDE.md and
+  /// `lib/services/watch_settings_service.dart`.
+  static const String shotCaptureSensitivity = 'shot_capture_sensitivity';
 
   const WatchPaths._();
 }

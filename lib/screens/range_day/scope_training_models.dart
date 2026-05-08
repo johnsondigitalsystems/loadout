@@ -8,6 +8,30 @@
 // its own file so the math is unit-testable without dragging in the
 // full-screen widget hierarchy.
 //
+// ============================================================================
+// PRO-GATING CONTRACT
+// ============================================================================
+// The model side of training mode is intentionally Pro-agnostic — pure
+// math has no business looking at `EntitlementNotifier`. The UI panel
+// in `scope_view_screen.dart` is responsible for gating these
+// affordances; the same is true for the moving-target card in
+// `range_day_detail_screen.dart` (already wrapped in
+// `ProGate(feature: 'Moving target lead', ...)`).
+//
+// Pro-gated training affordances (when the panel UI lands):
+//   * AimMode.free toggle — auto-aim stays free (it's the default).
+//   * SkillLevel dropdown — beginner/intermediate/advanced/expert.
+//   * TrainingOverlays.predictedImpact — only meaningful in free-aim
+//     mode, so gating that mode covers it.
+//   * TrainingOverlays.probabilityEllipse — same.
+//   * TrainingOverlays.animation — animated-target playback.
+//   * TrainingOverlays.ambushGuides — leading-edge/center-mass hash
+//     highlights.
+//
+// The convenience getter `TrainingOverlays.requiresPro` says whether a
+// given overlay configuration is Pro-only. If a panel needs to inspect
+// that, prefer the getter so the gating policy stays in one place.
+//
 // What's in here:
 //
 //   * `enum AimMode` — auto-aim vs free-aim toggle state.
@@ -84,6 +108,10 @@ AimMode parseAimMode(String? s) {
 
 String aimModeToString(AimMode m) =>
     m == AimMode.free ? 'free' : 'auto';
+
+/// True iff this aim mode is gated behind Pro. Free-aim drag is a Pro
+/// feature; auto-aim (the default) stays free for everyone.
+bool aimModeRequiresPro(AimMode m) => m == AimMode.free;
 
 /// Skill-level preset for the moving-target timing window. Each level
 /// expresses a `±halfWindowMs` tolerance band around the optimal shot
@@ -200,6 +228,13 @@ class TrainingOverlays {
         ambushGuides: ambushGuides ?? this.ambushGuides,
         animation: animation ?? this.animation,
       );
+
+  /// True iff any of the four training overlays is enabled. Every
+  /// flag flipped on by the user is a Pro-gated affordance, so the
+  /// panel can short-circuit to `ensurePro` before showing the
+  /// related UI.
+  bool get requiresPro =>
+      predictedImpact || probabilityEllipse || ambushGuides || animation;
 
   Map<String, dynamic> toJson() => {
         'predictedImpact': predictedImpact,

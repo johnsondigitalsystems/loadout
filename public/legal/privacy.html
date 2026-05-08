@@ -300,6 +300,18 @@
       We can't read your backup, and we can't recover a lost passphrase. If you forget it, the backup is unrecoverable. Write the passphrase down somewhere safe.
     </p>
 
+    <h3>AI Smart Import (Pro, opt-in per use)</h3>
+    <p>
+      Pro users can opt in to <strong>AI Smart Import</strong> to improve the parse of messy handwriting on photo-imported recipes. The feature is off by default and only fires when you tap an explicit "Improve with AI" button on a single import.
+    </p>
+    <ul>
+      <li>Only the OCR'd text from the specific photo you import is sent. We never see your saved recipes, firearms, batches, brass lots, or any other reloading data.</li>
+      <li>The LoadOut proxy logs only timestamp, a short anonymous identifier, response status, and token counts. Your OCR text is not logged by us.</li>
+      <li>Anthropic does not train on API requests. This is part of their API terms.</li>
+      <li>You can override the hosted proxy by entering your own Anthropic API key in <em>Settings &rarr; AI</em>. When you do, the request goes directly from your device to Anthropic; the LoadOut proxy is not involved. Your key is stored only on this device, in the iOS Keychain or Android Keystore.</li>
+      <li>A monthly cap of 30 imports per Pro user keeps the feature cost-bounded for hosted-mode users.</li>
+    </ul>
+
     <h2>Sub-processors and third parties</h2>
     <p>
       We use the following third-party services to operate LoadOut. Each has its own privacy policy that governs how they handle the data we send them.
@@ -307,6 +319,8 @@
     <ul>
       <li><strong>Google Cloud / Firebase</strong> (Authentication, Hosting, Storage for catalog updates). <a href="https://firebase.google.com/support/privacy">https://firebase.google.com/support/privacy</a></li>
       <li><strong>RevenueCat</strong> (in-app purchase verification and entitlement). <a href="https://www.revenuecat.com/privacy">https://www.revenuecat.com/privacy</a></li>
+      <li><strong>Cloudflare</strong> (the AI Smart Import proxy runs on Cloudflare Workers + KV; only relevant when you opt in to AI Smart Import in hosted mode). <a href="https://www.cloudflare.com/privacypolicy/">https://www.cloudflare.com/privacypolicy/</a></li>
+      <li><strong>Anthropic</strong> (the AI Smart Import feature, when enabled, forwards your OCR'd text to Anthropic's Messages API; either via our proxy or directly using your own API key). <a href="https://www.anthropic.com/legal/privacy">https://www.anthropic.com/legal/privacy</a></li>
       <li><strong>Apple App Store / Google Play</strong> for purchase processing and subscription management. <a href="https://www.apple.com/legal/privacy/">https://www.apple.com/legal/privacy/</a> &middot; <a href="https://play.google.com/about/play-terms/">https://play.google.com/about/play-terms/</a></li>
       <li><strong>Sign-in providers</strong> if you use them: Google, Apple, Microsoft, Yahoo. We request the minimum scope needed to identify you (typically email and name).</li>
     </ul>

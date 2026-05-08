@@ -68,12 +68,18 @@ import 'dart:io';
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../database/database.dart';
 import '../../repositories/component_repository.dart';
 import '../../repositories/recipe_repository.dart';
+import '../../services/ai_smart_import_config.dart';
+import '../../services/ai_smart_import_service.dart';
+import '../../services/entitlement_notifier.dart';
 import '../../services/recipe_parser.dart';
 import '../../widgets/component_field.dart';
+import '../../widgets/pro_gate.dart';
+import '../settings/ai_settings_screen.dart' show kAiSmartImportEnabledPrefKey;
 
 enum _DimensionAxis { coal, cbto }
 
@@ -119,9 +125,27 @@ class _PhotoImportReviewScreenState extends State<PhotoImportReviewScreen> {
   _DimensionAxis _axis = _DimensionAxis.coal;
   bool _busy = false;
 
+  /// Live mirror of the draft fields. Each "Improve with AI" call
+  /// returns a NEW `RecipeDraft` that we merge into this and into the
+  /// text controllers (only for fields the user hasn't edited).
+  late RecipeDraft _draft;
+
+  /// User-flipped master toggle for AI Smart Import. Read once on
+  /// initState; we don't watch it because the screen is short-lived.
+  bool _aiEnabledPref = false;
+
+  /// Whether the user has a BYOK key in secure storage. Read once on
+  /// initState. Determines whether the button can render for
+  /// non-Pro users.
+  bool _byokPresent = false;
+
+  /// True while an `improveDraft` call is in flight.
+  bool _aiBusy = false;
+
   @override
   void initState() {
     super.initState();
+    _draft = widget.draft;
     final d = widget.draft;
     _name = TextEditingController(text: d.recipeName ?? '');
     _caliber = TextEditingController(text: d.caliber?.value ?? '');
@@ -176,6 +200,35 @@ class _PhotoImportReviewScreenState extends State<PhotoImportReviewScreen> {
     );
     _wireEditListener(_primer, _FieldKey.primer, d.primer?.value);
     _wireEditListener(_brass, _FieldKey.brass, d.brass?.value);
+
+    // ignore: discarded_futures
+    _loadAiPrefs();
+  }
+
+  Future<void> _loadAiPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final enabled = prefs.getBool(kAiSmartImportEnabledPrefKey) ?? false;
+      // Best-effort BYOK check. A guest / signed-out user is fine here —
+      // BYOK lives in secure storage independently of Firebase Auth.
+      bool byok = false;
+      if (mounted) {
+        try {
+          final svc = context.read<AiSmartImportService>();
+          byok = (await svc.getByokKey()) != null;
+        } catch (_) {
+          byok = false;
+        }
+      }
+      if (!mounted) return;
+      setState(() {
+        _aiEnabledPref = enabled;
+        _byokPresent = byok;
+      });
+    } catch (_) {
+      // Treat any failure as "AI Smart Import is unavailable on this
+      // device" — the on-device parse + manual edits still work.
+    }
   }
 
   void _wireEditListener(
@@ -280,10 +333,160 @@ class _PhotoImportReviewScreenState extends State<PhotoImportReviewScreen> {
     }
   }
 
+  // ─────────────── AI Smart Import ───────────────
+
+  /// Decide whether to render the "Improve with AI" card. Conditions:
+  ///  - the user has explicitly enabled the master toggle in
+  ///    Settings → AI; AND
+  ///  - either the user is Pro (and the proxy is configured) OR a
+  ///    BYOK key is present in secure storage; AND
+  ///  - at least one parsed field is below the 0.6 confidence
+  ///    threshold (no point bothering AI for a clean parse).
+  bool _shouldOfferAiImprove(BuildContext context) {
+    if (!_aiEnabledPref) return false;
+    final isPro = context.watch<EntitlementNotifier>().isPro;
+    final canHosted = isPro && !AiSmartImportConfig.isPlaceholder;
+    if (!canHosted && !_byokPresent) return false;
+    return _hasLowConfidenceField(_draft);
+  }
+
+  bool _hasLowConfidenceField(RecipeDraft d) {
+    const threshold = 0.6;
+    final fields = <ParsedField<dynamic>?>[
+      d.caliber,
+      d.powder,
+      d.powderChargeGr,
+      d.bullet,
+      d.bulletWeightGr,
+      d.primer,
+      d.brass,
+      d.coalIn,
+      d.cbtoIn,
+    ];
+    for (final f in fields) {
+      if (f != null && f.confidence < threshold) return true;
+    }
+    return false;
+  }
+
+  /// Wire the "Improve with AI" tap. Routes through `ensurePro` for
+  /// non-BYOK users, calls `AiSmartImportService.improveDraft`, then
+  /// merges any field the user has NOT manually edited.
+  Future<void> _improveWithAi() async {
+    if (_aiBusy) return;
+
+    // Pro gate. BYOK users skip this — having a key is the unlock.
+    if (!_byokPresent) {
+      if (!await ensurePro(context)) return;
+      if (!mounted) return;
+    }
+
+    final svc = context.read<AiSmartImportService>();
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _aiBusy = true);
+    try {
+      final improved = await svc.improveDraft(
+        ocrText: widget.ocrText,
+        initialDraft: _draft,
+      );
+      if (!mounted) return;
+      final changedCount = _applyImprovedDraft(improved);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            changedCount == 0
+                ? 'AI didn\'t find any improvements.'
+                : 'AI improved $changedCount '
+                    'field${changedCount == 1 ? '' : 's'}.',
+          ),
+        ),
+      );
+    } on ProRequiredException {
+      if (!mounted) return;
+      // The Pro gate already ran above; this would only fire if the
+      // user dismissed the paywall mid-flow. Surface a quiet snackbar
+      // rather than re-pushing the paywall.
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Pro required to use AI Smart Import.')),
+      );
+    } on SmartImportNotConfiguredException catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    } on SmartImportException catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text('AI Smart Import failed: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _aiBusy = false);
+    }
+  }
+
+  /// Apply [improved] to the form. ONLY fields the user hasn't edited
+  /// are overwritten — anything in `_editedFields` is preserved
+  /// verbatim. Returns the number of fields actually changed in the
+  /// form (so the caller can surface a friendly "improved N fields"
+  /// snackbar).
+  int _applyImprovedDraft(RecipeDraft improved) {
+    var changed = 0;
+
+    void apply(_FieldKey key, TextEditingController c, String? next) {
+      if (next == null) return;
+      if (_editedFields.contains(key)) return;
+      if (c.text == next) return;
+      c.text = next;
+      changed++;
+    }
+
+    apply(_FieldKey.caliber, _caliber, improved.caliber?.value);
+    apply(_FieldKey.powder, _powder, improved.powder?.value);
+    apply(
+      _FieldKey.powderCharge,
+      _powderCharge,
+      improved.powderChargeGr == null
+          ? null
+          : _formatNum(improved.powderChargeGr!.value),
+    );
+    apply(_FieldKey.bullet, _bullet, improved.bullet?.value);
+    apply(
+      _FieldKey.bulletWeight,
+      _bulletWeight,
+      improved.bulletWeightGr == null
+          ? null
+          : _formatNum(improved.bulletWeightGr!.value),
+    );
+    apply(_FieldKey.primer, _primer, improved.primer?.value);
+    apply(_FieldKey.brass, _brass, improved.brass?.value);
+
+    // Update the dimension field too, but only if the AI improved the
+    // currently-selected axis. Switching axes here would be confusing.
+    if (_axis == _DimensionAxis.coal && improved.coalIn != null) {
+      final next = _formatNum(improved.coalIn!.value);
+      if (_dimension.text != next) {
+        _dimension.text = next;
+        changed++;
+      }
+    } else if (_axis == _DimensionAxis.cbto && improved.cbtoIn != null) {
+      final next = _formatNum(improved.cbtoIn!.value);
+      if (_dimension.text != next) {
+        _dimension.text = next;
+        changed++;
+      }
+    }
+
+    setState(() {
+      _draft = improved;
+    });
+    return changed;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final draft = widget.draft;
+    final draft = _draft;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Review imported recipe'),
@@ -328,6 +531,14 @@ class _PhotoImportReviewScreenState extends State<PhotoImportReviewScreen> {
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
+              if (_shouldOfferAiImprove(context)) ...[
+                const SizedBox(height: 12),
+                _ImproveWithAiCard(
+                  byok: _byokPresent,
+                  busy: _aiBusy,
+                  onImprove: _improveWithAi,
+                ),
+              ],
               const SizedBox(height: 16),
               TextFormField(
                 controller: _name,
@@ -431,7 +642,7 @@ class _PhotoImportReviewScreenState extends State<PhotoImportReviewScreen> {
                 onSelectionChanged: (s) {
                   setState(() {
                     _axis = s.first;
-                    final dr = widget.draft;
+                    final dr = _draft;
                     _dimension.text = _axis == _DimensionAxis.coal
                         ? (dr.coalIn == null
                             ? ''
@@ -456,8 +667,8 @@ class _PhotoImportReviewScreenState extends State<PhotoImportReviewScreen> {
               ),
               _ConfidenceCaption(
                 parsed: _axis == _DimensionAxis.coal
-                    ? widget.draft.coalIn
-                    : widget.draft.cbtoIn,
+                    ? _draft.coalIn
+                    : _draft.cbtoIn,
                 edited: false,
               ),
               const SizedBox(height: 12),
@@ -559,6 +770,56 @@ enum _FieldKey {
   bulletWeight,
   primer,
   brass,
+}
+
+/// "Improve with AI" affordance. Renders only when the on-device
+/// parser produced at least one low-confidence field AND the user has
+/// opted in via Settings → AI. Subtitle copy differs in BYOK vs
+/// hosted mode so the user knows where the request will route.
+class _ImproveWithAiCard extends StatelessWidget {
+  const _ImproveWithAiCard({
+    required this.byok,
+    required this.busy,
+    required this.onImprove,
+  });
+
+  final bool byok;
+  final bool busy;
+  final Future<void> Function() onImprove;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final subtitle = byok
+        ? 'Use your own Anthropic key to improve the parse. Unlimited.'
+        : 'Send the OCR\'d text to LoadOut\'s AI proxy. We don\'t log it. '
+            'Counts against your '
+            '${AiSmartImportConfig.monthlyCap} imports/month.';
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: theme.colorScheme.outlineVariant),
+      ),
+      child: ListTile(
+        leading: Icon(
+          Icons.auto_fix_high_outlined,
+          color: theme.colorScheme.primary,
+        ),
+        title: const Text('Improve with AI'),
+        subtitle: Text(subtitle),
+        trailing: busy
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.chevron_right),
+        // ignore: discarded_futures
+        onTap: busy ? null : onImprove,
+      ),
+    );
+  }
 }
 
 /// Small privacy-reassurance row that appears on the review screen.

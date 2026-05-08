@@ -23,7 +23,7 @@ It catalogs every load, firearm, brass lot, and range-day session
 without sending your data off the device — then layers a 6-DOF
 ballistic solver, 290+ scope reticles, 2,500+ factory ammo entries,
 real Hornady 4DOF measured drag curves, and Bluetooth integrations
-with Kestrel, Garmin Xero, and four major rangefinders on top."
+with Kestrel, Garmin Xero, and every major rangefinder on top."
 
 ## 2. The brand frame
 
@@ -120,10 +120,15 @@ exist; we don't bend product decisions around them.
 
 ### Primary competitor — Strelok / Ballistic Calculator 2026
 
-The historical Strelok ballistic calculator was discontinued; its
-replacement on Google Play is `com.ballistic.calculator.strelok`,
-listed as "Ballistic Calculator 2026" with 100K+ downloads. **Same
-team, same engine, modern packaging.** Their claim to fame:
+The historical Strelok ballistic calculator was discontinued; the
+nearest active replacement on Google Play is
+`com.ballistic.calculator.strelok`, listed as "Ballistic Calculator
+2026" with 100K+ downloads. **Caveat: BC2026 is published by
+"Educational apps LLC", not by Strelok's original developer (Igor
+Borisov).** The "same engine, modern packaging" framing is folklore
+that hasn't been independently confirmed — see
+`marketing/competitive_audit.md` for citation discussion. Their
+claim to fame:
 
 - **~4,000 cartridge / factory-load library**
 - **~3,000 scope reticle library** with hold-over visualization
@@ -141,7 +146,7 @@ offer, no lifetime.**
 |---|---|---|
 | Ballistics calculator | Same 6-DOF solver + hit probability + post-shot correction + group stats | "We do the math AND tell you why your shot missed." |
 | 4,000 cartridges | 200+ cartridges + **2,500+ factory ammo SKUs** | "Pick your factory ammo by the box label." |
-| 3,000 reticles | 290 reticles + **Scope View Pro** with what-if probability rings + tap-a-hash callouts | "Their reticle viewer is static. Ours shows you where your shot will land." |
+| 3,000 reticles | 258 reticles + **Scope View Pro** with what-if probability rings + tap-a-hash callouts | "Their reticle viewer is static. Ours shows you where your shot will land." |
 | Strelok loads on Android only | iOS + Android + macOS + web + Apple Watch + Wear OS | "Take it from the bench to the bag to the wrist." |
 | Calculator-only | **Recipe management, brass lifecycle, batch tracking, lot tracking, range-day workspace** | "Strelok stopped at the calculator. We give you the workbench." |
 | Russian-origin (sensitive post-2022) | US-based (Johnson Digital Systems) | Subtle in copy. Don't overplay. |
@@ -183,7 +188,7 @@ Group features by user job. Use these headings in landing-page copy.
 
 ### Catalog of components and reference data
 
-- **2,500+ factory ammo SKUs** with published MV + G1 + G7 BC
+- **4,100+ factory ammo SKUs** with published MV + G1 / G7 BC (92.6% have G1 BC, 17.6% have G7 BC; expanded to parity with Strelok 2026-05-08)
 - **300+ measured Hornady 4DOF custom drag curves** (real Cd-vs-Mach
   data, not derived)
 - **200+ cartridges with SAAMI specs** (case dimensions, neck angle,
@@ -192,7 +197,7 @@ Group features by user job. Use these headings in landing-page copy.
   S&B, Trijicon, Burris, Bushnell, Sig, Athlon, Steiner, Maven,
   Kahles, Swarovski, Zeiss, EOTech, Aimpoint, Holosun, Primary Arms,
   US Optics, Riton, Hawke)
-- **290 reticles with subtension data** + hold-over visualization
+- **258 reticles with subtension data** + hold-over visualization
 - **55 target shapes** (paper, cardboard, steel, reactive, game
   silhouettes from Caldwell, Birchwood Casey, AR500, Action Target)
 - 7 reloading workflow templates (PRS, F-Class, Bench Rest, 3-Gun,
@@ -284,6 +289,10 @@ Group features by user job. Use these headings in landing-page copy.
 - **Sig Sauer KILO BDX**
 - **Vortex Razor HD 4000 / Fury HD AB**
 - **Leica Geovid Pro**
+- **Vectronix Terrapin X** — mil/LE-grade laser rangefinder,
+  publishes LOS distance + incline + magnetic azimuth in one
+  frame; the only rangefinder we support that prefills the shot
+  azimuth field for Coriolis math
 
 ### Cloud sync (Pro)
 
@@ -368,14 +377,67 @@ they don't sell."
 
 ### What goes in the Pro pitch
 
-Six clear feature buckets per the proposal:
+Six clear feature buckets, in this order. The in-app paywall
+(`lib/screens/paywall/paywall_screen.dart` `_FeaturesShowcase`) renders
+them as bordered benefit cards, top-to-bottom, in the same order:
 
-1. **Cross-device cloud sync** (iCloud / Drive / OneDrive)
-2. **Real Hornady 4DOF + custom drag curves** (300+ measured)
-3. **Bluetooth devices** (Kestrel + 4 rangefinders + Garmin Xero)
-4. **Scope View Pro + free-aim + moving-target training**
-5. **Live weather + GPS altitude pull**
-6. **AI Reloading Assistant** (v1.1)
+1. **Cross-device cloud sync** — iCloud / Drive / OneDrive. Encrypted
+   on device with the user's passphrase. We never see the blob.
+2. **Real Hornady 4DOF + custom drag curves** — 300+ measured
+   Cd-vs-Mach curves from Hornady's Doppler radar dataset. More
+   accurate than G7 BC alone in the transonic region.
+3. **Bluetooth devices** — Kestrel 5xxx Link, Garmin Xero (.fit),
+   Bushnell BDX, Sig KILO, Vortex Razor, Leica Geovid, **and
+   Vectronix Terrapin X**. Live data, no manual entry.
+4. **Scope View Pro + training mode** — reticle hold-over
+   visualization, free-aim drag with predicted impact, skill-level
+   timing for movers, animated targets with ambush guides.
+5. **Live weather + GPS altitude** — pull station pressure,
+   temperature, humidity, wind, and altitude from the user's
+   location in one tap. Auto-fills the firing solution.
+6. **AI Smart Import** — reads messy handwriting from reloading
+   notebook photos and turns it into structured recipes.
+   **Reading-only — no chat, no training.** This framing is
+   load-bearing: our user research says reloaders are skeptical of
+   AI assistants, so we explicitly position Smart Import as a
+   one-way reading tool, not a conversational AI.
+
+The **AI Reloading Assistant** stays out of this pitch on purpose.
+It's still Coming Soon at v1.0 and the chat framing trips the
+"AI-powered" allergy. Mention it in roadmap copy, but don't lead
+with it.
+
+### Free vs Pro feature pricing table
+
+Authoritative list of which features land in which tier. When the
+in-app `ProGate` set drifts from this table the pitch goes wrong;
+keep them aligned.
+
+| Feature | Free | Pro |
+|---|---|---|
+| Recipe management (CRUD, beginner mode, custom fields *limited*) | yes | unlimited custom fields |
+| Firearm management | yes | yes |
+| Brass-lot tracking | yes | yes |
+| Batch checklist + process steps | yes | yes |
+| Glossary, SAAMI catalog, cartridge & chamber drawings | yes | yes |
+| Photo OCR (on-device ML Kit, Tier 1 — printed text and clean handwriting) | yes | yes |
+| Smart Import (CSV / Excel wizard) | yes | yes |
+| Manual one-shot encrypted backup (export the JSON, upload yourself) | yes | yes |
+| Local JSON export | yes | yes |
+| Apple Watch / Wear OS companion apps | yes | yes |
+| Ballistics calculator core (G1/G7 + standard solver) | yes | yes |
+| Range Day workspace (shot logging, hit probability, group stats) | yes | yes |
+| Sensors-only environment capture (cant, azimuth, incline) | yes | — |
+| **Cross-device cloud sync** (iCloud / Drive / OneDrive, automatic) | — | **yes** |
+| **Hornady 4DOF custom drag curves** (300+ measured Cd-vs-Mach) | — | **yes** |
+| **Bluetooth devices** (Kestrel, Garmin Xero, rangefinders) | — | **yes** |
+| **Scope View Pro + training mode** (free-aim, skill timing, animated mover, ambush guides) | — | **yes** |
+| **Moving target lead computation** | — | **yes** |
+| **Live weather pull** (station pressure, temp, humidity, wind) | — | **yes** |
+| **GPS-derived altitude** for the firing solution | — | **yes** |
+| **AI Smart Import** (translation tool — improves messy handwriting on photo import; opt-in per use; toggle off by default) | — | **yes** |
+| Load development (charge ladder, seating ladder, node analysis) | — | **yes** |
+| AI Reloading Assistant chat (v1.1, Coming Soon) | — | **yes** when shipped |
 
 ## 8. Decisions log (the "why")
 
@@ -392,19 +454,59 @@ behind a positioning choice, it's here.
 - **2026-05-06 — Reticle library 290 entries + Scope View Pro.** Surpasses any reloading-app competitor; matches Strelok's reticle scope without copying their UX.
 - **2026-05-06 — Cloud Sync (Pro) shipped.** Continuous, end-to-end encrypted, multi-provider (iCloud + Drive + OneDrive). Auto-syncs on save.
 - **2026-05-05 — Range Day workspace shipped.** 6th tab, 55 targets, shot tracking, hit probability, post-shot correction, moving target lead, group stats.
+- **2026-05-08 — AI Smart Import (Pro, opt-in per use) shipped.** Hybrid hosted-key + BYOK model. Hosted Cloudflare Worker proxy with per-user 20-imports/month cap; Pro users can override with their own Anthropic key (BYOK) for unlimited use. Scoped narrowly to "improve a low-confidence on-device parse" — never sends saved recipes, firearms, or anything else. Toggle is off by default. Reloader-skeptic framing throughout: "translates messy handwriting into structured recipe fields, nothing more." Operator deploy is a single `wrangler deploy` step (see `cloud_worker/anthropic-proxy/README.md`); the client gracefully no-ops while the Worker is undeployed.
 - **2026-05-05 — Smart Import (CSV + Excel).** Wizard with auto-mapping, ~100% accuracy on test workloads.
-- **2026-05-05 — Photo OCR Tier 1 (on-device).** Free, privacy-aligned. Tier 2 (AI Smart Import for messier handwriting) is Pro and depends on AI proxy backend (v1.1).
+- **2026-05-05 — Photo OCR Tier 1 (on-device).** Free, privacy-aligned. Tier 2 (AI Smart Import for messier handwriting) is Pro — superseded by the 2026-05-08 entry above.
 - **2026-05-04 — Multi-language scaffolding (DE/ES/FR/IT/RU).** ARB infrastructure + ~30 strings migrated. Native-speaker review pre-launch.
 - **2026-05-04 — Beginner Mode toggle.** Recipe form opens in Basic detail level. Quick Add becomes the default new-recipe path. Aimed squarely at the conversion personas.
 - **2026-05-03 — 6-DOF solver expanded.** Coriolis + spin drift + aero jump + Miller stability + cant + sight scale + powder temp sensitivity + zero atmosphere + incline angle. Surpasses Strelok in physical-model breadth (we have aero jump, sight scale, zero atmosphere; they don't surface these explicitly).
 
-## 9. What's coming (don't market hard yet, but mention)
+## 9. Pro features shipped (lead with these)
+
+These are the surfaces that already exist behind a `ProGate` /
+`ensurePro` in the app and have been tested in private builds.
+Marketing copy should lead with them.
+
+- **Cross-device Cloud Sync** — iCloud / Google Drive / OneDrive,
+  encrypted on device with user passphrase, automatic on every save.
+- **Real Hornady 4DOF custom drag curves** — 300 measured Cd-vs-Mach
+  curves from Hornady's Doppler radar dataset, gated behind Pro on
+  the ballistics screen and the per-bullet "Custom drag available"
+  badge. Free users keep G1 / G7 with the bullet's published BC.
+- **Bluetooth devices** — Kestrel 5xxx Link, Garmin Xero (.fit
+  parser), Bushnell BDX, Sig KILO, Vortex Razor, Leica Geovid,
+  Vectronix Terrapin X. Every major rangefinder.
+- **Scope View Pro + training mode** — reticle visualization with
+  free-aim drag, skill-level timing window for movers, animated
+  target playback, leading-edge / center-mass ambush guides.
+- **Live weather pull** — station pressure, temperature, humidity,
+  wind from the user's location via open-meteo. Plus the GPS
+  altitude → station-pressure derivation that powers the firing
+  solution. Range Day's "Capture environment from sensors" still
+  pulls cant / heading / incline for free users — only the GPS
+  altitude piece is Pro.
+- **AI Smart Import** — translates messy handwriting into structured
+  recipe fields, nothing more. Triggers only when the on-device
+  parser is uncertain AND the user explicitly taps "Improve with AI"
+  on a single import; toggle is **off by default** in Settings →
+  AI. Hybrid hosted-key + BYOK model: hosted Cloudflare Worker
+  proxy with a 20-imports-per-month cap; Pro users can override
+  with their own Anthropic key (BYOK) for unlimited use. **Reading
+  only** — only the OCR'd text from the imported photo is sent.
+  No chat, no training, no exfil of saved recipes / firearms /
+  brass lots / anything else. Reloaders are skeptical of AI
+  assistants in their workflow; framing this as a "translation
+  tool" instead of an "assistant" is what makes it land.
+- **Load development** — charge ladders, seating ladders, automatic
+  node analysis.
+- **Cartridge & Chamber drawings, Custom fields, Future Pro
+  features included** — evergreen.
+
+## 10. What's coming (don't market hard yet)
 
 - **AI Reloading Assistant** (v1.1) — Anthropic-powered chat trained
   on reloading data. Coming Soon screen + "Notify me" button live
-  in the app today.
-- **AI Smart Import** (v1.1, Pro) — uses the AI assistant to parse
-  messier handwriting. Frontend stub today.
+  in the app today. Stays out of the headline pitch.
 - **Native-speaker translation review** — 5 ARBs flagged
   `// TRANSLATOR-REVIEW`; pre-launch task.
 - **Multi-page notebook OCR Tier 3** improvements — automatic page-
@@ -418,7 +520,7 @@ behind a positioning choice, it's here.
 
 These are signaling-only in marketing — they're roadmap, not promises.
 
-## 10. Marketing channels + content angles
+## 11. Marketing channels + content angles
 
 ### Forums / communities (priority order)
 
@@ -480,10 +582,10 @@ These are signaling-only in marketing — they're roadmap, not promises.
   watch glanceable DOPE, photo OCR review screen, smart CSV import,
   privacy posture statement.
 
-## 11. Brand voice + style guide for marketing copy
+## 12. Brand voice + style guide for marketing copy
 
 - **Direct, second-person.** "You" not "the user."
-- **Specific numbers over adjectives.** "290 reticles" not "many
+- **Specific numbers over adjectives.** "258 reticles" not "many
   reticles"; "0.10 mil agreement with Hornady's measured curve" not
   "highly accurate"; "$20 cheaper than Strelok" not "great value."
 - **Show the math when it earns trust.** "We use Fritsch-Carlson
@@ -501,7 +603,7 @@ These are signaling-only in marketing — they're roadmap, not promises.
   loading. Never start at maximum charge." — same wording as the
   in-app disclaimer.
 
-## 12. What NOT to claim (compliance + safety)
+## 13. What NOT to claim (compliance + safety)
 
 - **Never publish specific load data** as marketing content without
   the verify-against-manual disclaimer adjacent.
@@ -522,13 +624,13 @@ These are signaling-only in marketing — they're roadmap, not promises.
   drift, ICAO atmosphere). Honesty here builds trust with the
   technical audience.
 
-## 13. Useful stats + numbers for copy
+## 14. Useful stats + numbers for copy
 
 Cite these directly. They're current as of 2026-05-08:
 
-- **2,500+ factory ammo SKUs** across 37 manufacturers
+- **4,100+ factory ammo SKUs** across 37+ manufacturers (parity with Strelok's ~4,000 factory-load library reached 2026-05-08)
 - **300+ measured Hornady 4DOF curves** (real Cd-vs-Mach radar data)
-- **290 reticles** across 24 brands
+- **258 reticles** across 24 brands
 - **156 optics** across 21 brands
 - **200+ cartridges** with full SAAMI specs
 - **55 target shapes** seeded
@@ -546,7 +648,7 @@ Cite these directly. They're current as of 2026-05-08:
 - **End-to-end encrypted Cloud Sync** — no LoadOut-operated backend
   receives reloading data
 
-## 14. Standard objections + responses
+## 15. Standard objections + responses
 
 | Objection | Response |
 |---|---|
@@ -557,7 +659,7 @@ Cite these directly. They're current as of 2026-05-08:
 | "What if you go out of business?" | "Your data is local SQLite + JSON export at any time. If we shut down tomorrow, you keep everything. We can't lock you in because we don't host you." |
 | "Why should I pay for a subscription on top of the lifetime?" | "You don't have to. The free tier covers recipe management, the ballistic calculator, range day basics, photo OCR import, watch / wear features, and the entire catalog. Pro adds Bluetooth Kestrel + rangefinders, real Hornady 4DOF curves, Cloud Sync, and the AI assistant when it ships. The lifetime is for users who want all of that forever." |
 
-## 15. Hard truths we're up-front about
+## 16. Hard truths we're up-front about
 
 These come up in long-form / forum threads. Don't dodge them.
 

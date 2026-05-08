@@ -109,6 +109,14 @@ def fetch_ammunition_urls() -> list[str]:
             continue
         if not rest:
             continue
+        # Skip international variants — they duplicate the regular SKU
+        # but with `muzzlevelocity` in m/s instead of fps, which would
+        # produce nonsense rows like "30-30 @ 770 fps".
+        if "(international)" in u.lower() or "-international" in u.lower():
+            continue
+        # Skip Custom International category pages too.
+        if "/custom-international" in u.lower():
+            continue
         out.append(u)
     return sorted(set(out))
 

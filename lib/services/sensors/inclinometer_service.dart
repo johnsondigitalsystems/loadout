@@ -83,6 +83,23 @@ class InclinometerService extends ChangeNotifier {
 
   StreamSubscription<AccelerometerEvent>? _sub;
 
+  /// Throttle floor for `notifyListeners()`. See `CantService` for the
+  /// full rationale — `SensorInterval.uiInterval` is ~60 Hz on iOS,
+  /// and three sensor services × 60 Hz = ~180 widget rebuilds/sec
+  /// trips the rendering layer's `parentDataDirty` semantics
+  /// assertion. 10 Hz is far below the perceptual rate for an
+  /// incline readout.
+  static const Duration _notifyMinInterval = Duration(milliseconds: 100);
+  DateTime? _lastNotifyAt;
+
+  void _notifyThrottled() {
+    final now = DateTime.now();
+    final last = _lastNotifyAt;
+    if (last != null && now.difference(last) < _notifyMinInterval) return;
+    _lastNotifyAt = now;
+    notifyListeners();
+  }
+
   /// Smoothed absolute pitch angle of the phone (degrees). Null until
   /// the first sample has arrived.
   double? _smoothedDeg;
@@ -191,11 +208,15 @@ class InclinometerService extends ChangeNotifier {
 
     final prev = _smoothedDeg;
     if (prev == null) {
+      // Force-notify on the first sample so listeners see "available"
+      // immediately; throttle the steady-state stream after that.
       _smoothedDeg = pitchDeg;
-    } else {
-      _smoothedDeg = prev + _emaAlpha * (pitchDeg - prev);
+      _lastNotifyAt = DateTime.now();
+      notifyListeners();
+      return;
     }
-    notifyListeners();
+    _smoothedDeg = prev + _emaAlpha * (pitchDeg - prev);
+    _notifyThrottled();
   }
 
   @override

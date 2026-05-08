@@ -9,10 +9,20 @@
 // magnitude in g, and fires a candidate "shot" event when the
 // magnitude stays above `thresholdG` for at least 50 ms.
 //
+// The threshold + sustained-peak window are driven by a four-way
+// "shot-capture sensitivity" preference (off / low / medium / high)
+// that the phone pushes via the `shot_capture_sensitivity` Data
+// Layer path. The user can also tune the legacy continuous slider
+// inside the Stage Log settings sheet, but the phone setting always
+// wins on receipt.
+//
 // Public surface (Compose-observable state via `mutableStateOf`):
-//   * `thresholdG: Double` — user-adjustable via Stage Log settings
-//     (3.0..10.0 g, default 5.0). Persists to `SharedPreferences`
-//     under `wear_motion_prefs.thresholdG`.
+//   * `sensitivity: ShotCaptureSensitivity` — current preset. Persists
+//     to `SharedPreferences` under
+//     `wear_motion_prefs.shot_capture_sensitivity`. Default `MEDIUM`.
+//   * `thresholdG: Double` — derived from the preset (or set by the
+//     legacy slider). Persists under `wear_motion_prefs.thresholdG`.
+//     Range 3.0..10.0 g, default 5.0.
 //   * `pendingShotPeakG: Double?` — non-null after a candidate is
 //     detected. The Stage Log composable shows a 5-second confirm
 //     prompt when this changes.
@@ -23,6 +33,9 @@
 //     the lifecycle and consume candidates.
 //   * `fun updateThreshold(value: Double)` — clamps to [3.0, 10.0]
 //     before persisting.
+//   * `fun applySensitivity(wireValue: String)` — phone-bridge entry
+//     point. Looks up the preset, updates threshold + sustained-peak
+//     window, and pauses the accelerometer entirely on `OFF`.
 //
 // ============================================================================
 // WHY IT EXISTS IN THE ARCHITECTURE
@@ -131,15 +144,52 @@ import kotlin.math.sqrt
  * persistence beyond the watch's own RAM (and the user's threshold
  * preference in SharedPreferences). See CLAUDE.md §15.
  */
+/**
+ * Four-way preset describing how aggressively the watch listens for
+ * shot impulses. Mirrors `ShotCaptureSensitivity` on the phone side
+ * (`lib/services/watch_settings_service.dart`) and on the watchOS
+ * sibling (`MotionDetector.swift`). Wire form is the lowercased name.
+ */
+enum class ShotCaptureSensitivity(val wire: String) {
+    OFF("off"),
+    LOW("low"),
+    MEDIUM("medium"),
+    HIGH("high");
+
+    /** Threshold (g) for the detector. Null when motion is disabled. */
+    val thresholdG: Double?
+        get() = when (this) {
+            OFF -> null
+            LOW -> 8.0
+            MEDIUM -> 5.0
+            HIGH -> 3.0
+        }
+
+    /** Sustained-peak duration (ms). Null when motion is disabled. */
+    val sustainedPeakMs: Long?
+        get() = when (this) {
+            OFF -> null
+            LOW -> 80L
+            MEDIUM -> 50L
+            HIGH -> 30L
+        }
+
+    companion object {
+        fun fromWire(raw: String?): ShotCaptureSensitivity? =
+            values().firstOrNull { it.wire == raw }
+    }
+}
+
 class MotionDetector(private val context: Context) : ViewModel(), SensorEventListener {
 
     companion object {
         private const val TAG = "MotionDetector"
         private const val PREFS_KEY = "wear_motion_prefs"
         private const val PREF_THRESHOLD = "thresholdG"
+        private const val PREF_SENSITIVITY = "shot_capture_sensitivity"
         private const val SAMPLE_INTERVAL_US = 20_000  // ~50 Hz
         private const val SETTLE_MS = 400L
-        private const val MIN_PEAK_MS = 50L
+        private const val DEFAULT_MIN_PEAK_MS = 50L
     }
 
     private val prefs = context.getSharedPreferences(PREFS_KEY, Context.MODE_PRIVATE)
@@ -150,6 +200,20 @@ class MotionDetector(private val context: Context) : ViewModel(), SensorEventLis
         prefs.getFloat(PREF_THRESHOLD, 5.0f).toDouble()
     )
         private set
+
+    /**
+     * Currently-selected sensitivity preset. Restored from
+     * SharedPreferences on construction so the watch keeps the user's
+     * choice across reboots even before the next phone push lands.
+     * Default `MEDIUM` matches the phone-side default.
+     */
+    var sensitivity by mutableStateOf(
+        ShotCaptureSensitivity.fromWire(prefs.getString(PREF_SENSITIVITY, null))
+            ?: ShotCaptureSensitivity.MEDIUM
+    )
+        private set
+
+    private var minPeakMs: Long = sensitivity.sustainedPeakMs ?: DEFAULT_MIN_PEAK_MS
 
     var pendingShotPeakG by mutableStateOf<Double?>(null)
         private set
@@ -169,8 +233,34 @@ class MotionDetector(private val context: Context) : ViewModel(), SensorEventLis
         prefs.edit().putFloat(PREF_THRESHOLD, thresholdG.toFloat()).apply()
     }
 
+    /**
+     * Phone-bridge entry point. Decodes the wire string, persists it,
+     * and re-tunes the threshold + sustained-peak window. Pauses the
+     * accelerometer entirely when the user picks `OFF` so battery use
+     * matches the user's expectation.
+     *
+     * Returns the resolved preset so callers can chain UI updates
+     * (e.g. flipping the legacy `motionEnabled` toggle).
+     */
+    fun applySensitivity(wireValue: String): ShotCaptureSensitivity? {
+        val preset = ShotCaptureSensitivity.fromWire(wireValue) ?: return null
+        sensitivity = preset
+        prefs.edit().putString(PREF_SENSITIVITY, preset.wire).apply()
+        if (preset == ShotCaptureSensitivity.OFF) {
+            stop()
+            return preset
+        }
+        preset.thresholdG?.let {
+            thresholdG = it
+            prefs.edit().putFloat(PREF_THRESHOLD, it.toFloat()).apply()
+        }
+        preset.sustainedPeakMs?.let { minPeakMs = it }
+        return preset
+    }
+
     fun start() {
         if (isRunning) return
+        if (sensitivity == ShotCaptureSensitivity.OFF) return
         val sm = sensorManager ?: return
         val sensor = sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) ?: return
         sm.registerListener(this, sensor, SAMPLE_INTERVAL_US)
@@ -211,7 +301,7 @@ class MotionDetector(private val context: Context) : ViewModel(), SensorEventLis
             if (aboveSinceMs == 0L) aboveSinceMs = System.currentTimeMillis()
             currentPeak = maxOf(currentPeak, magG)
             val held = System.currentTimeMillis() - aboveSinceMs
-            if (held >= MIN_PEAK_MS) {
+            if (held >= minPeakMs) {
                 fireCandidate(currentPeak)
             }
         } else {
