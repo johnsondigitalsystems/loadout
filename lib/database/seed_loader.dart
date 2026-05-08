@@ -720,6 +720,19 @@ class SeedLoader {
     final root = await _readJsonObject('drag_curves/curves.json');
     final list = (root['curves'] as List<dynamic>? ?? const <dynamic>[]);
     if (list.isEmpty) return;
+
+    // Dedupe by the table's UNIQUE-constraint signature
+    // (manufacturer, line, weight_gr, diameter_in) BEFORE the insert
+    // batch. The Hornady 4DOF scrape is the authoritative source today
+    // and contains 9 signature collisions (most notably 20 entries
+    // labeled "Custom/Custom/106.0/0.243" — different test bullets
+    // submitted by different users in Hornady's DB but indistinguishable
+    // at our column granularity). Without dedupe, the batch insert
+    // fails partway through with SqliteException(2067) "UNIQUE
+    // constraint failed", crashing the app at first launch. We keep
+    // the first occurrence per signature; the agent that re-runs the
+    // scrape can refine the JSON later if needed.
+    final seen = <(String, String, double, double)>{};
     final batch = <DragCurvesCompanion>[];
     for (final entry in list) {
       final m = entry as Map<String, dynamic>;
@@ -737,16 +750,28 @@ class SeedLoader {
           );
         }
       }
+      final manufacturer = m['manufacturer'] as String;
+      final line = m['line'] as String;
+      final weightGr = (m['weight_gr'] as num).toDouble();
+      final diameterIn = (m['diameter_in'] as num).toDouble();
+      final sig = (manufacturer, line, weightGr, diameterIn);
+      if (!seen.add(sig)) continue; // skip duplicate signature
       batch.add(DragCurvesCompanion.insert(
-        manufacturer: m['manufacturer'] as String,
-        line: m['line'] as String,
-        weightGr: (m['weight_gr'] as num).toDouble(),
-        diameterIn: (m['diameter_in'] as num).toDouble(),
+        manufacturer: manufacturer,
+        line: line,
+        weightGr: weightGr,
+        diameterIn: diameterIn,
         datapointsJson: json.encode(datapoints),
         source: Value(m['source'] as String?),
         notes: Value(m['notes'] as String?),
       ));
     }
-    await db.batch((b) => b.insertAll(db.dragCurves, batch));
+    // Belt-and-suspenders: also use insertOrIgnore so a future
+    // double-seed (re-run via SeedUpdater after a remote update) is a
+    // no-op rather than a crash. The first run's rows already exist;
+    // SQLite simply skips any insert that violates the UNIQUE.
+    await db.batch(
+      (b) => b.insertAll(db.dragCurves, batch, mode: InsertMode.insertOrIgnore),
+    );
   }
 }

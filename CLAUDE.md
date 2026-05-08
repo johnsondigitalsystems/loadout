@@ -462,6 +462,35 @@ Pattern that has worked for Microsoft, Yahoo, Apple:
 6. **Bump `schemaVersion`** and add a `MigrationStrategy.onUpgrade` clause
    that creates the new table for installs that already ran v1.
 
+### 12a. Pubspec asset rule (subdirectories don't recurse)
+
+Flutter's `flutter.assets:` declarations do **not** recurse into
+subdirectories. A `- assets/seed_data/` line picks up files **directly
+inside** that folder, but NOT files in `assets/seed_data/drag_curves/`.
+Every new asset subdirectory must be added as its own line in
+`pubspec.yaml`:
+
+```yaml
+flutter:
+  assets:
+    - assets/seed_data/
+    - assets/seed_data/drag_curves/   # each subdir = its own line
+```
+
+Forgetting this is a fresh-install crash, not a compile error —
+`flutter analyze` cannot see asset declarations, and the failure
+shape is `Unable to load asset: "assets/seed_data/<...>/<...>.json"`
+on first launch. The safety net is `test/assets_present_test.dart`,
+which walks every file under `assets/seed_data/` and asserts each
+one is reachable through `rootBundle`. Run `flutter test
+test/assets_present_test.dart` after any asset addition; it fails
+fast with the exact missing-asset message before the change ever
+reaches a user.
+
+If you introduce a brand-new top-level asset folder (e.g.
+`assets/sounds/`), add it to `pubspec.yaml` AND to the `assetDirs`
+list at the top of `test/assets_present_test.dart`.
+
 ## 13. Privacy posture
 
 The app's marketing claim and in-app privacy copy say, in plain English:

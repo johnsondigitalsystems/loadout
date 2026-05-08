@@ -383,7 +383,17 @@ flutter:
   generate: true
 
   assets:
+    # Flutter asset declarations do NOT recurse into subdirectories — a bare
+    # `assets/seed_data/` entry only picks up files directly inside that
+    # folder, NOT files inside `assets/seed_data/drag_curves/`. Each
+    # subdirectory of seed_data must be listed on its own line. The Hornady
+    # 4DOF / Berger / Sierra measured Cd-vs-Mach curves live in drag_curves/
+    # and are loaded at startup by `SeedLoader._seedDragCurves`; without the
+    # subdir entry below, the app crashes on first launch with "Unable to
+    # load asset: assets/seed_data/drag_curves/curves.json". Add a new line
+    # whenever a new seed_data subdirectory is created.
     - assets/seed_data/
+    - assets/seed_data/drag_curves/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

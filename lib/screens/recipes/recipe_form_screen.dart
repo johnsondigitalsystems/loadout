@@ -175,6 +175,7 @@ import '../../services/cloud_sync_service.dart';
 import '../../services/beginner_mode_service.dart';
 import '../../services/ble/ble_service.dart';
 import '../../services/ble/garmin_xero_service.dart';
+import '../../services/recipe_pdf_service.dart';
 import '../../services/recipe_print_service.dart';
 import '../../services/unit_service.dart';
 import '../../utils/responsive.dart';
@@ -1015,25 +1016,29 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     }
   }
 
-  /// Print-to-paper. Flushes any pending autosave so the printed copy
-  /// matches the current screen, then re-reads the row from the DB and
-  /// hands it to `RecipePrintService.share`. Errors fall through to a
-  /// snackbar — print failure is rarely fatal so we don't want to lock
-  /// the form.
-  Future<void> _printRecipe() async {
+  /// Share the saved recipe as a polished PDF. Flushes pending autosave
+  /// so the PDF matches what's on screen, re-reads the row from SQLite,
+  /// and hands it to `RecipePdfService.share`. Errors fall through to
+  /// a snackbar — share failure is rarely fatal so we don't want to
+  /// lock the form.
+  ///
+  /// `format` selects the artifact: PDF (default — the polished,
+  /// shareable version) or text (the original `RecipePrintService`
+  /// flow, retained for users who specifically want a copy-pastable
+  /// representation).
+  Future<void> _shareRecipe(_RecipeShareFormat format) async {
     final messenger = ScaffoldMessenger.of(context);
     final repo = context.read<RecipeRepository>();
     setState(() => _busy = true);
     try {
-      // Make sure autosave has committed any in-flight edits before we
-      // read the row back. Without this, recently-typed values wouldn't
-      // appear on the printed page.
+      // Commit any in-flight edits before re-reading the row so the
+      // shared artifact matches the on-screen state.
       await _autoSave.flush();
-      var rowId = _autoSave.currentRowId ?? widget.existing?.id;
+      final rowId = _autoSave.currentRowId ?? widget.existing?.id;
       if (rowId == null) {
         messenger.showSnackBar(
           const SnackBar(
-            content: Text('Save the recipe first, then print.'),
+            content: Text('Save the recipe first, then share.'),
           ),
         );
         return;
@@ -1045,10 +1050,18 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         );
         return;
       }
-      await RecipePrintService().share(row);
+      if (!mounted) return;
+      switch (format) {
+        case _RecipeShareFormat.pdf:
+          await RecipePdfService().share(context, row);
+          break;
+        case _RecipeShareFormat.text:
+          await RecipePrintService().share(row);
+          break;
+      }
     } catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text('Print failed: $e')),
+        SnackBar(content: Text('Share failed: $e')),
       );
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -2604,16 +2617,40 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         appBar: AppBar(
           title: Text(isEdit ? 'Edit Recipe' : 'New Recipe'),
           actions: [
-            // Print / share-as-paper action. Only available once the
-            // recipe has been saved at least once — there's nothing to
-            // print before then. Saves any pending edits via the
-            // autosave controller before formatting so the printed copy
-            // matches what's on screen.
+            // Share action. Only available once the recipe has been
+            // saved at least once — there's nothing to share before
+            // then. The default tap shares a polished PDF; the
+            // long-press / overflow path also exposes the legacy plain-
+            // text share. Pending autosave is flushed inside
+            // [_shareRecipe] so the artifact matches the screen.
             if (isEdit || _autoSave.currentRowId != null)
-              IconButton(
-                tooltip: 'Print recipe',
-                icon: const Icon(Icons.print_outlined),
-                onPressed: _busy ? null : _printRecipe,
+              PopupMenuButton<_RecipeShareFormat>(
+                tooltip: 'Share recipe',
+                icon: const Icon(Icons.share_outlined),
+                enabled: !_busy,
+                onSelected: _shareRecipe,
+                itemBuilder: (ctx) => const [
+                  PopupMenuItem(
+                    value: _RecipeShareFormat.pdf,
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                      leading: Icon(Icons.picture_as_pdf_outlined),
+                      title: Text('Share as PDF'),
+                      subtitle: Text('Polished one-page printout'),
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: _RecipeShareFormat.text,
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                      leading: Icon(Icons.text_snippet_outlined),
+                      title: Text('Share as text'),
+                      subtitle: Text('Plain copy-pastable record'),
+                    ),
+                  ),
+                ],
               ),
           ],
         ),
@@ -4250,3 +4287,7 @@ class _BeginnerWrap extends StatelessWidget {
     );
   }
 }
+
+/// Output format for the AppBar share action. PDF is the polished
+/// default; text falls back to the legacy `RecipePrintService`.
+enum _RecipeShareFormat { pdf, text }

@@ -16,6 +16,14 @@
 // `RecipeFormScreen(existing: r)` for editing; the floating action button
 // pushes a blank `RecipeFormScreen()` for creating a new recipe.
 //
+// Long-pressing any tile enters multi-select mode. In multi-select, taps
+// toggle inclusion in the selection set, an AppBar exposes "Share as PDF"
+// (one page per recipe via `RecipePdfService.shareMultiple`), and an
+// "Exit" affordance returns to the normal list. Selection is held in
+// `_RecipesListScreenState._selectedIds` and is intentionally cleared
+// when the live stream emits an updated list that no longer contains a
+// previously-selected id.
+//
 // ============================================================================
 // WHY IT EXISTS IN THE ARCHITECTURE
 // ============================================================================
@@ -42,6 +50,11 @@
 // otherwise an unrelated tile could be removed when the stream emits the
 // post-delete list.
 //
+// Multi-select mode disables `Dismissible` swipes for the duration so a
+// stray swipe doesn't destroy a row mid-selection. The AppBar `actions`
+// are recomposed when the mode flips so users can't trigger the wrong
+// action by reflex.
+//
 // ============================================================================
 // WHO CONSUMES THIS FILE
 // ============================================================================
@@ -56,6 +69,9 @@
 // - Calls `RecipeRepository.delete(r.id)` on confirmed swipe.
 // - Pushes `RecipeFormScreen` routes via `MaterialPageRoute` for both
 //   create and edit flows.
+// - In multi-select, hands the picked recipes to
+//   `RecipePdfService.shareMultiple` — writes a temp file and surfaces
+//   the OS share sheet.
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -63,6 +79,7 @@ import 'package:provider/provider.dart';
 import '../../database/database.dart';
 import '../../repositories/recipe_repository.dart';
 import '../../services/beginner_mode_service.dart';
+import '../../services/recipe_pdf_service.dart';
 import '../../utils/responsive.dart';
 import 'photo_import_screen.dart';
 import 'quick_add_recipe_screen.dart';
@@ -82,6 +99,74 @@ class _RecipesListScreenState extends State<RecipesListScreen> {
   // this state is unused — taps push a full-screen form route instead.
   int? _selectedRecipeId;
 
+  // Multi-select state. When `_isSelecting` is true, list taps toggle
+  // membership in `_selectedIds` instead of opening the recipe form.
+  // The selection survives stream rebuilds (we keep ids; the live
+  // recipe list re-resolves on each emit) but is pruned to drop ids
+  // that no longer correspond to extant rows.
+  bool _isSelecting = false;
+  final Set<int> _selectedIds = <int>{};
+
+  // True while a long-running share is in flight. Disables the AppBar
+  // share button so a double tap doesn't kick off two share sheets.
+  bool _sharing = false;
+
+  void _toggleSelection(UserLoadRow r) {
+    setState(() {
+      if (_selectedIds.contains(r.id)) {
+        _selectedIds.remove(r.id);
+        // Leaving the last selected item exits multi-select mode so
+        // the user isn't trapped in an empty selection state.
+        if (_selectedIds.isEmpty) _isSelecting = false;
+      } else {
+        _selectedIds.add(r.id);
+      }
+    });
+  }
+
+  void _enterSelectionMode(UserLoadRow r) {
+    setState(() {
+      _isSelecting = true;
+      _selectedIds.add(r.id);
+    });
+  }
+
+  void _exitSelectionMode() {
+    setState(() {
+      _isSelecting = false;
+      _selectedIds.clear();
+    });
+  }
+
+  /// Push a "Share as PDF" through `RecipePdfService.shareMultiple`.
+  /// Order is the visible list order at share time; recipes that have
+  /// been deleted between selection and share fall out silently.
+  Future<void> _shareSelectedAsPdf(List<UserLoadRow> visible) async {
+    if (_sharing) return;
+    final messenger = ScaffoldMessenger.of(context);
+    // Walk the visible list to preserve user-facing order. Then drop
+    // anything no longer in the list (race vs. live stream).
+    final picked = visible.where((r) => _selectedIds.contains(r.id)).toList();
+    if (picked.isEmpty) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Select at least one recipe.')),
+      );
+      return;
+    }
+    setState(() => _sharing = true);
+    try {
+      await RecipePdfService().shareMultiple(context, picked);
+      if (!mounted) return;
+      _exitSelectionMode();
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Share failed: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _sharing = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final repo = context.read<RecipeRepository>();
@@ -94,6 +179,10 @@ class _RecipesListScreenState extends State<RecipesListScreen> {
 
     final list = _RecipesList(
       onTap: (r) {
+        if (_isSelecting) {
+          _toggleSelection(r);
+          return;
+        }
         if (isWide) {
           setState(() => _selectedRecipeId = r.id);
         } else {
@@ -104,39 +193,87 @@ class _RecipesListScreenState extends State<RecipesListScreen> {
           );
         }
       },
-      selectedRecipeId: isWide ? _selectedRecipeId : null,
+      onLongPress: (r) {
+        if (_isSelecting) return;
+        _enterSelectionMode(r);
+      },
+      selectedRecipeId: isWide && !_isSelecting ? _selectedRecipeId : null,
       onDelete: (id) async {
         await repo.delete(id);
         if (mounted && _selectedRecipeId == id) {
           setState(() => _selectedRecipeId = null);
         }
       },
+      isSelecting: _isSelecting,
+      selectedIds: _selectedIds,
+      onListChanged: _pruneSelection,
+      onShareSelected: _shareSelectedAsPdf,
     );
 
-    final fab = FloatingActionButton(
-      heroTag: 'recipes_fab',
-      onPressed: () {
-        if (beginnerOn) {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => const QuickAddRecipeScreen(),
-            ),
+    final fab = _isSelecting
+        ? null
+        : FloatingActionButton(
+            heroTag: 'recipes_fab',
+            onPressed: () {
+              if (beginnerOn) {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const QuickAddRecipeScreen(),
+                  ),
+                );
+              } else {
+                _showAddOptions(context, isWide: isWide);
+              }
+            },
+            child: const Icon(Icons.add),
           );
-        } else {
-          _showAddOptions(context, isWide: isWide);
-        }
-      },
-      child: const Icon(Icons.add),
-    );
+
+    // Multi-select decorations: an AppBar with "Share as PDF" and a
+    // "Cancel" leading icon. The AppBar takes precedence over the
+    // home-screen toolbar by virtue of being on a Scaffold inside the
+    // tab page; HomeScreen renders the bottom-nav, this screen owns
+    // its top bar when needed.
+    final appBar = _isSelecting
+        ? AppBar(
+            title: Text(
+              _selectedIds.isEmpty
+                  ? 'Select recipes'
+                  : '${_selectedIds.length} selected',
+            ),
+            leading: IconButton(
+              tooltip: 'Cancel',
+              icon: const Icon(Icons.close),
+              onPressed: _exitSelectionMode,
+            ),
+            actions: [
+              IconButton(
+                tooltip: 'Share as PDF',
+                icon: const Icon(Icons.picture_as_pdf_outlined),
+                onPressed: (_selectedIds.isEmpty || _sharing)
+                    ? null
+                    : () async {
+                        // Re-read the current live list off the
+                        // repository so the share captures any
+                        // post-selection edits.
+                        final all = await repo.watchAll().first;
+                        if (!mounted) return;
+                        await _shareSelectedAsPdf(all);
+                      },
+              ),
+            ],
+          )
+        : null;
 
     if (!isWide) {
       return Scaffold(
+        appBar: appBar,
         body: list,
         floatingActionButton: fab,
       );
     }
 
     return Scaffold(
+      appBar: appBar,
       body: Row(
         children: [
           // Master pane — fixed width, large enough for typical recipe
@@ -151,20 +288,44 @@ class _RecipesListScreenState extends State<RecipesListScreen> {
           // full rebuild when the selection changes so the form's
           // internal controllers reset cleanly.
           Expanded(
-            child: _selectedRecipeId == null
+            child: _isSelecting
                 ? const _EmptyDetailPane(
                     message:
-                        'Select a recipe to view or edit it, or tap + to create one.',
+                        'Multi-select mode. Tap recipes to add them to the share, then tap the PDF icon.',
                   )
-                : _RecipeDetailPane(
-                    key: ValueKey('recipe_detail_${_selectedRecipeId!}'),
-                    recipeId: _selectedRecipeId!,
-                  ),
+                : (_selectedRecipeId == null
+                    ? const _EmptyDetailPane(
+                        message:
+                            'Select a recipe to view or edit it, or tap + to create one.',
+                      )
+                    : _RecipeDetailPane(
+                        key: ValueKey('recipe_detail_${_selectedRecipeId!}'),
+                        recipeId: _selectedRecipeId!,
+                      )),
           ),
         ],
       ),
       floatingActionButton: fab,
     );
+  }
+
+  /// Drop selection ids that no longer appear in the live list. Called
+  /// from `_RecipesList` whenever the stream emits a new snapshot so
+  /// deletions made elsewhere (e.g. in a different tab) clean up the
+  /// selection set.
+  void _pruneSelection(List<UserLoadRow> recipes) {
+    if (_selectedIds.isEmpty) return;
+    final live = recipes.map((r) => r.id).toSet();
+    final stale = _selectedIds.where((id) => !live.contains(id)).toList();
+    if (stale.isEmpty) return;
+    // Defer to a microtask — `setState` during build is forbidden.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        _selectedIds.removeAll(stale);
+        if (_selectedIds.isEmpty) _isSelecting = false;
+      });
+    });
   }
 
   /// Bottom-sheet "Quick Add" / "Detailed Recipe" picker. Shown in place
@@ -274,17 +435,28 @@ class _RecipesListScreenState extends State<RecipesListScreen> {
 /// Recipe list (master pane) — the same `StreamBuilder<List<UserLoadRow>>`
 /// + `Dismissible` swipe-to-delete pattern that used to live inline. Tap
 /// behaviour is delegated upstream so the parent can decide whether to
-/// push a route (phone) or update detail-pane state (wide).
+/// push a route (phone) or update detail-pane state (wide) or toggle
+/// multi-select inclusion.
 class _RecipesList extends StatelessWidget {
   const _RecipesList({
     required this.onTap,
     required this.onDelete,
+    required this.onLongPress,
+    required this.isSelecting,
+    required this.selectedIds,
+    required this.onListChanged,
+    required this.onShareSelected,
     this.selectedRecipeId,
   });
 
   final ValueChanged<UserLoadRow> onTap;
   final ValueChanged<int> onDelete;
+  final ValueChanged<UserLoadRow> onLongPress;
   final int? selectedRecipeId;
+  final bool isSelecting;
+  final Set<int> selectedIds;
+  final ValueChanged<List<UserLoadRow>> onListChanged;
+  final Future<void> Function(List<UserLoadRow>) onShareSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -297,6 +469,8 @@ class _RecipesList extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
         final recipes = snap.data ?? const <UserLoadRow>[];
+        // Tell the parent so it can prune stale selection ids.
+        onListChanged(recipes);
         if (recipes.isEmpty) {
           return const Center(
             child: Text('No recipes yet. Tap + to create your first.'),
@@ -313,7 +487,36 @@ class _RecipesList extends StatelessWidget {
               if (r.bullet != null) r.bullet,
               if (r.coalIn != null) 'COAL ${r.coalIn}"',
             ].whereType<String>().join(' · ');
-            final selected = selectedRecipeId == r.id;
+            final isSelectedForShare = selectedIds.contains(r.id);
+            final isDetailSelected =
+                !isSelecting && selectedRecipeId == r.id;
+            final tile = ListTile(
+              title: Text(r.name),
+              subtitle: subtitle.isEmpty ? null : Text(subtitle),
+              leading: isSelecting
+                  ? Checkbox(
+                      value: isSelectedForShare,
+                      onChanged: (_) => onTap(r),
+                    )
+                  : null,
+              trailing: isSelecting
+                  ? null
+                  : const Icon(Icons.chevron_right),
+              selected: isSelectedForShare || isDetailSelected,
+              selectedTileColor: isSelectedForShare
+                  ? theme.colorScheme.primary.withValues(alpha: 0.18)
+                  : theme.colorScheme.primary.withValues(alpha: 0.12),
+              onTap: () => onTap(r),
+              onLongPress: () => onLongPress(r),
+            );
+            // In multi-select mode, suppress the swipe-to-delete so a
+            // stray drag doesn't destroy a row mid-selection.
+            if (isSelecting) {
+              return KeyedSubtree(
+                key: ValueKey('recipe_${r.id}'),
+                child: tile,
+              );
+            }
             return Dismissible(
               key: ValueKey('recipe_${r.id}'),
               direction: DismissDirection.endToStart,
@@ -344,15 +547,7 @@ class _RecipesList extends StatelessWidget {
                     false;
               },
               onDismissed: (_) => onDelete(r.id),
-              child: ListTile(
-                title: Text(r.name),
-                subtitle: subtitle.isEmpty ? null : Text(subtitle),
-                trailing: const Icon(Icons.chevron_right),
-                selected: selected,
-                selectedTileColor:
-                    theme.colorScheme.primary.withValues(alpha: 0.12),
-                onTap: () => onTap(r),
-              ),
+              child: tile,
             );
           },
         );

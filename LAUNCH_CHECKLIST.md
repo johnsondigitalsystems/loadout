@@ -251,5 +251,10 @@ ship JSON corrections without a store release. See
 - [ ] Add Firebase Analytics (privacy-respecting — no logging of
   reloading data).
 - [ ] Set up CI (GitHub Actions or similar) for `flutter analyze`
-  + `dart run build_runner build` + tests on every PR.
+  + `dart run build_runner build` + `flutter test` on every PR.
+  `flutter test` is non-negotiable — `test/assets_present_test.dart`
+  catches missing `pubspec.yaml flutter.assets:` subdirectory
+  declarations (the bug class that crashed the app at startup with
+  "Unable to load asset" on a fresh install). Without it in CI, that
+  whole class can regress without any compile-time signal.
 - [ ] Versioning / release process.
