@@ -23,6 +23,7 @@ import 'package:provider/provider.dart';
 
 import '../../database/database.dart';
 import '../../repositories/range_day_repository.dart';
+import '../../widgets/range_day_safety.dart';
 import 'range_day_detail_screen.dart';
 
 class RangeDayScreen extends StatelessWidget {
@@ -42,39 +43,60 @@ class RangeDayScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: StreamBuilder<List<RangeDaySessionRow>>(
-        stream: repo.watchAll(),
-        builder: (context, snap) {
-          if (snap.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final rows = snap.data ?? const <RangeDaySessionRow>[];
-          if (rows.isEmpty) {
-            return _EmptyState(onCreate: () => _openDetail(context));
-          }
-          return ListView.separated(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: rows.length,
-            separatorBuilder: (_, _) => const Divider(height: 1),
-            itemBuilder: (context, i) {
-              final s = rows[i];
-              return _SessionTile(
-                session: s,
-                onTap: () => _openDetail(context, sessionId: s.id),
-                onDelete: () => _confirmDelete(context, s),
+      body: RangeDayErrorBoundary(
+        label: 'Range Day list',
+        child: StreamBuilder<List<RangeDaySessionRow>>(
+          stream: repo.watchAll(),
+          builder: (context, snap) {
+            if (snap.hasError) {
+              // DB closed mid-tab-switch, schema mismatch, etc. Show a
+              // friendly retry path instead of a blank screen.
+              return _SessionsLoadError(
+                message: 'Could not load Range Day sessions.',
+                onRetry: () {
+                  // Force a rebuild — the StreamBuilder re-subscribes
+                  // on the next frame.
+                  (context as Element).markNeedsBuild();
+                },
               );
-            },
-          );
-        },
+            }
+            if (snap.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final rows = snap.data ?? const <RangeDaySessionRow>[];
+            if (rows.isEmpty) {
+              return _EmptyState(onCreate: () => _openDetail(context));
+            }
+            return ListView.separated(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: rows.length,
+              separatorBuilder: (_, _) => const Divider(height: 1),
+              itemBuilder: (context, i) {
+                final s = rows[i];
+                return _SessionTile(
+                  session: s,
+                  onTap: () => _openDetail(context, sessionId: s.id),
+                  onDelete: () => _confirmDelete(context, s),
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }
 
   Future<void> _openDetail(BuildContext context, {int? sessionId}) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => RangeDayDetailScreen(sessionId: sessionId),
-      ),
+    await safeAsync<void>(
+      context,
+      userMessage: 'Could not open this session.',
+      body: () async {
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => RangeDayDetailScreen(sessionId: sessionId),
+          ),
+        );
+      },
     );
   }
 
@@ -105,10 +127,32 @@ class RangeDayScreen extends StatelessWidget {
       ),
     );
     if (ok != true) return;
-    await repo.deleteSession(session.id);
-    messenger.showSnackBar(
-      SnackBar(content: Text('"${session.name}" deleted.')),
-    );
+    try {
+      await repo.deleteSession(session.id);
+      messenger.showSnackBar(
+        SnackBar(content: Text('"${session.name}" deleted.')),
+      );
+    } catch (error, stack) {
+      debugPrint('[range_day] deleteSession failed: $error');
+      debugPrintStack(stackTrace: stack, label: 'deleteSession');
+      // Inline (not asyncErrorSnackBar) to avoid reaching across the
+      // dialog's async gap into the parent BuildContext.
+      messenger.showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 4),
+          content: Text(
+            'Could not delete "${session.name}". Please try again.',
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+          ),
+          action: SnackBarAction(
+            label: 'Dismiss',
+            onPressed: () => messenger.hideCurrentSnackBar(),
+          ),
+        ),
+      );
+    }
   }
 }
 
@@ -182,6 +226,50 @@ class _SessionTile extends StatelessWidget {
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
     ];
     return '${months[d.month - 1]} ${d.day}, ${d.year}';
+  }
+}
+
+/// Soft-failure state for the sessions stream. Mirrors `_EmptyState`'s
+/// visual weight so the user isn't faced with a stack trace.
+class _SessionsLoadError extends StatelessWidget {
+  const _SessionsLoadError({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 56,
+              color: theme.colorScheme.error,
+            ),
+            const SizedBox(height: 16),
+            Text(message, style: theme.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(
+              'Your sessions are saved on this device. Try reloading — '
+              'this can happen briefly while the database catches up.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Reload'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

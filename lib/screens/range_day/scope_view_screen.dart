@@ -90,6 +90,7 @@ import '../../data/reticle_library.dart';
 import '../../database/database.dart';
 import '../../services/ballistics/units.dart' as bu;
 import '../../services/hit_probability_service.dart';
+import '../../widgets/range_day_safety.dart';
 import 'widgets/target_plot.dart';
 
 /// Subtension display unit for the scope view's tap-to-switch
@@ -395,20 +396,23 @@ class _ScopeViewScreenState extends State<ScopeViewScreen>
           ),
         ],
       ),
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              child: Column(
-                children: [
-                  _scopeFovCard(constraints.maxWidth),
-                  _controlsCard(),
-                  _animatedMoverCard(),
-                  _adjustmentsTable(),
-                ],
-              ),
-            );
-          },
+      body: RangeDayErrorBoundary(
+        label: 'scope view',
+        child: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                child: Column(
+                  children: [
+                    _scopeFovCard(constraints.maxWidth),
+                    _controlsCard(),
+                    _animatedMoverCard(),
+                    _adjustmentsTable(),
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       ),
     );

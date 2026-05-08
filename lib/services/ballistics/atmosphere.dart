@@ -375,13 +375,39 @@ class Atmosphere {
         pVapor / (IcaoStd.rWaterVapor * tK);
 
     // Speed of sound: molar form. Mole fraction of water vapor.
-    final xV = pVapor / pPa;
-    // Molar mass of moist air (kg/mol).
-    final mHumid = (1.0 - xV) * IcaoStd.molarMassDryAir +
-        xV * IcaoStd.molarMassWater;
-    // γ of moist air, blended by mole fraction.
-    final gammaHumid =
-        (1.0 - xV) * IcaoStd.gammaDryAir + xV * IcaoStd.gammaWaterVapor;
+    //
+    // Vacuum guard: when `stationPressureInHg <= 0` (a non-physical
+    // input the caller should never reach in real use, but possible
+    // if a sensor mis-reads or a user types a bad value), `pPa = 0`
+    // and the `pVapor / pPa` divide produces NaN. NaN then poisons
+    // `mHumid` and the molar-form speedOfSound calculation,
+    // returning NaN — which would silently break Mach-lookups in
+    // the trajectory solver downstream and surface as a hard-to-
+    // diagnose "all drops are NaN" symptom.
+    //
+    // Fix: when there is no air pressure to speak of, treat the
+    // mole-fraction of water vapor as 0 (vacuum has no vapor) and
+    // fall back to the dry-air speed of sound from temperature
+    // alone. Density will already be 0 from the prior dry+wet
+    // partial-pressure sum, which is the correct answer for a
+    // vacuum. The solver still has to check for `density <= 0`
+    // separately — that's a different invariant.
+    final double xV;
+    final double mHumid;
+    final double gammaHumid;
+    if (pPa <= 0) {
+      xV = 0;
+      mHumid = IcaoStd.molarMassDryAir;
+      gammaHumid = IcaoStd.gammaDryAir;
+    } else {
+      xV = pVapor / pPa;
+      // Molar mass of moist air (kg/mol).
+      mHumid = (1.0 - xV) * IcaoStd.molarMassDryAir +
+          xV * IcaoStd.molarMassWater;
+      // γ of moist air, blended by mole fraction.
+      gammaHumid =
+          (1.0 - xV) * IcaoStd.gammaDryAir + xV * IcaoStd.gammaWaterVapor;
+    }
     final speedOfSound =
         math.sqrt(gammaHumid * IcaoStd.rUniversal * tK / mHumid);
 

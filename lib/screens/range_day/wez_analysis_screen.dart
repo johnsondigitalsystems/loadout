@@ -37,6 +37,7 @@ import '../../repositories/recipe_repository.dart';
 import '../../repositories/target_repository.dart';
 import '../../services/hit_probability_service.dart';
 import '../../services/wez_analysis_service.dart';
+import '../../widgets/range_day_safety.dart';
 
 class WezAnalysisScreen extends StatefulWidget {
   const WezAnalysisScreen({
@@ -258,8 +259,9 @@ class _WezAnalysisScreenState extends State<WezAnalysisScreen> {
   Future<void> _saveProfile() async {
     final result = _result;
     final target = _selectedTarget;
+    final messenger = ScaffoldMessenger.of(context);
     if (result == null || target == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(content: Text('Pick a target and compute first.')),
       );
       return;
@@ -268,22 +270,31 @@ class _WezAnalysisScreenState extends State<WezAnalysisScreen> {
         ? _profileName!.trim()
         : _suggestedProfileName();
     final db = context.read<AppDatabase>();
-    await db.into(db.wezProfiles).insert(WezProfilesCompanion.insert(
-          name: name,
-          loadId: Value(_selectedLoad?.id),
-          firearmId: Value(_selectedFirearm?.id),
-          targetWidthIn: target.widthIn,
-          targetHeightIn: target.heightIn,
-          targetShape: target.shape,
-          groupMoa: _groupMoa,
-          windUncertaintyMph: _windUncertaintyMph,
-          rangeUncertaintyYd: _rangeUncertaintyYd,
-          mvSdFps: _mvSdFps,
-          curveJson: result.curveJsonString(),
-          computedAt: result.computedAt,
-        ));
+    final ok = await safeAsync<bool>(
+      context,
+      mounted: () => mounted,
+      userMessage: 'Could not save the WEZ profile. Please try again.',
+      body: () async {
+        await db.into(db.wezProfiles).insert(WezProfilesCompanion.insert(
+              name: name,
+              loadId: Value(_selectedLoad?.id),
+              firearmId: Value(_selectedFirearm?.id),
+              targetWidthIn: target.widthIn,
+              targetHeightIn: target.heightIn,
+              targetShape: target.shape,
+              groupMoa: _groupMoa,
+              windUncertaintyMph: _windUncertaintyMph,
+              rangeUncertaintyYd: _rangeUncertaintyYd,
+              mvSdFps: _mvSdFps,
+              curveJson: result.curveJsonString(),
+              computedAt: result.computedAt,
+            ));
+        return true;
+      },
+    );
+    if (ok != true) return;
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
+    messenger.showSnackBar(
       SnackBar(content: Text('Saved WEZ profile "$name"')),
     );
   }
@@ -311,24 +322,27 @@ class _WezAnalysisScreenState extends State<WezAnalysisScreen> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _setupCard(),
-              const SizedBox(height: 12),
-              _inputsCard(),
-              const SizedBox(height: 12),
-              _curveCard(),
-              const SizedBox(height: 12),
-              _bandsCard(),
-              const SizedBox(height: 12),
-              _breakdownCard(),
-              const SizedBox(height: 12),
-              _saveCard(),
-            ],
+      body: RangeDayErrorBoundary(
+        label: 'WEZ analysis',
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _setupCard(),
+                const SizedBox(height: 12),
+                _inputsCard(),
+                const SizedBox(height: 12),
+                _curveCard(),
+                const SizedBox(height: 12),
+                _bandsCard(),
+                const SizedBox(height: 12),
+                _breakdownCard(),
+                const SizedBox(height: 12),
+                _saveCard(),
+              ],
+            ),
           ),
         ),
       ),
@@ -354,6 +368,19 @@ class _WezAnalysisScreenState extends State<WezAnalysisScreen> {
             FutureBuilder<List<UserLoadRow>>(
               future: _loadsFuture,
               builder: (context, snap) {
+                if (snap.hasError) {
+                  return RangeDayInlineError(
+                    message: 'Could not load recipes: ${snap.error}',
+                    onRetry: () {
+                      setState(() {
+                        _loadsFuture = context
+                            .read<RecipeRepository>()
+                            .watchAll()
+                            .first;
+                      });
+                    },
+                  );
+                }
                 final loads = snap.data ?? const [];
                 return DropdownButtonFormField<UserLoadRow?>(
                   initialValue: _selectedLoad,
@@ -381,6 +408,17 @@ class _WezAnalysisScreenState extends State<WezAnalysisScreen> {
             FutureBuilder<List<UserFirearmRow>>(
               future: _firearmsFuture,
               builder: (context, snap) {
+                if (snap.hasError) {
+                  return RangeDayInlineError(
+                    message: 'Could not load firearms: ${snap.error}',
+                    onRetry: () {
+                      setState(() {
+                        _firearmsFuture =
+                            context.read<FirearmRepository>().allFirearms();
+                      });
+                    },
+                  );
+                }
                 final firearms = snap.data ?? const [];
                 return DropdownButtonFormField<UserFirearmRow?>(
                   initialValue: _selectedFirearm,
@@ -408,6 +446,17 @@ class _WezAnalysisScreenState extends State<WezAnalysisScreen> {
             FutureBuilder<List<TargetRow>>(
               future: _targetsFuture,
               builder: (context, snap) {
+                if (snap.hasError) {
+                  return RangeDayInlineError(
+                    message: 'Could not load targets: ${snap.error}',
+                    onRetry: () {
+                      setState(() {
+                        _targetsFuture =
+                            context.read<TargetRepository>().allTargets();
+                      });
+                    },
+                  );
+                }
                 final targets = snap.data ?? const [];
                 return DropdownButtonFormField<TargetRow?>(
                   initialValue: _selectedTarget,

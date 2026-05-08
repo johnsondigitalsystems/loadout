@@ -26,6 +26,7 @@ import 'package:provider/provider.dart';
 import '../../database/database.dart';
 import '../../repositories/firearm_repository.dart';
 import '../../services/sight_calibration_service.dart';
+import '../../widgets/range_day_safety.dart';
 
 class SightCalibrationScreen extends StatefulWidget {
   const SightCalibrationScreen({super.key, this.initialFirearmId});
@@ -121,39 +122,52 @@ class _SightCalibrationScreenState extends State<SightCalibrationScreen> {
     final firearm = _selectedFirearm;
     if (result == null || firearm == null) return;
     final db = context.read<AppDatabase>();
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
     final dialMil = _dialInMoa ? _dialMil * 0.291 : _dialMil;
-    await db.transaction(() async {
-      // Log the calibration history.
-      await db.into(db.sightCalibrations).insert(
-            SightCalibrationsCompanion.insert(
-              firearmId: firearm.id,
-              axis: result.axis.dbValue,
-              advertisedClickMil: dialMil,
-              observedClickMil: result.measuredMil,
-              derivedScale: result.derivedScale,
-              observationJson: result.observationJsonString(),
-              calibratedAt: DateTime.now(),
-            ),
-          );
-      // Apply to the firearm row.
-      if (result.axis == SightCalibrationAxis.vertical) {
-        await (db.update(db.userFirearms)
-              ..where((f) => f.id.equals(firearm.id)))
-            .write(UserFirearmsCompanion(
-          sightScaleVertical: Value(result.derivedScale),
-          updatedAt: Value(DateTime.now()),
-        ));
-      } else {
-        await (db.update(db.userFirearms)
-              ..where((f) => f.id.equals(firearm.id)))
-            .write(UserFirearmsCompanion(
-          sightScaleHorizontal: Value(result.derivedScale),
-          updatedAt: Value(DateTime.now()),
-        ));
-      }
-    });
+    // Wrap the whole transaction so a closed DB / serialization error
+    // surfaces as a snackbar instead of an uncaught exception.
+    final ok = await safeAsync<bool>(
+      context,
+      mounted: () => mounted,
+      userMessage: 'Could not save the sight calibration. Please try again.',
+      body: () async {
+        await db.transaction(() async {
+          // Log the calibration history.
+          await db.into(db.sightCalibrations).insert(
+                SightCalibrationsCompanion.insert(
+                  firearmId: firearm.id,
+                  axis: result.axis.dbValue,
+                  advertisedClickMil: dialMil,
+                  observedClickMil: result.measuredMil,
+                  derivedScale: result.derivedScale,
+                  observationJson: result.observationJsonString(),
+                  calibratedAt: DateTime.now(),
+                ),
+              );
+          // Apply to the firearm row.
+          if (result.axis == SightCalibrationAxis.vertical) {
+            await (db.update(db.userFirearms)
+                  ..where((f) => f.id.equals(firearm.id)))
+                .write(UserFirearmsCompanion(
+              sightScaleVertical: Value(result.derivedScale),
+              updatedAt: Value(DateTime.now()),
+            ));
+          } else {
+            await (db.update(db.userFirearms)
+                  ..where((f) => f.id.equals(firearm.id)))
+                .write(UserFirearmsCompanion(
+              sightScaleHorizontal: Value(result.derivedScale),
+              updatedAt: Value(DateTime.now()),
+            ));
+          }
+        });
+        return true;
+      },
+    );
+    if (ok != true) return;
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
+    messenger.showSnackBar(
       SnackBar(
         content: Text(
           'Applied ${result.axis.dbValue} sight scale '
@@ -161,29 +175,32 @@ class _SightCalibrationScreenState extends State<SightCalibrationScreen> {
         ),
       ),
     );
-    Navigator.of(context).pop();
+    navigator.pop();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Sight Calibration')),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _instructionsCard(),
-              const SizedBox(height: 12),
-              _setupCard(),
-              const SizedBox(height: 12),
-              _impactsCard(),
-              const SizedBox(height: 12),
-              _resultCard(),
-              const SizedBox(height: 12),
-              _saveCard(),
-            ],
+      body: RangeDayErrorBoundary(
+        label: 'sight calibration',
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _instructionsCard(),
+                const SizedBox(height: 12),
+                _setupCard(),
+                const SizedBox(height: 12),
+                _impactsCard(),
+                const SizedBox(height: 12),
+                _resultCard(),
+                const SizedBox(height: 12),
+                _saveCard(),
+              ],
+            ),
           ),
         ),
       ),
@@ -234,6 +251,18 @@ class _SightCalibrationScreenState extends State<SightCalibrationScreen> {
             FutureBuilder<List<UserFirearmRow>>(
               future: _firearmsFuture,
               builder: (context, snap) {
+                if (snap.hasError) {
+                  return RangeDayInlineError(
+                    message:
+                        'Could not load firearms: ${snap.error}',
+                    onRetry: () {
+                      setState(() {
+                        _firearmsFuture =
+                            context.read<FirearmRepository>().allFirearms();
+                      });
+                    },
+                  );
+                }
                 final firearms = snap.data ?? const [];
                 return DropdownButtonFormField<UserFirearmRow?>(
                   initialValue: _selectedFirearm,

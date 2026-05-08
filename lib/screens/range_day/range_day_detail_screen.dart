@@ -66,6 +66,7 @@ import '../../services/sensors/cant_service.dart';
 import '../../services/sensors/inclinometer_service.dart';
 import '../../services/sensors/magnetometer_service.dart';
 import '../../services/unit_service.dart';
+import '../../widgets/range_day_safety.dart';
 import '../../services/weather_service.dart';
 import '../../utils/responsive.dart';
 import '../../widgets/atmosphere_preset_picker.dart';
@@ -330,7 +331,45 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     final firearmRepo = context.read<FirearmRepository>();
     final recipeRepo = context.read<RecipeRepository>();
     final reticleRepo = context.read<ReticleRepository>();
+    final messenger = ScaffoldMessenger.of(context);
 
+    // Wrap the entire hydration in try/catch — a missing target/load/
+    // profile row (e.g. user deleted it between sessions) or a closed
+    // DB on app teardown must NOT take down the screen. The caller
+    // simply sees an unhydrated session with a snackbar explaining.
+    try {
+      await _hydrateFromSessionInner(
+        id: id,
+        rangeDayRepo: rangeDayRepo,
+        targetRepo: targetRepo,
+        profileRepo: profileRepo,
+        firearmRepo: firearmRepo,
+        recipeRepo: recipeRepo,
+        reticleRepo: reticleRepo,
+      );
+    } catch (e, stack) {
+      debugPrint('[range_day] _hydrateFromSession failed: $e');
+      debugPrintStack(stackTrace: stack, label: '_hydrateFromSession');
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Could not fully load this session. Some fields may be empty.',
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _hydrateFromSessionInner({
+    required int id,
+    required RangeDayRepository rangeDayRepo,
+    required TargetRepository targetRepo,
+    required BallisticProfileRepository profileRepo,
+    required FirearmRepository firearmRepo,
+    required RecipeRepository recipeRepo,
+    required ReticleRepository reticleRepo,
+  }) async {
     final s = await rangeDayRepo.getById(id);
     if (s == null || !mounted) return;
     setState(() {
@@ -575,26 +614,34 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     if (load == null || firearm == null) return;
     final db = context.read<AppDatabase>();
     final dragModelStr = _dragModel.short.toLowerCase();
-    final row = await (db.select(db.truedBcOverrides)
-          ..where((t) => t.loadId.equals(load.id))
-          ..where((t) => t.firearmId.equals(firearm.id))
-          ..where((t) => t.dragModel.equals(dragModelStr))
-          ..limit(1))
-        .getSingleOrNull();
-    if (row == null || !mounted) return;
-    setState(() {
-      _bcCtrl.text = row.truedBc.toStringAsFixed(3);
-    });
-    _scheduleSolve();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Applied trued BC ${row.truedBc.toStringAsFixed(3)} '
-          '(was ${row.nominalBc.toStringAsFixed(3)})',
+    // Wrapped — DB lookup runs every load/firearm change, so a transient
+    // closed-DB or schema problem must NOT take down the screen. We
+    // silently skip applying the override on failure (debugPrint only).
+    try {
+      final row = await (db.select(db.truedBcOverrides)
+            ..where((t) => t.loadId.equals(load.id))
+            ..where((t) => t.firearmId.equals(firearm.id))
+            ..where((t) => t.dragModel.equals(dragModelStr))
+            ..limit(1))
+          .getSingleOrNull();
+      if (row == null || !mounted) return;
+      setState(() {
+        _bcCtrl.text = row.truedBc.toStringAsFixed(3);
+      });
+      _scheduleSolve();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Applied trued BC ${row.truedBc.toStringAsFixed(3)} '
+            '(was ${row.nominalBc.toStringAsFixed(3)})',
+          ),
+          duration: const Duration(seconds: 3),
         ),
-        duration: const Duration(seconds: 3),
-      ),
-    );
+      );
+    } catch (e, stack) {
+      debugPrint('[range_day] _maybeApplyTruedBcOverride failed: $e');
+      debugPrintStack(stackTrace: stack, label: '_maybeApplyTruedBcOverride');
+    }
   }
 
   int? _parseTwist(String? raw) {
@@ -920,32 +967,47 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   Future<void> _saveSession({bool collapseSetup = false}) async {
     final repo = context.read<RangeDayRepository>();
     final messenger = ScaffoldMessenger.of(context);
-    if (_session == null) {
-      final id = await repo.insertSession(_buildSessionCompanion());
-      final fresh = await repo.getById(id);
+    // Save runs on every debounced edit, so a thrown exception here can
+    // wedge the autosave loop. Catch + snackbar instead.
+    try {
+      if (_session == null) {
+        final id = await repo.insertSession(_buildSessionCompanion());
+        final fresh = await repo.getById(id);
+        if (!mounted) return;
+        setState(() {
+          _session = fresh;
+          _shotsStream = repo.streamShotsForSession(id);
+          if (collapseSetup) {
+            _setupExpanded = false;
+            _environmentExpanded = false;
+          }
+        });
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Session saved.')),
+        );
+      } else {
+        await repo.updateSession(_session!.id, _buildSessionCompanion());
+        final fresh = await repo.getById(_session!.id);
+        if (!mounted) return;
+        setState(() {
+          _session = fresh;
+          if (collapseSetup) {
+            _setupExpanded = false;
+            _environmentExpanded = false;
+          }
+        });
+      }
+    } catch (e, stack) {
+      debugPrint('[range_day] _saveSession failed: $e');
+      debugPrintStack(stackTrace: stack, label: '_saveSession');
       if (!mounted) return;
-      setState(() {
-        _session = fresh;
-        _shotsStream = repo.streamShotsForSession(id);
-        if (collapseSetup) {
-          _setupExpanded = false;
-          _environmentExpanded = false;
-        }
-      });
       messenger.showSnackBar(
-        const SnackBar(content: Text('Session saved.')),
+        const SnackBar(
+          content: Text(
+            'Could not save the session. Your changes are still in the form.',
+          ),
+        ),
       );
-    } else {
-      await repo.updateSession(_session!.id, _buildSessionCompanion());
-      final fresh = await repo.getById(_session!.id);
-      if (!mounted) return;
-      setState(() {
-        _session = fresh;
-        if (collapseSetup) {
-          _setupExpanded = false;
-          _environmentExpanded = false;
-        }
-      });
     }
   }
 
@@ -970,25 +1032,36 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       await _saveSession(collapseSetup: true);
     }
     if (_session == null) return;
-    final shotNum = await repo.nextShotNumberForSession(_session!.id);
-    await repo.insertShot(ShotImpactsCompanion.insert(
-      rangeDaySessionId: _session!.id,
-      shotNumber: shotNum,
-      impactX: normX,
-      impactY: normY,
-    ));
-    if (!mounted) return;
-    // Sync the in-memory list so render is instant — the stream will
-    // also re-emit, which is harmless.
-    final fresh = await repo.shotsForSession(_session!.id);
-    if (!mounted) return;
-    setState(() => _shots = fresh);
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text('Shot $shotNum recorded.'),
-        duration: const Duration(milliseconds: 800),
-      ),
-    );
+    try {
+      final shotNum = await repo.nextShotNumberForSession(_session!.id);
+      await repo.insertShot(ShotImpactsCompanion.insert(
+        rangeDaySessionId: _session!.id,
+        shotNumber: shotNum,
+        impactX: normX,
+        impactY: normY,
+      ));
+      if (!mounted) return;
+      // Sync the in-memory list so render is instant — the stream will
+      // also re-emit, which is harmless.
+      final fresh = await repo.shotsForSession(_session!.id);
+      if (!mounted) return;
+      setState(() => _shots = fresh);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Shot $shotNum recorded.'),
+          duration: const Duration(milliseconds: 800),
+        ),
+      );
+    } catch (e, stack) {
+      debugPrint('[range_day] _recordShot failed: $e');
+      debugPrintStack(stackTrace: stack, label: '_recordShot');
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Could not record that shot. Try again.'),
+        ),
+      );
+    }
   }
 
   Future<void> _editShotDialog(ShotImpactRow shot) async {
@@ -1043,29 +1116,42 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         ],
       ),
     );
-    if (result == _ShotEditResult.save) {
-      final vel = double.tryParse(velCtrl.text.trim());
-      await repo.updateShot(shot.id, ShotImpactsCompanion(
-        notes: drift.Value(
-            notesCtrl.text.trim().isEmpty ? null : notesCtrl.text.trim()),
-        velocityFps: drift.Value(vel),
-      ));
-      if (!mounted) return;
-      final fresh = await repo.shotsForSession(_session!.id);
-      if (!mounted) return;
-      setState(() => _shots = fresh);
-    } else if (result == _ShotEditResult.delete) {
-      await repo.deleteShot(shot.id);
-      if (!mounted) return;
-      final fresh = await repo.shotsForSession(_session!.id);
-      if (!mounted) return;
-      setState(() => _shots = fresh);
-      messenger.showSnackBar(
-        SnackBar(content: Text('Shot ${shot.shotNumber} deleted.')),
-      );
+    try {
+      if (result == _ShotEditResult.save) {
+        final vel = double.tryParse(velCtrl.text.trim());
+        await repo.updateShot(shot.id, ShotImpactsCompanion(
+          notes: drift.Value(
+              notesCtrl.text.trim().isEmpty ? null : notesCtrl.text.trim()),
+          velocityFps: drift.Value(vel),
+        ));
+        if (!mounted) return;
+        final fresh = await repo.shotsForSession(_session!.id);
+        if (!mounted) return;
+        setState(() => _shots = fresh);
+      } else if (result == _ShotEditResult.delete) {
+        await repo.deleteShot(shot.id);
+        if (!mounted) return;
+        final fresh = await repo.shotsForSession(_session!.id);
+        if (!mounted) return;
+        setState(() => _shots = fresh);
+        messenger.showSnackBar(
+          SnackBar(content: Text('Shot ${shot.shotNumber} deleted.')),
+        );
+      }
+    } catch (e, stack) {
+      debugPrint('[range_day] _editShotDialog failed: $e');
+      debugPrintStack(stackTrace: stack, label: '_editShotDialog');
+      if (mounted) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Could not update that shot. Try again.'),
+          ),
+        );
+      }
+    } finally {
+      notesCtrl.dispose();
+      velCtrl.dispose();
     }
-    notesCtrl.dispose();
-    velCtrl.dispose();
   }
 
   Future<void> _confirmClearShots() async {
@@ -1091,12 +1177,24 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       ),
     );
     if (ok != true) return;
-    await repo.clearShotsForSession(_session!.id);
-    if (!mounted) return;
-    setState(() => _shots = const []);
-    messenger.showSnackBar(
-      const SnackBar(content: Text('Shots cleared.')),
-    );
+    try {
+      await repo.clearShotsForSession(_session!.id);
+      if (!mounted) return;
+      setState(() => _shots = const []);
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Shots cleared.')),
+      );
+    } catch (e, stack) {
+      debugPrint('[range_day] _confirmClearShots failed: $e');
+      debugPrintStack(stackTrace: stack, label: '_confirmClearShots');
+      if (mounted) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Could not clear shots. Try again.'),
+          ),
+        );
+      }
+    }
   }
 
   // ─────────────────────── Weather (Pro) ───────────────────────
@@ -1165,21 +1263,40 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   Future<void> _onStartUsingKestrel() async {
     if (!await ensurePro(context)) return;
     if (!mounted) return;
-    final kestrel = context.read<KestrelService>();
-    if (kestrel.device == null) return;
-    await _kestrelSub?.cancel();
-    _kestrelSub = kestrel.readings.listen(_applyKestrelReading);
-    setState(() => _useKestrel = true);
-    final last = kestrel.lastReading;
-    if (last != null) _applyKestrelReading(last);
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Pulling live data from Kestrel.')),
-    );
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final kestrel = context.read<KestrelService>();
+      if (kestrel.device == null) return;
+      await _kestrelSub?.cancel();
+      _kestrelSub = kestrel.readings.listen(_applyKestrelReading);
+      setState(() => _useKestrel = true);
+      final last = kestrel.lastReading;
+      if (last != null) _applyKestrelReading(last);
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Pulling live data from Kestrel.')),
+      );
+    } catch (e, stack) {
+      debugPrint('[range_day] _onStartUsingKestrel failed: $e');
+      debugPrintStack(stackTrace: stack, label: '_onStartUsingKestrel');
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Could not start Kestrel stream. Reconnect and try again.'),
+        ),
+      );
+    }
   }
 
   Future<void> _onStopUsingKestrel() async {
-    await _kestrelSub?.cancel();
+    try {
+      await _kestrelSub?.cancel();
+    } catch (e, stack) {
+      // Cancellation should never throw, but if it does we still want
+      // to clear the local "live" state so the toggle reflects reality.
+      debugPrint('[range_day] _onStopUsingKestrel cancel failed: $e');
+      debugPrintStack(stackTrace: stack, label: '_onStopUsingKestrel');
+    }
     _kestrelSub = null;
     if (!mounted) return;
     setState(() => _useKestrel = false);
@@ -1291,8 +1408,11 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: isWide ? _wideBody() : _phoneBody(),
+      body: RangeDayErrorBoundary(
+        label: 'Range Day session',
+        child: SafeArea(
+          child: isWide ? _wideBody() : _phoneBody(),
+        ),
       ),
     );
   }
@@ -1576,35 +1696,56 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     if (!await ensurePro(context)) return;
     final dist = double.tryParse(_distanceCtrl.text.trim());
     if (!mounted) return;
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => WezAnalysisScreen(
-        initialLoadId: _selectedLoad?.id,
-        initialFirearmId: _selectedFirearm?.id,
-        initialTargetId: _selectedTarget?.id,
-        initialDistanceYd: dist,
-      ),
-    ));
+    await safeAsync<void>(
+      context,
+      mounted: () => mounted,
+      userMessage: 'Could not open WEZ analysis.',
+      body: () async {
+        await Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => WezAnalysisScreen(
+            initialLoadId: _selectedLoad?.id,
+            initialFirearmId: _selectedFirearm?.id,
+            initialTargetId: _selectedTarget?.id,
+            initialDistanceYd: dist,
+          ),
+        ));
+      },
+    );
   }
 
   Future<void> _openBcTruing() async {
     if (!await ensurePro(context)) return;
     if (!mounted) return;
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => BcTruingScreen(
-        initialLoadId: _selectedLoad?.id,
-        initialFirearmId: _selectedFirearm?.id,
-      ),
-    ));
+    await safeAsync<void>(
+      context,
+      mounted: () => mounted,
+      userMessage: 'Could not open BC truing.',
+      body: () async {
+        await Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => BcTruingScreen(
+            initialLoadId: _selectedLoad?.id,
+            initialFirearmId: _selectedFirearm?.id,
+          ),
+        ));
+      },
+    );
   }
 
   Future<void> _openSightCalibration() async {
     if (!await ensurePro(context)) return;
     if (!mounted) return;
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => SightCalibrationScreen(
-        initialFirearmId: _selectedFirearm?.id,
-      ),
-    ));
+    await safeAsync<void>(
+      context,
+      mounted: () => mounted,
+      userMessage: 'Could not open sight calibration.',
+      body: () async {
+        await Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => SightCalibrationScreen(
+            initialFirearmId: _selectedFirearm?.id,
+          ),
+        ));
+      },
+    );
   }
 
   // ─────────────────────── Shot azimuth ───────────────────────
@@ -1846,12 +1987,28 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   Future<void> _captureEnvironmentFromSensors() async {
     final messenger = ScaffoldMessenger.of(context);
     final isPro = context.read<EntitlementNotifier>().isPro;
-    final cantSvc = context.read<CantService>();
-    final magSvc = context.read<MagnetometerService>();
-    final inclineSvc = context.read<InclinometerService>();
-    final cant = cantSvc.cantDegrees;
-    final heading = magSvc.headingDegrees;
-    final incline = inclineSvc.inclineDegrees;
+    // Sensor reads are property accessors so they shouldn't throw, but
+    // a misbehaving plugin (or a recent platform change) could. Skip
+    // the broken sensor and keep going so the user still gets the
+    // ones that DO work.
+    double? cant;
+    double? heading;
+    double? incline;
+    try {
+      cant = context.read<CantService>().cantDegrees;
+    } catch (e) {
+      debugPrint('[range_day] CantService read failed: $e');
+    }
+    try {
+      heading = context.read<MagnetometerService>().headingDegrees;
+    } catch (e) {
+      debugPrint('[range_day] MagnetometerService read failed: $e');
+    }
+    try {
+      incline = context.read<InclinometerService>().inclineDegrees;
+    } catch (e) {
+      debugPrint('[range_day] InclinometerService read failed: $e');
+    }
     // Pull location-derived values via the existing weather service —
     // it already wraps the geolocator handshake AND reports station
     // pressure + altitude in one round trip. Pro-only — free users
@@ -2536,6 +2693,17 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         FutureBuilder<List<TargetRow>>(
           future: _targetsFuture,
           builder: (context, snap) {
+            if (snap.hasError) {
+              return RangeDayInlineError(
+                message: 'Could not load targets: ${snap.error}',
+                onRetry: () {
+                  setState(() {
+                    _targetsFuture =
+                        context.read<TargetRepository>().allTargets();
+                  });
+                },
+              );
+            }
             if (snap.connectionState == ConnectionState.waiting) {
               return const LinearProgressIndicator();
             }
@@ -2795,6 +2963,18 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         StreamBuilder<List<BallisticProfileRow>>(
           stream: _profilesStream,
           builder: (context, snap) {
+            if (snap.hasError) {
+              return RangeDayInlineError(
+                message:
+                    'Could not load ballistic profiles: ${snap.error}',
+                onRetry: () {
+                  setState(() {
+                    _profilesStream =
+                        context.read<BallisticProfileRepository>().watchAll();
+                  });
+                },
+              );
+            }
             final profiles = snap.data ?? const <BallisticProfileRow>[];
             return DropdownButtonFormField<int?>(
               initialValue: _selectedProfile?.id,
@@ -2839,6 +3019,17 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         FutureBuilder<List<UserLoadRow>>(
           future: _loadsFuture,
           builder: (context, snap) {
+            if (snap.hasError) {
+              return RangeDayInlineError(
+                message: 'Could not load recipes: ${snap.error}',
+                onRetry: () {
+                  setState(() {
+                    _loadsFuture =
+                        context.read<RecipeRepository>().watchAll().first;
+                  });
+                },
+              );
+            }
             final loads = snap.data ?? const <UserLoadRow>[];
             return DropdownButtonFormField<int?>(
               initialValue: _selectedLoad?.id,
@@ -2885,6 +3076,17 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         FutureBuilder<List<UserFirearmRow>>(
           future: _firearmsFuture,
           builder: (context, snap) {
+            if (snap.hasError) {
+              return RangeDayInlineError(
+                message: 'Could not load firearms: ${snap.error}',
+                onRetry: () {
+                  setState(() {
+                    _firearmsFuture =
+                        context.read<FirearmRepository>().allFirearms();
+                  });
+                },
+              );
+            }
             final firearms = snap.data ?? const <UserFirearmRow>[];
             return DropdownButtonFormField<int?>(
               initialValue: _selectedFirearm?.id,
@@ -2980,12 +3182,19 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       return;
     }
     final altitude = double.tryParse(_elevationCtrl.text.trim());
-    final newId = await showSaveAtmospherePresetDialog(
+    final newId = await safeAsync<int?>(
       context,
-      stationPressureInHg: pressure,
-      temperatureF: temp,
-      humidityPct: humidity,
-      altitudeFt: altitude,
+      mounted: () => mounted,
+      userMessage: 'Could not save atmosphere preset.',
+      body: () async {
+        return await showSaveAtmospherePresetDialog(
+          context,
+          stationPressureInHg: pressure,
+          temperatureF: temp,
+          humidityPct: humidity,
+          altitudeFt: altitude,
+        );
+      },
     );
     if (newId != null && mounted) {
       setState(() => _atmospherePresetId = newId);
@@ -3733,25 +3942,32 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     final spec = _selectedTarget == null
         ? TargetSpec.defaultPaper()
         : TargetSpec.fromRow(_selectedTarget!);
-    final inputs = buildScopeViewInputs(
-      reticle: reticle,
-      targetSpec: spec,
-      dropInches: s.dropInches,
-      windDriftInches: s.windDriftInches,
-      rangeYards: s.rangeYards,
-      aimPointX: _aimPointX,
-      aimPointY: _aimPointY,
-      latestImpactX: latestImpactX,
-      latestImpactY: latestImpactY,
-      hitProb: _hitProb,
-      optic: optic,
-      opticName: opticName,
-    );
-    if (!mounted) return;
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => ScopeViewScreen(inputs: inputs),
-      ),
+    await safeAsync<void>(
+      context,
+      mounted: () => mounted,
+      userMessage: 'Could not open Scope View.',
+      body: () async {
+        final inputs = buildScopeViewInputs(
+          reticle: reticle,
+          targetSpec: spec,
+          dropInches: s.dropInches,
+          windDriftInches: s.windDriftInches,
+          rangeYards: s.rangeYards,
+          aimPointX: _aimPointX,
+          aimPointY: _aimPointY,
+          latestImpactX: latestImpactX,
+          latestImpactY: latestImpactY,
+          hitProb: _hitProb,
+          optic: optic,
+          opticName: opticName,
+        );
+        if (!mounted) return;
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => ScopeViewScreen(inputs: inputs),
+          ),
+        );
+      },
     );
   }
 
@@ -3919,11 +4135,20 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
           '${bu.inchesToMoaAtYards(s.windDriftInches, s.rangeYards).toStringAsFixed(1).padLeft(5)} M  '
           '${s.timeSec.toStringAsFixed(2)} s');
     }
-    await Clipboard.setData(ClipboardData(text: buf.toString()));
-    if (!mounted) return;
-    messenger.showSnackBar(
-      const SnackBar(content: Text('DOPE copied to clipboard')),
-    );
+    try {
+      await Clipboard.setData(ClipboardData(text: buf.toString()));
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(content: Text('DOPE copied to clipboard')),
+      );
+    } catch (e, stack) {
+      debugPrint('[range_day] _copyDope failed: $e');
+      debugPrintStack(stackTrace: stack, label: '_copyDope');
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Could not copy DOPE to clipboard.')),
+      );
+    }
   }
 
   // ─────────────────────── Target plot card ───────────────────────
@@ -3993,6 +4218,41 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                 stream: _shotsStream,
                 initialData: _shots,
                 builder: (context, snap) {
+                  if (snap.hasError) {
+                    // The shot stream errored — surface a small inline
+                    // error and fall back to the in-memory cache so
+                    // the user can keep recording.
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        RangeDayInlineError(
+                          message:
+                              'Could not load shots: ${snap.error}',
+                          onRetry: () {
+                            if (_session == null) return;
+                            setState(() {
+                              _shotsStream = context
+                                  .read<RangeDayRepository>()
+                                  .streamShotsForSession(_session!.id);
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 8),
+                        TargetPlot(
+                          target: spec,
+                          shots: _shots,
+                          onTapAt: _recordShot,
+                          onLongPressShot: _editShotDialog,
+                          tapMode: _tapMode,
+                          aimPointX: _aimPointX,
+                          aimPointY: _aimPointY,
+                          onAimPointSet: _setAimPoint,
+                          reticle: _selectedReticle,
+                          reticleDisplayUnit: reticleUnit,
+                        ),
+                      ],
+                    );
+                  }
                   final shots = snap.data ?? const <ShotImpactRow>[];
                   // Keep in-memory cache in sync without triggering a setState
                   // that would loop.

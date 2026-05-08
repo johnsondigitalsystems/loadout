@@ -178,7 +178,10 @@
       "Bash(npm test *)",
       "Bash(npx wrangler *)",
       "Bash(wrangler deploy *)",
-      "Bash(awk ' *)"
+      "Bash(awk ' *)",
+      "Bash(pgrep -fq \"flutter test test/range_day_screen_widget_test\")",
+      "Bash(pkill -KILL -f \"flutter test test/range_day\")",
+      "Bash(echo \"exitcode=$?\")"
     ]
   }
 }

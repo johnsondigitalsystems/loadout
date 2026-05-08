@@ -39,6 +39,7 @@ import '../../services/ballistics/projectile.dart';
 import '../../services/ballistics/solver.dart';
 import '../../services/ballistics/units.dart' as bu;
 import '../../services/bc_truing_service.dart';
+import '../../widgets/range_day_safety.dart';
 
 class BcTruingScreen extends StatefulWidget {
   const BcTruingScreen({
@@ -248,8 +249,9 @@ class _BcTruingScreenState extends State<BcTruingScreen> {
   Future<void> _saveOverride() async {
     final result = _result;
     if (result == null) return;
+    final messenger = ScaffoldMessenger.of(context);
     if (_selectedLoad == null || _selectedFirearm == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(
           content: Text(
               'BC truing requires a saved load AND firearm to bind the override to.'),
@@ -262,27 +264,36 @@ class _BcTruingScreenState extends State<BcTruingScreen> {
     // Upsert — the unique key is (loadId, firearmId, dragModel).
     final loadId = _selectedLoad!.id;
     final firearmId = _selectedFirearm!.id;
-    await db.transaction(() async {
-      await (db.delete(db.truedBcOverrides)
-            ..where((t) => t.loadId.equals(loadId))
-            ..where((t) => t.firearmId.equals(firearmId))
-            ..where((t) => t.dragModel.equals(dragModelStr)))
-          .go();
-      await db.into(db.truedBcOverrides).insert(
-            TruedBcOverridesCompanion.insert(
-              loadId: _selectedLoad!.id,
-              firearmId: _selectedFirearm!.id,
-              dragModel: dragModelStr,
-              nominalBc: result.nominalBc,
-              truedBc: result.truedBc,
-              truingDistanceYd: result.maxObservationRangeYd,
-              observationJson: result.observationJsonString(),
-              truedAt: DateTime.now(),
-            ),
-          );
-    });
+    final ok = await safeAsync<bool>(
+      context,
+      mounted: () => mounted,
+      userMessage: 'Could not save the trued BC. Please try again.',
+      body: () async {
+        await db.transaction(() async {
+          await (db.delete(db.truedBcOverrides)
+                ..where((t) => t.loadId.equals(loadId))
+                ..where((t) => t.firearmId.equals(firearmId))
+                ..where((t) => t.dragModel.equals(dragModelStr)))
+              .go();
+          await db.into(db.truedBcOverrides).insert(
+                TruedBcOverridesCompanion.insert(
+                  loadId: _selectedLoad!.id,
+                  firearmId: _selectedFirearm!.id,
+                  dragModel: dragModelStr,
+                  nominalBc: result.nominalBc,
+                  truedBc: result.truedBc,
+                  truingDistanceYd: result.maxObservationRangeYd,
+                  observationJson: result.observationJsonString(),
+                  truedAt: DateTime.now(),
+                ),
+              );
+        });
+        return true;
+      },
+    );
+    if (ok != true) return;
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
+    messenger.showSnackBar(
       SnackBar(
         content: Text(
           'Saved trued BC ${result.truedBc.toStringAsFixed(3)} '
@@ -315,20 +326,23 @@ class _BcTruingScreenState extends State<BcTruingScreen> {
       appBar: AppBar(
         title: const Text('BC Truing'),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _setupCard(),
-              const SizedBox(height: 12),
-              _observationsCard(),
-              const SizedBox(height: 12),
-              _resultCard(),
-              const SizedBox(height: 12),
-              _saveCard(),
-            ],
+      body: RangeDayErrorBoundary(
+        label: 'BC truing',
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _setupCard(),
+                const SizedBox(height: 12),
+                _observationsCard(),
+                const SizedBox(height: 12),
+                _resultCard(),
+                const SizedBox(height: 12),
+                _saveCard(),
+              ],
+            ),
           ),
         ),
       ),
@@ -359,6 +373,19 @@ class _BcTruingScreenState extends State<BcTruingScreen> {
             FutureBuilder<List<UserLoadRow>>(
               future: _loadsFuture,
               builder: (context, snap) {
+                if (snap.hasError) {
+                  return RangeDayInlineError(
+                    message: 'Could not load recipes: ${snap.error}',
+                    onRetry: () {
+                      setState(() {
+                        _loadsFuture = context
+                            .read<RecipeRepository>()
+                            .watchAll()
+                            .first;
+                      });
+                    },
+                  );
+                }
                 final loads = snap.data ?? const [];
                 return DropdownButtonFormField<UserLoadRow?>(
                   initialValue: _selectedLoad,
@@ -392,6 +419,17 @@ class _BcTruingScreenState extends State<BcTruingScreen> {
             FutureBuilder<List<UserFirearmRow>>(
               future: _firearmsFuture,
               builder: (context, snap) {
+                if (snap.hasError) {
+                  return RangeDayInlineError(
+                    message: 'Could not load firearms: ${snap.error}',
+                    onRetry: () {
+                      setState(() {
+                        _firearmsFuture =
+                            context.read<FirearmRepository>().allFirearms();
+                      });
+                    },
+                  );
+                }
                 final firearms = snap.data ?? const [];
                 return DropdownButtonFormField<UserFirearmRow?>(
                   initialValue: _selectedFirearm,
