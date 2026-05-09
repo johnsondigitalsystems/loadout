@@ -78,6 +78,7 @@ import 'package:flutter/material.dart';
 import '../../database/database.dart';
 import '../../services/ballistics/group_stats.dart';
 import '../../services/ballistics/units.dart' as bu;
+import '../../widgets/glossary_label.dart';
 import '../../widgets/range_day_safety.dart';
 
 /// Full-screen presentation of the rich Group Statistics block for a
@@ -247,8 +248,9 @@ class _GroupStatsScreenState extends State<GroupStatsScreen> {
                       color: theme.colorScheme.primary,
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      'Group Statistics',
+                    GlossaryLabel(
+                      text: 'Group Statistics',
+                      glossaryTerm: 'Group',
                       style: theme.textTheme.titleMedium,
                     ),
                     const Spacer(),
@@ -462,8 +464,9 @@ class _GroupStatsScreenState extends State<GroupStatsScreen> {
             children: [
               Icon(Icons.show_chart, size: 16, color: palette.text),
               const SizedBox(width: 6),
-              Text(
-                '90% confidence interval',
+              GlossaryLabel(
+                text: '90% confidence interval',
+                glossaryTerm: 'Confidence interval (90%)',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: palette.text,
                   fontWeight: FontWeight.w600,
@@ -515,6 +518,9 @@ class _GroupStatsScreenState extends State<GroupStatsScreen> {
     required String angleText,
   }) {
     final theme = Theme.of(context);
+    // Map the abbreviated row label to the matching glossary entry
+    // so the (?) glyph leads to the right definition.
+    final glossaryHint = _statRowGlossaryHintFor(label);
     return Tooltip(
       message: tooltip,
       child: Row(
@@ -522,9 +528,10 @@ class _GroupStatsScreenState extends State<GroupStatsScreen> {
           Icon(icon, size: 16, color: theme.colorScheme.primary),
           const SizedBox(width: 8),
           SizedBox(
-            width: 64,
-            child: Text(
-              label,
+            width: 72,
+            child: GlossaryLabel(
+              text: label,
+              glossaryTerm: glossaryHint,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -560,11 +567,15 @@ class _GroupStatsScreenState extends State<GroupStatsScreen> {
   /// notice a typographic seam between the two surfaces.
   Widget _smallStat(String label, String value) {
     final theme = Theme.of(context);
+    // σ horizontal / σ vertical map to the same "Standard Deviation"
+    // glossary entry; soft-fails to plain Text on unknown labels.
+    final glossaryHint = _smallStatGlossaryHintFor(label);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
+        GlossaryLabel(
+          text: label,
+          glossaryTerm: glossaryHint,
           style: theme.textTheme.bodySmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -577,6 +588,27 @@ class _GroupStatsScreenState extends State<GroupStatsScreen> {
         ),
       ],
     );
+  }
+
+  /// Map per-row group-stat labels to glossary entries.
+  String? _statRowGlossaryHintFor(String label) {
+    switch (label) {
+      case 'ES':
+        return 'Extreme Spread';
+      case 'Mean R':
+        return 'Mean radius';
+      case 'Group':
+        return 'Group';
+      default:
+        return null;
+    }
+  }
+
+  /// Map small stat labels (σ horizontal / σ vertical) to a useful
+  /// glossary entry — both currently route to the statistical SD.
+  String? _smallStatGlossaryHintFor(String label) {
+    if (label.startsWith('σ')) return 'Standard Deviation (sample)';
+    return null;
   }
 
   /// "Centroid: 0.4" right, 0.2" low → Suggested zero adjust: 0.4" left

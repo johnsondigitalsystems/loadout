@@ -742,6 +742,68 @@ class FactoryLoads extends Table {
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
+// ─────────────────────── Manufactured ammo (curated subset, schema v23) ───────────────────────
+//
+// Distinct from [FactoryLoads]:
+//   * [FactoryLoads] is the BIG (3 000+ row) factory-ammo catalog, scraped
+//     from manufacturer spec sheets and consumed by the ballistics
+//     calculator's "Factory Ammo" picker.
+//   * [ManufacturedAmmo] is the SMALL (~17 row) curated catalog the Range
+//     Day "Pick a common factory load" empty-state picker uses. Rows here
+//     are hand-picked match / hunting loads that a first-launch shooter
+//     is most likely to recognize, with manufacturer-published Standard
+//     Deviation where it has been verified.
+//
+// Used for: ballistic profiles + the Range Day "Common Loads" picker.
+// NEVER used for recipes — recipes need a powder, factory ammo doesn't
+// list one. NEVER cross-consumed with [Bullets] — the bullets-only table
+// (Berger 109gr Hybrid etc.) feeds recipes + ballistic profiles, the
+// manufactured-ammo table feeds ballistic profiles + the Range Day
+// common-loads picker. Keeping the two surfaces separate is a contract:
+// callers consuming `Bullets` SHOULD NOT see [ManufacturedAmmo] rows,
+// and vice versa.
+@DataClassName('ManufacturedAmmoRow')
+class ManufacturedAmmo extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  /// Manufacturer name (free-form text, e.g. "Hornady", "Federal", "CCI",
+  /// "Berger"). Not FK-linked to `Manufacturers` — the curated list is
+  /// small enough that the lookup overhead isn't worth it, and the
+  /// rows are read-only from the user's perspective.
+  TextColumn get manufacturer => text()();
+  /// Cartridge family as the manufacturer prints it on the box
+  /// (e.g. "6.5 Creedmoor", "308 Win", "22 LR", "9mm Luger").
+  TextColumn get cartridge => text()();
+  /// Display name for the load (e.g. "140gr ELD-Match",
+  /// "Gold Medal 175gr SMK", "Standard Velocity 40gr").
+  TextColumn get name => text()();
+  RealColumn get bulletWeightGr => real()();
+  RealColumn get bulletDiameterIn => real()();
+  /// Manufacturer-published muzzle velocity in fps. Typical 24" barrel
+  /// number for centerfire rifle, shorter where appropriate (22 LR /
+  /// 9mm). The user can override on the Range Day screen.
+  RealColumn get muzzleVelocityFps => real()();
+  /// Manufacturer-published Standard Deviation of muzzle velocity, in
+  /// fps. Null when the manufacturer doesn't publish it. Drives the WEZ
+  /// analysis screen's MV-uncertainty input.
+  RealColumn get standardDeviationFps => real().nullable()();
+  /// G7 ballistic coefficient. Centerfire rifle loads carry a G7 BC by
+  /// convention; null for pistol / rimfire (which only publish G1).
+  RealColumn get bcG7 => real().nullable()();
+  /// G1 ballistic coefficient. Always populated for pistol / rimfire,
+  /// optionally populated for rifle loads where the manufacturer also
+  /// publishes a G1 number for legacy compatibility.
+  RealColumn get bcG1 => real().nullable()();
+  TextColumn get notes => text().nullable()();
+  /// Manufacturer's product page URL backing the published MV / SD / BC
+  /// numbers. Required for verified entries; null for catalog rows
+  /// where the source URL isn't readily available.
+  TextColumn get sourceUrl => text().nullable()();
+  /// Wall-clock when the published numbers were last verified against
+  /// the source URL. Null for unverified entries.
+  DateTimeColumn get verifiedAt => dateTime().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
 // ─────────────────────── User data tables ───────────────────────
 
 /// Custom components (powders/bullets/primers/brass/cartridges) the user
@@ -1361,6 +1423,24 @@ class RangeDaySessions extends Table {
   /// loads a preset on the Range Day screen, this id is captured so
   /// reopening the session shows which preset was active in the picker.
   IntColumn get atmospherePresetId => integer().nullable()();
+
+  // ── Rack mode (added schema v23) ──
+  /// Optional FK to the [TargetRacks] row this session is configured
+  /// against. Mutually exclusive with [targetId]: when [rackId] is
+  /// non-null the session is in rack mode and [targetId] is forced
+  /// null on auto-save; when [rackId] is null the session falls
+  /// through to the existing single-target [targetId] path. The
+  /// active child within the rack is recorded by [rackChildPosition].
+  IntColumn get rackId =>
+      integer().nullable().references(TargetRacks, #id)();
+  /// Zero-based position of the active child inside the rack, matching
+  /// `TargetRackChildren.position`. Null when the session is NOT in
+  /// rack mode. The renderer / ballistics solver pulls the active
+  /// child's geometry by indexing `childrenOf(rackId)` at this
+  /// position; a stale value (e.g. seed re-shuffle that dropped the
+  /// position) is clamped to the valid range by the picker, never
+  /// crashes.
+  IntColumn get rackChildPosition => integer().nullable()();
 }
 
 /// One row per shot recorded during a range-day session. Impact coordinates
@@ -1667,6 +1747,10 @@ class UserCustomFieldValues extends Table {
     ScopeManufacturers,
     ScopeModels,
     ScopeReticleOptions,
+    // Schema v23 additions (curated manufactured-ammo catalog feeding
+    // the Range Day "Pick a common factory load" picker, plus rack
+    // mode persistence on RangeDaySessions).
+    ManufacturedAmmo,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -1675,7 +1759,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 22;
+  int get schemaVersion => 23;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -2078,6 +2162,33 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(reticles, reticles.license);
             await m.addColumn(reticles, reticles.subtensionsJson);
           }
+          if (from < 23) {
+            // v23 — Two coordinated additions:
+            //
+            //   1. New [ManufacturedAmmo] table (curated subset of
+            //      factory loads that feeds the Range Day "Pick a
+            //      common factory load" empty-state picker). The
+            //      previous incarnation of this catalog was a
+            //      hand-coded `static const List<CommonLoad>` in
+            //      `lib/services/common_loads_catalog.dart`; the v23
+            //      migration moves the data into SQLite so the
+            //      catalog can be live-updated via SeedUpdater
+            //      without an App Store push.
+            //   2. Two new nullable columns on [RangeDaySessions]
+            //      ([rackId], [rackChildPosition]) so a session in
+            //      rack mode survives an app restart. Existing rows
+            //      get null values and continue rendering through
+            //      the single-target [targetId] path.
+            //
+            // Both additions are additive — no existing user data is
+            // touched. The [ManufacturedAmmo] table is populated on
+            // next launch by `SeedLoader.seedIfNeeded` from
+            // `assets/seed_data/manufactured_ammo.json`.
+            await m.createTable(manufacturedAmmo);
+            await m.addColumn(rangeDaySessions, rangeDaySessions.rackId);
+            await m.addColumn(
+                rangeDaySessions, rangeDaySessions.rackChildPosition);
+          }
         },
       );
 
@@ -2404,6 +2515,18 @@ class AppDatabase extends _$AppDatabase {
     final count = await (selectOnly(scopeReticleOptions)
           ..addColumns([scopeReticleOptions.id.count()]))
         .map((row) => row.read(scopeReticleOptions.id.count()) ?? 0)
+        .getSingle();
+    return count == 0;
+  }
+
+  /// True when the [ManufacturedAmmo] catalog is empty. Used by the
+  /// seed loader to decide whether to insert the bundled curated
+  /// manufactured-ammo library on first launch (or after the v23
+  /// migration).
+  Future<bool> get manufacturedAmmoAreEmpty async {
+    final count = await (selectOnly(manufacturedAmmo)
+          ..addColumns([manufacturedAmmo.id.count()]))
+        .map((row) => row.read(manufacturedAmmo.id.count()) ?? 0)
         .getSingle();
     return count == 0;
   }

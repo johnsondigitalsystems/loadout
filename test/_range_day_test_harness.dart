@@ -89,6 +89,7 @@ import 'package:loadout/database/database.dart';
 import 'package:loadout/repositories/atmosphere_preset_repository.dart';
 import 'package:loadout/repositories/ballistic_profile_repository.dart';
 import 'package:loadout/repositories/firearm_repository.dart';
+import 'package:loadout/repositories/manufactured_ammo_repository.dart';
 import 'package:loadout/repositories/optics_repository.dart';
 import 'package:loadout/repositories/range_day_repository.dart';
 import 'package:loadout/repositories/recipe_repository.dart';
@@ -325,6 +326,12 @@ Future<RangeDayHarness> pumpRangeDayScreen(
         ),
         Provider<OpticsRepository>(
           create: (_) => OpticsRepository(database),
+        ),
+        // Curated manufactured-ammo catalog (schema v23). Read-only
+        // surface that feeds the Range Day "Pick a common factory
+        // load" empty-state picker via [CommonLoadsCatalog].
+        Provider<ManufacturedAmmoRepository>(
+          create: (_) => ManufacturedAmmoRepository(database),
         ),
         Provider<ReticleRepository>(
           create: (_) => ReticleRepository(database),

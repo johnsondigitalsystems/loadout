@@ -71,74 +71,184 @@ import 'help_support_screen.dart';
 import 'privacy_data_screen.dart';
 import 'watch_settings_screen.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
   @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  /// Search query the user types into the filter bar at the top of
+  /// the screen. Matches against each tile's title + subtitle case-
+  /// insensitively. Empty string = show every tile.
+  final TextEditingController _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  /// Tile catalog. Lifting the rows out of `build()` so the filter
+  /// pass operates on data instead of rebuilt widgets.
+  List<_SettingsTileSpec> _allTiles() {
+    return [
+      _SettingsTileSpec(
+        icon: Icons.account_circle_outlined,
+        title: 'Account',
+        subtitle: 'Sign-in, email, restore purchases.',
+        destinationBuilder: (_) => const AccountSettingsScreen(),
+      ),
+      _SettingsTileSpec(
+        icon: Icons.tune_outlined,
+        title: 'App preferences',
+        subtitle: 'Beginner Mode, auto-save, language, units.',
+        destinationBuilder: (_) => const AppPreferencesScreen(),
+      ),
+      _SettingsTileSpec(
+        icon: Icons.cloud_sync_outlined,
+        title: 'Cloud Sync',
+        subtitle:
+            'Continuously sync your data to your own iCloud, Google '
+            'Drive, or OneDrive. End-to-end encrypted (Pro).',
+        destinationBuilder: (_) => const CloudSyncScreen(),
+      ),
+      _SettingsTileSpec(
+        icon: Icons.watch_outlined,
+        title: 'Watch & Wear',
+        subtitle:
+            'Apple Watch / Wear OS connection, shot-capture sensitivity.',
+        destinationBuilder: (_) => const WatchSettingsScreen(),
+      ),
+      _SettingsTileSpec(
+        icon: Icons.bluetooth_outlined,
+        title: 'Connected Devices',
+        subtitle:
+            'Pair a Bluetooth chronograph, Kestrel, or rangefinder.',
+        destinationBuilder: (_) => const DevicesScreen(),
+      ),
+      _SettingsTileSpec(
+        icon: Icons.auto_awesome_outlined,
+        title: 'AI features',
+        subtitle:
+            'Optional AI assist for messy handwriting in Smart Import.',
+        destinationBuilder: (_) => const AiSettingsScreen(),
+      ),
+      _SettingsTileSpec(
+        icon: Icons.privacy_tip_outlined,
+        title: 'Privacy & Data',
+        subtitle:
+            'Crashlytics, export, delete, privacy policy / disclaimer.',
+        destinationBuilder: (_) => const PrivacyDataScreen(),
+      ),
+      _SettingsTileSpec(
+        icon: Icons.help_outline,
+        title: 'Help & Support',
+        subtitle:
+            'Email support, print notebook page, restore backup.',
+        destinationBuilder: (_) => const HelpSupportScreen(),
+      ),
+    ];
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final all = _allTiles();
+    final q = _query.toLowerCase();
+    final filtered = q.isEmpty
+        ? all
+        : all
+            .where((t) =>
+                t.title.toLowerCase().contains(q) ||
+                t.subtitle.toLowerCase().contains(q))
+            .toList();
+
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
-      body: ListView(
-        children: [
-          _CategoryTile(
-            icon: Icons.account_circle_outlined,
-            title: 'Account',
-            subtitle: 'Sign-in, email, restore purchases.',
-            destinationBuilder: (_) => const AccountSettingsScreen(),
-          ),
-          _CategoryTile(
-            icon: Icons.tune_outlined,
-            title: 'App preferences',
-            subtitle: 'Beginner Mode, auto-save, language, units.',
-            destinationBuilder: (_) => const AppPreferencesScreen(),
-          ),
-          _CategoryTile(
-            icon: Icons.cloud_sync_outlined,
-            title: 'Cloud Sync',
-            subtitle:
-                'Continuously sync your data to your own iCloud, Google '
-                'Drive, or OneDrive. End-to-end encrypted (Pro).',
-            destinationBuilder: (_) => const CloudSyncScreen(),
-          ),
-          _CategoryTile(
-            icon: Icons.watch_outlined,
-            title: 'Watch & Wear',
-            subtitle:
-                'Apple Watch / Wear OS connection, shot-capture sensitivity.',
-            destinationBuilder: (_) => const WatchSettingsScreen(),
-          ),
-          _CategoryTile(
-            icon: Icons.bluetooth_outlined,
-            title: 'Connected Devices',
-            subtitle:
-                'Pair a Bluetooth chronograph, Kestrel, or rangefinder.',
-            destinationBuilder: (_) => const DevicesScreen(),
-          ),
-          _CategoryTile(
-            icon: Icons.auto_awesome_outlined,
-            title: 'AI features',
-            subtitle:
-                'Optional AI assist for messy handwriting in Smart Import.',
-            destinationBuilder: (_) => const AiSettingsScreen(),
-          ),
-          _CategoryTile(
-            icon: Icons.privacy_tip_outlined,
-            title: 'Privacy & Data',
-            subtitle:
-                'Crashlytics, export, delete, privacy policy / disclaimer.',
-            destinationBuilder: (_) => const PrivacyDataScreen(),
-          ),
-          _CategoryTile(
-            icon: Icons.help_outline,
-            title: 'Help & Support',
-            subtitle:
-                'Email support, print notebook page, restore backup.',
-            destinationBuilder: (_) => const HelpSupportScreen(),
-          ),
-        ],
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Filter bar mirrors the glossary's pattern — type to
+            // narrow the visible list. Matches title + subtitle so a
+            // search for "kestrel" finds Connected Devices, "auto"
+            // finds App preferences, etc.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: TextField(
+                controller: _searchController,
+                textInputAction: TextInputAction.search,
+                onChanged: (v) => setState(() => _query = v.trim()),
+                decoration: InputDecoration(
+                  hintText: 'Filter settings',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: _query.isEmpty
+                      ? null
+                      : IconButton(
+                          icon: const Icon(Icons.clear),
+                          tooltip: 'Clear filter',
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() => _query = '');
+                          },
+                        ),
+                  filled: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: filtered.isEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Text(
+                          'No settings match "$_query".',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    )
+                  : ListView(
+                      children: [
+                        for (final tile in filtered)
+                          _CategoryTile(
+                            icon: tile.icon,
+                            title: tile.title,
+                            subtitle: tile.subtitle,
+                            destinationBuilder: tile.destinationBuilder,
+                          ),
+                      ],
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
+}
+
+/// Pure-data settings tile spec. The filter pass operates on a list
+/// of these (cheap to scan) before constructing widgets — keeps the
+/// search responsive even as the catalog grows.
+class _SettingsTileSpec {
+  const _SettingsTileSpec({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.destinationBuilder,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final WidgetBuilder destinationBuilder;
 }
 
 /// Re-usable directory row. Renders an icon, title, subtitle, and

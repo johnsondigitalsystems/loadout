@@ -339,6 +339,26 @@ dependencies:
   # absence of samples and gate the UI gracefully.
   sensors_plus: ^6.0.0
 
+  # Recipe QR sharing (peer-to-peer offline import).
+  # `qr_flutter` renders a `Widget` QR code from an arbitrary string. We
+  # use it for the in-app "Share via QR" sheet so a second LoadOut user
+  # can scan the recipe with their camera — no network, no account, no
+  # server. The QR encodes a gzip-compressed JSON subset of the recipe
+  # (cartridge, powder, charge, bullet, primer, COAL/CBTO, notes), magic-
+  # prefixed `LO1:` so the scanner can tell it apart from arbitrary QRs.
+  # `mobile_scanner` is the camera side of the same flow — modern, MIT-
+  # licensed, MLKit-backed on Android and AVFoundation on iOS. It opens
+  # a camera preview, detects barcodes in the visible frame, and emits
+  # the decoded payload. Camera permission is handled via the existing
+  # `permission_handler` and the iOS `NSCameraUsageDescription` already
+  # declared for the photo-import feature. We pin to ^7.2.0 because that
+  # series tracks the same `GoogleMLKit/MLKitCore 9.0.0` floor that
+  # `google_mlkit_text_recognition: ^0.15.0` already pulls in — earlier
+  # mobile_scanner releases pinned MLKit 6.x and produced a CocoaPods
+  # version conflict.
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^7.2.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

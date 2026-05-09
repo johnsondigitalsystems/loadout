@@ -78,13 +78,11 @@ import 'package:provider/provider.dart';
 
 import '../../database/database.dart';
 import '../../repositories/recipe_repository.dart';
-import '../../services/beginner_mode_service.dart';
 import '../../services/recipe_pdf_service.dart';
 import '../../utils/responsive.dart';
-import 'photo_import_screen.dart';
+import '../../widgets/quick_add_fab_stack.dart';
 import 'quick_add_recipe_screen.dart';
 import 'recipe_form_screen.dart';
-import 'smart_import_screen.dart';
 
 class RecipesListScreen extends StatefulWidget {
   const RecipesListScreen({super.key});
@@ -171,11 +169,6 @@ class _RecipesListScreenState extends State<RecipesListScreen> {
   Widget build(BuildContext context) {
     final repo = context.read<RecipeRepository>();
     final isWide = Breakpoints.isWide(context);
-    // Beginner Mode short-circuits the FAB straight into Quick Add.
-    // Power users (Beginner Mode off) get the two-button picker so the
-    // long form is one tap away. Quick Add itself still surfaces a
-    // "Switch to detailed" link inside the screen for both audiences.
-    final beginnerOn = context.watch<BeginnerModeService>().isEnabled;
 
     final list = _RecipesList(
       onTap: (r) {
@@ -210,22 +203,36 @@ class _RecipesListScreenState extends State<RecipesListScreen> {
       onShareSelected: _shareSelectedAsPdf,
     );
 
+    // Two-FAB cluster: a "Quick" extended FAB (notebook-line capture)
+    // stacked above a "Regular" `+` FAB (full recipe form). Both are
+    // hidden during multi-select so the user isn't tempted to start a
+    // new recipe while picking ones to share.
+    //
+    // The previous bottom-sheet picker is gone — discoverability of
+    // the import paths now lives inside the `ImportOptionsSection`
+    // that hangs under both forms. Beginners and power users both
+    // see the two FABs.
     final fab = _isSelecting
         ? null
-        : FloatingActionButton(
-            heroTag: 'recipes_fab',
-            onPressed: () {
-              if (beginnerOn) {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const QuickAddRecipeScreen(),
-                  ),
-                );
-              } else {
-                _showAddOptions(context, isWide: isWide);
-              }
+        : QuickAddFabStack(
+            tagPrefix: 'recipes',
+            quickIcon: Icons.bolt,
+            quickLabel: 'Quick',
+            onQuickPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const QuickAddRecipeScreen(),
+                ),
+              );
             },
-            child: const Icon(Icons.add),
+            onAddPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const RecipeFormScreen(),
+                ),
+              );
+            },
+            addTooltip: 'Regular recipe',
           );
 
     // Multi-select decorations: an AppBar with "Share as PDF" and a
@@ -328,108 +335,6 @@ class _RecipesListScreenState extends State<RecipesListScreen> {
     });
   }
 
-  /// Bottom-sheet "Quick Add" / "Detailed Recipe" picker. Shown in place
-  /// of an instant push so beginners default into Quick Add but power
-  /// users can reach the full form in one extra tap.
-  void _showAddOptions(BuildContext context, {required bool isWide}) {
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetCtx) {
-        final theme = Theme.of(sheetCtx);
-        return SafeArea(
-          top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-                child: Text(
-                  'Add a Recipe',
-                  style: theme.textTheme.titleLarge,
-                ),
-              ),
-              ListTile(
-                leading: Icon(
-                  Icons.bolt,
-                  color: theme.colorScheme.primary,
-                ),
-                title: const Text('Quick Add'),
-                subtitle: const Text(
-                  'Just the basics — like a notebook line',
-                ),
-                onTap: () {
-                  Navigator.of(sheetCtx).pop();
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const QuickAddRecipeScreen(),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                leading: Icon(
-                  Icons.tune,
-                  color: theme.colorScheme.primary,
-                ),
-                title: const Text('Detailed Recipe'),
-                subtitle: const Text(
-                  'Every field — CBTO, primer, brass lots, pressure, more',
-                ),
-                onTap: () {
-                  Navigator.of(sheetCtx).pop();
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const RecipeFormScreen(),
-                    ),
-                  );
-                },
-              ),
-              const Divider(height: 1),
-              ListTile(
-                leading: Icon(
-                  Icons.table_chart_outlined,
-                  color: theme.colorScheme.primary,
-                ),
-                title: const Text('Import from spreadsheet'),
-                subtitle: const Text(
-                  'Bring loads in from a CSV or Excel file — free.',
-                ),
-                onTap: () {
-                  Navigator.of(sheetCtx).pop();
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const SmartImportScreen(),
-                    ),
-                  );
-                },
-              ),
-              if (PhotoImportScreen.isSupportedPlatform)
-                ListTile(
-                  leading: Icon(
-                    Icons.photo_camera_outlined,
-                    color: theme.colorScheme.primary,
-                  ),
-                  title: const Text('Import from photo'),
-                  subtitle: const Text(
-                    'Snap a notebook page — read on this device. Free.',
-                  ),
-                  onTap: () {
-                    Navigator.of(sheetCtx).pop();
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const PhotoImportScreen(),
-                      ),
-                    );
-                  },
-                ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        );
-      },
-    );
-  }
 }
 
 /// Recipe list (master pane) — the same `StreamBuilder<List<UserLoadRow>>`

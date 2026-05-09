@@ -40,7 +40,7 @@
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>LoadOut uses your location to pull current weather (temperature, pressure, humidity, wind) for ballistics calculations.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Use your camera to scan handwritten reloading notes into LoadOut.</string>
+	<string>Use your camera to scan handwritten reloading notes and recipe QR codes shared by other LoadOut users.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Access photos to import scanned reloading notes.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>

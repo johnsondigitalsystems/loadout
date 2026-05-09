@@ -70,7 +70,22 @@ import '../../services/spreadsheet_import_service.dart';
 import 'recipes_list_screen.dart';
 
 class SmartImportScreen extends StatefulWidget {
-  const SmartImportScreen({super.key});
+  const SmartImportScreen({
+    super.key,
+    this.initialFile,
+    this.titleOverride,
+  });
+
+  /// Optional file to pre-load — when non-null, the wizard skips the
+  /// "pick a file" step and jumps straight into preview / mapping.
+  /// Used by callers that already have a CSV in hand, e.g. the
+  /// "Paste from clipboard" path (we materialize the pasted text into
+  /// a temp `.csv` and pass it through) or "Import from another
+  /// reloading app" (after the user confirms which export they have).
+  final File? initialFile;
+
+  /// Optional AppBar title override. Defaults to "Smart Import".
+  final String? titleOverride;
 
   @override
   State<SmartImportScreen> createState() => _SmartImportScreenState();
@@ -105,6 +120,22 @@ class _SmartImportScreenState extends State<SmartImportScreen> {
   void initState() {
     super.initState();
     _loadPresets();
+    // If the caller pre-supplied a file (clipboard paste, another-app
+    // CSV bridge, etc.), skip the picker step and refresh the preview
+    // once the service is ready.
+    final initial = widget.initialFile;
+    if (initial != null) {
+      _file = initial;
+      _step = _Step.preview;
+      // The service is created inside `_loadPresets`; defer the
+      // first preview fetch until after the build, by which time
+      // `_service` is non-null. If presets load slowly we still want
+      // to show "Reading file..." rather than the picker.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        // ignore: discarded_futures
+        _refreshPreview();
+      });
+    }
   }
 
   Future<void> _loadPresets() async {
@@ -264,7 +295,7 @@ class _SmartImportScreenState extends State<SmartImportScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Smart Import'),
+        title: Text(widget.titleOverride ?? 'Smart Import'),
         leading: IconButton(
           icon: const Icon(Icons.close),
           tooltip: 'Cancel',

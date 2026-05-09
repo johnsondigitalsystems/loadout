@@ -205,6 +205,13 @@ class SeedLoader {
     final verifiedScopesReseed = firstRun ||
         await db.scopeManufacturersAreEmpty ||
         flag('scopes_v2');
+    // Curated manufactured-ammo catalog (added schema v23). Feeds the
+    // Range Day "Pick a common factory load" empty-state picker. Lifted
+    // out of a hand-coded Dart list so it can be live-updated via
+    // SeedUpdater without an App Store push.
+    final manufacturedAmmoReseed = firstRun ||
+        await db.manufacturedAmmoAreEmpty ||
+        flag('manufactured_ammo');
 
     final any = cartridgesReseed ||
         powdersReseed ||
@@ -218,7 +225,8 @@ class SeedLoader {
         reticlesReseed ||
         dragCurvesReseed ||
         targetRacksReseed ||
-        verifiedScopesReseed;
+        verifiedScopesReseed ||
+        manufacturedAmmoReseed;
     if (!any) return;
 
     await db.transaction(() async {
@@ -363,6 +371,17 @@ class SeedLoader {
         }
         await _seedVerifiedScopes();
       }
+      if (manufacturedAmmoReseed) {
+        // Curated manufactured-ammo catalog. No shared `Manufacturers`
+        // dependency — the table stores manufacturer as free-form text
+        // (mirrors how reticles / targets / drag curves carry their
+        // brand label). Wipe and re-seed so a new download cleanly
+        // replaces the previous catalog.
+        if (!firstRun) {
+          await db.delete(db.manufacturedAmmo).go();
+        }
+        await _seedManufacturedAmmo();
+      }
       // Re-seed primers if they're missing — the v3 migration intentionally
       // clears them so the new productLine field gets populated for
       // upgrading users without nuking the rest of the DB. The forced
@@ -403,6 +422,7 @@ class SeedLoader {
     await clearIf(dragCurvesReseed, 'drag_curves');
     await clearIf(targetRacksReseed, 'target_racks');
     await clearIf(verifiedScopesReseed, 'scopes_v2');
+    await clearIf(manufacturedAmmoReseed, 'manufactured_ammo');
   }
 
   Future<int> _manufacturerId(
@@ -1183,6 +1203,70 @@ class SeedLoader {
     }
     if (optBatch.isNotEmpty) {
       await db.batch((b) => b.insertAll(db.scopeReticleOptions, optBatch));
+    }
+  }
+
+  /// Seed the [ManufacturedAmmo] curated catalog (schema v23) from
+  /// `assets/seed_data/manufactured_ammo.json`. The JSON shape is a
+  /// flat array of objects:
+  ///
+  ///   * `manufacturer`, `cartridge`, `name` — required strings.
+  ///   * `bulletWeightGr`, `bulletDiameterIn`, `muzzleVelocityFps`
+  ///     — required numbers.
+  ///   * `bcG7`, `bcG1`, `standardDeviationFps`, `notes`,
+  ///     `sourceUrl`, `verifiedAt` — optional / nullable.
+  ///
+  /// Defensive parsing: skip rows that don't carry the required
+  /// fields rather than crashing the whole seed pass. The picker UI
+  /// tolerates an empty catalog (renders "no common loads available")
+  /// so a partial seed degrades gracefully.
+  Future<void> _seedManufacturedAmmo() async {
+    final data = await _readJsonList('manufactured_ammo.json');
+    final batch = <ManufacturedAmmoCompanion>[];
+    for (final entry in data) {
+      final m = entry as Map<String, dynamic>;
+      final manufacturer = m['manufacturer'] as String?;
+      final cartridge = m['cartridge'] as String?;
+      final name = m['name'] as String?;
+      final bulletWeightGr = (m['bulletWeightGr'] as num?)?.toDouble();
+      final bulletDiameterIn = (m['bulletDiameterIn'] as num?)?.toDouble();
+      final muzzleVelocityFps = (m['muzzleVelocityFps'] as num?)?.toDouble();
+      if (manufacturer == null ||
+          cartridge == null ||
+          name == null ||
+          bulletWeightGr == null ||
+          bulletDiameterIn == null ||
+          muzzleVelocityFps == null) {
+        // ignore: avoid_print
+        print(
+          'seed_loader: skipping manufactured_ammo row "$manufacturer / '
+          '$name": missing required field '
+          '(manufacturer/cartridge/name/bulletWeightGr/bulletDiameterIn/muzzleVelocityFps)',
+        );
+        continue;
+      }
+      final verifiedAtStr = m['verifiedAt'] as String?;
+      final verifiedAt = verifiedAtStr != null
+          ? DateTime.tryParse(verifiedAtStr)
+          : null;
+      batch.add(ManufacturedAmmoCompanion.insert(
+        manufacturer: manufacturer,
+        cartridge: cartridge,
+        name: name,
+        bulletWeightGr: bulletWeightGr,
+        bulletDiameterIn: bulletDiameterIn,
+        muzzleVelocityFps: muzzleVelocityFps,
+        standardDeviationFps:
+            Value((m['standardDeviationFps'] as num?)?.toDouble()),
+        bcG7: Value((m['bcG7'] as num?)?.toDouble()),
+        bcG1: Value((m['bcG1'] as num?)?.toDouble()),
+        notes: Value(m['notes'] as String?),
+        sourceUrl: Value(m['sourceUrl'] as String?),
+        verifiedAt: Value(verifiedAt),
+      ));
+    }
+    if (batch.isNotEmpty) {
+      await db.batch((b) => b.insertAll(db.manufacturedAmmo, batch));
     }
   }
 }

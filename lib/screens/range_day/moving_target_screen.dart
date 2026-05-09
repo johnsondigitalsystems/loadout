@@ -79,6 +79,7 @@ import 'package:flutter/material.dart';
 import '../../database/database.dart';
 import '../../services/ballistics/solver.dart';
 import '../../services/ballistics/units.dart' as bu;
+import '../../widgets/glossary_label.dart';
 import '../../widgets/pro_gate.dart';
 import '../../widgets/range_day_safety.dart';
 
@@ -302,8 +303,11 @@ class _MovingTargetScreenState extends State<MovingTargetScreen>
                   color: theme.colorScheme.primary,
                 ),
                 const SizedBox(width: 8),
-                Text('Lead Calculator',
-                    style: theme.textTheme.titleMedium),
+                GlossaryLabel(
+                  text: 'Lead Calculator',
+                  glossaryTerm: 'Lead',
+                  style: theme.textTheme.titleMedium,
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -316,7 +320,13 @@ class _MovingTargetScreenState extends State<MovingTargetScreen>
                         const TextInputType.numberWithOptions(decimal: true),
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
-                      labelText: 'Speed',
+                      // `label:` (Widget) lets the GlossaryLabel
+                      // provide tap-to-define for the Speed field.
+                      // Soft-fails if no entry exists yet.
+                      label: GlossaryLabel(
+                        text: 'Speed',
+                        glossaryTerm: 'Lead',
+                      ),
                       suffixText: 'mph',
                       isDense: true,
                     ),
@@ -592,8 +602,14 @@ class _MovingTargetScreenState extends State<MovingTargetScreen>
         children: [
           SizedBox(
             width: 56,
-            child: Text(
-              label,
+            // GlossaryLabel here gives "Lead" labels (when used) the
+            // (?) tap-to-define affordance. "Center" / "Front" labels
+            // soft-fail to plain Text; that's the intended behavior.
+            child: GlossaryLabel(
+              text: label,
+              glossaryTerm: label == 'Center' || label == 'Front'
+                  ? 'Lead'
+                  : null,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

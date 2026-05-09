@@ -85,15 +85,9 @@ import '../../repositories/component_repository.dart';
 import '../../repositories/recipe_repository.dart';
 import '../../services/beginner_mode_service.dart';
 import '../../widgets/component_field.dart';
+import '../../widgets/import_options_section.dart';
 import '../glossary/glossary_screen.dart';
-import 'photo_import_screen.dart';
 import 'recipe_form_screen.dart';
-import 'smart_import_screen.dart';
-
-/// One-of dimension axis used for the COAL/CBTO segmented control. Only
-/// one is rendered at a time — the other is cleared when the user
-/// switches.
-enum _DimensionAxis { coal, cbto }
 
 class QuickAddRecipeScreen extends StatefulWidget {
   const QuickAddRecipeScreen({super.key});
@@ -111,10 +105,7 @@ class _QuickAddRecipeScreenState extends State<QuickAddRecipeScreen> {
   final _powderCharge = TextEditingController();
   final _bullet = TextEditingController();
   final _bulletWeight = TextEditingController();
-  final _dimension = TextEditingController();
   final _notes = TextEditingController();
-
-  _DimensionAxis _axis = _DimensionAxis.coal;
 
   /// Currently-selected template id (if any). Used only as the
   /// dropdown's indicator value.
@@ -134,7 +125,6 @@ class _QuickAddRecipeScreenState extends State<QuickAddRecipeScreen> {
     _powderCharge.dispose();
     _bullet.dispose();
     _bulletWeight.dispose();
-    _dimension.dispose();
     _notes.dispose();
     super.dispose();
   }
@@ -148,11 +138,6 @@ class _QuickAddRecipeScreenState extends State<QuickAddRecipeScreen> {
       _powderCharge.text = t.powderChargeGr.toString();
       _bullet.text = t.bullet;
       _bulletWeight.text = t.bulletWeightGr.toString();
-      // Templates always provide COAL today. Keep the axis on COAL when
-      // applying a template, regardless of the user's prior choice — the
-      // user can swap to CBTO afterwards if they prefer.
-      _axis = _DimensionAxis.coal;
-      _dimension.text = t.coalIn?.toString() ?? '';
       _useCase = t.useCase;
       // Append the template's note to anything the user already wrote.
       // Don't blow away their text — they may have typed something first
@@ -169,23 +154,58 @@ class _QuickAddRecipeScreenState extends State<QuickAddRecipeScreen> {
   }
 
   /// Build the `UserLoadsCompanion` representing the current form state.
-  /// Shared between `_save` (insert + pop) and "Switch to detailed"
-  /// (insert + push detailed form).
+  /// Shared between `_save` (insert + pop) and "Switch to Regular"
+  /// (insert + push detailed form when the form has a name; push the
+  /// regular form pre-populated with the partial draft otherwise).
+  ///
+  /// If the user left the Recipe Name empty, generate one from the
+  /// load-defining fields + a date/time stamp so the saved row is
+  /// findable in the list view. Mirror the regular form's
+  /// `_generateRecipeName` shape so the two flows produce
+  /// look-alike names.
   UserLoadsCompanion _buildCompanion() {
-    final coalText = _axis == _DimensionAxis.coal ? _dimension.text : '';
-    final cbtoText = _axis == _DimensionAxis.cbto ? _dimension.text : '';
+    final typed = _name.text.trim();
+    final name = typed.isEmpty ? _generateName() : typed;
     return UserLoadsCompanion(
-      name: drift.Value(_name.text.trim()),
+      name: drift.Value(name),
       caliber: drift.Value(_emptyToNull(_caliber.text)),
       powder: drift.Value(_emptyToNull(_powder.text)),
       powderChargeGr: drift.Value(double.tryParse(_powderCharge.text.trim())),
       bullet: drift.Value(_emptyToNull(_bullet.text)),
       bulletWeightGr: drift.Value(double.tryParse(_bulletWeight.text.trim())),
-      coalIn: drift.Value(double.tryParse(coalText.trim())),
-      cbtoIn: drift.Value(double.tryParse(cbtoText.trim())),
       useCase: drift.Value(_useCase),
       notes: drift.Value(_emptyToNull(_notes.text)),
     );
+  }
+
+  /// Fallback recipe name generator. See the regular form's
+  /// `_generateRecipeName` for the canonical version; this one
+  /// trims to the fields the Quick form actually has.
+  String _generateName() {
+    final parts = <String>[];
+    final caliber = _caliber.text.trim();
+    if (caliber.isNotEmpty) parts.add(caliber);
+    final weight = _bulletWeight.text.trim();
+    if (weight.isNotEmpty) {
+      parts.add(weight.toLowerCase().endsWith('gr') ? weight : '${weight}gr');
+    }
+    final powder = _powder.text.trim();
+    if (powder.isNotEmpty) {
+      parts.add(powder.length > 12 ? '${powder.substring(0, 12)}…' : powder);
+    }
+    final body = parts.isEmpty ? 'Recipe' : parts.join(' ');
+    final now = DateTime.now();
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    final hour12 = now.hour == 0
+        ? 12
+        : (now.hour > 12 ? now.hour - 12 : now.hour);
+    final ampm = now.hour >= 12 ? 'PM' : 'AM';
+    final minute = now.minute.toString().padLeft(2, '0');
+    return '$body — ${months[now.month - 1]} ${now.day} '
+        '$hour12:$minute $ampm';
   }
 
   String? _emptyToNull(String s) {
@@ -234,7 +254,29 @@ class _QuickAddRecipeScreenState extends State<QuickAddRecipeScreen> {
     Navigator.of(context).pop();
   }
 
+  /// "Switch to Regular" — open the full recipe form. The user does
+  /// not need to fill in a Recipe Name first: if the name is empty,
+  /// we just hand the partial draft to the regular form so they can
+  /// keep editing what's typed, with an empty name field to fill in.
+  /// If a name IS filled we persist first (so the row exists in the
+  /// list and autosave from the long form is in `update` mode) and
+  /// route to the saved row.
   Future<void> _switchToDetailed() async {
+    final navigator = Navigator.of(context);
+    final hasName = _name.text.trim().isNotEmpty;
+    if (!hasName) {
+      // No name yet — push the regular form with the partial draft as
+      // the seed. The regular form will open with these values
+      // populated and an empty Recipe Name field for the user to
+      // fill in there.
+      final draft = _buildCompanion();
+      navigator.pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => RecipeFormScreen(initialDraft: draft),
+        ),
+      );
+      return;
+    }
     final id = await _persist(showSnack: false);
     if (id == null || !mounted) return;
     final repo = context.read<RecipeRepository>();
@@ -243,7 +285,7 @@ class _QuickAddRecipeScreenState extends State<QuickAddRecipeScreen> {
     // Replace this Quick Add screen with the long form pre-populated
     // with the just-saved row, so back-button returns the user to the
     // recipes list — not back into Quick Add.
-    Navigator.of(context).pushReplacement(
+    navigator.pushReplacement(
       MaterialPageRoute(
         builder: (_) => RecipeFormScreen(existing: row),
       ),
@@ -289,37 +331,29 @@ class _QuickAddRecipeScreenState extends State<QuickAddRecipeScreen> {
                 onPick: _applyTemplate,
               ),
               const SizedBox(height: 12),
-              _SmartImportEntryCard(
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const SmartImportScreen(),
-                    ),
-                  );
+              // Collapsed-by-default imports section. Shared with the
+              // regular form so users see the same set on both. We pop
+              // back to the recipes list after a successful file
+              // import — the user explicitly bulk-imported, so showing
+              // them their list is the right next step.
+              ImportOptionsSection(
+                onImported: (_) {
+                  if (!mounted) return;
+                  Navigator.of(context).pop();
                 },
               ),
-              if (PhotoImportScreen.isSupportedPlatform) ...[
-                const SizedBox(height: 12),
-                _PhotoImportEntryCard(
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const PhotoImportScreen(),
-                      ),
-                    );
-                  },
-                ),
-              ],
               const SizedBox(height: 16),
+              // Recipe Name is optional — when the user taps Save
+              // with this empty, `_save` (further down) generates a
+              // name from caliber + bullet weight + powder +
+              // date/time. Hint copy makes the optional-ness clear.
               TextFormField(
                 controller: _name,
                 decoration: const InputDecoration(
-                  labelText: 'Recipe Name *',
-                  helperText: 'How you want to find this load later',
+                  labelText: 'Recipe Name',
+                  helperText:
+                      'Optional — we name it for you if blank',
                 ),
-                validator: (v) => (v == null || v.trim().isEmpty)
-                    ? 'Required'
-                    : null,
               ),
               const SizedBox(height: 12),
               ComponentField(
@@ -360,33 +394,6 @@ class _QuickAddRecipeScreenState extends State<QuickAddRecipeScreen> {
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
               ),
-              const SizedBox(height: 16),
-              _DimensionAxisPicker(
-                axis: _axis,
-                onChanged: (a) {
-                  setState(() {
-                    _axis = a;
-                    // Clear the field so the value is unambiguous after
-                    // a swap.
-                    _dimension.text = '';
-                  });
-                },
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _dimension,
-                decoration: InputDecoration(
-                  labelText: _axis == _DimensionAxis.coal
-                      ? 'COAL (in)'
-                      : 'CBTO (in)',
-                  suffixText: 'in',
-                  helperText: _axis == _DimensionAxis.coal
-                      ? 'Cartridge overall length'
-                      : 'Cartridge base to ogive',
-                ),
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-              ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _notes,
@@ -406,13 +413,14 @@ class _QuickAddRecipeScreenState extends State<QuickAddRecipeScreen> {
                 child: TextButton.icon(
                   onPressed: _busy ? null : _switchToDetailed,
                   icon: const Icon(Icons.tune),
-                  label: const Text('Switch to detailed'),
+                  label: const Text('Switch to Regular'),
                 ),
               ),
               const SizedBox(height: 4),
               Center(
                 child: Text(
-                  'Adds CBTO, primer, brass, pressure indicators, and more.',
+                  'Adds COAL, CBTO, primer, brass, pressure indicators, '
+                  'and more — your typed values come along.',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -523,94 +531,3 @@ class _TemplatePickerCard extends StatelessWidget {
   }
 }
 
-/// Compact "Import from spreadsheet" affordance on the Quick Add
-/// screen. Routes to the Smart Import wizard so a user with an Excel
-/// or CSV table doesn't have to retype every recipe by hand.
-class _SmartImportEntryCard extends StatelessWidget {
-  const _SmartImportEntryCard({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: ListTile(
-        leading: Icon(
-          Icons.table_chart_outlined,
-          color: theme.colorScheme.primary,
-        ),
-        title: Text(
-          'Import from spreadsheet',
-          style: theme.textTheme.titleSmall,
-        ),
-        subtitle: const Text(
-          'Bring in many recipes at once from a CSV or Excel file. Free.',
-        ),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: onTap,
-      ),
-    );
-  }
-}
-
-/// Compact "Import from photo" affordance on the Quick Add screen.
-/// Mirrors `_SmartImportEntryCard` but routes to the on-device OCR
-/// flow for pen-and-paper reloaders. Hidden on platforms that don't
-/// support `image_picker` + ML Kit (macOS / web).
-class _PhotoImportEntryCard extends StatelessWidget {
-  const _PhotoImportEntryCard({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: ListTile(
-        leading: Icon(
-          Icons.photo_camera_outlined,
-          color: theme.colorScheme.primary,
-        ),
-        title: Text(
-          'Import from photo',
-          style: theme.textTheme.titleSmall,
-        ),
-        subtitle: const Text(
-          'Snap a notebook page — we read it on this device. Free.',
-        ),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: onTap,
-      ),
-    );
-  }
-}
-
-/// Two-segment toggle between COAL and CBTO. Notebooks usually carry one
-/// or the other; presenting both at once would clutter the form.
-class _DimensionAxisPicker extends StatelessWidget {
-  const _DimensionAxisPicker({required this.axis, required this.onChanged});
-
-  final _DimensionAxis axis;
-  final ValueChanged<_DimensionAxis> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return SegmentedButton<_DimensionAxis>(
-      segments: const [
-        ButtonSegment(
-          value: _DimensionAxis.coal,
-          label: Text('COAL'),
-        ),
-        ButtonSegment(
-          value: _DimensionAxis.cbto,
-          label: Text('CBTO'),
-        ),
-      ],
-      selected: {axis},
-      onSelectionChanged: (s) => onChanged(s.first),
-    );
-  }
-}

@@ -1,0 +1,78 @@
+# FILE: dart_test.yaml
+#
+# ============================================================================
+# WHAT THIS FILE DOES
+# ============================================================================
+# Configures the Dart test runner that backs `flutter test`. Sets a default
+# 30-second per-test timeout to flag hangs early, runs four test isolates in
+# parallel by default, and registers a `slow` tag (consumed by every
+# `testWidgets(...)` callsite in `test/`) that bumps the per-test timeout
+# to 60 seconds. The `slow` tag is the lever that lets the dev iteration
+# loop exclude widget tests via `flutter test --exclude-tags=slow` —
+# tagged tests opt out, untagged unit tests run at full speed.
+#
+# ============================================================================
+# WHY IT EXISTS IN THE ARCHITECTURE
+# ============================================================================
+# Flutter's default `flutter test` discovers every file in `test/` and runs
+# them serially with a 30-minute timeout each. With ~55 test files in the
+# LoadOut repo, that yields a ~10-minute "all green" wall-clock that's too
+# slow to run on every save. This file is the project-wide knob that
+# (1) raises concurrency, (2) lowers the default timeout to surface hangs
+# immediately, and (3) declares the tag namespace the rest of the test
+# suite uses to separate fast unit tests from slow widget pumps. The
+# matching shell wrapper at `tool/test-fast.sh` is the dev-loop entry
+# point that calls `flutter test --exclude-tags=slow`.
+#
+# ============================================================================
+# WHY THIS IS HARDER THAN IT LOOKS
+# ============================================================================
+# - Per-test `timeout: ...` in `testWidgets(...)` overrides the tag-level
+#   timeout, which overrides the file-level timeout, which overrides this
+#   default. Don't be surprised if a test runs longer than 30s — check
+#   for a per-test override first.
+# - `concurrency: 4` runs four test isolates in parallel. Tests that share
+#   a global (e.g. a singleton `SharedPreferences.setMockInitialValues`
+#   call without a `setUp` reset) can flake in parallel where they
+#   passed serially. If a previously-green test starts flaking, suspect
+#   global state before suspecting the test runner.
+# - The `slow` tag has to be registered here even though widget tests
+#   declare it inline — if the registry doesn't list a tag, the runner
+#   treats tagged tests as a config error rather than a tag filter.
+# - Tags are case-sensitive. Use lower-case `slow` everywhere; the runner
+#   silently ignores tags that don't match the registry.
+#
+# ============================================================================
+# WHO CONSUMES THIS FILE
+# ============================================================================
+# - `flutter test` (and by extension every `dart test` invocation in this
+#   repo). The Flutter tool reads `dart_test.yaml` from the project root
+#   automatically; no flag is required.
+# - `tool/test-fast.sh` — fast dev-loop wrapper that calls
+#   `flutter test --exclude-tags=slow`.
+# - Every `testWidgets(...)` callsite in `test/*_widget_test.dart` and
+#   `test/quick_add_fab_stack_test.dart` declares `tags: 'slow'`, which
+#   only resolves cleanly because this file registers the tag.
+#
+# ============================================================================
+# SIDE EFFECTS
+# ============================================================================
+# - None at runtime. This is config consumed by the test runner before
+#   any test process starts.
+
+# Default timeout: 15 seconds. The full suite runs in under 17s
+# wall-clock today, so any single test slower than 15s is either
+# a hang or has stretched far past where it ought to be — surface
+# the symptom early. Tagged `slow` tests get 30s (still tight; a
+# real widget pump-and-settle finishes in 1-3s).
+timeout: 15s
+
+# Concurrency: use 4 isolates by default. Bump to 6-8 only after
+# auditing every test for shared global state (SharedPreferences
+# mock state, Firebase mock singletons, etc.). At 4 the LoadOut
+# suite hasn't shown flake from concurrency.
+concurrency: 4
+
+tags:
+  slow:
+    timeout: 30s  # widget tests need a bit longer than unit tests

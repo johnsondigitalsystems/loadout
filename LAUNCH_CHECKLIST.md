@@ -258,3 +258,140 @@ ship JSON corrections without a store release. See
   "Unable to load asset" on a fresh install). Without it in CI, that
   whole class can regress without any compile-time signal.
 - [ ] Versioning / release process.
+
+## Reticle & scope data — verification
+
+The verified scope+reticle catalog (schema v22+) ships ~47 scope models
+across 19 brands. Some entries are sourced from manufacturer URLs
+(`verified: true`); others have approximated geometry or a missing
+subtension dictionary (`verified: false` — picker hides them by default).
+The list below is the work that requires physical-world access (paper
+manuals, dealer relationships) which I can't do programmatically.
+
+- [ ] **Get Tier 3 reticle subtension PDFs** — 24 reticle entries across
+  ZeroTech, Riton, Swarovski, Zeiss, Meopta, March, Sightron currently
+  ship with `subtensionsJson: null` and `verified: false`. Most
+  manufacturer PDFs are not extractable via WebFetch (paywalled,
+  login-gated, JS-only viewers). Either:
+  - Email each brand's optics-tech contact and request the subtension
+    sheet, OR
+  - Open the printed user manual that ships in the scope's box and
+    type the subtension dimensions into each entry's `subtensionsJson`.
+  Once filled, flip `verified: true` per row.
+- [ ] **Confirm Hensoldt CCC + NSV reticles exist** — neither pattern is
+  published by Hensoldt in any retrievable form. NSV is a night-vision
+  attachment line, not a reticle. Confirm with Hensoldt USA whether
+  these are real reticle names — if not, delete the entries.
+- [ ] **Confirm March-X / March-FX exact SKUs** — DEON's product-code
+  suffix pattern (`D50V56TI-MTR-1` etc.) was inferred from retailer
+  pages; the box-printed SKU may differ. Photograph the SKU on a
+  physical scope and verify against the JSON entries.
+- [ ] **Confirm "Riton 5 PRIMAL" → 5 Conquer substitution** — the 5
+  Primal 5-25x56 doesn't exist; substituted with the 5 Conquer 5-25x56.
+  Documented in the entry's `notes` field. Confirm with Riton USA.
+- [ ] **Confirm "Sightron SVII PLR 4.5-30x56" → SVIII 5-40x56
+  substitution** — the SVII PLR 4.5-30x56 doesn't exist in the current
+  Sightron catalog; substituted with the SVIII 5-40x56 FFP. Confirm
+  with Sightron USA.
+- [ ] **Source Sig Sauer Tango6T MSR-BDC6 per-yard mil drops** — the
+  reticle is calibrated for 5.56/77gr SMK ballistics. Per-yard drops
+  in the JSON were estimated from generic 5.56 ballistics; replace
+  with the values from Sig's printed reticle manual.
+- [ ] **Source Primary Arms ACSS-HUD-DMR per-yard drops for .308** —
+  same shape: I estimated for 175gr SMK at 2600 fps. Real per-yard
+  values live in PA's reticle PDF (download from primaryarmsoptics.com
+  manually since WebFetch returned binary) and replace.
+- [ ] **Verify Swarovski X5(i) / Z6i specs** — swarovskioptik.com
+  returned 404 from automated WebFetch (rate-limited / bot-detected).
+  Specs sourced from Greentop / SportOptics retailer mirrors. Open
+  the manufacturer page in a browser and cross-check tube / clicks /
+  travel / max-adjust against what we have.
+- [ ] **Vortex EBR-2C MRAD/MOA + Horus TReMoR3 / H59 last 2%** — Horus
+  reticles ship at ~98% renderable fidelity. The remaining 2% is
+  peripheral ranging stadia + accessory bars at the extreme edges.
+  Pull the latest Horus PDF revision from horusvision.com/dealer-portal
+  (dealer login) and add the missing peripheral elements.
+- [ ] **Add a `chevron` element type to the reticle renderer** —
+  Horus chevron mil markers are currently approximated with two angled
+  `crosshair` segments per chevron (40 chevrons × 2 segments × 2
+  reticles = 160 surplus elements). A native `chevron` type in
+  `lib/data/reticle_library.dart` + the painter would render cleaner
+  and reduce element count. Small renderer change; geometry import is
+  already correct, just verbose.
+
+## Custom Drag Models (CDM) — strategic
+
+- [ ] **Aggregate manufacturer-published CDM data instead of trying to
+  match Applied Ballistics head-on.** AB's library is proprietary
+  Doppler radar measurement and not licensable. The strategic answer
+  is to expand our Hornady 4DOF support to also import:
+  - Berger Tuning Calculator data (CSV exports — public)
+  - Sierra published "match-grade" trajectory tables
+  - Lapua published BC-vs-velocity curves
+  - Older CDM data on JBM Ballistics
+  Build a generic "import per-bullet drag table from CSV" path that
+  the user pastes manufacturer data into. Marketing message: "use the
+  drag data the bullet maker already publishes for your bullet" —
+  not "we matched AB."
+
+## Reticle & scope IP / trademarks (legal review needed)
+
+- [ ] **Get a real lawyer's read on reticle name + geometry use.**
+  See `docs/RETICLE_LICENSING.md` for the full risk analysis. Short
+  version: **HIGH RISK on the Horus TReMoR / H series** (Horus Vision
+  LLC is litigious about IP; trade dress + design patents on the
+  geometry); **MEDIUM RISK on brand-specific reticles** (EBR, MOAR,
+  MIL-XT, P4F — nominative fair use likely covers using the name to
+  identify the scope's reticle option, but rendering an approximation
+  of the design is grayer); **LOW / NO RISK on generic patterns**
+  (mil-dot, plex, duplex — public domain).
+- [ ] **Decide before launch** whether to:
+  - (a) Pay for licensing — most likely impossible / too expensive
+    for Horus + brand-specific.
+  - (b) Replace high-risk named reticles with generic descriptors
+    in the picker (e.g. "Horus TReMoR3" → "Horus-style mil grid",
+    keep scope/manufacturer names since they're factual).
+  - (c) Stay with the current approach (name + approximate render)
+    PLUS add a clear disclaimer: "Reticle names and geometric
+    representations are used for identification only. LoadOut is
+    not affiliated with [Horus Vision LLC, Vortex Optics,
+    Nightforce, Schmidt & Bender, etc.]. All trademarks belong to
+    their respective owners."
+  Option (c) is what most ballistic apps do (Strelok Pro, Geoballistics
+  BalisticArc); the lawyer answer determines whether it's enough.
+- [ ] **Build a generic "LoadOut Default" reticle as the rendered
+  fallback** for the realistic-mode scope view. A clean Christmas-tree
+  mil pattern designed by us, our own art. Users still PICK named
+  reticles for hold-off math, but the default RENDERED visual is our
+  own design — moves Horus geometry off the rendered surface and onto
+  the hold-off math surface only (data, not visual reproduction).
+
+## Test infrastructure
+
+- [ ] **Repair the 12 widget tests fixed by removing runZonedGuarded
+  workarounds** — long-term, these tests should not depend on the
+  workaround pattern. Most landed cleanly (suite is green); the
+  rewrites are noted in the test files' header comments. Confirm
+  during the next QA pass that the tests still verify what they
+  intend to verify, not just that the screen mounts without throwing.
+- [ ] **Codify the published-Litz / JBM regression suite** — the
+  external-validation answer (see CLAUDE.md §20 + `litz_regression_test.dart`).
+  ~5–10 reference projectiles × 2 atmospheres × 5–6 ranges, asserting
+  each row matches the published Litz / JBM tables within ±0.1 mil at
+  ≤ 1000 yd. The suite is in place; per-row Litz citations need to be
+  filled in by reading from a printed copy of *Applied Ballistics for
+  Long-Range Shooting* 2nd ed.
+
+## Hardware / device QA
+
+- [ ] **Real-device QA pass for Range Day**: dropdown filter-chip flow
+  (target / category), empty-state load picker (Quick + Common Loads),
+  target preview row, fullscreen reticle viewer + daytime backdrop,
+  rack-of-targets switch, view-mode toggle (Realistic vs Target-
+  Focused), rangefinder pairing.
+- [ ] **Test reticle picker `verified` flag UX** — does the warning
+  chip on unverified entries read correctly to a power user? Adjust
+  copy if it sounds patronizing.
+- [ ] **Smoke-test rate limiting** on the AI Smart Import worker —
+  fire-hose 30+ requests in a minute and confirm 429 with `Retry-After`
+  header. Optional but useful before scaling. (See § AI Smart Import.)

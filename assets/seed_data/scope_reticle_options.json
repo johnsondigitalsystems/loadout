@@ -343,6 +343,590 @@
       "manufacturer_sku": null,
       "is_default": true,
       "notes": "HTMR is the precision-shooter SKU on the VX-5HD 3-15. Reticle row currently a placeholder (verified=false) until a per-reticle PDF subtension diagram is captured."
+    },
+    {
+      "scope_manufacturer": "Tangent Theta",
+      "scope_model": "TT525P 5-25x56",
+      "reticle_id": "tangent_theta_mil_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "MIL is the most-popular default on the TT525P 5-25x56. Renderable elements captured from the published Tangent Theta MIL reticle PDF."
+    },
+    {
+      "scope_manufacturer": "Tangent Theta",
+      "scope_model": "TT525P 5-25x56",
+      "reticle_id": "tangent_theta_jtac_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "JTAC reticle option (military / JTAC pattern). Reticle row is a placeholder (verified=false) until per-element diagram is captured."
+    },
+    {
+      "scope_manufacturer": "Tangent Theta",
+      "scope_model": "TT525P 5-25x56",
+      "reticle_id": "tangent_theta_gen3xr_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "Gen3XR reticle option (Christmas-tree variant). Placeholder reticle row."
+    },
+    {
+      "scope_manufacturer": "Tangent Theta",
+      "scope_model": "TT315M 3-15x50",
+      "reticle_id": "tangent_theta_mil_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "MIL default on TT315M (same reticle row as the TT525P MIL SKU)."
+    },
+    {
+      "scope_manufacturer": "Tangent Theta",
+      "scope_model": "TT315M 3-15x50",
+      "reticle_id": "tangent_theta_jtac_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "JTAC reticle option."
+    },
+    {
+      "scope_manufacturer": "Zero Compromise Optic",
+      "scope_model": "ZC527 5-27x56",
+      "reticle_id": "zco_mpct2_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "MPCT2 is the headline reticle for the ZC527. Renderable element list captured."
+    },
+    {
+      "scope_manufacturer": "Zero Compromise Optic",
+      "scope_model": "ZC527 5-27x56",
+      "reticle_id": "zco_mpct3_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "MPCT3 reticle option (placeholder, verified=false)."
+    },
+    {
+      "scope_manufacturer": "Zero Compromise Optic",
+      "scope_model": "ZC527 5-27x56",
+      "reticle_id": "zco_mpct3x_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "MPCT3X reticle option (placeholder)."
+    },
+    {
+      "scope_manufacturer": "Zero Compromise Optic",
+      "scope_model": "ZC840 8-40x56",
+      "reticle_id": "zco_mpct3_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "MPCT3 default on the ZC840 ELR scope. Placeholder reticle until subtension diagram captured."
+    },
+    {
+      "scope_manufacturer": "Zero Compromise Optic",
+      "scope_model": "ZC840 8-40x56",
+      "reticle_id": "zco_mpct3x_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "MPCT3X reticle option."
+    },
+    {
+      "scope_manufacturer": "Zero Compromise Optic",
+      "scope_model": "ZC840 8-40x56",
+      "reticle_id": "zco_mpct2_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "MPCT2 reticle option (also offered on ZC840)."
+    },
+    {
+      "scope_manufacturer": "Hensoldt",
+      "scope_model": "ZF 4-16x56",
+      "reticle_id": "hensoldt_ccc_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "CCC default on ZF 4-16x56. Placeholder reticle row."
+    },
+    {
+      "scope_manufacturer": "Hensoldt",
+      "scope_model": "ZF 4-16x56",
+      "reticle_id": "hensoldt_nsv_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "NSV reticle option."
+    },
+    {
+      "scope_manufacturer": "Hensoldt",
+      "scope_model": "ZF 4-16x56",
+      "reticle_id": "hensoldt_mr_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "MR reticle option."
+    },
+    {
+      "scope_manufacturer": "Hensoldt",
+      "scope_model": "ZF 6-24x72",
+      "reticle_id": "hensoldt_ccc_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "CCC default on ZF 6-24x72."
+    },
+    {
+      "scope_manufacturer": "Hensoldt",
+      "scope_model": "ZF 6-24x72",
+      "reticle_id": "hensoldt_nsv_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "NSV reticle option."
+    },
+    {
+      "scope_manufacturer": "Hensoldt",
+      "scope_model": "ZF 6-24x72",
+      "reticle_id": "hensoldt_mr_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "MR reticle option."
+    },
+    {
+      "scope_manufacturer": "Kahles",
+      "scope_model": "K525i 5-25x56",
+      "reticle_id": "kahles_skmr4_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "SKMR4 default on K525i 5-25x56. Placeholder reticle row (verified=false)."
+    },
+    {
+      "scope_manufacturer": "Kahles",
+      "scope_model": "K525i 5-25x56",
+      "reticle_id": "kahles_msr_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "MSR reticle option."
+    },
+    {
+      "scope_manufacturer": "Kahles",
+      "scope_model": "K525i 5-25x56",
+      "reticle_id": "kahles_amr_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "AMR reticle option."
+    },
+    {
+      "scope_manufacturer": "Kahles",
+      "scope_model": "K318i 3.5-18x50",
+      "reticle_id": "kahles_skmr4_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "SKMR4 default on K318i 3.5-18x50."
+    },
+    {
+      "scope_manufacturer": "Kahles",
+      "scope_model": "K318i 3.5-18x50",
+      "reticle_id": "kahles_msr_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "MSR reticle option."
+    },
+    {
+      "scope_manufacturer": "Kahles",
+      "scope_model": "K318i 3.5-18x50",
+      "reticle_id": "kahles_amr_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "AMR reticle option."
+    },
+    {
+      "scope_manufacturer": "Bushnell",
+      "scope_model": "Match Pro ED 5-30x56",
+      "reticle_id": "bushnell_eql_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "EQL Christmas-tree default on Match Pro ED 5-30x56. Placeholder reticle row."
+    },
+    {
+      "scope_manufacturer": "Bushnell",
+      "scope_model": "Match Pro ED 5-30x56",
+      "reticle_id": "bushnell_deploy_mil_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "Deploy MIL reticle option."
+    },
+    {
+      "scope_manufacturer": "Bushnell",
+      "scope_model": "Match Pro ED 5-30x56",
+      "reticle_id": "bushnell_deploy_moa_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "Deploy MOA reticle option."
+    },
+    {
+      "scope_manufacturer": "Sig Sauer",
+      "scope_model": "Tango6T 1-6x24",
+      "reticle_id": "sig_msr_bdc6_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "MSR-BDC6 default on Tango6T 1-6x24 LPVO. Placeholder reticle row."
+    },
+    {
+      "scope_manufacturer": "Sig Sauer",
+      "scope_model": "Tango6T DEV-L 5-30x56",
+      "reticle_id": "sig_dev_l_mil_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "DEV-L MIL default on Tango6T DEV-L 5-30x56. Placeholder reticle row until per-element diagram is captured."
+    },
+    {
+      "scope_manufacturer": "Athlon Optics",
+      "scope_model": "Cronus BTR Gen2 4.5-29x56",
+      "reticle_id": "athlon_aprs6_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "APRS6 FFP IR MIL default on Cronus BTR Gen2 4.5-29x56."
+    },
+    {
+      "scope_manufacturer": "Athlon Optics",
+      "scope_model": "Cronus BTR Gen2 4.5-29x56",
+      "reticle_id": "athlon_aplr8_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "APLR8 FFP IR MOA reticle option."
+    },
+    {
+      "scope_manufacturer": "Element Optics",
+      "scope_model": "Helix 6-24x50 FFP",
+      "reticle_id": "element_apr2d_mil_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "APR-2D MIL default on Helix 6-24x50 FFP."
+    },
+    {
+      "scope_manufacturer": "Burris",
+      "scope_model": "XTR III 5.5-30x56",
+      "reticle_id": "burris_scr2_mil_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "SCR2 MIL default on XTR III 5.5-30x56."
+    },
+    {
+      "scope_manufacturer": "Burris",
+      "scope_model": "XTR III 5.5-30x56",
+      "reticle_id": "burris_scr2_moa_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "SCR2 MOA reticle option."
+    },
+    {
+      "scope_manufacturer": "Arken Optics",
+      "scope_model": "EP5 5-25x56 FFP",
+      "reticle_id": "arken_vpr_mil_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "VPR MIL default on EP5 5-25x56 FFP."
+    },
+    {
+      "scope_manufacturer": "Arken Optics",
+      "scope_model": "EP5 5-25x56 FFP",
+      "reticle_id": "arken_vpr_moa_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "VPR MOA reticle option."
+    },
+    {
+      "scope_manufacturer": "Arken Optics",
+      "scope_model": "SH4 6-24x50 FFP",
+      "reticle_id": "arken_vpr_mil_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "VPR MIL default on SH4 6-24x50 FFP (same reticle row as EP5)."
+    },
+    {
+      "scope_manufacturer": "Arken Optics",
+      "scope_model": "SH4 6-24x50 FFP",
+      "reticle_id": "arken_vpr_moa_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "VPR MOA reticle option."
+    },
+    {
+      "scope_manufacturer": "Primary Arms",
+      "scope_model": "GLx 4-16x50 FFP",
+      "reticle_id": "primary_arms_acss_griffin_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "ACSS Griffin MIL default on GLx 4-16x50 FFP. Renderable element list captured."
+    },
+    {
+      "scope_manufacturer": "Primary Arms",
+      "scope_model": "GLx 4-16x50 FFP",
+      "reticle_id": "primary_arms_acss_hud_dmr_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "ACSS-HUD-DMR-308 reticle option."
+    },
+    {
+      "scope_manufacturer": "Primary Arms",
+      "scope_model": "SLx 4-14x44 FFP",
+      "reticle_id": "primary_arms_acss_hud_dmr_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "ACSS-HUD-DMR-308 default on SLx 4-14x44 FFP."
+    },
+    {
+      "scope_manufacturer": "Primary Arms",
+      "scope_model": "SLx 4-14x44 FFP",
+      "reticle_id": "primary_arms_acss_griffin_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "ACSS Griffin MIL reticle option."
+    },
+    {
+      "scope_manufacturer": "Aimpoint",
+      "scope_model": "CompM5",
+      "reticle_id": "aimpoint_2moa_dot_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "2 MOA red dot is the only reticle for CompM5. Renderable element captured."
+    },
+    {
+      "scope_manufacturer": "EOTech",
+      "scope_model": "XPS3-0 Holographic",
+      "reticle_id": "eotech_xps3_holographic_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "1 MOA dot + 68 MOA ring is the standard XPS3-0 reticle. Renderable element captured."
+    },
+    {
+      "scope_manufacturer": "Trijicon",
+      "scope_model": "ACOG TA31 4x32",
+      "reticle_id": "trijicon_acog_bac_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "BAC chevron 5.56 reticle on TA31. Renderable element list captured (chevron + BDC ladder)."
+    },
+    {
+      "scope_manufacturer": "Holosun",
+      "scope_model": "HE509T",
+      "reticle_id": "holosun_he509t_circle_dot_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "32 MOA ring + 2 MOA dot multi-reticle pattern is the default on HE509T. Renderable element captured."
+    },
+    {
+      "scope_manufacturer": "ZeroTech Optics",
+      "scope_model": "Trace Advanced 4.5-27x50 RMG FFP",
+      "reticle_id": "zerotech_rmg_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "RMG (FFP MRAD) is the only reticle on this body; the SFP-bodied 4.5-27x50 R3 ships as a separate scope row. Reticle row is verified=false pending manual subtension capture."
+    },
+    {
+      "scope_manufacturer": "ZeroTech Optics",
+      "scope_model": "Trace Advanced 4.5-27x50 RMG FFP",
+      "reticle_id": "zerotech_r3_mil_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "MIL R3 ships in the SFP version only per current ZeroTech catalog; wired here as a secondary catalog cross-link so users coming from the prompt brief see both reticle names."
+    },
+    {
+      "scope_manufacturer": "ZeroTech Optics",
+      "scope_model": "Vengeance 4-20x50 SFP",
+      "reticle_id": "zerotech_phr2_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "PHR II is the default reticle on the Vengeance 4-20x50. ZeroTech also ships R3 / R3 IR / PHR II IR variants under different SKUs."
+    },
+    {
+      "scope_manufacturer": "ZeroTech Optics",
+      "scope_model": "Vengeance 4-20x50 SFP",
+      "reticle_id": "zerotech_r3_mil_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "R3 reticle option on the Vengeance 4-20x50."
+    },
+    {
+      "scope_manufacturer": "Riton Optics",
+      "scope_model": "5 Conquer 5-25x56 FFP",
+      "reticle_id": "riton_psr_mil_v2",
+      "manufacturer_sku": "850041390086",
+      "is_default": true,
+      "notes": "PSR (FFP MRAD, illuminated) is the default reticle on the MRAD SKU (UPC 850041390086)."
+    },
+    {
+      "scope_manufacturer": "Riton Optics",
+      "scope_model": "5 Conquer 5-25x56 FFP",
+      "reticle_id": "riton_bas_moa_v2",
+      "manufacturer_sku": "850041390093",
+      "is_default": false,
+      "notes": "BAS (FFP MOA, illuminated) reticle on the MOA SKU (UPC 850041390093)."
+    },
+    {
+      "scope_manufacturer": "Riton Optics",
+      "scope_model": "7 Conquer 4-32x56 FFP",
+      "reticle_id": "riton_psr_mil_v2",
+      "manufacturer_sku": "850041390185",
+      "is_default": true,
+      "notes": "PSR (FFP MRAD, illuminated) on the MRAD SKU (UPC 850041390185). Same Reticles row as the 5 Conquer 5-25x56 MRAD wiring -- one source of truth per pattern."
+    },
+    {
+      "scope_manufacturer": "Riton Optics",
+      "scope_model": "7 Conquer 4-32x56 FFP",
+      "reticle_id": "riton_mor_moa_v2",
+      "manufacturer_sku": "850041390192",
+      "is_default": false,
+      "notes": "MOR (FFP MOA, illuminated) reticle on the MOA SKU (UPC 850041390192)."
+    },
+    {
+      "scope_manufacturer": "Swarovski Optik",
+      "scope_model": "X5(i) 5-25x56 P",
+      "reticle_id": "swarovski_4wxi_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "4WX-I+ is the canonical tactical reticle on the X5i 5-25x56 P 1/4 MOA SKU."
+    },
+    {
+      "scope_manufacturer": "Swarovski Optik",
+      "scope_model": "X5(i) 5-25x56 P",
+      "reticle_id": "swarovski_brxi_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "BRX-I+ ballistic-tree reticle option."
+    },
+    {
+      "scope_manufacturer": "Swarovski Optik",
+      "scope_model": "X5(i) 5-25x56 P",
+      "reticle_id": "swarovski_brhi_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "BRH-I+ hunting reticle option."
+    },
+    {
+      "scope_manufacturer": "Swarovski Optik",
+      "scope_model": "Z6i 2.5-15x56 P (Gen 2)",
+      "reticle_id": "swarovski_4ai_v2",
+      "manufacturer_sku": "69558",
+      "is_default": true,
+      "notes": "4A-I default reticle on the Gen-2 BT (Ballistic Turret) SKU (Swarovski item # 69558)."
+    },
+    {
+      "scope_manufacturer": "Swarovski Optik",
+      "scope_model": "Z6i 2.5-15x56 P (Gen 2)",
+      "reticle_id": "swarovski_brti_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "BRT-I ballistic tree reticle option (current Gen-2 illuminated variant of the BRT/BRX patterns named in older catalogs)."
+    },
+    {
+      "scope_manufacturer": "Carl Zeiss",
+      "scope_model": "LRP S5 5-25x56",
+      "reticle_id": "zeiss_zf_mri_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "ZF-MRi (FFP MRAD illuminated) is the default reticle on the MIL SKU."
+    },
+    {
+      "scope_manufacturer": "Carl Zeiss",
+      "scope_model": "LRP S5 5-25x56",
+      "reticle_id": "zeiss_zf_moai_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "ZF-MOAi (FFP MOA illuminated) reticle on the MOA SKU."
+    },
+    {
+      "scope_manufacturer": "Carl Zeiss",
+      "scope_model": "Victory V8 4.8-35x60",
+      "reticle_id": "zeiss_reticle_60_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "Reticle 60 (illuminated plex) is the default on the international V8 4.8-35x60 SKU. The ZBR-2 / ZMOA-T30 reticles named in the LoadOut sourcing brief are NOT cataloged for this body on either zeiss.com region; Reticle 60 is the canonical default."
+    },
+    {
+      "scope_manufacturer": "Carl Zeiss",
+      "scope_model": "Victory V8 4.8-35x60",
+      "reticle_id": "zeiss_reticle_43_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "Reticle 43 (illuminated mil-dot variant) on the alternative SKU."
+    },
+    {
+      "scope_manufacturer": "Meopta",
+      "scope_model": "Optika6 5-30x56 RD FFP",
+      "reticle_id": "meopta_mrad1_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "MRAD-1 (illuminated FFP MRAD) is the default reticle on the FFP RD MRAD SKU."
+    },
+    {
+      "scope_manufacturer": "Meopta",
+      "scope_model": "Optika6 5-30x56 RD FFP",
+      "reticle_id": "meopta_mildot2_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "Mil-Dot 3 / Mil-Dot 2 illuminated reticle option on the same body. (Meopta refers to 'Mil-Dot 3' in some marketing copy and 'Mil-Dot 2' in others; both share the LoadOut placeholder row.)"
+    },
+    {
+      "scope_manufacturer": "Meopta",
+      "scope_model": "Optika6 4.5-27x50 RD FFP",
+      "reticle_id": "meopta_mrad1_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "MRAD-1 (illuminated FFP MRAD) on the MIL SKU. Same Reticles row as the 5-30x56 wiring."
+    },
+    {
+      "scope_manufacturer": "Meopta",
+      "scope_model": "Optika6 4.5-27x50 RD FFP",
+      "reticle_id": "meopta_mildot2_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "Mil-Dot 2 illuminated reticle option."
+    },
+    {
+      "scope_manufacturer": "DEON Optical Design (March)",
+      "scope_model": "March-X 5-50x56 SFP Tactical",
+      "reticle_id": "march_mtr1_moa_v2",
+      "manufacturer_sku": "D50V56TI-MTR-1",
+      "is_default": true,
+      "notes": "MTR-1 is the standard target reticle on the March-X 5-50x56. Other reticles available: MTR-2 / MTR-3 / MTR-4 / MTR-5 / MTR-FT / MTR-RTM / Di-Plex / FD-1; only the MTR-1 placeholder row is wired here. SKU pattern observed on retailer pages (DEON product code D50V56TI plus suffixed reticle code)."
+    },
+    {
+      "scope_manufacturer": "DEON Optical Design (March)",
+      "scope_model": "March-FX 4.5-28x52 FFP Tactical High Master Wide-Angle",
+      "reticle_id": "march_fml_pdki_v2",
+      "manufacturer_sku": "D28HV52WFIMLX-FML-PDKi",
+      "is_default": true,
+      "notes": "FML-PDKi (illuminated FFP MRAD precision Christmas tree) is the standard reticle on the Shuriken-lock D28HV52WFIMLX. SKU pattern from DEON product page."
+    },
+    {
+      "scope_manufacturer": "DEON Optical Design (March)",
+      "scope_model": "March-FX 4.5-28x52 FFP Tactical High Master Wide-Angle",
+      "reticle_id": "march_fml_tr1_v2",
+      "manufacturer_sku": "D28HV52WFIML-FML-TR1",
+      "is_default": false,
+      "notes": "FML-TR1 illuminated FFP MRAD tactical reticle option on the non-Shuriken D28HV52WFIML SKU sibling."
+    },
+    {
+      "scope_manufacturer": "Sightron",
+      "scope_model": "SVIII 5-40x56 FFP ED IR Zero Stop",
+      "reticle_id": "sightron_lrm_mil_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "LRM (Long Range Mil) is the default reticle on the SVIII 5-40x56 FFP."
+    },
+    {
+      "scope_manufacturer": "Sightron",
+      "scope_model": "SVIII 5-40x56 FFP ED IR Zero Stop",
+      "reticle_id": "sightron_mh6_mil_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "MH-6 (Mid-Haul 6) reticle option."
+    },
+    {
+      "scope_manufacturer": "Sightron",
+      "scope_model": "SIII PLR 6-24x50 FFP Zero Stop",
+      "reticle_id": "sightron_mh_h_mil_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "MH-H IR (FFP MIL hash, illuminated) is the default reticle on the MIL SKU."
+    },
+    {
+      "scope_manufacturer": "Sightron",
+      "scope_model": "SIII PLR 6-24x50 FFP Zero Stop",
+      "reticle_id": "sightron_moa_h_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "MOA-H IR (FFP MOA hash, illuminated) reticle on the MOA SKU."
     }
   ]
 }

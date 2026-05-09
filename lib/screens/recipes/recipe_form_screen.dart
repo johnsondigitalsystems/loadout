@@ -35,11 +35,14 @@
 // persistence under the key `recipe_form_detail_level`. Every `_FieldDef`
 // declares the lowest level at which it should be visible, and
 // `DetailLevel.includes` enforces nesting (basic ⊂ detailed ⊂ all). The
-// `Basic` level shows just the most-used fields (Recipe Name, Caliber,
-// Powder, Charge, Bullet, Bullet Weight, Primer, Brass, COAL); `Detailed`
-// adds CBTO, Seating Depth, primer / brass setup, lot pickers, etc.;
-// `All` exposes pressure indicators, process / equipment provenance, and
-// advanced bullet-sorting fields.
+// `Core` level shows just the most-used fields (Recipe Name, Caliber,
+// Powder, Charge, Bullet, Bullet Weight, Primer, Brass, COAL);
+// `Extended` adds CBTO, Seating Depth, primer / brass setup, lot
+// pickers, etc.; `Full` exposes pressure indicators, process /
+// equipment provenance, and advanced bullet-sorting fields. The
+// underlying enum values stay `DetailLevel.basic / detailed / all`
+// for backwards compatibility with the persisted SharedPreferences
+// key `recipe_form_detail_level` — only the UI labels were renamed.
 //
 // A token-based filter input sits above the section list. When non-empty,
 // every token must appear (case-insensitively) in either the field's
@@ -182,13 +185,33 @@ import '../../utils/responsive.dart';
 import '../../widgets/auto_save_banner.dart';
 import '../../widgets/auto_save_first_time_hint.dart';
 import '../../widgets/component_field.dart';
+import '../../widgets/glossary_label.dart';
+import '../../widgets/import_options_section.dart';
 import '../../widgets/primer_cascade_field.dart';
 import '../../widgets/pro_gate.dart';
+import '../../widgets/recipe_qr_share_sheet.dart';
 import '../../widgets/unsaved_changes_dispatcher.dart';
 
 /// Trailing-`<num>gr` matcher used to extract the bullet weight out of a
 /// catalog label like `"Berger Long Range Hybrid Target 109gr"`.
 final RegExp _bulletWeightSuffix = RegExp(r'(\d+(?:\.\d+)?)\s*gr$');
+
+/// Helpers that bridge a `Value<T>` from a `UserLoadsCompanion` (the
+/// type Quick Add hands us via `initialDraft`) into the controller-text
+/// form the regular form's `TextEditingController`s consume. A
+/// `Value<T>` can be `Value.absent()` (the field wasn't supplied),
+/// `Value(null)` (the field was supplied as null), or `Value(t)` (the
+/// field had a real value); we map all three to a string.
+String _draftStr(drift.Value<String?> v) {
+  if (!v.present) return '';
+  return v.value ?? '';
+}
+
+String _draftDouble(drift.Value<double?> v) {
+  if (!v.present) return '';
+  final raw = v.value;
+  return raw == null ? '' : raw.toString();
+}
 
 /// Allowed values for the Primer Size dropdown.
 const List<String> _primerSizeOptions = <String>[
@@ -481,9 +504,24 @@ class _PairFieldItem extends _SectionRenderItem {
 }
 
 class RecipeFormScreen extends StatefulWidget {
-  const RecipeFormScreen({super.key, this.existing});
+  const RecipeFormScreen({
+    super.key,
+    this.existing,
+    this.initialDraft,
+  });
 
+  /// Existing recipe row to edit. Mutually exclusive with
+  /// [initialDraft]; when both are supplied, [existing] wins.
   final UserLoadRow? existing;
+
+  /// Optional partial draft to seed the form on a brand-new recipe.
+  /// Used by Quick Add's "Switch to Regular" path so the user
+  /// doesn't lose what they typed when promoting a Quick capture
+  /// into the full form. The form opens with these values populated,
+  /// an empty Recipe Name field for the user to fill, and is treated
+  /// as a brand-new unsaved row (autosave runs in `insert` mode on
+  /// first save).
+  final UserLoadsCompanion? initialDraft;
 
   @override
   State<RecipeFormScreen> createState() => _RecipeFormScreenState();
@@ -603,15 +641,31 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
   void initState() {
     super.initState();
     final e = widget.existing;
-    _name = TextEditingController(text: e?.name ?? '');
-    _caliber = TextEditingController(text: e?.caliber ?? '');
-    _powder = TextEditingController(text: e?.powder ?? '');
-    _powderCharge = TextEditingController(
-      text: e?.powderChargeGr?.toString() ?? '',
+    final d = e == null ? widget.initialDraft : null;
+    // The Quick Add → Regular bridge passes a draft companion when the
+    // user picks "Switch to Regular" without filling a name. We seed
+    // controllers from `existing` first, then fall through to the
+    // draft for any field the draft populated. Fields not represented
+    // in Quick Add (primer, brass, COAL, etc.) stay default-empty.
+    _name = TextEditingController(
+      text: e?.name ?? (d == null ? '' : _draftStr(d.name)),
     );
-    _bullet = TextEditingController(text: e?.bullet ?? '');
+    _caliber = TextEditingController(
+      text: e?.caliber ?? (d == null ? '' : _draftStr(d.caliber)),
+    );
+    _powder = TextEditingController(
+      text: e?.powder ?? (d == null ? '' : _draftStr(d.powder)),
+    );
+    _powderCharge = TextEditingController(
+      text: e?.powderChargeGr?.toString() ??
+          (d == null ? '' : _draftDouble(d.powderChargeGr)),
+    );
+    _bullet = TextEditingController(
+      text: e?.bullet ?? (d == null ? '' : _draftStr(d.bullet)),
+    );
     _bulletWeight = TextEditingController(
-      text: e?.bulletWeightGr?.toString() ?? '',
+      text: e?.bulletWeightGr?.toString() ??
+          (d == null ? '' : _draftDouble(d.bulletWeightGr)),
     );
     _primer = TextEditingController(text: e?.primer ?? '');
     _brass = TextEditingController(text: e?.brass ?? '');
@@ -629,7 +683,9 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     _mandrelSize = TextEditingController(
       text: e?.mandrelSizeIn?.toString() ?? '',
     );
-    _notes = TextEditingController(text: e?.notes ?? '');
+    _notes = TextEditingController(
+      text: e?.notes ?? (d == null ? '' : _draftStr(d.notes)),
+    );
 
     // ── New v4 controllers ──
     _chargeTolerance = TextEditingController(
@@ -698,7 +754,8 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     _primerSize = null; // populated below from existing primer text
     _primerPocketSize = null;
     _status = e?.status;
-    _useCase = e?.useCase;
+    _useCase = e?.useCase ??
+        (d == null || !d.useCase.present ? null : d.useCase.value);
     _boltLift = e?.boltLift;
     _boreState = e?.boreState;
     _bulletMeplatTrimmed = e?.bulletMeplatTrimmed ?? false;
@@ -859,12 +916,63 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     );
   }
 
-  /// Autosave entry point. Skips the save if the recipe has no name
-  /// (it's not a complete enough record to persist yet). Insert on
-  /// first save, update on subsequent.
+  /// Build a fallback recipe name from the most-load-defining fields
+  /// + a date/time stamp. Used when the user saves without typing a
+  /// name. Aim: produce a string the user can recognize at a glance
+  /// in the list view ("6.5 CM 140gr H4350 — May 9 8:42 PM" beats
+  /// "Untitled recipe 47").
+  ///
+  /// Fields used in priority order:
+  ///   - Caliber (always shown if set)
+  ///   - Bullet weight (always shown if set, with "gr")
+  ///   - Powder name (truncated to 12 chars if very long)
+  ///   - Date + 12-hour time (always appended)
+  ///
+  /// If everything is empty, falls back to "Recipe — `<date> <time>`".
+  String _generateRecipeName() {
+    final parts = <String>[];
+    final caliber = _caliber.text.trim();
+    if (caliber.isNotEmpty) parts.add(caliber);
+    final weight = _bulletWeight.text.trim();
+    if (weight.isNotEmpty) {
+      // Don't double-up "gr" if the user already typed it.
+      parts.add(
+        weight.toLowerCase().endsWith('gr') ? weight : '${weight}gr',
+      );
+    }
+    final powder = _powder.text.trim();
+    if (powder.isNotEmpty) {
+      parts.add(
+        powder.length > 12 ? '${powder.substring(0, 12)}…' : powder,
+      );
+    }
+    final body = parts.isEmpty ? 'Recipe' : parts.join(' ');
+    final now = DateTime.now();
+    // Format: "May 9 8:42 PM" — month name, day, 12-hour wall clock.
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    final hour12 = now.hour == 0
+        ? 12
+        : (now.hour > 12 ? now.hour - 12 : now.hour);
+    final ampm = now.hour >= 12 ? 'PM' : 'AM';
+    final minute = now.minute.toString().padLeft(2, '0');
+    final stamp = '${months[now.month - 1]} ${now.day} '
+        '$hour12:$minute $ampm';
+    return '$body — $stamp';
+  }
+
+  /// Autosave entry point. If the recipe has no name, generate one
+  /// from caliber + load-defining fields + the current date/time so
+  /// the user always gets a row they can find later in the list.
+  /// Insert on first save, update on subsequent.
   Future<int?> _runAutoSave() async {
-    final name = _name.text.trim();
-    if (name.isEmpty) return null;
+    final typedName = _name.text.trim();
+    if (typedName.isEmpty) {
+      final generated = _generateRecipeName();
+      _name.text = generated;
+    }
     final repo = context.read<RecipeRepository>();
     final entry = _buildCompanion();
     int recipeId;
@@ -1053,6 +1161,11 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
       }
       if (!mounted) return;
       switch (format) {
+        case _RecipeShareFormat.share:
+          // Unified share sheet — exposes QR + copy + PDF inline. The
+          // dismissal is silent; sub-actions surface their own toasts.
+          await showRecipeQrShareSheet(context, row);
+          break;
         case _RecipeShareFormat.pdf:
           await RecipePdfService().share(context, row);
           break;
@@ -1132,11 +1245,21 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     }
   }
 
-  Future<void> _save() async {
+  /// Manual save handler. Persists every field on the form, then pops
+  /// the route iff [popAfter] is true. The "Done" button calls this
+  /// with `popAfter: true`; the "Save" (stay-on-page) button calls it
+  /// with `popAfter: false`. When autosave is on neither button
+  /// renders — autosave handles the save and back-button handles the
+  /// pop, so this method is only relevant for the autosave-off path.
+  ///
+  /// Uses [AutoSaveController.forceSave] under the hood so the saved
+  /// row id round-trips back into the controller — that means a
+  /// subsequent "Save" keeps issuing UPDATEs instead of accidentally
+  /// re-INSERTing the row.
+  Future<void> _save({bool popAfter = true}) async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _busy = true);
 
-    final repo = context.read<RecipeRepository>();
     final components = context.read<ComponentRepository>();
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
@@ -1159,99 +1282,28 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
       ensureCustom('brass', _brass),
     ]);
 
-    final entryLegacy = UserLoadsCompanion(
-      name: drift.Value(_name.text.trim()),
-      caliber: drift.Value(_trimToNull(_caliber)),
-      powder: drift.Value(_trimToNull(_powder)),
-      powderChargeGr: drift.Value(_parseDouble(_powderCharge)),
-      bullet: drift.Value(_trimToNull(_bullet)),
-      bulletWeightGr: drift.Value(_parseDouble(_bulletWeight)),
-      primer: drift.Value(_trimToNull(_primer)),
-      brass: drift.Value(_trimToNull(_brass)),
-      coalIn: drift.Value(_parseDouble(_coal)),
-      cbtoIn: drift.Value(_parseDouble(_cbto)),
-      seatingDepthIn: drift.Value(_parseDouble(_seatingDepth)),
-      primerDepthCps: drift.Value(_parseDouble(_primerDepth)),
-      shoulderBumpIn: drift.Value(_parseDouble(_shoulderBump)),
-      mandrelSizeIn: drift.Value(_parseDouble(_mandrelSize)),
-      notes: drift.Value(_trimToNull(_notes)),
-      // Phase 1 expansion fields.
-      status: drift.Value(_status),
-      useCase: drift.Value(_useCase),
-      powderLotId: drift.Value(_powderLotId),
-      chargeToleranceGr: drift.Value(_parseDouble(_chargeTolerance)),
-      // ── v15 ballistic-precision (powder temp sensitivity) ──
-      powderTempSensitivityFpsPerCelsius:
-          drift.Value(_parseDouble(_powderTempSensitivity)),
-      powderReferenceTempCelsius: _parseDouble(_powderReferenceTemp) == null
-          ? const drift.Value.absent()
-          : drift.Value(_parseDouble(_powderReferenceTemp)!),
-      primerLotId: drift.Value(_primerLotId),
-      primerSeatingForceLbs: drift.Value(_parseDouble(_primerSeatingForce)),
-      bulletLotId: drift.Value(_bulletLotId),
-      bulletLengthIn: drift.Value(_parseDouble(_bulletLength)),
-      bulletBaseToOgiveIn: drift.Value(_parseDouble(_bulletBaseToOgive)),
-      bulletBearingSurfaceIn: drift.Value(_parseDouble(_bulletBearingSurface)),
-      bulletMeplatTrimmed: drift.Value(_bulletMeplatTrimmed),
-      bulletPointed: drift.Value(_bulletPointed),
-      bulletWeightSorted: drift.Value(_bulletWeightSorted),
-      bulletWeightToleranceGr:
-          drift.Value(_parseDouble(_bulletWeightTolerance)),
-      bulletBtoSorted: drift.Value(_bulletBtoSorted),
-      bulletBtoToleranceIn: drift.Value(_parseDouble(_bulletBtoTolerance)),
-      bulletDiameterSorted: drift.Value(_bulletDiameterSorted),
-      brassLotId: drift.Value(_brassLotId),
-      distanceToLandsIn: drift.Value(_parseDouble(_distanceToLands)),
-      jumpToLandsIn: drift.Value(_parseDouble(_jumpToLands)),
-      loadedNeckDiameterIn: drift.Value(_parseDouble(_loadedNeckDiameter)),
-      bulletRunoutTirIn: drift.Value(_parseDouble(_bulletRunout)),
-      bushingSizeIn: drift.Value(_parseDouble(_bushingSize)),
-      pressureNotes: drift.Value(_trimToNull(_pressureNotes)),
-      boltLift: drift.Value(_boltLift),
-      ejectorMarks: drift.Value(_ejectorMarks),
-      crateredPrimers: drift.Value(_crateredPrimers),
-      webExpansion200In: drift.Value(_parseDouble(_webExpansion)),
-      primerFlatness: drift.Value(_primerFlatness),
-      loadingDate: drift.Value(_loadingDate),
-      roundsLoadedInBatch: drift.Value(_parseInt(_roundsLoadedInBatch)),
-      pressUsed: drift.Value(_trimToNull(_pressUsed)),
-      sizingDieUsed: drift.Value(_trimToNull(_sizingDieUsed)),
-      seatingDieUsed: drift.Value(_trimToNull(_seatingDieUsed)),
-      scaleUsed: drift.Value(_trimToNull(_scaleUsed)),
-      scaleCalibrationDate: drift.Value(_scaleCalibrationDate),
-      comparatorInsertUsed: drift.Value(_trimToNull(_comparatorInsertUsed)),
-      chronographUsed: drift.Value(_trimToNull(_chronographUsed)),
-      boreState: drift.Value(_boreState),
-      loadedBy: drift.Value(_trimToNull(_loadedBy)),
+    // Round-trip through the autosave controller so the row id lands
+    // back inside it — that keeps subsequent "Save" presses doing an
+    // UPDATE instead of a second INSERT, even when global autosave is
+    // off. `_runAutoSave` (the controller's `onSave` callback) is the
+    // canonical path that already knows how to insert vs update and
+    // also writes custom-field values, so reusing it here keeps the
+    // two save paths in lockstep.
+    final isInsert = _autoSave.currentRowId == null;
+    await _autoSave.forceSave();
+
+    if (!mounted) return;
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(isInsert ? 'Recipe Saved.' : 'Recipe Updated.'),
+      ),
     );
 
-    int recipeId;
-    final existingId = _autoSave.currentRowId;
-    if (existingId == null) {
-      recipeId = await repo.insert(entryLegacy);
-      messenger.showSnackBar(const SnackBar(content: Text('Recipe Saved.')));
-    } else {
-      recipeId = existingId;
-      await repo.update(recipeId, entryLegacy);
-      messenger.showSnackBar(const SnackBar(content: Text('Recipe Updated.')));
+    if (popAfter) {
+      navigator.pop();
+      return;
     }
-
-    // Persist custom-field values. We sync controller text into the
-    // _customValues map for text/number fields before writing.
-    for (final entry in _customControllers.entries) {
-      final fieldId = entry.key;
-      final text = entry.value.text.trim();
-      _customValues[fieldId] = text.isEmpty ? null : text;
-    }
-    for (final entry in _customValues.entries) {
-      await repo.setCustomFieldValue(
-        fieldId: entry.key,
-        entityId: recipeId,
-        value: entry.value,
-      );
-    }
-
-    if (mounted) navigator.pop();
+    setState(() => _busy = false);
   }
 
   // ─────────────────────── Form layout (declarative) ───────────────────────
@@ -1280,9 +1332,15 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         aliases: const ['title', 'name'],
         builder: (ctx) => TextFormField(
           controller: _name,
-          decoration: const InputDecoration(labelText: 'Recipe Name *'),
-          validator: (v) =>
-              (v == null || v.trim().isEmpty) ? 'Required' : null,
+          // Recipe Name is now optional — `_runAutoSave` /
+          // `_generateRecipeName` synthesize one from caliber +
+          // bullet weight + powder + a date/time stamp when the
+          // user saves a recipe with the field empty. The hint
+          // gives the user format guidance without making them type.
+          decoration: const InputDecoration(
+            labelText: 'Recipe Name',
+            hintText: 'Optional — we name it for you if blank',
+          ),
         ),
       ),
       _FieldId.caliber: _FieldDef(
@@ -1359,7 +1417,13 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           return TextFormField(
             controller: _powderCharge,
             decoration: InputDecoration(
-              labelText: 'Powder Charge ($wt)',
+              // `label:` Widget so GlossaryLabel can show the (?)
+              // tap-to-define affordance. `labelText:` (String) would
+              // lose it.
+              label: GlossaryLabel(
+                text: 'Powder Charge ($wt)',
+                glossaryTerm: 'Charge weight',
+              ),
               suffixText: wt,
             ),
             keyboardType:
@@ -1453,7 +1517,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         builder: (ctx) => TextFormField(
           controller: _powderTempSensitivity,
           decoration: const InputDecoration(
-            labelText: 'Sensitivity (fps/°C)',
+            label: GlossaryLabel(
+              text: 'Sensitivity (fps/°C)',
+              glossaryTerm: 'Temperature sensitivity',
+            ),
             suffixText: 'fps/°C',
             helperText:
                 'Powder velocity changes with temperature. Hodgdon Extreme '
@@ -1536,7 +1603,12 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         builder: (ctx) => DropdownButtonFormField<String>(
           initialValue: _primerSize,
           isExpanded: true,
-          decoration: const InputDecoration(labelText: 'Primer Size'),
+          decoration: const InputDecoration(
+            label: GlossaryLabel(
+              text: 'Primer Size',
+              glossaryTerm: 'Small / large pistol / rifle primers',
+            ),
+          ),
           items: [
             for (final s in _primerSizeOptions)
               DropdownMenuItem(value: s, child: Text(s)),
@@ -1559,7 +1631,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           return TextFormField(
             controller: _primerDepth,
             decoration: InputDecoration(
-              labelText: 'Primer Depth ($len)',
+              label: GlossaryLabel(
+                text: 'Primer Depth ($len)',
+                glossaryTerm: 'Primer pocket uniformity / depth',
+              ),
               suffixText: len,
               helperText: 'CPS, in 0.001" units',
             ),
@@ -1646,7 +1721,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           return TextFormField(
             controller: _bulletWeight,
             decoration: InputDecoration(
-              labelText: 'Bullet Weight ($wt)',
+              label: GlossaryLabel(
+                text: 'Bullet Weight ($wt)',
+                glossaryTerm: 'Sectional Density',
+              ),
               suffixText: wt,
             ),
             keyboardType:
@@ -1744,7 +1822,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           return TextFormField(
             controller: _bulletBearingSurface,
             decoration: InputDecoration(
-              labelText: 'Bearing Surface Length ($len)',
+              label: GlossaryLabel(
+                text: 'Bearing Surface Length ($len)',
+                glossaryTerm: 'Bearing surface',
+              ),
               suffixText: len,
             ),
             keyboardType:
@@ -1881,7 +1962,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           return TextFormField(
             controller: _seatingDepth,
             decoration: InputDecoration(
-              labelText: 'Seating Depth ($len)',
+              label: GlossaryLabel(
+                text: 'Seating Depth ($len)',
+                glossaryTerm: 'Seating die',
+              ),
               suffixText: len,
             ),
             keyboardType:
@@ -1907,7 +1991,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           return TextFormField(
             controller: _cbto,
             decoration: InputDecoration(
-              labelText: 'CBTO ($len)',
+              label: GlossaryLabel(
+                text: 'CBTO ($len)',
+                glossaryTerm: 'Cartridge Base To Ogive',
+              ),
               suffixText: len,
               helperText: 'Cartridge base to ogive',
             ),
@@ -1959,7 +2046,12 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         builder: (ctx) => DropdownButtonFormField<String>(
           initialValue: _primerPocketSize,
           isExpanded: true,
-          decoration: const InputDecoration(labelText: 'Primer Pocket Size'),
+          decoration: const InputDecoration(
+            label: GlossaryLabel(
+              text: 'Primer Pocket Size',
+              glossaryTerm: 'Primer pocket uniformity / depth',
+            ),
+          ),
           items: [
             for (final s in _primerPocketOptions)
               DropdownMenuItem(value: s, child: Text(s)),
@@ -1986,7 +2078,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           return TextFormField(
             controller: _shoulderBump,
             decoration: InputDecoration(
-              labelText: 'Shoulder Bump ($len)',
+              label: GlossaryLabel(
+                text: 'Shoulder Bump ($len)',
+                glossaryTerm: 'Shoulder bump',
+              ),
               suffixText: len,
             ),
             keyboardType:
@@ -2006,7 +2101,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           return TextFormField(
             controller: _mandrelSize,
             decoration: InputDecoration(
-              labelText: 'Mandrel Size ($len)',
+              label: GlossaryLabel(
+                text: 'Mandrel Size ($len)',
+                glossaryTerm: 'Mandrel sizing',
+              ),
               suffixText: len,
             ),
             keyboardType:
@@ -2048,7 +2146,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           return TextFormField(
             controller: _coal,
             decoration: InputDecoration(
-              labelText: 'COAL ($len)',
+              label: GlossaryLabel(
+                text: 'COAL ($len)',
+                glossaryTerm: 'Cartridge Overall Length',
+              ),
               suffixText: len,
             ),
             keyboardType:
@@ -2072,7 +2173,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           return TextFormField(
             controller: _distanceToLands,
             decoration: InputDecoration(
-              labelText: 'Distance to Lands ($len)',
+              label: GlossaryLabel(
+                text: 'Distance to Lands ($len)',
+                glossaryTerm: 'Lands and grooves',
+              ),
               suffixText: len,
             ),
             keyboardType:
@@ -2092,7 +2196,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           return TextFormField(
             controller: _jumpToLands,
             decoration: InputDecoration(
-              labelText: 'Jump to Lands ($len)',
+              label: GlossaryLabel(
+                text: 'Jump to Lands ($len)',
+                glossaryTerm: 'Freebore',
+              ),
               suffixText: len,
             ),
             keyboardType:
@@ -2112,7 +2219,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           return TextFormField(
             controller: _loadedNeckDiameter,
             decoration: InputDecoration(
-              labelText: 'Loaded Neck Diameter ($len)',
+              label: GlossaryLabel(
+                text: 'Loaded Neck Diameter ($len)',
+                glossaryTerm: 'Neck tension',
+              ),
               suffixText: len,
             ),
             keyboardType:
@@ -2136,7 +2246,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           return TextFormField(
             controller: _bulletRunout,
             decoration: InputDecoration(
-              labelText: 'Bullet Runout / TIR ($len)',
+              label: GlossaryLabel(
+                text: 'Bullet Runout / TIR ($len)',
+                glossaryTerm: 'Concentricity gauge',
+              ),
               suffixText: len,
             ),
             keyboardType:
@@ -2154,7 +2267,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         builder: (ctx) => TextFormField(
           controller: _pressureNotes,
           decoration: const InputDecoration(
-            labelText: 'Pressure Notes',
+            label: GlossaryLabel(
+              text: 'Pressure Notes',
+              glossaryTerm: 'Pressure signs',
+            ),
             helperText: 'Free-form pressure-sign observations',
           ),
           maxLines: 3,
@@ -2172,7 +2288,12 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         builder: (ctx) => DropdownButtonFormField<String>(
           initialValue: _boltLift,
           isExpanded: true,
-          decoration: const InputDecoration(labelText: 'Bolt Lift'),
+          decoration: const InputDecoration(
+            label: GlossaryLabel(
+              text: 'Bolt Lift',
+              glossaryTerm: 'Pressure signs',
+            ),
+          ),
           items: [
             for (final s in _boltLiftOptions)
               DropdownMenuItem(value: s.value, child: Text(s.label)),
@@ -2617,10 +2738,12 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           actions: [
             // Share action. Only available once the recipe has been
             // saved at least once — there's nothing to share before
-            // then. The default tap shares a polished PDF; the
-            // long-press / overflow path also exposes the legacy plain-
-            // text share. Pending autosave is flushed inside
-            // [_shareRecipe] so the artifact matches the screen.
+            // then. The default tap opens the unified share sheet
+            // (QR + clipboard + PDF inline); the overflow exposes
+            // the direct PDF and plain-text exports for users who
+            // want to skip straight to a single artifact. Pending
+            // autosave is flushed inside [_shareRecipe] so the
+            // artifact matches the screen.
             if (isEdit || _autoSave.currentRowId != null)
               PopupMenuButton<_RecipeShareFormat>(
                 tooltip: 'Share recipe',
@@ -2628,6 +2751,16 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
                 enabled: !_busy,
                 onSelected: _shareRecipe,
                 itemBuilder: (ctx) => const [
+                  PopupMenuItem(
+                    value: _RecipeShareFormat.share,
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                      leading: Icon(Icons.qr_code_2_outlined),
+                      title: Text('Share via QR'),
+                      subtitle: Text('Scan-to-import for nearby devices'),
+                    ),
+                  ),
                   PopupMenuItem(
                     value: _RecipeShareFormat.pdf,
                     child: ListTile(
@@ -2700,15 +2833,15 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
                         segments: const [
                           ButtonSegment(
                             value: DetailLevel.basic,
-                            label: Text('Basic'),
+                            label: Text('Core'),
                           ),
                           ButtonSegment(
                             value: DetailLevel.detailed,
-                            label: Text('Detailed'),
+                            label: Text('Extended'),
                           ),
                           ButtonSegment(
                             value: DetailLevel.all,
-                            label: Text('All'),
+                            label: Text('Full'),
                           ),
                         ],
                         selected: {_detailLevel},
@@ -2751,6 +2884,16 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
                       ),
                     ),
                   const SizedBox(height: 16),
+                  // Collapsed-by-default imports section. Same widget
+                  // the Quick Add screen uses, so the user has every
+                  // import path in both forms.
+                  ImportOptionsSection(
+                    onImported: (_) {
+                      if (!mounted) return;
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                  const SizedBox(height: 16),
                   // Pro: import shot velocities from a Garmin Xero .fit
                   // export. Drops the resulting average / ES / SD into
                   // the Notes field and the Chronograph Used field —
@@ -2763,10 +2906,31 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
                     label: const Text('Import velocity from Garmin .fit'),
                   ),
                   const SizedBox(height: 16),
-                  FilledButton(
-                    onPressed: _busy ? null : _save,
-                    child: Text(_finalButtonLabel(autoSaveOn, isEdit)),
-                  ),
+                  // When autosave is ON we don't render Save / Done at
+                  // all — the autosave service handles persistence and
+                  // the system back button handles the navigation pop.
+                  // When autosave is OFF we surface Save (stays on
+                  // page) AND Done (saves + pops) side by side via a
+                  // `Wrap` so a narrow phone reflows them onto two
+                  // lines instead of overflowing.
+                  if (!autoSaveOn)
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      alignment: WrapAlignment.end,
+                      children: [
+                        OutlinedButton(
+                          onPressed: _busy
+                              ? null
+                              : () => _save(popAfter: false),
+                          child: const Text('Save'),
+                        ),
+                        FilledButton(
+                          onPressed: _busy ? null : _save,
+                          child: const Text('Done'),
+                        ),
+                      ],
+                    ),
                   const SizedBox(height: 16),
                 ],
               ),
@@ -2780,12 +2944,6 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         ),
       ),
     );
-  }
-
-  /// When autosave is on, the trailing button is just "Done".
-  String _finalButtonLabel(bool autoSaveOn, bool isEdit) {
-    if (autoSaveOn) return 'Done';
-    return isEdit ? 'Save Changes' : 'Create Recipe';
   }
 
   bool _noVisibleFields(
@@ -2894,7 +3052,7 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Text(
                   _detailLevel == DetailLevel.basic
-                      ? 'Switch to Detailed or All to see more fields.'
+                      ? 'Switch to Extended or Full to see more fields.'
                       : 'No fields in this section yet.',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
@@ -4286,6 +4444,9 @@ class _BeginnerWrap extends StatelessWidget {
   }
 }
 
-/// Output format for the AppBar share action. PDF is the polished
-/// default; text falls back to the legacy `RecipePrintService`.
-enum _RecipeShareFormat { pdf, text }
+/// Output format for the AppBar share action. `share` opens the unified
+/// share sheet (QR + clipboard + PDF together — the default tap target);
+/// `pdf` is a fast-path direct PDF for users who want the polished
+/// printable; `text` is the legacy plain-text export retained for the
+/// copy-pastable flow.
+enum _RecipeShareFormat { share, pdf, text }

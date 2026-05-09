@@ -95,7 +95,7 @@ void main() {
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
     // AppBar title is "New Range Day" for an unsaved session.
-    expect(find.text('New Range Day'), findsOneWidget);
+    expect(find.text('Range Day'), findsOneWidget);
     // Setup card header shows on first build (the body is collapsed
     // by default — `_setupExpanded = false` in production — so the
     // distance/profile/load pickers inside `_setupBody()` are
@@ -124,7 +124,7 @@ void main() {
     );
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
-    expect(find.text('New Range Day'), findsOneWidget);
+    expect(find.text('Range Day'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tearDownRangeDayWidgetTree(tester);
   });
@@ -171,7 +171,7 @@ void main() {
     );
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
-    expect(find.text('New Range Day'), findsOneWidget);
+    expect(find.text('Range Day'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tearDownRangeDayWidgetTree(tester);
   });
@@ -228,16 +228,22 @@ void main() {
     }
 
     // After hydration, the AppBar title is the constant "Range Day"
-    // (per the user's "There is no New Range Day" rule). The screen
-    // SHOULD reflect the persisted distance somewhere — either in
-    // the summary strip beneath the AppBar or, after expanding
-    // Setup, in the distance TextField. We assert the distance
-    // appears as substring in any rendered Text widget.
+    // (the user's "There is no 'New' Range Day" rule — the session
+    // name lives in the History list, NOT the AppBar). The hydrated
+    // distance surfaces in the Setup card's collapsed-mode summary
+    // line — `_setupSummary()` stitches "${dist} yd" from
+    // `_distanceCtrl.text`, which `_hydrateFromSessionInner` sets
+    // from `s.distanceYd`. Hydration leaves Setup collapsed
+    // (`_setupExpanded = false`), so the summary line is visible
+    // without any tap. That gives us TWO clean proofs hydration
+    // ran: AppBar title still says "Range Day" (didn't crash to
+    // an error boundary), and the persisted distance bubbled up.
     expect(find.text('Range Day'), findsOneWidget);
     expect(
       find.textContaining('800 yd'),
       findsAtLeastNWidgets(1),
-      reason: 'AppBar summary strip should reflect the persisted distance.',
+      reason:
+          'Setup card collapsed-mode summary should reflect the persisted distance.',
     );
     expect(tester.takeException(), isNull);
     await tearDownRangeDayWidgetTree(tester);

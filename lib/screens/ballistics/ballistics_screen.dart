@@ -136,6 +136,7 @@ import '../../services/weather_service.dart';
 import '../../utils/responsive.dart';
 import '../../screens/atmosphere/atmosphere_presets_screen.dart';
 import '../../widgets/atmosphere_preset_picker.dart';
+import '../../widgets/glossary_label.dart';
 import '../../widgets/pro_gate.dart';
 import '../../widgets/unsaved_changes_dispatcher.dart';
 import 'widgets/contribution_breakdown.dart';
@@ -1895,7 +1896,10 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                     // Diameter stays in inches by convention — cartridge
                     // designations ("6.5mm", ".308") still map to bullet
                     // diameters in inches even in metric workflows.
-                    labelText: 'Diameter (in)',
+                    label: GlossaryLabel(
+                      text: 'Diameter (in)',
+                      glossaryTerm: 'Bullet diameter vs. groove diameter',
+                    ),
                     helperText: 'e.g. 0.264 for 6.5mm',
                   ),
                 ),
@@ -1907,7 +1911,10 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                   keyboardType: const TextInputType.numberWithOptions(
                       decimal: true),
                   decoration: InputDecoration(
-                    labelText: 'Weight ($bulletWt)',
+                    label: GlossaryLabel(
+                      text: 'Weight ($bulletWt)',
+                      glossaryTerm: 'Sectional Density',
+                    ),
                     suffixText: bulletWt,
                   ),
                 ),
@@ -1923,7 +1930,10 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                   keyboardType: const TextInputType.numberWithOptions(
                       decimal: true),
                   decoration: InputDecoration(
-                    labelText: 'Length ($smallLen, optional)',
+                    label: GlossaryLabel(
+                      text: 'Length ($smallLen, optional)',
+                      glossaryTerm: 'Miller stability formula',
+                    ),
                     helperText: 'For Miller stability calc',
                     suffixText: smallLen,
                   ),
@@ -1936,7 +1946,10 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                   keyboardType: const TextInputType.numberWithOptions(
                       decimal: true),
                   decoration: const InputDecoration(
-                    labelText: 'Twist (1:in)',
+                    label: GlossaryLabel(
+                      text: 'Twist (1:in)',
+                      glossaryTerm: 'Twist rate',
+                    ),
                     helperText: 'e.g. 8 for 1:8',
                   ),
                 ),
@@ -1958,7 +1971,10 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                     keyboardType: const TextInputType.numberWithOptions(
                         decimal: true),
                     decoration: const InputDecoration(
-                      labelText: 'BC',
+                      label: GlossaryLabel(
+                        text: 'BC',
+                        glossaryTerm: 'Ballistic Coefficient — G1',
+                      ),
                       helperText: 'In the chosen drag-model family',
                     ),
                   ),
@@ -2015,7 +2031,10 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
       initialValue: currentValue,
       isExpanded: true,
       decoration: const InputDecoration(
-        labelText: 'Drag function',
+        label: GlossaryLabel(
+          text: 'Drag function',
+          glossaryTerm: 'Drag',
+        ),
       ),
       items: [
         for (final m in DragModel.values)
@@ -2376,7 +2395,10 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                   keyboardType: const TextInputType.numberWithOptions(
                       decimal: true),
                   decoration: InputDecoration(
-                    labelText: 'Muzzle velocity ($velUnit)',
+                    label: GlossaryLabel(
+                      text: 'Muzzle velocity ($velUnit)',
+                      glossaryTerm: 'Muzzle Velocity',
+                    ),
                     suffixText: velUnit,
                   ),
                 ),
@@ -2388,7 +2410,10 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                   keyboardType: const TextInputType.numberWithOptions(
                       decimal: true),
                   decoration: InputDecoration(
-                    labelText: 'Sight height ($smallLen)',
+                    label: GlossaryLabel(
+                      text: 'Sight height ($smallLen)',
+                      glossaryTerm: 'Eye relief',
+                    ),
                     suffixText: smallLen,
                   ),
                 ),
@@ -2404,7 +2429,10 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                   keyboardType: const TextInputType.numberWithOptions(
                       decimal: true),
                   decoration: InputDecoration(
-                    labelText: 'Zero range ($rangeUnit)',
+                    label: GlossaryLabel(
+                      text: 'Zero range ($rangeUnit)',
+                      glossaryTerm: 'DOPE',
+                    ),
                     suffixText: rangeUnit,
                   ),
                 ),
@@ -2416,7 +2444,10 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                   keyboardType: const TextInputType.numberWithOptions(
                       decimal: true, signed: true),
                   decoration: const InputDecoration(
-                    labelText: 'Shot azimuth (°)',
+                    label: GlossaryLabel(
+                      text: 'Shot azimuth (°)',
+                      glossaryTerm: 'Azimuth',
+                    ),
                     // Beginner-friendly: spell out the compass values
                     // and call out that this is for Coriolis. Most
                     // shooters under 1000 yd can leave this at 0.
@@ -2436,7 +2467,10 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
             keyboardType: const TextInputType.numberWithOptions(
                 decimal: true, signed: true),
             decoration: const InputDecoration(
-              labelText: 'Target elevation Δ (ft)',
+              label: GlossaryLabel(
+                text: 'Target elevation Δ (ft)',
+                glossaryTerm: 'Incline / decline angle',
+              ),
               helperText: 'Positive = uphill',
             ),
           ),
@@ -2851,7 +2885,10 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                   keyboardType: const TextInputType.numberWithOptions(
                       decimal: true),
                   decoration: InputDecoration(
-                    labelText: 'Pressure ($pressureLabel)',
+                    label: GlossaryLabel(
+                      text: 'Pressure ($pressureLabel)',
+                      glossaryTerm: 'Station pressure',
+                    ),
                     helperText: 'Station, not corrected',
                     suffixText: pressureLabel,
                   ),
@@ -2882,7 +2919,10 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                     // Elevation stays in feet — the solver normalizes
                     // station pressure with feet, and altitude has no
                     // dedicated unit category in the Settings list.
-                    labelText: 'Elevation (ft)',
+                    label: GlossaryLabel(
+                      text: 'Elevation (ft)',
+                      glossaryTerm: 'Density altitude',
+                    ),
                   ),
                 ),
               ),
@@ -2897,7 +2937,10 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                   keyboardType: const TextInputType.numberWithOptions(
                       decimal: true),
                   decoration: InputDecoration(
-                    labelText: 'Wind ($windLabel)',
+                    label: GlossaryLabel(
+                      text: 'Wind ($windLabel)',
+                      glossaryTerm: 'Wind drift',
+                    ),
                     suffixText: windLabel,
                   ),
                 ),
@@ -2909,7 +2952,10 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                   keyboardType: const TextInputType.numberWithOptions(
                       decimal: true),
                   decoration: const InputDecoration(
-                    labelText: 'Wind from (°)',
+                    label: GlossaryLabel(
+                      text: 'Wind from (°)',
+                      glossaryTerm: 'Wind direction (from convention)',
+                    ),
                     helperText: '0=tail, 90=right',
                   ),
                 ),
@@ -2924,7 +2970,10 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
             keyboardType: const TextInputType.numberWithOptions(
                 decimal: true),
             decoration: InputDecoration(
-              labelText: 'Wind uncertainty (± $windLabel)',
+              label: GlossaryLabel(
+                text: 'Wind uncertainty (± $windLabel)',
+                glossaryTerm: 'Wind uncertainty',
+              ),
               helperText:
                   'How sure are you of the wind speed? Drives the Litz '
                   'wind-bracket card. Set to 0 to hide.',
@@ -2938,7 +2987,10 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
             keyboardType: const TextInputType.numberWithOptions(
                 decimal: true, signed: true),
             decoration: const InputDecoration(
-              labelText: 'Latitude (°N)',
+              label: GlossaryLabel(
+                text: 'Latitude (°N)',
+                glossaryTerm: 'Latitude',
+              ),
               helperText: 'Used by Coriolis',
             ),
           ),
@@ -3059,7 +3111,10 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
               keyboardType: const TextInputType.numberWithOptions(
                   decimal: true, signed: true),
               decoration: const InputDecoration(
-                labelText: 'Aerodynamic jump (multiplier)',
+                label: GlossaryLabel(
+                  text: 'Aerodynamic jump (multiplier)',
+                  glossaryTerm: 'Aerodynamic jump',
+                ),
                 hintText: 'e.g. 0.0 (off) or ±0.05',
                 helperText:
                     'Litz aerodynamic jump term. Positive multiplier '
@@ -3571,8 +3626,9 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
               Icon(Icons.flight_takeoff,
                   size: 16, color: theme.colorScheme.primary),
               const SizedBox(width: 6),
-              Text(
-                'Stability and form factor',
+              GlossaryLabel(
+                text: 'Stability and form factor',
+                glossaryTerm: 'Miller stability formula',
                 style: theme.textTheme.labelLarge?.copyWith(
                   color: theme.colorScheme.primary,
                   fontWeight: FontWeight.w600,
@@ -3651,11 +3707,20 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
       icon = Icons.error;
       verdict = 'Unstable';
     }
+    // "Miller Sg" / "Pejsa Sg" route to the corresponding glossary
+    // entry; soft-fails to plain Text on a miss.
+    final glossaryHint = label.startsWith('Miller')
+        ? 'Miller stability formula'
+        : (label.startsWith('Pejsa') ? 'Pejsa stability' : null);
     return Row(
       children: [
         SizedBox(
           width: 110,
-          child: Text(label, style: theme.textTheme.bodyMedium),
+          child: GlossaryLabel(
+            text: label,
+            glossaryTerm: glossaryHint,
+            style: theme.textTheme.bodyMedium,
+          ),
         ),
         SizedBox(
           width: 56,
@@ -3700,8 +3765,9 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
       children: [
         SizedBox(
           width: 110,
-          child: Text(
-            'Form factor (i7)',
+          child: GlossaryLabel(
+            text: 'Form factor (i7)',
+            glossaryTerm: 'Form factor (i7)',
             style: theme.textTheme.bodyMedium,
           ),
         ),

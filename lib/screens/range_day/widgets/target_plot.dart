@@ -230,6 +230,7 @@ class TargetPlot extends StatelessWidget {
     this.reticleDisplayUnit = 'mil',
     this.rackChildren,
     this.activeRackChildIndex,
+    this.colorHexOverride,
   });
 
   /// Target geometry / color. In rack mode this is the active child's
@@ -287,6 +288,14 @@ class TargetPlot extends StatelessWidget {
   /// receiving aim-point taps + shot-dot overlay). Ignored when
   /// [rackChildren] is null. Out-of-range values are clamped.
   final int? activeRackChildIndex;
+
+  /// User color override for the active target's tint. Hex string
+  /// like `'#cc1f1f'`. When non-null, the target painters substitute
+  /// this value for `target.colorHex` (single-target mode) or for
+  /// the active rack child's color (rack mode). Inactive rack
+  /// children retain their natural cream color so an override
+  /// doesn't bleed across the whole rack. Null = use natural color.
+  final String? colorHexOverride;
 
   @override
   Widget build(BuildContext context) {
@@ -356,6 +365,7 @@ class TargetPlot extends StatelessWidget {
                         primary: theme.colorScheme.primary,
                         errorColor: theme.colorScheme.error,
                         textColor: theme.colorScheme.onSurface,
+                        colorHexOverride: colorHexOverride,
                       ),
                     )
                   else
@@ -373,6 +383,7 @@ class TargetPlot extends StatelessWidget {
                         textColor: theme.colorScheme.onSurface,
                         backgroundColor:
                             theme.colorScheme.surfaceContainerLowest,
+                        colorHexOverride: colorHexOverride,
                       ),
                     ),
                   // Reticle overlay anchored to the aim marker. Only
@@ -672,6 +683,7 @@ class _RealisticTargetPainter extends CustomPainter {
     required this.primary,
     required this.errorColor,
     required this.textColor,
+    this.colorHexOverride,
   })  : _backdropPainter = ScopeDaytimeBackdropPainter(
           // We render the target ourselves on top of the backdrop so
           // the backdrop only paints the scenery layers.
@@ -711,6 +723,11 @@ class _RealisticTargetPainter extends CustomPainter {
   final Color primary;
   final Color errorColor;
   final Color textColor;
+  /// User-selected color override hex (e.g. `'#cc1f1f'`). Only the
+  /// active target / active rack child takes the override; non-active
+  /// rack children retain their natural cream color so the override
+  /// doesn't visually leak across the whole rack.
+  final String? colorHexOverride;
 
   // Cached painters / paint objects so paint() never allocates on the
   // hot path. ScopeDaytimeBackdropPainter is instantiated once per
@@ -862,8 +879,23 @@ class _RealisticTargetPainter extends CustomPainter {
     // 1.6px outline. Inactive = 70% opacity + 1.2px outline.
     final fillAlpha = isActive ? 1.0 : 0.70;
     final outlineWidth = isActive ? 1.6 : 1.2;
-    _targetFillPaint.color = Color.fromRGBO(0xf2, 0xef, 0xe6,
-        fillAlpha);
+    // The override only paints the ACTIVE target (single or active
+    // rack child). Inactive rack children keep the cream default so
+    // the user's color choice doesn't leak across the whole rack.
+    if (isActive && colorHexOverride != null) {
+      // Inline-parse the override hex (e.g. `#cc1f1f`). The other
+      // painter has a `_parseColor` helper; not worth promoting it
+      // to a top-level function for one call site.
+      final raw = colorHexOverride!.startsWith('#')
+          ? colorHexOverride!.substring(1)
+          : colorHexOverride!;
+      final v = int.tryParse(raw, radix: 16) ?? 0xf2efe6;
+      final base = Color(0xff000000 | v);
+      _targetFillPaint.color = base.withValues(alpha: fillAlpha);
+    } else {
+      _targetFillPaint.color = Color.fromRGBO(0xf2, 0xef, 0xe6,
+          fillAlpha);
+    }
     _targetOutlinePaint.color = Color.fromRGBO(
         0x1a, 0x1a, 0x1a, isActive ? 1.0 : 0.70);
     _targetOutlinePaint.strokeWidth = outlineWidth;
@@ -1127,6 +1159,7 @@ class _RealisticTargetPainter extends CustomPainter {
     if (old.target.shape != target.shape) return true;
     if (old.target.widthIn != target.widthIn) return true;
     if (old.target.heightIn != target.heightIn) return true;
+    if (old.colorHexOverride != colorHexOverride) return true;
     if (old.aimPointX != aimPointX || old.aimPointY != aimPointY) {
       return true;
     }
@@ -1168,6 +1201,7 @@ class _TargetPainter extends CustomPainter {
     required this.backgroundColor,
     this.aimPointX,
     this.aimPointY,
+    this.colorHexOverride,
   });
 
   final TargetSpec target;
@@ -1182,6 +1216,10 @@ class _TargetPainter extends CustomPainter {
   final Color backgroundColor;
   final double? aimPointX;
   final double? aimPointY;
+  /// User-selected color override hex (e.g. `'#cc1f1f'`). When non-null,
+  /// substitutes for `target.colorHex` at fill time. See `TargetPlot`'s
+  /// constructor doc for full semantics.
+  final String? colorHexOverride;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1193,7 +1231,8 @@ class _TargetPainter extends CustomPainter {
       Paint()..color = backgroundColor,
     );
 
-    final fill = Paint()..color = _parseColor(target.colorHex);
+    final fill = Paint()
+      ..color = _parseColor(colorHexOverride ?? target.colorHex);
     final outline = Paint()
       ..color = outlineColor
       ..style = PaintingStyle.stroke
@@ -1378,6 +1417,7 @@ class _TargetPainter extends CustomPainter {
     if (old.target.widthIn != target.widthIn) return true;
     if (old.target.heightIn != target.heightIn) return true;
     if (old.target.colorHex != target.colorHex) return true;
+    if (old.colorHexOverride != colorHexOverride) return true;
     if (old.targetRect != targetRect) return true;
     if (old.aimPointX != aimPointX || old.aimPointY != aimPointY) {
       return true;

@@ -21158,6 +21158,535 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
   }
 }
 
+class $TargetRacksTable extends TargetRacks
+    with TableInfo<$TargetRacksTable, TargetRackRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TargetRacksTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rackKindMeta = const VerificationMeta(
+    'rackKind',
+  );
+  @override
+  late final GeneratedColumn<String> rackKind = GeneratedColumn<String>(
+    'rack_kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _totalWidthInMeta = const VerificationMeta(
+    'totalWidthIn',
+  );
+  @override
+  late final GeneratedColumn<double> totalWidthIn = GeneratedColumn<double>(
+    'total_width_in',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _totalHeightInMeta = const VerificationMeta(
+    'totalHeightIn',
+  );
+  @override
+  late final GeneratedColumn<double> totalHeightIn = GeneratedColumn<double>(
+    'total_height_in',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    description,
+    rackKind,
+    totalWidthIn,
+    totalHeightIn,
+    notes,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'target_racks';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TargetRackRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('rack_kind')) {
+      context.handle(
+        _rackKindMeta,
+        rackKind.isAcceptableOrUnknown(data['rack_kind']!, _rackKindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_rackKindMeta);
+    }
+    if (data.containsKey('total_width_in')) {
+      context.handle(
+        _totalWidthInMeta,
+        totalWidthIn.isAcceptableOrUnknown(
+          data['total_width_in']!,
+          _totalWidthInMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_totalWidthInMeta);
+    }
+    if (data.containsKey('total_height_in')) {
+      context.handle(
+        _totalHeightInMeta,
+        totalHeightIn.isAcceptableOrUnknown(
+          data['total_height_in']!,
+          _totalHeightInMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_totalHeightInMeta);
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TargetRackRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TargetRackRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      ),
+      rackKind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rack_kind'],
+      )!,
+      totalWidthIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}total_width_in'],
+      )!,
+      totalHeightIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}total_height_in'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $TargetRacksTable createAlias(String alias) {
+    return $TargetRacksTable(attachedDatabase, alias);
+  }
+}
+
+class TargetRackRow extends DataClass implements Insertable<TargetRackRow> {
+  final int id;
+
+  /// Display name shown in the rack picker ("5-Plate KYL", "Pepper
+  /// Popper Rack").
+  final String name;
+
+  /// Free-form description of how the rack is intended to be engaged.
+  final String? description;
+
+  /// 'kyl' | 'pepper-popper' | 'plate-rack' | 'idpa-stage' | 'custom'.
+  /// Used for grouping in pickers and selecting an icon. Free-form text
+  /// rather than an enum so future rack categories don't require a
+  /// schema migration.
+  final String rackKind;
+
+  /// Visual envelope width in inches. Drives renderer scaling against
+  /// the FOV — NOT a ballistics input. The solver uses each child's
+  /// dimensions instead.
+  final double totalWidthIn;
+
+  /// Visual envelope height in inches. See `totalWidthIn`.
+  final double totalHeightIn;
+  final String? notes;
+  final DateTime createdAt;
+  const TargetRackRow({
+    required this.id,
+    required this.name,
+    this.description,
+    required this.rackKind,
+    required this.totalWidthIn,
+    required this.totalHeightIn,
+    this.notes,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    map['rack_kind'] = Variable<String>(rackKind);
+    map['total_width_in'] = Variable<double>(totalWidthIn);
+    map['total_height_in'] = Variable<double>(totalHeightIn);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  TargetRacksCompanion toCompanion(bool nullToAbsent) {
+    return TargetRacksCompanion(
+      id: Value(id),
+      name: Value(name),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      rackKind: Value(rackKind),
+      totalWidthIn: Value(totalWidthIn),
+      totalHeightIn: Value(totalHeightIn),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory TargetRackRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TargetRackRow(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      description: serializer.fromJson<String?>(json['description']),
+      rackKind: serializer.fromJson<String>(json['rackKind']),
+      totalWidthIn: serializer.fromJson<double>(json['totalWidthIn']),
+      totalHeightIn: serializer.fromJson<double>(json['totalHeightIn']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'description': serializer.toJson<String?>(description),
+      'rackKind': serializer.toJson<String>(rackKind),
+      'totalWidthIn': serializer.toJson<double>(totalWidthIn),
+      'totalHeightIn': serializer.toJson<double>(totalHeightIn),
+      'notes': serializer.toJson<String?>(notes),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  TargetRackRow copyWith({
+    int? id,
+    String? name,
+    Value<String?> description = const Value.absent(),
+    String? rackKind,
+    double? totalWidthIn,
+    double? totalHeightIn,
+    Value<String?> notes = const Value.absent(),
+    DateTime? createdAt,
+  }) => TargetRackRow(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    description: description.present ? description.value : this.description,
+    rackKind: rackKind ?? this.rackKind,
+    totalWidthIn: totalWidthIn ?? this.totalWidthIn,
+    totalHeightIn: totalHeightIn ?? this.totalHeightIn,
+    notes: notes.present ? notes.value : this.notes,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  TargetRackRow copyWithCompanion(TargetRacksCompanion data) {
+    return TargetRackRow(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      rackKind: data.rackKind.present ? data.rackKind.value : this.rackKind,
+      totalWidthIn: data.totalWidthIn.present
+          ? data.totalWidthIn.value
+          : this.totalWidthIn,
+      totalHeightIn: data.totalHeightIn.present
+          ? data.totalHeightIn.value
+          : this.totalHeightIn,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TargetRackRow(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('rackKind: $rackKind, ')
+          ..write('totalWidthIn: $totalWidthIn, ')
+          ..write('totalHeightIn: $totalHeightIn, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    description,
+    rackKind,
+    totalWidthIn,
+    totalHeightIn,
+    notes,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TargetRackRow &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.description == this.description &&
+          other.rackKind == this.rackKind &&
+          other.totalWidthIn == this.totalWidthIn &&
+          other.totalHeightIn == this.totalHeightIn &&
+          other.notes == this.notes &&
+          other.createdAt == this.createdAt);
+}
+
+class TargetRacksCompanion extends UpdateCompanion<TargetRackRow> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<String?> description;
+  final Value<String> rackKind;
+  final Value<double> totalWidthIn;
+  final Value<double> totalHeightIn;
+  final Value<String?> notes;
+  final Value<DateTime> createdAt;
+  const TargetRacksCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.description = const Value.absent(),
+    this.rackKind = const Value.absent(),
+    this.totalWidthIn = const Value.absent(),
+    this.totalHeightIn = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  TargetRacksCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    this.description = const Value.absent(),
+    required String rackKind,
+    required double totalWidthIn,
+    required double totalHeightIn,
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : name = Value(name),
+       rackKind = Value(rackKind),
+       totalWidthIn = Value(totalWidthIn),
+       totalHeightIn = Value(totalHeightIn);
+  static Insertable<TargetRackRow> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<String>? description,
+    Expression<String>? rackKind,
+    Expression<double>? totalWidthIn,
+    Expression<double>? totalHeightIn,
+    Expression<String>? notes,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (description != null) 'description': description,
+      if (rackKind != null) 'rack_kind': rackKind,
+      if (totalWidthIn != null) 'total_width_in': totalWidthIn,
+      if (totalHeightIn != null) 'total_height_in': totalHeightIn,
+      if (notes != null) 'notes': notes,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  TargetRacksCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<String?>? description,
+    Value<String>? rackKind,
+    Value<double>? totalWidthIn,
+    Value<double>? totalHeightIn,
+    Value<String?>? notes,
+    Value<DateTime>? createdAt,
+  }) {
+    return TargetRacksCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      rackKind: rackKind ?? this.rackKind,
+      totalWidthIn: totalWidthIn ?? this.totalWidthIn,
+      totalHeightIn: totalHeightIn ?? this.totalHeightIn,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (rackKind.present) {
+      map['rack_kind'] = Variable<String>(rackKind.value);
+    }
+    if (totalWidthIn.present) {
+      map['total_width_in'] = Variable<double>(totalWidthIn.value);
+    }
+    if (totalHeightIn.present) {
+      map['total_height_in'] = Variable<double>(totalHeightIn.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TargetRacksCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('rackKind: $rackKind, ')
+          ..write('totalWidthIn: $totalWidthIn, ')
+          ..write('totalHeightIn: $totalHeightIn, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $RangeDaySessionsTable extends RangeDaySessions
     with TableInfo<$RangeDaySessionsTable, RangeDaySessionRow> {
   @override
@@ -21469,6 +21998,29 @@ class $RangeDaySessionsTable extends RangeDaySessions
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _rackIdMeta = const VerificationMeta('rackId');
+  @override
+  late final GeneratedColumn<int> rackId = GeneratedColumn<int>(
+    'rack_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES target_racks (id)',
+    ),
+  );
+  static const VerificationMeta _rackChildPositionMeta = const VerificationMeta(
+    'rackChildPosition',
+  );
+  @override
+  late final GeneratedColumn<int> rackChildPosition = GeneratedColumn<int>(
+    'rack_child_position',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -21499,6 +22051,8 @@ class $RangeDaySessionsTable extends RangeDaySessions
     shotAzimuthDegrees,
     inclineAngleDeg,
     atmospherePresetId,
+    rackId,
+    rackChildPosition,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -21728,6 +22282,21 @@ class $RangeDaySessionsTable extends RangeDaySessions
         ),
       );
     }
+    if (data.containsKey('rack_id')) {
+      context.handle(
+        _rackIdMeta,
+        rackId.isAcceptableOrUnknown(data['rack_id']!, _rackIdMeta),
+      );
+    }
+    if (data.containsKey('rack_child_position')) {
+      context.handle(
+        _rackChildPositionMeta,
+        rackChildPosition.isAcceptableOrUnknown(
+          data['rack_child_position']!,
+          _rackChildPositionMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -21849,6 +22418,14 @@ class $RangeDaySessionsTable extends RangeDaySessions
         DriftSqlType.int,
         data['${effectivePrefix}atmosphere_preset_id'],
       ),
+      rackId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rack_id'],
+      ),
+      rackChildPosition: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rack_child_position'],
+      ),
     );
   }
 
@@ -21947,6 +22524,23 @@ class RangeDaySessionRow extends DataClass
   /// loads a preset on the Range Day screen, this id is captured so
   /// reopening the session shows which preset was active in the picker.
   final int? atmospherePresetId;
+
+  /// Optional FK to the [TargetRacks] row this session is configured
+  /// against. Mutually exclusive with [targetId]: when [rackId] is
+  /// non-null the session is in rack mode and [targetId] is forced
+  /// null on auto-save; when [rackId] is null the session falls
+  /// through to the existing single-target [targetId] path. The
+  /// active child within the rack is recorded by [rackChildPosition].
+  final int? rackId;
+
+  /// Zero-based position of the active child inside the rack, matching
+  /// `TargetRackChildren.position`. Null when the session is NOT in
+  /// rack mode. The renderer / ballistics solver pulls the active
+  /// child's geometry by indexing `childrenOf(rackId)` at this
+  /// position; a stale value (e.g. seed re-shuffle that dropped the
+  /// position) is clamped to the valid range by the picker, never
+  /// crashes.
+  final int? rackChildPosition;
   const RangeDaySessionRow({
     required this.id,
     required this.name,
@@ -21976,6 +22570,8 @@ class RangeDaySessionRow extends DataClass
     this.shotAzimuthDegrees,
     this.inclineAngleDeg,
     this.atmospherePresetId,
+    this.rackId,
+    this.rackChildPosition,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -22049,6 +22645,12 @@ class RangeDaySessionRow extends DataClass
     }
     if (!nullToAbsent || atmospherePresetId != null) {
       map['atmosphere_preset_id'] = Variable<int>(atmospherePresetId);
+    }
+    if (!nullToAbsent || rackId != null) {
+      map['rack_id'] = Variable<int>(rackId);
+    }
+    if (!nullToAbsent || rackChildPosition != null) {
+      map['rack_child_position'] = Variable<int>(rackChildPosition);
     }
     return map;
   }
@@ -22125,6 +22727,12 @@ class RangeDaySessionRow extends DataClass
       atmospherePresetId: atmospherePresetId == null && nullToAbsent
           ? const Value.absent()
           : Value(atmospherePresetId),
+      rackId: rackId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rackId),
+      rackChildPosition: rackChildPosition == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rackChildPosition),
     );
   }
 
@@ -22168,6 +22776,8 @@ class RangeDaySessionRow extends DataClass
       ),
       inclineAngleDeg: serializer.fromJson<double?>(json['inclineAngleDeg']),
       atmospherePresetId: serializer.fromJson<int?>(json['atmospherePresetId']),
+      rackId: serializer.fromJson<int?>(json['rackId']),
+      rackChildPosition: serializer.fromJson<int?>(json['rackChildPosition']),
     );
   }
   @override
@@ -22202,6 +22812,8 @@ class RangeDaySessionRow extends DataClass
       'shotAzimuthDegrees': serializer.toJson<double?>(shotAzimuthDegrees),
       'inclineAngleDeg': serializer.toJson<double?>(inclineAngleDeg),
       'atmospherePresetId': serializer.toJson<int?>(atmospherePresetId),
+      'rackId': serializer.toJson<int?>(rackId),
+      'rackChildPosition': serializer.toJson<int?>(rackChildPosition),
     };
   }
 
@@ -22234,6 +22846,8 @@ class RangeDaySessionRow extends DataClass
     Value<double?> shotAzimuthDegrees = const Value.absent(),
     Value<double?> inclineAngleDeg = const Value.absent(),
     Value<int?> atmospherePresetId = const Value.absent(),
+    Value<int?> rackId = const Value.absent(),
+    Value<int?> rackChildPosition = const Value.absent(),
   }) => RangeDaySessionRow(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -22279,6 +22893,10 @@ class RangeDaySessionRow extends DataClass
     atmospherePresetId: atmospherePresetId.present
         ? atmospherePresetId.value
         : this.atmospherePresetId,
+    rackId: rackId.present ? rackId.value : this.rackId,
+    rackChildPosition: rackChildPosition.present
+        ? rackChildPosition.value
+        : this.rackChildPosition,
   );
   RangeDaySessionRow copyWithCompanion(RangeDaySessionsCompanion data) {
     return RangeDaySessionRow(
@@ -22342,6 +22960,10 @@ class RangeDaySessionRow extends DataClass
       atmospherePresetId: data.atmospherePresetId.present
           ? data.atmospherePresetId.value
           : this.atmospherePresetId,
+      rackId: data.rackId.present ? data.rackId.value : this.rackId,
+      rackChildPosition: data.rackChildPosition.present
+          ? data.rackChildPosition.value
+          : this.rackChildPosition,
     );
   }
 
@@ -22375,7 +22997,9 @@ class RangeDaySessionRow extends DataClass
           ..write('cantDegrees: $cantDegrees, ')
           ..write('shotAzimuthDegrees: $shotAzimuthDegrees, ')
           ..write('inclineAngleDeg: $inclineAngleDeg, ')
-          ..write('atmospherePresetId: $atmospherePresetId')
+          ..write('atmospherePresetId: $atmospherePresetId, ')
+          ..write('rackId: $rackId, ')
+          ..write('rackChildPosition: $rackChildPosition')
           ..write(')'))
         .toString();
   }
@@ -22410,6 +23034,8 @@ class RangeDaySessionRow extends DataClass
     shotAzimuthDegrees,
     inclineAngleDeg,
     atmospherePresetId,
+    rackId,
+    rackChildPosition,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -22442,7 +23068,9 @@ class RangeDaySessionRow extends DataClass
           other.cantDegrees == this.cantDegrees &&
           other.shotAzimuthDegrees == this.shotAzimuthDegrees &&
           other.inclineAngleDeg == this.inclineAngleDeg &&
-          other.atmospherePresetId == this.atmospherePresetId);
+          other.atmospherePresetId == this.atmospherePresetId &&
+          other.rackId == this.rackId &&
+          other.rackChildPosition == this.rackChildPosition);
 }
 
 class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
@@ -22474,6 +23102,8 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
   final Value<double?> shotAzimuthDegrees;
   final Value<double?> inclineAngleDeg;
   final Value<int?> atmospherePresetId;
+  final Value<int?> rackId;
+  final Value<int?> rackChildPosition;
   const RangeDaySessionsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -22503,6 +23133,8 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
     this.shotAzimuthDegrees = const Value.absent(),
     this.inclineAngleDeg = const Value.absent(),
     this.atmospherePresetId = const Value.absent(),
+    this.rackId = const Value.absent(),
+    this.rackChildPosition = const Value.absent(),
   });
   RangeDaySessionsCompanion.insert({
     this.id = const Value.absent(),
@@ -22533,6 +23165,8 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
     this.shotAzimuthDegrees = const Value.absent(),
     this.inclineAngleDeg = const Value.absent(),
     this.atmospherePresetId = const Value.absent(),
+    this.rackId = const Value.absent(),
+    this.rackChildPosition = const Value.absent(),
   }) : name = Value(name),
        date = Value(date),
        distanceYd = Value(distanceYd);
@@ -22565,6 +23199,8 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
     Expression<double>? shotAzimuthDegrees,
     Expression<double>? inclineAngleDeg,
     Expression<int>? atmospherePresetId,
+    Expression<int>? rackId,
+    Expression<int>? rackChildPosition,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -22600,6 +23236,8 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
       if (inclineAngleDeg != null) 'incline_angle_deg': inclineAngleDeg,
       if (atmospherePresetId != null)
         'atmosphere_preset_id': atmospherePresetId,
+      if (rackId != null) 'rack_id': rackId,
+      if (rackChildPosition != null) 'rack_child_position': rackChildPosition,
     });
   }
 
@@ -22632,6 +23270,8 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
     Value<double?>? shotAzimuthDegrees,
     Value<double?>? inclineAngleDeg,
     Value<int?>? atmospherePresetId,
+    Value<int?>? rackId,
+    Value<int?>? rackChildPosition,
   }) {
     return RangeDaySessionsCompanion(
       id: id ?? this.id,
@@ -22662,6 +23302,8 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
       shotAzimuthDegrees: shotAzimuthDegrees ?? this.shotAzimuthDegrees,
       inclineAngleDeg: inclineAngleDeg ?? this.inclineAngleDeg,
       atmospherePresetId: atmospherePresetId ?? this.atmospherePresetId,
+      rackId: rackId ?? this.rackId,
+      rackChildPosition: rackChildPosition ?? this.rackChildPosition,
     );
   }
 
@@ -22752,6 +23394,12 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
     if (atmospherePresetId.present) {
       map['atmosphere_preset_id'] = Variable<int>(atmospherePresetId.value);
     }
+    if (rackId.present) {
+      map['rack_id'] = Variable<int>(rackId.value);
+    }
+    if (rackChildPosition.present) {
+      map['rack_child_position'] = Variable<int>(rackChildPosition.value);
+    }
     return map;
   }
 
@@ -22785,7 +23433,9 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
           ..write('cantDegrees: $cantDegrees, ')
           ..write('shotAzimuthDegrees: $shotAzimuthDegrees, ')
           ..write('inclineAngleDeg: $inclineAngleDeg, ')
-          ..write('atmospherePresetId: $atmospherePresetId')
+          ..write('atmospherePresetId: $atmospherePresetId, ')
+          ..write('rackId: $rackId, ')
+          ..write('rackChildPosition: $rackChildPosition')
           ..write(')'))
         .toString();
   }
@@ -28612,535 +29262,6 @@ class AtmospherePresetsCompanion extends UpdateCompanion<AtmospherePresetRow> {
   }
 }
 
-class $TargetRacksTable extends TargetRacks
-    with TableInfo<$TargetRacksTable, TargetRackRow> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $TargetRacksTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
-    'id',
-    aliasedName,
-    false,
-    hasAutoIncrement: true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
-  );
-  static const VerificationMeta _nameMeta = const VerificationMeta('name');
-  @override
-  late final GeneratedColumn<String> name = GeneratedColumn<String>(
-    'name',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _descriptionMeta = const VerificationMeta(
-    'description',
-  );
-  @override
-  late final GeneratedColumn<String> description = GeneratedColumn<String>(
-    'description',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _rackKindMeta = const VerificationMeta(
-    'rackKind',
-  );
-  @override
-  late final GeneratedColumn<String> rackKind = GeneratedColumn<String>(
-    'rack_kind',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _totalWidthInMeta = const VerificationMeta(
-    'totalWidthIn',
-  );
-  @override
-  late final GeneratedColumn<double> totalWidthIn = GeneratedColumn<double>(
-    'total_width_in',
-    aliasedName,
-    false,
-    type: DriftSqlType.double,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _totalHeightInMeta = const VerificationMeta(
-    'totalHeightIn',
-  );
-  @override
-  late final GeneratedColumn<double> totalHeightIn = GeneratedColumn<double>(
-    'total_height_in',
-    aliasedName,
-    false,
-    type: DriftSqlType.double,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
-  @override
-  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
-    'notes',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta(
-    'createdAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
-    'created_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-    defaultValue: currentDateAndTime,
-  );
-  @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    name,
-    description,
-    rackKind,
-    totalWidthIn,
-    totalHeightIn,
-    notes,
-    createdAt,
-  ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'target_racks';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<TargetRackRow> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('name')) {
-      context.handle(
-        _nameMeta,
-        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_nameMeta);
-    }
-    if (data.containsKey('description')) {
-      context.handle(
-        _descriptionMeta,
-        description.isAcceptableOrUnknown(
-          data['description']!,
-          _descriptionMeta,
-        ),
-      );
-    }
-    if (data.containsKey('rack_kind')) {
-      context.handle(
-        _rackKindMeta,
-        rackKind.isAcceptableOrUnknown(data['rack_kind']!, _rackKindMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_rackKindMeta);
-    }
-    if (data.containsKey('total_width_in')) {
-      context.handle(
-        _totalWidthInMeta,
-        totalWidthIn.isAcceptableOrUnknown(
-          data['total_width_in']!,
-          _totalWidthInMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_totalWidthInMeta);
-    }
-    if (data.containsKey('total_height_in')) {
-      context.handle(
-        _totalHeightInMeta,
-        totalHeightIn.isAcceptableOrUnknown(
-          data['total_height_in']!,
-          _totalHeightInMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_totalHeightInMeta);
-    }
-    if (data.containsKey('notes')) {
-      context.handle(
-        _notesMeta,
-        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
-      );
-    }
-    if (data.containsKey('created_at')) {
-      context.handle(
-        _createdAtMeta,
-        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
-      );
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  TargetRackRow map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return TargetRackRow(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      )!,
-      name: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}name'],
-      )!,
-      description: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}description'],
-      ),
-      rackKind: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}rack_kind'],
-      )!,
-      totalWidthIn: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}total_width_in'],
-      )!,
-      totalHeightIn: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}total_height_in'],
-      )!,
-      notes: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}notes'],
-      ),
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}created_at'],
-      )!,
-    );
-  }
-
-  @override
-  $TargetRacksTable createAlias(String alias) {
-    return $TargetRacksTable(attachedDatabase, alias);
-  }
-}
-
-class TargetRackRow extends DataClass implements Insertable<TargetRackRow> {
-  final int id;
-
-  /// Display name shown in the rack picker ("5-Plate KYL", "Pepper
-  /// Popper Rack").
-  final String name;
-
-  /// Free-form description of how the rack is intended to be engaged.
-  final String? description;
-
-  /// 'kyl' | 'pepper-popper' | 'plate-rack' | 'idpa-stage' | 'custom'.
-  /// Used for grouping in pickers and selecting an icon. Free-form text
-  /// rather than an enum so future rack categories don't require a
-  /// schema migration.
-  final String rackKind;
-
-  /// Visual envelope width in inches. Drives renderer scaling against
-  /// the FOV — NOT a ballistics input. The solver uses each child's
-  /// dimensions instead.
-  final double totalWidthIn;
-
-  /// Visual envelope height in inches. See `totalWidthIn`.
-  final double totalHeightIn;
-  final String? notes;
-  final DateTime createdAt;
-  const TargetRackRow({
-    required this.id,
-    required this.name,
-    this.description,
-    required this.rackKind,
-    required this.totalWidthIn,
-    required this.totalHeightIn,
-    this.notes,
-    required this.createdAt,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
-    map['name'] = Variable<String>(name);
-    if (!nullToAbsent || description != null) {
-      map['description'] = Variable<String>(description);
-    }
-    map['rack_kind'] = Variable<String>(rackKind);
-    map['total_width_in'] = Variable<double>(totalWidthIn);
-    map['total_height_in'] = Variable<double>(totalHeightIn);
-    if (!nullToAbsent || notes != null) {
-      map['notes'] = Variable<String>(notes);
-    }
-    map['created_at'] = Variable<DateTime>(createdAt);
-    return map;
-  }
-
-  TargetRacksCompanion toCompanion(bool nullToAbsent) {
-    return TargetRacksCompanion(
-      id: Value(id),
-      name: Value(name),
-      description: description == null && nullToAbsent
-          ? const Value.absent()
-          : Value(description),
-      rackKind: Value(rackKind),
-      totalWidthIn: Value(totalWidthIn),
-      totalHeightIn: Value(totalHeightIn),
-      notes: notes == null && nullToAbsent
-          ? const Value.absent()
-          : Value(notes),
-      createdAt: Value(createdAt),
-    );
-  }
-
-  factory TargetRackRow.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return TargetRackRow(
-      id: serializer.fromJson<int>(json['id']),
-      name: serializer.fromJson<String>(json['name']),
-      description: serializer.fromJson<String?>(json['description']),
-      rackKind: serializer.fromJson<String>(json['rackKind']),
-      totalWidthIn: serializer.fromJson<double>(json['totalWidthIn']),
-      totalHeightIn: serializer.fromJson<double>(json['totalHeightIn']),
-      notes: serializer.fromJson<String?>(json['notes']),
-      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
-      'name': serializer.toJson<String>(name),
-      'description': serializer.toJson<String?>(description),
-      'rackKind': serializer.toJson<String>(rackKind),
-      'totalWidthIn': serializer.toJson<double>(totalWidthIn),
-      'totalHeightIn': serializer.toJson<double>(totalHeightIn),
-      'notes': serializer.toJson<String?>(notes),
-      'createdAt': serializer.toJson<DateTime>(createdAt),
-    };
-  }
-
-  TargetRackRow copyWith({
-    int? id,
-    String? name,
-    Value<String?> description = const Value.absent(),
-    String? rackKind,
-    double? totalWidthIn,
-    double? totalHeightIn,
-    Value<String?> notes = const Value.absent(),
-    DateTime? createdAt,
-  }) => TargetRackRow(
-    id: id ?? this.id,
-    name: name ?? this.name,
-    description: description.present ? description.value : this.description,
-    rackKind: rackKind ?? this.rackKind,
-    totalWidthIn: totalWidthIn ?? this.totalWidthIn,
-    totalHeightIn: totalHeightIn ?? this.totalHeightIn,
-    notes: notes.present ? notes.value : this.notes,
-    createdAt: createdAt ?? this.createdAt,
-  );
-  TargetRackRow copyWithCompanion(TargetRacksCompanion data) {
-    return TargetRackRow(
-      id: data.id.present ? data.id.value : this.id,
-      name: data.name.present ? data.name.value : this.name,
-      description: data.description.present
-          ? data.description.value
-          : this.description,
-      rackKind: data.rackKind.present ? data.rackKind.value : this.rackKind,
-      totalWidthIn: data.totalWidthIn.present
-          ? data.totalWidthIn.value
-          : this.totalWidthIn,
-      totalHeightIn: data.totalHeightIn.present
-          ? data.totalHeightIn.value
-          : this.totalHeightIn,
-      notes: data.notes.present ? data.notes.value : this.notes,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('TargetRackRow(')
-          ..write('id: $id, ')
-          ..write('name: $name, ')
-          ..write('description: $description, ')
-          ..write('rackKind: $rackKind, ')
-          ..write('totalWidthIn: $totalWidthIn, ')
-          ..write('totalHeightIn: $totalHeightIn, ')
-          ..write('notes: $notes, ')
-          ..write('createdAt: $createdAt')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(
-    id,
-    name,
-    description,
-    rackKind,
-    totalWidthIn,
-    totalHeightIn,
-    notes,
-    createdAt,
-  );
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is TargetRackRow &&
-          other.id == this.id &&
-          other.name == this.name &&
-          other.description == this.description &&
-          other.rackKind == this.rackKind &&
-          other.totalWidthIn == this.totalWidthIn &&
-          other.totalHeightIn == this.totalHeightIn &&
-          other.notes == this.notes &&
-          other.createdAt == this.createdAt);
-}
-
-class TargetRacksCompanion extends UpdateCompanion<TargetRackRow> {
-  final Value<int> id;
-  final Value<String> name;
-  final Value<String?> description;
-  final Value<String> rackKind;
-  final Value<double> totalWidthIn;
-  final Value<double> totalHeightIn;
-  final Value<String?> notes;
-  final Value<DateTime> createdAt;
-  const TargetRacksCompanion({
-    this.id = const Value.absent(),
-    this.name = const Value.absent(),
-    this.description = const Value.absent(),
-    this.rackKind = const Value.absent(),
-    this.totalWidthIn = const Value.absent(),
-    this.totalHeightIn = const Value.absent(),
-    this.notes = const Value.absent(),
-    this.createdAt = const Value.absent(),
-  });
-  TargetRacksCompanion.insert({
-    this.id = const Value.absent(),
-    required String name,
-    this.description = const Value.absent(),
-    required String rackKind,
-    required double totalWidthIn,
-    required double totalHeightIn,
-    this.notes = const Value.absent(),
-    this.createdAt = const Value.absent(),
-  }) : name = Value(name),
-       rackKind = Value(rackKind),
-       totalWidthIn = Value(totalWidthIn),
-       totalHeightIn = Value(totalHeightIn);
-  static Insertable<TargetRackRow> custom({
-    Expression<int>? id,
-    Expression<String>? name,
-    Expression<String>? description,
-    Expression<String>? rackKind,
-    Expression<double>? totalWidthIn,
-    Expression<double>? totalHeightIn,
-    Expression<String>? notes,
-    Expression<DateTime>? createdAt,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (name != null) 'name': name,
-      if (description != null) 'description': description,
-      if (rackKind != null) 'rack_kind': rackKind,
-      if (totalWidthIn != null) 'total_width_in': totalWidthIn,
-      if (totalHeightIn != null) 'total_height_in': totalHeightIn,
-      if (notes != null) 'notes': notes,
-      if (createdAt != null) 'created_at': createdAt,
-    });
-  }
-
-  TargetRacksCompanion copyWith({
-    Value<int>? id,
-    Value<String>? name,
-    Value<String?>? description,
-    Value<String>? rackKind,
-    Value<double>? totalWidthIn,
-    Value<double>? totalHeightIn,
-    Value<String?>? notes,
-    Value<DateTime>? createdAt,
-  }) {
-    return TargetRacksCompanion(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      description: description ?? this.description,
-      rackKind: rackKind ?? this.rackKind,
-      totalWidthIn: totalWidthIn ?? this.totalWidthIn,
-      totalHeightIn: totalHeightIn ?? this.totalHeightIn,
-      notes: notes ?? this.notes,
-      createdAt: createdAt ?? this.createdAt,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<int>(id.value);
-    }
-    if (name.present) {
-      map['name'] = Variable<String>(name.value);
-    }
-    if (description.present) {
-      map['description'] = Variable<String>(description.value);
-    }
-    if (rackKind.present) {
-      map['rack_kind'] = Variable<String>(rackKind.value);
-    }
-    if (totalWidthIn.present) {
-      map['total_width_in'] = Variable<double>(totalWidthIn.value);
-    }
-    if (totalHeightIn.present) {
-      map['total_height_in'] = Variable<double>(totalHeightIn.value);
-    }
-    if (notes.present) {
-      map['notes'] = Variable<String>(notes.value);
-    }
-    if (createdAt.present) {
-      map['created_at'] = Variable<DateTime>(createdAt.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('TargetRacksCompanion(')
-          ..write('id: $id, ')
-          ..write('name: $name, ')
-          ..write('description: $description, ')
-          ..write('rackKind: $rackKind, ')
-          ..write('totalWidthIn: $totalWidthIn, ')
-          ..write('totalHeightIn: $totalHeightIn, ')
-          ..write('notes: $notes, ')
-          ..write('createdAt: $createdAt')
-          ..write(')'))
-        .toString();
-  }
-}
-
 class $TargetRackChildrenTable extends TargetRackChildren
     with TableInfo<$TargetRackChildrenTable, TargetRackChildRow> {
   @override
@@ -32149,6 +32270,857 @@ class ScopeReticleOptionsCompanion
   }
 }
 
+class $ManufacturedAmmoTable extends ManufacturedAmmo
+    with TableInfo<$ManufacturedAmmoTable, ManufacturedAmmoRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ManufacturedAmmoTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _manufacturerMeta = const VerificationMeta(
+    'manufacturer',
+  );
+  @override
+  late final GeneratedColumn<String> manufacturer = GeneratedColumn<String>(
+    'manufacturer',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _cartridgeMeta = const VerificationMeta(
+    'cartridge',
+  );
+  @override
+  late final GeneratedColumn<String> cartridge = GeneratedColumn<String>(
+    'cartridge',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bulletWeightGrMeta = const VerificationMeta(
+    'bulletWeightGr',
+  );
+  @override
+  late final GeneratedColumn<double> bulletWeightGr = GeneratedColumn<double>(
+    'bullet_weight_gr',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bulletDiameterInMeta = const VerificationMeta(
+    'bulletDiameterIn',
+  );
+  @override
+  late final GeneratedColumn<double> bulletDiameterIn = GeneratedColumn<double>(
+    'bullet_diameter_in',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _muzzleVelocityFpsMeta = const VerificationMeta(
+    'muzzleVelocityFps',
+  );
+  @override
+  late final GeneratedColumn<double> muzzleVelocityFps =
+      GeneratedColumn<double>(
+        'muzzle_velocity_fps',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _standardDeviationFpsMeta =
+      const VerificationMeta('standardDeviationFps');
+  @override
+  late final GeneratedColumn<double> standardDeviationFps =
+      GeneratedColumn<double>(
+        'standard_deviation_fps',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _bcG7Meta = const VerificationMeta('bcG7');
+  @override
+  late final GeneratedColumn<double> bcG7 = GeneratedColumn<double>(
+    'bc_g7',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _bcG1Meta = const VerificationMeta('bcG1');
+  @override
+  late final GeneratedColumn<double> bcG1 = GeneratedColumn<double>(
+    'bc_g1',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sourceUrlMeta = const VerificationMeta(
+    'sourceUrl',
+  );
+  @override
+  late final GeneratedColumn<String> sourceUrl = GeneratedColumn<String>(
+    'source_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _verifiedAtMeta = const VerificationMeta(
+    'verifiedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> verifiedAt = GeneratedColumn<DateTime>(
+    'verified_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    manufacturer,
+    cartridge,
+    name,
+    bulletWeightGr,
+    bulletDiameterIn,
+    muzzleVelocityFps,
+    standardDeviationFps,
+    bcG7,
+    bcG1,
+    notes,
+    sourceUrl,
+    verifiedAt,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'manufactured_ammo';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ManufacturedAmmoRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('manufacturer')) {
+      context.handle(
+        _manufacturerMeta,
+        manufacturer.isAcceptableOrUnknown(
+          data['manufacturer']!,
+          _manufacturerMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_manufacturerMeta);
+    }
+    if (data.containsKey('cartridge')) {
+      context.handle(
+        _cartridgeMeta,
+        cartridge.isAcceptableOrUnknown(data['cartridge']!, _cartridgeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_cartridgeMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('bullet_weight_gr')) {
+      context.handle(
+        _bulletWeightGrMeta,
+        bulletWeightGr.isAcceptableOrUnknown(
+          data['bullet_weight_gr']!,
+          _bulletWeightGrMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_bulletWeightGrMeta);
+    }
+    if (data.containsKey('bullet_diameter_in')) {
+      context.handle(
+        _bulletDiameterInMeta,
+        bulletDiameterIn.isAcceptableOrUnknown(
+          data['bullet_diameter_in']!,
+          _bulletDiameterInMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_bulletDiameterInMeta);
+    }
+    if (data.containsKey('muzzle_velocity_fps')) {
+      context.handle(
+        _muzzleVelocityFpsMeta,
+        muzzleVelocityFps.isAcceptableOrUnknown(
+          data['muzzle_velocity_fps']!,
+          _muzzleVelocityFpsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_muzzleVelocityFpsMeta);
+    }
+    if (data.containsKey('standard_deviation_fps')) {
+      context.handle(
+        _standardDeviationFpsMeta,
+        standardDeviationFps.isAcceptableOrUnknown(
+          data['standard_deviation_fps']!,
+          _standardDeviationFpsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('bc_g7')) {
+      context.handle(
+        _bcG7Meta,
+        bcG7.isAcceptableOrUnknown(data['bc_g7']!, _bcG7Meta),
+      );
+    }
+    if (data.containsKey('bc_g1')) {
+      context.handle(
+        _bcG1Meta,
+        bcG1.isAcceptableOrUnknown(data['bc_g1']!, _bcG1Meta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('source_url')) {
+      context.handle(
+        _sourceUrlMeta,
+        sourceUrl.isAcceptableOrUnknown(data['source_url']!, _sourceUrlMeta),
+      );
+    }
+    if (data.containsKey('verified_at')) {
+      context.handle(
+        _verifiedAtMeta,
+        verifiedAt.isAcceptableOrUnknown(data['verified_at']!, _verifiedAtMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ManufacturedAmmoRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ManufacturedAmmoRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      manufacturer: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}manufacturer'],
+      )!,
+      cartridge: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cartridge'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      bulletWeightGr: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}bullet_weight_gr'],
+      )!,
+      bulletDiameterIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}bullet_diameter_in'],
+      )!,
+      muzzleVelocityFps: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}muzzle_velocity_fps'],
+      )!,
+      standardDeviationFps: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}standard_deviation_fps'],
+      ),
+      bcG7: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}bc_g7'],
+      ),
+      bcG1: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}bc_g1'],
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      sourceUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_url'],
+      ),
+      verifiedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}verified_at'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ManufacturedAmmoTable createAlias(String alias) {
+    return $ManufacturedAmmoTable(attachedDatabase, alias);
+  }
+}
+
+class ManufacturedAmmoRow extends DataClass
+    implements Insertable<ManufacturedAmmoRow> {
+  final int id;
+
+  /// Manufacturer name (free-form text, e.g. "Hornady", "Federal", "CCI",
+  /// "Berger"). Not FK-linked to `Manufacturers` — the curated list is
+  /// small enough that the lookup overhead isn't worth it, and the
+  /// rows are read-only from the user's perspective.
+  final String manufacturer;
+
+  /// Cartridge family as the manufacturer prints it on the box
+  /// (e.g. "6.5 Creedmoor", "308 Win", "22 LR", "9mm Luger").
+  final String cartridge;
+
+  /// Display name for the load (e.g. "140gr ELD-Match",
+  /// "Gold Medal 175gr SMK", "Standard Velocity 40gr").
+  final String name;
+  final double bulletWeightGr;
+  final double bulletDiameterIn;
+
+  /// Manufacturer-published muzzle velocity in fps. Typical 24" barrel
+  /// number for centerfire rifle, shorter where appropriate (22 LR /
+  /// 9mm). The user can override on the Range Day screen.
+  final double muzzleVelocityFps;
+
+  /// Manufacturer-published Standard Deviation of muzzle velocity, in
+  /// fps. Null when the manufacturer doesn't publish it. Drives the WEZ
+  /// analysis screen's MV-uncertainty input.
+  final double? standardDeviationFps;
+
+  /// G7 ballistic coefficient. Centerfire rifle loads carry a G7 BC by
+  /// convention; null for pistol / rimfire (which only publish G1).
+  final double? bcG7;
+
+  /// G1 ballistic coefficient. Always populated for pistol / rimfire,
+  /// optionally populated for rifle loads where the manufacturer also
+  /// publishes a G1 number for legacy compatibility.
+  final double? bcG1;
+  final String? notes;
+
+  /// Manufacturer's product page URL backing the published MV / SD / BC
+  /// numbers. Required for verified entries; null for catalog rows
+  /// where the source URL isn't readily available.
+  final String? sourceUrl;
+
+  /// Wall-clock when the published numbers were last verified against
+  /// the source URL. Null for unverified entries.
+  final DateTime? verifiedAt;
+  final DateTime createdAt;
+  const ManufacturedAmmoRow({
+    required this.id,
+    required this.manufacturer,
+    required this.cartridge,
+    required this.name,
+    required this.bulletWeightGr,
+    required this.bulletDiameterIn,
+    required this.muzzleVelocityFps,
+    this.standardDeviationFps,
+    this.bcG7,
+    this.bcG1,
+    this.notes,
+    this.sourceUrl,
+    this.verifiedAt,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['manufacturer'] = Variable<String>(manufacturer);
+    map['cartridge'] = Variable<String>(cartridge);
+    map['name'] = Variable<String>(name);
+    map['bullet_weight_gr'] = Variable<double>(bulletWeightGr);
+    map['bullet_diameter_in'] = Variable<double>(bulletDiameterIn);
+    map['muzzle_velocity_fps'] = Variable<double>(muzzleVelocityFps);
+    if (!nullToAbsent || standardDeviationFps != null) {
+      map['standard_deviation_fps'] = Variable<double>(standardDeviationFps);
+    }
+    if (!nullToAbsent || bcG7 != null) {
+      map['bc_g7'] = Variable<double>(bcG7);
+    }
+    if (!nullToAbsent || bcG1 != null) {
+      map['bc_g1'] = Variable<double>(bcG1);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    if (!nullToAbsent || sourceUrl != null) {
+      map['source_url'] = Variable<String>(sourceUrl);
+    }
+    if (!nullToAbsent || verifiedAt != null) {
+      map['verified_at'] = Variable<DateTime>(verifiedAt);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  ManufacturedAmmoCompanion toCompanion(bool nullToAbsent) {
+    return ManufacturedAmmoCompanion(
+      id: Value(id),
+      manufacturer: Value(manufacturer),
+      cartridge: Value(cartridge),
+      name: Value(name),
+      bulletWeightGr: Value(bulletWeightGr),
+      bulletDiameterIn: Value(bulletDiameterIn),
+      muzzleVelocityFps: Value(muzzleVelocityFps),
+      standardDeviationFps: standardDeviationFps == null && nullToAbsent
+          ? const Value.absent()
+          : Value(standardDeviationFps),
+      bcG7: bcG7 == null && nullToAbsent ? const Value.absent() : Value(bcG7),
+      bcG1: bcG1 == null && nullToAbsent ? const Value.absent() : Value(bcG1),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      sourceUrl: sourceUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceUrl),
+      verifiedAt: verifiedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(verifiedAt),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory ManufacturedAmmoRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ManufacturedAmmoRow(
+      id: serializer.fromJson<int>(json['id']),
+      manufacturer: serializer.fromJson<String>(json['manufacturer']),
+      cartridge: serializer.fromJson<String>(json['cartridge']),
+      name: serializer.fromJson<String>(json['name']),
+      bulletWeightGr: serializer.fromJson<double>(json['bulletWeightGr']),
+      bulletDiameterIn: serializer.fromJson<double>(json['bulletDiameterIn']),
+      muzzleVelocityFps: serializer.fromJson<double>(json['muzzleVelocityFps']),
+      standardDeviationFps: serializer.fromJson<double?>(
+        json['standardDeviationFps'],
+      ),
+      bcG7: serializer.fromJson<double?>(json['bcG7']),
+      bcG1: serializer.fromJson<double?>(json['bcG1']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      sourceUrl: serializer.fromJson<String?>(json['sourceUrl']),
+      verifiedAt: serializer.fromJson<DateTime?>(json['verifiedAt']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'manufacturer': serializer.toJson<String>(manufacturer),
+      'cartridge': serializer.toJson<String>(cartridge),
+      'name': serializer.toJson<String>(name),
+      'bulletWeightGr': serializer.toJson<double>(bulletWeightGr),
+      'bulletDiameterIn': serializer.toJson<double>(bulletDiameterIn),
+      'muzzleVelocityFps': serializer.toJson<double>(muzzleVelocityFps),
+      'standardDeviationFps': serializer.toJson<double?>(standardDeviationFps),
+      'bcG7': serializer.toJson<double?>(bcG7),
+      'bcG1': serializer.toJson<double?>(bcG1),
+      'notes': serializer.toJson<String?>(notes),
+      'sourceUrl': serializer.toJson<String?>(sourceUrl),
+      'verifiedAt': serializer.toJson<DateTime?>(verifiedAt),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  ManufacturedAmmoRow copyWith({
+    int? id,
+    String? manufacturer,
+    String? cartridge,
+    String? name,
+    double? bulletWeightGr,
+    double? bulletDiameterIn,
+    double? muzzleVelocityFps,
+    Value<double?> standardDeviationFps = const Value.absent(),
+    Value<double?> bcG7 = const Value.absent(),
+    Value<double?> bcG1 = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
+    Value<String?> sourceUrl = const Value.absent(),
+    Value<DateTime?> verifiedAt = const Value.absent(),
+    DateTime? createdAt,
+  }) => ManufacturedAmmoRow(
+    id: id ?? this.id,
+    manufacturer: manufacturer ?? this.manufacturer,
+    cartridge: cartridge ?? this.cartridge,
+    name: name ?? this.name,
+    bulletWeightGr: bulletWeightGr ?? this.bulletWeightGr,
+    bulletDiameterIn: bulletDiameterIn ?? this.bulletDiameterIn,
+    muzzleVelocityFps: muzzleVelocityFps ?? this.muzzleVelocityFps,
+    standardDeviationFps: standardDeviationFps.present
+        ? standardDeviationFps.value
+        : this.standardDeviationFps,
+    bcG7: bcG7.present ? bcG7.value : this.bcG7,
+    bcG1: bcG1.present ? bcG1.value : this.bcG1,
+    notes: notes.present ? notes.value : this.notes,
+    sourceUrl: sourceUrl.present ? sourceUrl.value : this.sourceUrl,
+    verifiedAt: verifiedAt.present ? verifiedAt.value : this.verifiedAt,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  ManufacturedAmmoRow copyWithCompanion(ManufacturedAmmoCompanion data) {
+    return ManufacturedAmmoRow(
+      id: data.id.present ? data.id.value : this.id,
+      manufacturer: data.manufacturer.present
+          ? data.manufacturer.value
+          : this.manufacturer,
+      cartridge: data.cartridge.present ? data.cartridge.value : this.cartridge,
+      name: data.name.present ? data.name.value : this.name,
+      bulletWeightGr: data.bulletWeightGr.present
+          ? data.bulletWeightGr.value
+          : this.bulletWeightGr,
+      bulletDiameterIn: data.bulletDiameterIn.present
+          ? data.bulletDiameterIn.value
+          : this.bulletDiameterIn,
+      muzzleVelocityFps: data.muzzleVelocityFps.present
+          ? data.muzzleVelocityFps.value
+          : this.muzzleVelocityFps,
+      standardDeviationFps: data.standardDeviationFps.present
+          ? data.standardDeviationFps.value
+          : this.standardDeviationFps,
+      bcG7: data.bcG7.present ? data.bcG7.value : this.bcG7,
+      bcG1: data.bcG1.present ? data.bcG1.value : this.bcG1,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      sourceUrl: data.sourceUrl.present ? data.sourceUrl.value : this.sourceUrl,
+      verifiedAt: data.verifiedAt.present
+          ? data.verifiedAt.value
+          : this.verifiedAt,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ManufacturedAmmoRow(')
+          ..write('id: $id, ')
+          ..write('manufacturer: $manufacturer, ')
+          ..write('cartridge: $cartridge, ')
+          ..write('name: $name, ')
+          ..write('bulletWeightGr: $bulletWeightGr, ')
+          ..write('bulletDiameterIn: $bulletDiameterIn, ')
+          ..write('muzzleVelocityFps: $muzzleVelocityFps, ')
+          ..write('standardDeviationFps: $standardDeviationFps, ')
+          ..write('bcG7: $bcG7, ')
+          ..write('bcG1: $bcG1, ')
+          ..write('notes: $notes, ')
+          ..write('sourceUrl: $sourceUrl, ')
+          ..write('verifiedAt: $verifiedAt, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    manufacturer,
+    cartridge,
+    name,
+    bulletWeightGr,
+    bulletDiameterIn,
+    muzzleVelocityFps,
+    standardDeviationFps,
+    bcG7,
+    bcG1,
+    notes,
+    sourceUrl,
+    verifiedAt,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ManufacturedAmmoRow &&
+          other.id == this.id &&
+          other.manufacturer == this.manufacturer &&
+          other.cartridge == this.cartridge &&
+          other.name == this.name &&
+          other.bulletWeightGr == this.bulletWeightGr &&
+          other.bulletDiameterIn == this.bulletDiameterIn &&
+          other.muzzleVelocityFps == this.muzzleVelocityFps &&
+          other.standardDeviationFps == this.standardDeviationFps &&
+          other.bcG7 == this.bcG7 &&
+          other.bcG1 == this.bcG1 &&
+          other.notes == this.notes &&
+          other.sourceUrl == this.sourceUrl &&
+          other.verifiedAt == this.verifiedAt &&
+          other.createdAt == this.createdAt);
+}
+
+class ManufacturedAmmoCompanion extends UpdateCompanion<ManufacturedAmmoRow> {
+  final Value<int> id;
+  final Value<String> manufacturer;
+  final Value<String> cartridge;
+  final Value<String> name;
+  final Value<double> bulletWeightGr;
+  final Value<double> bulletDiameterIn;
+  final Value<double> muzzleVelocityFps;
+  final Value<double?> standardDeviationFps;
+  final Value<double?> bcG7;
+  final Value<double?> bcG1;
+  final Value<String?> notes;
+  final Value<String?> sourceUrl;
+  final Value<DateTime?> verifiedAt;
+  final Value<DateTime> createdAt;
+  const ManufacturedAmmoCompanion({
+    this.id = const Value.absent(),
+    this.manufacturer = const Value.absent(),
+    this.cartridge = const Value.absent(),
+    this.name = const Value.absent(),
+    this.bulletWeightGr = const Value.absent(),
+    this.bulletDiameterIn = const Value.absent(),
+    this.muzzleVelocityFps = const Value.absent(),
+    this.standardDeviationFps = const Value.absent(),
+    this.bcG7 = const Value.absent(),
+    this.bcG1 = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.sourceUrl = const Value.absent(),
+    this.verifiedAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  ManufacturedAmmoCompanion.insert({
+    this.id = const Value.absent(),
+    required String manufacturer,
+    required String cartridge,
+    required String name,
+    required double bulletWeightGr,
+    required double bulletDiameterIn,
+    required double muzzleVelocityFps,
+    this.standardDeviationFps = const Value.absent(),
+    this.bcG7 = const Value.absent(),
+    this.bcG1 = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.sourceUrl = const Value.absent(),
+    this.verifiedAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : manufacturer = Value(manufacturer),
+       cartridge = Value(cartridge),
+       name = Value(name),
+       bulletWeightGr = Value(bulletWeightGr),
+       bulletDiameterIn = Value(bulletDiameterIn),
+       muzzleVelocityFps = Value(muzzleVelocityFps);
+  static Insertable<ManufacturedAmmoRow> custom({
+    Expression<int>? id,
+    Expression<String>? manufacturer,
+    Expression<String>? cartridge,
+    Expression<String>? name,
+    Expression<double>? bulletWeightGr,
+    Expression<double>? bulletDiameterIn,
+    Expression<double>? muzzleVelocityFps,
+    Expression<double>? standardDeviationFps,
+    Expression<double>? bcG7,
+    Expression<double>? bcG1,
+    Expression<String>? notes,
+    Expression<String>? sourceUrl,
+    Expression<DateTime>? verifiedAt,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (manufacturer != null) 'manufacturer': manufacturer,
+      if (cartridge != null) 'cartridge': cartridge,
+      if (name != null) 'name': name,
+      if (bulletWeightGr != null) 'bullet_weight_gr': bulletWeightGr,
+      if (bulletDiameterIn != null) 'bullet_diameter_in': bulletDiameterIn,
+      if (muzzleVelocityFps != null) 'muzzle_velocity_fps': muzzleVelocityFps,
+      if (standardDeviationFps != null)
+        'standard_deviation_fps': standardDeviationFps,
+      if (bcG7 != null) 'bc_g7': bcG7,
+      if (bcG1 != null) 'bc_g1': bcG1,
+      if (notes != null) 'notes': notes,
+      if (sourceUrl != null) 'source_url': sourceUrl,
+      if (verifiedAt != null) 'verified_at': verifiedAt,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  ManufacturedAmmoCompanion copyWith({
+    Value<int>? id,
+    Value<String>? manufacturer,
+    Value<String>? cartridge,
+    Value<String>? name,
+    Value<double>? bulletWeightGr,
+    Value<double>? bulletDiameterIn,
+    Value<double>? muzzleVelocityFps,
+    Value<double?>? standardDeviationFps,
+    Value<double?>? bcG7,
+    Value<double?>? bcG1,
+    Value<String?>? notes,
+    Value<String?>? sourceUrl,
+    Value<DateTime?>? verifiedAt,
+    Value<DateTime>? createdAt,
+  }) {
+    return ManufacturedAmmoCompanion(
+      id: id ?? this.id,
+      manufacturer: manufacturer ?? this.manufacturer,
+      cartridge: cartridge ?? this.cartridge,
+      name: name ?? this.name,
+      bulletWeightGr: bulletWeightGr ?? this.bulletWeightGr,
+      bulletDiameterIn: bulletDiameterIn ?? this.bulletDiameterIn,
+      muzzleVelocityFps: muzzleVelocityFps ?? this.muzzleVelocityFps,
+      standardDeviationFps: standardDeviationFps ?? this.standardDeviationFps,
+      bcG7: bcG7 ?? this.bcG7,
+      bcG1: bcG1 ?? this.bcG1,
+      notes: notes ?? this.notes,
+      sourceUrl: sourceUrl ?? this.sourceUrl,
+      verifiedAt: verifiedAt ?? this.verifiedAt,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (manufacturer.present) {
+      map['manufacturer'] = Variable<String>(manufacturer.value);
+    }
+    if (cartridge.present) {
+      map['cartridge'] = Variable<String>(cartridge.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (bulletWeightGr.present) {
+      map['bullet_weight_gr'] = Variable<double>(bulletWeightGr.value);
+    }
+    if (bulletDiameterIn.present) {
+      map['bullet_diameter_in'] = Variable<double>(bulletDiameterIn.value);
+    }
+    if (muzzleVelocityFps.present) {
+      map['muzzle_velocity_fps'] = Variable<double>(muzzleVelocityFps.value);
+    }
+    if (standardDeviationFps.present) {
+      map['standard_deviation_fps'] = Variable<double>(
+        standardDeviationFps.value,
+      );
+    }
+    if (bcG7.present) {
+      map['bc_g7'] = Variable<double>(bcG7.value);
+    }
+    if (bcG1.present) {
+      map['bc_g1'] = Variable<double>(bcG1.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (sourceUrl.present) {
+      map['source_url'] = Variable<String>(sourceUrl.value);
+    }
+    if (verifiedAt.present) {
+      map['verified_at'] = Variable<DateTime>(verifiedAt.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ManufacturedAmmoCompanion(')
+          ..write('id: $id, ')
+          ..write('manufacturer: $manufacturer, ')
+          ..write('cartridge: $cartridge, ')
+          ..write('name: $name, ')
+          ..write('bulletWeightGr: $bulletWeightGr, ')
+          ..write('bulletDiameterIn: $bulletDiameterIn, ')
+          ..write('muzzleVelocityFps: $muzzleVelocityFps, ')
+          ..write('standardDeviationFps: $standardDeviationFps, ')
+          ..write('bcG7: $bcG7, ')
+          ..write('bcG1: $bcG1, ')
+          ..write('notes: $notes, ')
+          ..write('sourceUrl: $sourceUrl, ')
+          ..write('verifiedAt: $verifiedAt, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -32185,6 +33157,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $BallisticProfilesTable ballisticProfiles =
       $BallisticProfilesTable(this);
   late final $TargetsTable targets = $TargetsTable(this);
+  late final $TargetRacksTable targetRacks = $TargetRacksTable(this);
   late final $RangeDaySessionsTable rangeDaySessions = $RangeDaySessionsTable(
     this,
   );
@@ -32200,7 +33173,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $SightCalibrationsTable(this);
   late final $AtmospherePresetsTable atmospherePresets =
       $AtmospherePresetsTable(this);
-  late final $TargetRacksTable targetRacks = $TargetRacksTable(this);
   late final $TargetRackChildrenTable targetRackChildren =
       $TargetRackChildrenTable(this);
   late final $ScopeManufacturersTable scopeManufacturers =
@@ -32208,6 +33180,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ScopeModelsTable scopeModels = $ScopeModelsTable(this);
   late final $ScopeReticleOptionsTable scopeReticleOptions =
       $ScopeReticleOptionsTable(this);
+  late final $ManufacturedAmmoTable manufacturedAmmo = $ManufacturedAmmoTable(
+    this,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -32237,6 +33212,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     optics,
     ballisticProfiles,
     targets,
+    targetRacks,
     rangeDaySessions,
     shotImpacts,
     reticles,
@@ -32246,11 +33222,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     truedBcOverrides,
     sightCalibrations,
     atmospherePresets,
-    targetRacks,
     targetRackChildren,
     scopeManufacturers,
     scopeModels,
     scopeReticleOptions,
+    manufacturedAmmo,
   ];
 }
 
@@ -46735,6 +47711,477 @@ typedef $$TargetsTableProcessedTableManager =
       TargetRow,
       PrefetchHooks Function()
     >;
+typedef $$TargetRacksTableCreateCompanionBuilder =
+    TargetRacksCompanion Function({
+      Value<int> id,
+      required String name,
+      Value<String?> description,
+      required String rackKind,
+      required double totalWidthIn,
+      required double totalHeightIn,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+    });
+typedef $$TargetRacksTableUpdateCompanionBuilder =
+    TargetRacksCompanion Function({
+      Value<int> id,
+      Value<String> name,
+      Value<String?> description,
+      Value<String> rackKind,
+      Value<double> totalWidthIn,
+      Value<double> totalHeightIn,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+    });
+
+final class $$TargetRacksTableReferences
+    extends BaseReferences<_$AppDatabase, $TargetRacksTable, TargetRackRow> {
+  $$TargetRacksTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$RangeDaySessionsTable, List<RangeDaySessionRow>>
+  _rangeDaySessionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.rangeDaySessions,
+    aliasName: $_aliasNameGenerator(
+      db.targetRacks.id,
+      db.rangeDaySessions.rackId,
+    ),
+  );
+
+  $$RangeDaySessionsTableProcessedTableManager get rangeDaySessionsRefs {
+    final manager = $$RangeDaySessionsTableTableManager(
+      $_db,
+      $_db.rangeDaySessions,
+    ).filter((f) => f.rackId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _rangeDaySessionsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$TargetRackChildrenTable, List<TargetRackChildRow>>
+  _targetRackChildrenRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.targetRackChildren,
+        aliasName: $_aliasNameGenerator(
+          db.targetRacks.id,
+          db.targetRackChildren.rackId,
+        ),
+      );
+
+  $$TargetRackChildrenTableProcessedTableManager get targetRackChildrenRefs {
+    final manager = $$TargetRackChildrenTableTableManager(
+      $_db,
+      $_db.targetRackChildren,
+    ).filter((f) => f.rackId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _targetRackChildrenRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$TargetRacksTableFilterComposer
+    extends Composer<_$AppDatabase, $TargetRacksTable> {
+  $$TargetRacksTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rackKind => $composableBuilder(
+    column: $table.rackKind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get totalWidthIn => $composableBuilder(
+    column: $table.totalWidthIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get totalHeightIn => $composableBuilder(
+    column: $table.totalHeightIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> rangeDaySessionsRefs(
+    Expression<bool> Function($$RangeDaySessionsTableFilterComposer f) f,
+  ) {
+    final $$RangeDaySessionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.rangeDaySessions,
+      getReferencedColumn: (t) => t.rackId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RangeDaySessionsTableFilterComposer(
+            $db: $db,
+            $table: $db.rangeDaySessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> targetRackChildrenRefs(
+    Expression<bool> Function($$TargetRackChildrenTableFilterComposer f) f,
+  ) {
+    final $$TargetRackChildrenTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.targetRackChildren,
+      getReferencedColumn: (t) => t.rackId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TargetRackChildrenTableFilterComposer(
+            $db: $db,
+            $table: $db.targetRackChildren,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$TargetRacksTableOrderingComposer
+    extends Composer<_$AppDatabase, $TargetRacksTable> {
+  $$TargetRacksTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rackKind => $composableBuilder(
+    column: $table.rackKind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get totalWidthIn => $composableBuilder(
+    column: $table.totalWidthIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get totalHeightIn => $composableBuilder(
+    column: $table.totalHeightIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TargetRacksTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TargetRacksTable> {
+  $$TargetRacksTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get rackKind =>
+      $composableBuilder(column: $table.rackKind, builder: (column) => column);
+
+  GeneratedColumn<double> get totalWidthIn => $composableBuilder(
+    column: $table.totalWidthIn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get totalHeightIn => $composableBuilder(
+    column: $table.totalHeightIn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  Expression<T> rangeDaySessionsRefs<T extends Object>(
+    Expression<T> Function($$RangeDaySessionsTableAnnotationComposer a) f,
+  ) {
+    final $$RangeDaySessionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.rangeDaySessions,
+      getReferencedColumn: (t) => t.rackId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RangeDaySessionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.rangeDaySessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> targetRackChildrenRefs<T extends Object>(
+    Expression<T> Function($$TargetRackChildrenTableAnnotationComposer a) f,
+  ) {
+    final $$TargetRackChildrenTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.targetRackChildren,
+          getReferencedColumn: (t) => t.rackId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$TargetRackChildrenTableAnnotationComposer(
+                $db: $db,
+                $table: $db.targetRackChildren,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$TargetRacksTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TargetRacksTable,
+          TargetRackRow,
+          $$TargetRacksTableFilterComposer,
+          $$TargetRacksTableOrderingComposer,
+          $$TargetRacksTableAnnotationComposer,
+          $$TargetRacksTableCreateCompanionBuilder,
+          $$TargetRacksTableUpdateCompanionBuilder,
+          (TargetRackRow, $$TargetRacksTableReferences),
+          TargetRackRow,
+          PrefetchHooks Function({
+            bool rangeDaySessionsRefs,
+            bool targetRackChildrenRefs,
+          })
+        > {
+  $$TargetRacksTableTableManager(_$AppDatabase db, $TargetRacksTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TargetRacksTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TargetRacksTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TargetRacksTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<String> rackKind = const Value.absent(),
+                Value<double> totalWidthIn = const Value.absent(),
+                Value<double> totalHeightIn = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => TargetRacksCompanion(
+                id: id,
+                name: name,
+                description: description,
+                rackKind: rackKind,
+                totalWidthIn: totalWidthIn,
+                totalHeightIn: totalHeightIn,
+                notes: notes,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                Value<String?> description = const Value.absent(),
+                required String rackKind,
+                required double totalWidthIn,
+                required double totalHeightIn,
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => TargetRacksCompanion.insert(
+                id: id,
+                name: name,
+                description: description,
+                rackKind: rackKind,
+                totalWidthIn: totalWidthIn,
+                totalHeightIn: totalHeightIn,
+                notes: notes,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$TargetRacksTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({rangeDaySessionsRefs = false, targetRackChildrenRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (rangeDaySessionsRefs) db.rangeDaySessions,
+                    if (targetRackChildrenRefs) db.targetRackChildren,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (rangeDaySessionsRefs)
+                        await $_getPrefetchedData<
+                          TargetRackRow,
+                          $TargetRacksTable,
+                          RangeDaySessionRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TargetRacksTableReferences
+                              ._rangeDaySessionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TargetRacksTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).rangeDaySessionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.rackId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (targetRackChildrenRefs)
+                        await $_getPrefetchedData<
+                          TargetRackRow,
+                          $TargetRacksTable,
+                          TargetRackChildRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TargetRacksTableReferences
+                              ._targetRackChildrenRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TargetRacksTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).targetRackChildrenRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.rackId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$TargetRacksTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TargetRacksTable,
+      TargetRackRow,
+      $$TargetRacksTableFilterComposer,
+      $$TargetRacksTableOrderingComposer,
+      $$TargetRacksTableAnnotationComposer,
+      $$TargetRacksTableCreateCompanionBuilder,
+      $$TargetRacksTableUpdateCompanionBuilder,
+      (TargetRackRow, $$TargetRacksTableReferences),
+      TargetRackRow,
+      PrefetchHooks Function({
+        bool rangeDaySessionsRefs,
+        bool targetRackChildrenRefs,
+      })
+    >;
 typedef $$RangeDaySessionsTableCreateCompanionBuilder =
     RangeDaySessionsCompanion Function({
       Value<int> id,
@@ -46765,6 +48212,8 @@ typedef $$RangeDaySessionsTableCreateCompanionBuilder =
       Value<double?> shotAzimuthDegrees,
       Value<double?> inclineAngleDeg,
       Value<int?> atmospherePresetId,
+      Value<int?> rackId,
+      Value<int?> rackChildPosition,
     });
 typedef $$RangeDaySessionsTableUpdateCompanionBuilder =
     RangeDaySessionsCompanion Function({
@@ -46796,6 +48245,8 @@ typedef $$RangeDaySessionsTableUpdateCompanionBuilder =
       Value<double?> shotAzimuthDegrees,
       Value<double?> inclineAngleDeg,
       Value<int?> atmospherePresetId,
+      Value<int?> rackId,
+      Value<int?> rackChildPosition,
     });
 
 final class $$RangeDaySessionsTableReferences
@@ -46810,6 +48261,25 @@ final class $$RangeDaySessionsTableReferences
     super.$_table,
     super.$_typedResult,
   );
+
+  static $TargetRacksTable _rackIdTable(_$AppDatabase db) =>
+      db.targetRacks.createAlias(
+        $_aliasNameGenerator(db.rangeDaySessions.rackId, db.targetRacks.id),
+      );
+
+  $$TargetRacksTableProcessedTableManager? get rackId {
+    final $_column = $_itemColumn<int>('rack_id');
+    if ($_column == null) return null;
+    final manager = $$TargetRacksTableTableManager(
+      $_db,
+      $_db.targetRacks,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_rackIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
 
   static MultiTypedResultKey<$ShotImpactsTable, List<ShotImpactRow>>
   _shotImpactsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
@@ -46981,6 +48451,34 @@ class $$RangeDaySessionsTableFilterComposer
     column: $table.atmospherePresetId,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<int> get rackChildPosition => $composableBuilder(
+    column: $table.rackChildPosition,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$TargetRacksTableFilterComposer get rackId {
+    final $$TargetRacksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.rackId,
+      referencedTable: $db.targetRacks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TargetRacksTableFilterComposer(
+            $db: $db,
+            $table: $db.targetRacks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 
   Expression<bool> shotImpactsRefs(
     Expression<bool> Function($$ShotImpactsTableFilterComposer f) f,
@@ -47156,6 +48654,34 @@ class $$RangeDaySessionsTableOrderingComposer
     column: $table.atmospherePresetId,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get rackChildPosition => $composableBuilder(
+    column: $table.rackChildPosition,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$TargetRacksTableOrderingComposer get rackId {
+    final $$TargetRacksTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.rackId,
+      referencedTable: $db.targetRacks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TargetRacksTableOrderingComposer(
+            $db: $db,
+            $table: $db.targetRacks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$RangeDaySessionsTableAnnotationComposer
@@ -47283,6 +48809,34 @@ class $$RangeDaySessionsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get rackChildPosition => $composableBuilder(
+    column: $table.rackChildPosition,
+    builder: (column) => column,
+  );
+
+  $$TargetRacksTableAnnotationComposer get rackId {
+    final $$TargetRacksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.rackId,
+      referencedTable: $db.targetRacks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TargetRacksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.targetRacks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
   Expression<T> shotImpactsRefs<T extends Object>(
     Expression<T> Function($$ShotImpactsTableAnnotationComposer a) f,
   ) {
@@ -47322,7 +48876,7 @@ class $$RangeDaySessionsTableTableManager
           $$RangeDaySessionsTableUpdateCompanionBuilder,
           (RangeDaySessionRow, $$RangeDaySessionsTableReferences),
           RangeDaySessionRow,
-          PrefetchHooks Function({bool shotImpactsRefs})
+          PrefetchHooks Function({bool rackId, bool shotImpactsRefs})
         > {
   $$RangeDaySessionsTableTableManager(
     _$AppDatabase db,
@@ -47367,6 +48921,8 @@ class $$RangeDaySessionsTableTableManager
                 Value<double?> shotAzimuthDegrees = const Value.absent(),
                 Value<double?> inclineAngleDeg = const Value.absent(),
                 Value<int?> atmospherePresetId = const Value.absent(),
+                Value<int?> rackId = const Value.absent(),
+                Value<int?> rackChildPosition = const Value.absent(),
               }) => RangeDaySessionsCompanion(
                 id: id,
                 name: name,
@@ -47396,6 +48952,8 @@ class $$RangeDaySessionsTableTableManager
                 shotAzimuthDegrees: shotAzimuthDegrees,
                 inclineAngleDeg: inclineAngleDeg,
                 atmospherePresetId: atmospherePresetId,
+                rackId: rackId,
+                rackChildPosition: rackChildPosition,
               ),
           createCompanionCallback:
               ({
@@ -47427,6 +48985,8 @@ class $$RangeDaySessionsTableTableManager
                 Value<double?> shotAzimuthDegrees = const Value.absent(),
                 Value<double?> inclineAngleDeg = const Value.absent(),
                 Value<int?> atmospherePresetId = const Value.absent(),
+                Value<int?> rackId = const Value.absent(),
+                Value<int?> rackChildPosition = const Value.absent(),
               }) => RangeDaySessionsCompanion.insert(
                 id: id,
                 name: name,
@@ -47456,6 +49016,8 @@ class $$RangeDaySessionsTableTableManager
                 shotAzimuthDegrees: shotAzimuthDegrees,
                 inclineAngleDeg: inclineAngleDeg,
                 atmospherePresetId: atmospherePresetId,
+                rackId: rackId,
+                rackChildPosition: rackChildPosition,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -47465,11 +49027,44 @@ class $$RangeDaySessionsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({shotImpactsRefs = false}) {
+          prefetchHooksCallback: ({rackId = false, shotImpactsRefs = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [if (shotImpactsRefs) db.shotImpacts],
-              addJoins: null,
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (rackId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.rackId,
+                                referencedTable:
+                                    $$RangeDaySessionsTableReferences
+                                        ._rackIdTable(db),
+                                referencedColumn:
+                                    $$RangeDaySessionsTableReferences
+                                        ._rackIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (shotImpactsRefs)
@@ -47513,7 +49108,7 @@ typedef $$RangeDaySessionsTableProcessedTableManager =
       $$RangeDaySessionsTableUpdateCompanionBuilder,
       (RangeDaySessionRow, $$RangeDaySessionsTableReferences),
       RangeDaySessionRow,
-      PrefetchHooks Function({bool shotImpactsRefs})
+      PrefetchHooks Function({bool rackId, bool shotImpactsRefs})
     >;
 typedef $$ShotImpactsTableCreateCompanionBuilder =
     ShotImpactsCompanion Function({
@@ -51105,373 +52700,6 @@ typedef $$AtmospherePresetsTableProcessedTableManager =
       AtmospherePresetRow,
       PrefetchHooks Function()
     >;
-typedef $$TargetRacksTableCreateCompanionBuilder =
-    TargetRacksCompanion Function({
-      Value<int> id,
-      required String name,
-      Value<String?> description,
-      required String rackKind,
-      required double totalWidthIn,
-      required double totalHeightIn,
-      Value<String?> notes,
-      Value<DateTime> createdAt,
-    });
-typedef $$TargetRacksTableUpdateCompanionBuilder =
-    TargetRacksCompanion Function({
-      Value<int> id,
-      Value<String> name,
-      Value<String?> description,
-      Value<String> rackKind,
-      Value<double> totalWidthIn,
-      Value<double> totalHeightIn,
-      Value<String?> notes,
-      Value<DateTime> createdAt,
-    });
-
-final class $$TargetRacksTableReferences
-    extends BaseReferences<_$AppDatabase, $TargetRacksTable, TargetRackRow> {
-  $$TargetRacksTableReferences(super.$_db, super.$_table, super.$_typedResult);
-
-  static MultiTypedResultKey<$TargetRackChildrenTable, List<TargetRackChildRow>>
-  _targetRackChildrenRefsTable(_$AppDatabase db) =>
-      MultiTypedResultKey.fromTable(
-        db.targetRackChildren,
-        aliasName: $_aliasNameGenerator(
-          db.targetRacks.id,
-          db.targetRackChildren.rackId,
-        ),
-      );
-
-  $$TargetRackChildrenTableProcessedTableManager get targetRackChildrenRefs {
-    final manager = $$TargetRackChildrenTableTableManager(
-      $_db,
-      $_db.targetRackChildren,
-    ).filter((f) => f.rackId.id.sqlEquals($_itemColumn<int>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(
-      _targetRackChildrenRefsTable($_db),
-    );
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-}
-
-class $$TargetRacksTableFilterComposer
-    extends Composer<_$AppDatabase, $TargetRacksTable> {
-  $$TargetRacksTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get name => $composableBuilder(
-    column: $table.name,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get description => $composableBuilder(
-    column: $table.description,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get rackKind => $composableBuilder(
-    column: $table.rackKind,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<double> get totalWidthIn => $composableBuilder(
-    column: $table.totalWidthIn,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<double> get totalHeightIn => $composableBuilder(
-    column: $table.totalHeightIn,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get notes => $composableBuilder(
-    column: $table.notes,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  Expression<bool> targetRackChildrenRefs(
-    Expression<bool> Function($$TargetRackChildrenTableFilterComposer f) f,
-  ) {
-    final $$TargetRackChildrenTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.targetRackChildren,
-      getReferencedColumn: (t) => t.rackId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$TargetRackChildrenTableFilterComposer(
-            $db: $db,
-            $table: $db.targetRackChildren,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-}
-
-class $$TargetRacksTableOrderingComposer
-    extends Composer<_$AppDatabase, $TargetRacksTable> {
-  $$TargetRacksTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get name => $composableBuilder(
-    column: $table.name,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get description => $composableBuilder(
-    column: $table.description,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get rackKind => $composableBuilder(
-    column: $table.rackKind,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<double> get totalWidthIn => $composableBuilder(
-    column: $table.totalWidthIn,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<double> get totalHeightIn => $composableBuilder(
-    column: $table.totalHeightIn,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get notes => $composableBuilder(
-    column: $table.notes,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-}
-
-class $$TargetRacksTableAnnotationComposer
-    extends Composer<_$AppDatabase, $TargetRacksTable> {
-  $$TargetRacksTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<int> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<String> get name =>
-      $composableBuilder(column: $table.name, builder: (column) => column);
-
-  GeneratedColumn<String> get description => $composableBuilder(
-    column: $table.description,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get rackKind =>
-      $composableBuilder(column: $table.rackKind, builder: (column) => column);
-
-  GeneratedColumn<double> get totalWidthIn => $composableBuilder(
-    column: $table.totalWidthIn,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<double> get totalHeightIn => $composableBuilder(
-    column: $table.totalHeightIn,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get notes =>
-      $composableBuilder(column: $table.notes, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => column);
-
-  Expression<T> targetRackChildrenRefs<T extends Object>(
-    Expression<T> Function($$TargetRackChildrenTableAnnotationComposer a) f,
-  ) {
-    final $$TargetRackChildrenTableAnnotationComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.id,
-          referencedTable: $db.targetRackChildren,
-          getReferencedColumn: (t) => t.rackId,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$TargetRackChildrenTableAnnotationComposer(
-                $db: $db,
-                $table: $db.targetRackChildren,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return f(composer);
-  }
-}
-
-class $$TargetRacksTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $TargetRacksTable,
-          TargetRackRow,
-          $$TargetRacksTableFilterComposer,
-          $$TargetRacksTableOrderingComposer,
-          $$TargetRacksTableAnnotationComposer,
-          $$TargetRacksTableCreateCompanionBuilder,
-          $$TargetRacksTableUpdateCompanionBuilder,
-          (TargetRackRow, $$TargetRacksTableReferences),
-          TargetRackRow,
-          PrefetchHooks Function({bool targetRackChildrenRefs})
-        > {
-  $$TargetRacksTableTableManager(_$AppDatabase db, $TargetRacksTable table)
-    : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$TargetRacksTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$TargetRacksTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$TargetRacksTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                Value<String> name = const Value.absent(),
-                Value<String?> description = const Value.absent(),
-                Value<String> rackKind = const Value.absent(),
-                Value<double> totalWidthIn = const Value.absent(),
-                Value<double> totalHeightIn = const Value.absent(),
-                Value<String?> notes = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-              }) => TargetRacksCompanion(
-                id: id,
-                name: name,
-                description: description,
-                rackKind: rackKind,
-                totalWidthIn: totalWidthIn,
-                totalHeightIn: totalHeightIn,
-                notes: notes,
-                createdAt: createdAt,
-              ),
-          createCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                required String name,
-                Value<String?> description = const Value.absent(),
-                required String rackKind,
-                required double totalWidthIn,
-                required double totalHeightIn,
-                Value<String?> notes = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-              }) => TargetRacksCompanion.insert(
-                id: id,
-                name: name,
-                description: description,
-                rackKind: rackKind,
-                totalWidthIn: totalWidthIn,
-                totalHeightIn: totalHeightIn,
-                notes: notes,
-                createdAt: createdAt,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map(
-                (e) => (
-                  e.readTable(table),
-                  $$TargetRacksTableReferences(db, table, e),
-                ),
-              )
-              .toList(),
-          prefetchHooksCallback: ({targetRackChildrenRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [
-                if (targetRackChildrenRefs) db.targetRackChildren,
-              ],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (targetRackChildrenRefs)
-                    await $_getPrefetchedData<
-                      TargetRackRow,
-                      $TargetRacksTable,
-                      TargetRackChildRow
-                    >(
-                      currentTable: table,
-                      referencedTable: $$TargetRacksTableReferences
-                          ._targetRackChildrenRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$TargetRacksTableReferences(
-                            db,
-                            table,
-                            p0,
-                          ).targetRackChildrenRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.rackId == item.id),
-                      typedResults: items,
-                    ),
-                ];
-              },
-            );
-          },
-        ),
-      );
-}
-
-typedef $$TargetRacksTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $TargetRacksTable,
-      TargetRackRow,
-      $$TargetRacksTableFilterComposer,
-      $$TargetRacksTableOrderingComposer,
-      $$TargetRacksTableAnnotationComposer,
-      $$TargetRacksTableCreateCompanionBuilder,
-      $$TargetRacksTableUpdateCompanionBuilder,
-      (TargetRackRow, $$TargetRacksTableReferences),
-      TargetRackRow,
-      PrefetchHooks Function({bool targetRackChildrenRefs})
-    >;
 typedef $$TargetRackChildrenTableCreateCompanionBuilder =
     TargetRackChildrenCompanion Function({
       Value<int> id,
@@ -53536,6 +54764,393 @@ typedef $$ScopeReticleOptionsTableProcessedTableManager =
       ScopeReticleOptionRow,
       PrefetchHooks Function({bool scopeModelId, bool reticleId})
     >;
+typedef $$ManufacturedAmmoTableCreateCompanionBuilder =
+    ManufacturedAmmoCompanion Function({
+      Value<int> id,
+      required String manufacturer,
+      required String cartridge,
+      required String name,
+      required double bulletWeightGr,
+      required double bulletDiameterIn,
+      required double muzzleVelocityFps,
+      Value<double?> standardDeviationFps,
+      Value<double?> bcG7,
+      Value<double?> bcG1,
+      Value<String?> notes,
+      Value<String?> sourceUrl,
+      Value<DateTime?> verifiedAt,
+      Value<DateTime> createdAt,
+    });
+typedef $$ManufacturedAmmoTableUpdateCompanionBuilder =
+    ManufacturedAmmoCompanion Function({
+      Value<int> id,
+      Value<String> manufacturer,
+      Value<String> cartridge,
+      Value<String> name,
+      Value<double> bulletWeightGr,
+      Value<double> bulletDiameterIn,
+      Value<double> muzzleVelocityFps,
+      Value<double?> standardDeviationFps,
+      Value<double?> bcG7,
+      Value<double?> bcG1,
+      Value<String?> notes,
+      Value<String?> sourceUrl,
+      Value<DateTime?> verifiedAt,
+      Value<DateTime> createdAt,
+    });
+
+class $$ManufacturedAmmoTableFilterComposer
+    extends Composer<_$AppDatabase, $ManufacturedAmmoTable> {
+  $$ManufacturedAmmoTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get manufacturer => $composableBuilder(
+    column: $table.manufacturer,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cartridge => $composableBuilder(
+    column: $table.cartridge,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get bulletWeightGr => $composableBuilder(
+    column: $table.bulletWeightGr,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get bulletDiameterIn => $composableBuilder(
+    column: $table.bulletDiameterIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get muzzleVelocityFps => $composableBuilder(
+    column: $table.muzzleVelocityFps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get standardDeviationFps => $composableBuilder(
+    column: $table.standardDeviationFps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get bcG7 => $composableBuilder(
+    column: $table.bcG7,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get bcG1 => $composableBuilder(
+    column: $table.bcG1,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceUrl => $composableBuilder(
+    column: $table.sourceUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get verifiedAt => $composableBuilder(
+    column: $table.verifiedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ManufacturedAmmoTableOrderingComposer
+    extends Composer<_$AppDatabase, $ManufacturedAmmoTable> {
+  $$ManufacturedAmmoTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get manufacturer => $composableBuilder(
+    column: $table.manufacturer,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cartridge => $composableBuilder(
+    column: $table.cartridge,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get bulletWeightGr => $composableBuilder(
+    column: $table.bulletWeightGr,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get bulletDiameterIn => $composableBuilder(
+    column: $table.bulletDiameterIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get muzzleVelocityFps => $composableBuilder(
+    column: $table.muzzleVelocityFps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get standardDeviationFps => $composableBuilder(
+    column: $table.standardDeviationFps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get bcG7 => $composableBuilder(
+    column: $table.bcG7,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get bcG1 => $composableBuilder(
+    column: $table.bcG1,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceUrl => $composableBuilder(
+    column: $table.sourceUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get verifiedAt => $composableBuilder(
+    column: $table.verifiedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ManufacturedAmmoTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ManufacturedAmmoTable> {
+  $$ManufacturedAmmoTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get manufacturer => $composableBuilder(
+    column: $table.manufacturer,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get cartridge =>
+      $composableBuilder(column: $table.cartridge, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<double> get bulletWeightGr => $composableBuilder(
+    column: $table.bulletWeightGr,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get bulletDiameterIn => $composableBuilder(
+    column: $table.bulletDiameterIn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get muzzleVelocityFps => $composableBuilder(
+    column: $table.muzzleVelocityFps,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get standardDeviationFps => $composableBuilder(
+    column: $table.standardDeviationFps,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get bcG7 =>
+      $composableBuilder(column: $table.bcG7, builder: (column) => column);
+
+  GeneratedColumn<double> get bcG1 =>
+      $composableBuilder(column: $table.bcG1, builder: (column) => column);
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceUrl =>
+      $composableBuilder(column: $table.sourceUrl, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get verifiedAt => $composableBuilder(
+    column: $table.verifiedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$ManufacturedAmmoTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ManufacturedAmmoTable,
+          ManufacturedAmmoRow,
+          $$ManufacturedAmmoTableFilterComposer,
+          $$ManufacturedAmmoTableOrderingComposer,
+          $$ManufacturedAmmoTableAnnotationComposer,
+          $$ManufacturedAmmoTableCreateCompanionBuilder,
+          $$ManufacturedAmmoTableUpdateCompanionBuilder,
+          (
+            ManufacturedAmmoRow,
+            BaseReferences<
+              _$AppDatabase,
+              $ManufacturedAmmoTable,
+              ManufacturedAmmoRow
+            >,
+          ),
+          ManufacturedAmmoRow,
+          PrefetchHooks Function()
+        > {
+  $$ManufacturedAmmoTableTableManager(
+    _$AppDatabase db,
+    $ManufacturedAmmoTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ManufacturedAmmoTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ManufacturedAmmoTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ManufacturedAmmoTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> manufacturer = const Value.absent(),
+                Value<String> cartridge = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<double> bulletWeightGr = const Value.absent(),
+                Value<double> bulletDiameterIn = const Value.absent(),
+                Value<double> muzzleVelocityFps = const Value.absent(),
+                Value<double?> standardDeviationFps = const Value.absent(),
+                Value<double?> bcG7 = const Value.absent(),
+                Value<double?> bcG1 = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<String?> sourceUrl = const Value.absent(),
+                Value<DateTime?> verifiedAt = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => ManufacturedAmmoCompanion(
+                id: id,
+                manufacturer: manufacturer,
+                cartridge: cartridge,
+                name: name,
+                bulletWeightGr: bulletWeightGr,
+                bulletDiameterIn: bulletDiameterIn,
+                muzzleVelocityFps: muzzleVelocityFps,
+                standardDeviationFps: standardDeviationFps,
+                bcG7: bcG7,
+                bcG1: bcG1,
+                notes: notes,
+                sourceUrl: sourceUrl,
+                verifiedAt: verifiedAt,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String manufacturer,
+                required String cartridge,
+                required String name,
+                required double bulletWeightGr,
+                required double bulletDiameterIn,
+                required double muzzleVelocityFps,
+                Value<double?> standardDeviationFps = const Value.absent(),
+                Value<double?> bcG7 = const Value.absent(),
+                Value<double?> bcG1 = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<String?> sourceUrl = const Value.absent(),
+                Value<DateTime?> verifiedAt = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => ManufacturedAmmoCompanion.insert(
+                id: id,
+                manufacturer: manufacturer,
+                cartridge: cartridge,
+                name: name,
+                bulletWeightGr: bulletWeightGr,
+                bulletDiameterIn: bulletDiameterIn,
+                muzzleVelocityFps: muzzleVelocityFps,
+                standardDeviationFps: standardDeviationFps,
+                bcG7: bcG7,
+                bcG1: bcG1,
+                notes: notes,
+                sourceUrl: sourceUrl,
+                verifiedAt: verifiedAt,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ManufacturedAmmoTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ManufacturedAmmoTable,
+      ManufacturedAmmoRow,
+      $$ManufacturedAmmoTableFilterComposer,
+      $$ManufacturedAmmoTableOrderingComposer,
+      $$ManufacturedAmmoTableAnnotationComposer,
+      $$ManufacturedAmmoTableCreateCompanionBuilder,
+      $$ManufacturedAmmoTableUpdateCompanionBuilder,
+      (
+        ManufacturedAmmoRow,
+        BaseReferences<
+          _$AppDatabase,
+          $ManufacturedAmmoTable,
+          ManufacturedAmmoRow
+        >,
+      ),
+      ManufacturedAmmoRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -53591,6 +55206,8 @@ class $AppDatabaseManager {
       $$BallisticProfilesTableTableManager(_db, _db.ballisticProfiles);
   $$TargetsTableTableManager get targets =>
       $$TargetsTableTableManager(_db, _db.targets);
+  $$TargetRacksTableTableManager get targetRacks =>
+      $$TargetRacksTableTableManager(_db, _db.targetRacks);
   $$RangeDaySessionsTableTableManager get rangeDaySessions =>
       $$RangeDaySessionsTableTableManager(_db, _db.rangeDaySessions);
   $$ShotImpactsTableTableManager get shotImpacts =>
@@ -53609,8 +55226,6 @@ class $AppDatabaseManager {
       $$SightCalibrationsTableTableManager(_db, _db.sightCalibrations);
   $$AtmospherePresetsTableTableManager get atmospherePresets =>
       $$AtmospherePresetsTableTableManager(_db, _db.atmospherePresets);
-  $$TargetRacksTableTableManager get targetRacks =>
-      $$TargetRacksTableTableManager(_db, _db.targetRacks);
   $$TargetRackChildrenTableTableManager get targetRackChildren =>
       $$TargetRackChildrenTableTableManager(_db, _db.targetRackChildren);
   $$ScopeManufacturersTableTableManager get scopeManufacturers =>
@@ -53619,4 +55234,6 @@ class $AppDatabaseManager {
       $$ScopeModelsTableTableManager(_db, _db.scopeModels);
   $$ScopeReticleOptionsTableTableManager get scopeReticleOptions =>
       $$ScopeReticleOptionsTableTableManager(_db, _db.scopeReticleOptions);
+  $$ManufacturedAmmoTableTableManager get manufacturedAmmo =>
+      $$ManufacturedAmmoTableTableManager(_db, _db.manufacturedAmmo);
 }

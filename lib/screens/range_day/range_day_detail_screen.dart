@@ -53,6 +53,7 @@ import '../../data/reticle_library.dart';
 import '../../database/database.dart';
 import '../../repositories/ballistic_profile_repository.dart';
 import '../../repositories/firearm_repository.dart';
+import '../../repositories/manufactured_ammo_repository.dart';
 import '../../repositories/optics_repository.dart';
 import '../../repositories/range_day_repository.dart';
 import '../../repositories/recipe_repository.dart';
@@ -88,6 +89,7 @@ import '../../widgets/range_day_safety.dart';
 import '../../services/weather_service.dart';
 import '../../utils/responsive.dart';
 import '../../widgets/atmosphere_preset_picker.dart';
+import '../../widgets/glossary_label.dart';
 import '../../widgets/pro_gate.dart';
 import '../../widgets/reticle_picker.dart';
 import '../ballistics/ballistics_screen.dart';
@@ -168,15 +170,15 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   // `_activeTargetWidthIn` / `_activeTargetHeightIn` /
   // `_activeTargetSpec` helpers below.
   //
-  // TODO(rack-persistence): the rack choice is intentionally NOT
-  // persisted yet. [RangeDaySessions] only carries `targetId` (a single
-  // target FK), so when a rack is active we write `targetId = null` on
-  // auto-save and the rack selection vanishes when the session is
-  // re-opened. Adding `rackId` + `rackChildPosition` columns to
-  // [RangeDaySessions] is a follow-up task that has to bump
-  // `schemaVersion`, add an `onUpgrade` clause, mirror the columns into
-  // the cloud-sync payload, and seed-roundtrip the picker via
-  // `_hydrateFromSession`.
+  // Rack mode persists across app restarts via the schema v23
+  // [RangeDaySessions.rackId] / [rackChildPosition] columns.
+  // `_buildSessionCompanion` writes `rackId` + `rackChildPosition`
+  // when [_hasActiveRack] is true (forcing `targetId = null` so the
+  // two surfaces don't both light up); `_hydrateFromSessionInner`
+  // resolves the saved rack via `TargetRepository.rackById` /
+  // `childrenOf` and restores [_selectedRack] /
+  // [_selectedRackChildren] / [_selectedRackChildPosition] before
+  // the first solve runs.
   TargetRackRow? _selectedRack;
   List<TargetRackChildRow> _selectedRackChildren = const [];
   int _selectedRackChildPosition = 0;
@@ -186,10 +188,21 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   /// Two-segment toggle picking which kind of target the user is
   /// configuring. [_TargetPickerMode.single] keeps the existing single-
   /// target dropdown UX (default). [_TargetPickerMode.rack] swaps in
-  /// the rack dropdown + active-child chips. Mode is in-memory only —
-  /// hydration on a saved session always lands in `single` because the
-  /// schema doesn't carry a rack id yet (see TODO above).
+  /// the rack dropdown + active-child chips. Hydration on a saved
+  /// session lands in [_TargetPickerMode.rack] when the persisted
+  /// `RangeDaySessions.rackId` is non-null, otherwise in
+  /// [_TargetPickerMode.single].
   _TargetPickerMode _targetPickerMode = _TargetPickerMode.single;
+
+  /// User-selected color hex override for the active target's tint.
+  /// Null means "use the target row's natural `colorHex`". Set by the
+  /// 5-swatch picker in `_targetColorSwatchRow`. Plumbed into
+  /// [TargetPlot] via the `colorHexOverride` constructor arg so the
+  /// painter substitutes the override when filling the target shape.
+  /// Per-session-only state (not persisted to a column today — would
+  /// need a `RangeDaySessions.targetColorHexOverride` column for
+  /// cross-restart persistence).
+  String? _selectedTargetColorHex;
 
   BallisticProfileRow? _selectedProfile;
   Stream<List<BallisticProfileRow>>? _profilesStream;
@@ -632,7 +645,52 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       _environmentExpanded = false;
     });
     // Resolve the foreign keys now that we know we're editing.
-    if (s.targetId != null) {
+    //
+    // Rack and single-target modes are mutually exclusive on the
+    // database side (auto-save writes one and forces the other null),
+    // so we restore rack state first when `rackId` is non-null and
+    // skip the single-target lookup entirely. When `rackId` is null,
+    // fall through to the existing `targetId` path. Soft-fail on the
+    // rack-children fetch — a stale id, a re-seeded catalog, or a
+    // closed-DB during teardown all return [] rather than crashing
+    // the screen, and the picker simply lands back in single-target
+    // mode with an empty rack pick.
+    if (s.rackId != null) {
+      try {
+        final rack = await targetRepo.rackById(s.rackId!);
+        if (rack != null) {
+          List<TargetRackChildRow> children = const [];
+          try {
+            children = await targetRepo.childrenOf(rack.id);
+          } catch (e) {
+            debugPrint(
+              '[range_day] _hydrateFromSession childrenOf failed: $e',
+            );
+            children = const [];
+          }
+          if (mounted) {
+            setState(() {
+              _selectedRack = rack;
+              _selectedRackChildren = children;
+              // Clamp the persisted position into the valid range so
+              // a stale value (e.g. seed re-shuffle that dropped the
+              // tail child) doesn't index out of bounds.
+              final saved = s.rackChildPosition ?? 0;
+              _selectedRackChildPosition = children.isEmpty
+                  ? 0
+                  : saved.clamp(0, children.length - 1);
+              _targetPickerMode = _TargetPickerMode.rack;
+              // Mutual exclusion: when a rack is active, the legacy
+              // single-target selection is forced empty so the UI
+              // doesn't render two pickers in conflict.
+              _selectedTarget = null;
+            });
+          }
+        }
+      } catch (e) {
+        debugPrint('[range_day] _hydrateFromSession rackById failed: $e');
+      }
+    } else if (s.targetId != null) {
       final target = await targetRepo.getById(s.targetId!);
       if (mounted) setState(() => _selectedTarget = target);
     }
@@ -1151,6 +1209,13 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     final defaultName = activeName == null
         ? 'Range day · ${distance.toStringAsFixed(0)} yd'
         : '$activeName · ${distance.toStringAsFixed(0)} yd';
+    // Rack mode persistence (schema v23). The rack columns and the
+    // single-target column are mutually exclusive: when a rack is
+    // active we write `targetId = null` so the next load doesn't
+    // accidentally fall back to a stale single-target FK; when no
+    // rack is active we write both rack columns null so the row
+    // continues rendering through the existing `targetId` path.
+    final hasActiveRack = _hasActiveRack;
     return RangeDaySessionsCompanion(
       name: drift.Value(_session?.name ?? defaultName),
       date: drift.Value(_session?.date ?? DateTime.now()),
@@ -1160,13 +1225,12 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       ballisticProfileId: drift.Value(_selectedProfile?.id),
       recipeId: drift.Value(_selectedLoad?.id),
       firearmId: drift.Value(_selectedFirearm?.id),
-      // TODO(rack-persistence): when a rack is active we write
-      // `targetId = null` because [RangeDaySessions] has no `rackId`
-      // column yet. The rack pick survives only for the lifetime of
-      // the screen; reopening the saved session restores nothing
-      // rack-related. See the state-fields TODO above for the schema
-      // changes this needs.
-      targetId: drift.Value(_selectedTarget?.id),
+      // Rack mode and single-target mode are mutually exclusive — see
+      // the comment at the top of `_buildSessionCompanion`.
+      targetId: drift.Value(hasActiveRack ? null : _selectedTarget?.id),
+      rackId: drift.Value(hasActiveRack ? _selectedRack?.id : null),
+      rackChildPosition:
+          drift.Value(hasActiveRack ? _selectedRackChildPosition : null),
       distanceYd: drift.Value(distance),
       temperatureF: drift.Value(double.tryParse(_tempCtrl.text)),
       pressureInHg: drift.Value(double.tryParse(_pressureCtrl.text)),
@@ -1621,14 +1685,13 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final isWide = Breakpoints.isWide(context);
-    final scaffoldTitle = _session?.name ?? 'New Range Day';
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          scaffoldTitle,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
+        // Title is constant "Range Day" — the user explicitly rejected
+        // a per-session name in the AppBar ("There is no 'New' Range
+        // Day. There is only one"). The session name lives in the
+        // History list, not the AppBar.
+        title: const Text('Range Day'),
         actions: [
           // History entry point. The bottom-nav "Range Day" tab now
           // always opens a fresh detail screen; users reach the saved-
@@ -1910,8 +1973,11 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
             Icon(Icons.science_outlined,
                 color: theme.colorScheme.primary, size: 18),
             const SizedBox(width: 6),
-            Text('Litz analysis (Pro)',
-                style: theme.textTheme.titleSmall),
+            GlossaryLabel(
+              text: 'Litz analysis (Pro)',
+              glossaryTerm: 'Confidence interval (90%)',
+              style: theme.textTheme.titleSmall,
+            ),
           ]),
           const SizedBox(height: 4),
           Text(
@@ -2026,7 +2092,14 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       keyboardType:
           const TextInputType.numberWithOptions(decimal: true, signed: false),
       decoration: const InputDecoration(
-        labelText: 'Shot azimuth (°)',
+        // Using `label:` (a Widget) instead of `labelText:` so the
+        // GlossaryLabel widget can render the (?) help glyph and
+        // intercept taps for the in-form definition modal. Same
+        // floating-label treatment Material gives the string variant.
+        label: GlossaryLabel(
+          text: 'Shot azimuth (°)',
+          glossaryTerm: 'Azimuth',
+        ),
         helperText:
             'Compass direction of the shot — 0=N, 90=E, 180=S, 270=W. '
             'Used for Coriolis at long range; leave 0 if unsure.',
@@ -2061,7 +2134,12 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                 signed: true,
               ),
               decoration: const InputDecoration(
-                labelText: 'Incline / decline angle (°)',
+                // Using `label:` (Widget) instead of `labelText:`
+                // (String) lets GlossaryLabel render the (?) glyph.
+                label: GlossaryLabel(
+                  text: 'Incline / decline angle (°)',
+                  glossaryTerm: 'Incline / decline angle',
+                ),
                 helperText:
                     'Slope of fire — positive = uphill, negative = '
                     'downhill. Drop reduces with steep angles via the '
@@ -2577,7 +2655,11 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                 Icon(Icons.straighten,
                     size: 18, color: theme.colorScheme.primary),
                 const SizedBox(width: 8),
-                Text('Cant', style: theme.textTheme.titleSmall),
+                GlossaryLabel(
+                  text: 'Cant',
+                  glossaryTerm: 'Cant correction',
+                  style: theme.textTheme.titleSmall,
+                ),
                 const Spacer(),
                 Text(
                   readout,
@@ -2712,7 +2794,11 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                 Icon(Icons.explore,
                     size: 18, color: theme.colorScheme.primary),
                 const SizedBox(width: 8),
-                Text('Heading', style: theme.textTheme.titleSmall),
+                GlossaryLabel(
+                  text: 'Heading',
+                  glossaryTerm: 'Magnetic declination',
+                  style: theme.textTheme.titleSmall,
+                ),
                 const Spacer(),
                 Text(
                   readout,
@@ -2919,13 +3005,19 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     required String suffix,
     required void Function(double) onChanged,
   }) {
+    final glossaryHint = _capabilityGlossaryHintFor(label);
     return TextField(
       controller: controller,
       keyboardType:
           const TextInputType.numberWithOptions(decimal: true),
       decoration: InputDecoration(
         border: const OutlineInputBorder(),
-        labelText: label,
+        // `label:` Widget instead of `labelText:` String so the
+        // GlossaryLabel can show the (?) tap-to-define affordance.
+        label: GlossaryLabel(
+          text: label,
+          glossaryTerm: glossaryHint,
+        ),
         suffixText: suffix,
         isDense: true,
       ),
@@ -2934,6 +3026,36 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         if (v != null && v >= 0) onChanged(v);
       },
     );
+  }
+
+  /// Map group-stats row labels ("ES", "Mean R") to glossary entries.
+  String? _groupStatGlossaryHintFor(String label) {
+    switch (label) {
+      case 'ES':
+        return 'Extreme Spread';
+      case 'Mean R':
+        return 'Mean radius';
+      case 'Group':
+        return 'Group';
+      default:
+        return null;
+    }
+  }
+
+  /// Map shooter-capability labels ("Group at 100 yd") to the
+  /// canonical glossary term name. Returns null when the visible
+  /// label and the glossary entry name are already equal.
+  String? _capabilityGlossaryHintFor(String label) {
+    switch (label) {
+      case 'Group at 100 yd':
+        return 'Group MOA';
+      case 'Wind uncertainty':
+        return 'Wind uncertainty';
+      case 'Range uncertainty':
+        return 'Range uncertainty';
+      default:
+        return null;
+    }
   }
 
   Widget _targetPicker() {
@@ -3154,11 +3276,117 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                 // computed solution.
                 if (selected != null && stillInCatalog)
                   _selectedTargetPreview(selected),
+                // Color swatch row — five circular tappable swatches.
+                // Tapping one writes `_selectedTargetColorHex`, which
+                // overrides the target's natural color in the
+                // TargetPlot painters via `colorHexOverride`. Null
+                // means "use the target's natural colorHex".
+                _targetColorSwatchRow(),
               ],
             );
           },
         ),
       ],
+    );
+  }
+
+  /// Five-color target tint palette. Locked to the colors a real
+  /// range target most often takes: white paper (default), orange
+  /// reactive paint, brown cardboard / silhouette, yellow steel
+  /// reactive, red plate. Replaced the earlier white/yellow/orange/
+  /// red/black set on user feedback — black silhouettes are rendered
+  /// via the silhouette `shape`, not via tint, so a "black" swatch
+  /// was redundant. Brown covers the cardboard IPSC / IDPA case the
+  /// old palette missed.
+  static const List<String> _kTargetColorSwatches = [
+    '#ffffff', // white (default)
+    '#ff7700', // orange
+    '#8b5a2b', // brown (cardboard)
+    '#ffeb00', // yellow
+    '#cc1f1f', // red
+  ];
+
+  /// Five circular tappable color swatches in a `Wrap` (so a narrow
+  /// device wraps gracefully instead of overflowing). The active
+  /// swatch — when `_selectedTargetColorHex` matches — gets a thin
+  /// gold border. A "Reset" affordance is offered as a sixth subtle
+  /// chip on the right when an override is active, returning to the
+  /// target's natural color.
+  Widget _targetColorSwatchRow() {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Wrap(
+          spacing: 8,
+          runSpacing: 6,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            for (final hex in _kTargetColorSwatches)
+              _targetColorSwatchButton(hex),
+            if (_selectedTargetColorHex != null)
+              TextButton(
+                onPressed: () {
+                  setState(() => _selectedTargetColorHex = null);
+                  _scheduleAutoSave();
+                },
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  textStyle: theme.textTheme.bodySmall,
+                ),
+                child: const Text('Reset'),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Single circular swatch. Active swatch = thicker gold border + a
+  /// check glyph for accessibility (color-blind users still see which
+  /// is selected without relying on the border alone).
+  Widget _targetColorSwatchButton(String hex) {
+    final theme = Theme.of(context);
+    final selected = _selectedTargetColorHex == hex;
+    Color parse(String h) {
+      final raw = h.startsWith('#') ? h.substring(1) : h;
+      final v = int.parse(raw, radix: 16);
+      return Color(0xff000000 | v);
+    }
+    final fill = parse(hex);
+    // Pick a contrast color for the check glyph based on perceived
+    // luminance — white-on-light or black-on-dark would be invisible.
+    final luminance = fill.computeLuminance();
+    final checkColor = luminance > 0.5 ? Colors.black : Colors.white;
+    return Semantics(
+      label: 'Target color swatch $hex',
+      button: true,
+      selected: selected,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(28),
+        onTap: () {
+          setState(() => _selectedTargetColorHex = hex);
+          _scheduleAutoSave();
+        },
+        child: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: fill,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: selected
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.outlineVariant,
+              width: selected ? 3 : 1,
+            ),
+          ),
+          child: selected
+              ? Icon(Icons.check, size: 18, color: checkColor)
+              : null,
+        ),
+      ),
     );
   }
 
@@ -3695,7 +3923,14 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Distance (yd)', style: theme.textTheme.labelLarge),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: GlossaryLabel(
+            text: 'Distance (yd)',
+            glossaryTerm: 'Distance',
+            style: theme.textTheme.labelLarge,
+          ),
+        ),
         const SizedBox(height: 6),
         Row(
           children: [
@@ -3891,9 +4126,13 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          'Ballistic profile',
-          style: Theme.of(context).textTheme.labelLarge,
+        Align(
+          alignment: Alignment.centerLeft,
+          child: GlossaryLabel(
+            text: 'Ballistic profile',
+            glossaryTerm: 'DOPE',
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
         ),
         const SizedBox(height: 6),
         StreamBuilder<List<BallisticProfileRow>>(
@@ -4134,11 +4373,15 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   /// the top. When the user picks one, [_applyCommonLoad] is called
   /// and the sheet dismisses.
   Future<void> _pickCommonLoad() async {
+    // Capture the repo before opening the sheet so the picker doesn't
+    // have to walk the inherited-widget tree itself. The repo is
+    // provided once in `app.dart` and feeds [CommonLoadsCatalog].
+    final repo = context.read<ManufacturedAmmoRepository>();
     final picked = await showModalBottomSheet<CommonLoad>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (sheetContext) => const _CommonLoadPickerSheet(),
+      builder: (sheetContext) => _CommonLoadPickerSheet(repo: repo),
     );
     if (picked != null && mounted) {
       _applyCommonLoad(picked);
@@ -4545,13 +4788,22 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
 
   Widget _envField(
       TextEditingController controller, String label, String suffix) {
+    // Map per-row labels to a known glossary term where one exists.
+    // Soft-fails to plain text inside GlossaryLabel when no match.
+    final glossaryHint = _envGlossaryHintFor(label);
     return TextField(
       controller: controller,
       keyboardType:
           const TextInputType.numberWithOptions(signed: true, decimal: true),
       decoration: InputDecoration(
         border: const OutlineInputBorder(),
-        labelText: label,
+        // Use `label:` (Widget) so the label can show the (?) help
+        // glyph and tap-to-define modal. `labelText:` is String-only
+        // and would lose the affordance.
+        label: GlossaryLabel(
+          text: label,
+          glossaryTerm: glossaryHint,
+        ),
         suffixText: suffix,
         isDense: true,
       ),
@@ -4560,6 +4812,25 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         _scheduleAutoSave();
       },
     );
+  }
+
+  /// Map the short environment-grid labels ("Temp", "From") to the
+  /// glossary entry that describes the concept. When the entry name
+  /// differs from the label visible in the grid, this is where the
+  /// link gets pinned.
+  String? _envGlossaryHintFor(String label) {
+    switch (label) {
+      case 'Pressure':
+        return 'Station pressure';
+      case 'From':
+        return 'Wind direction (from convention)';
+      case 'Wind':
+        return 'Wind drift';
+      case 'Elevation':
+        return 'Density altitude';
+      default:
+        return null;
+    }
   }
 
   String _formatTime(DateTime t) {
@@ -4592,8 +4863,11 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
               children: [
                 Icon(Icons.flag_outlined, color: theme.colorScheme.primary),
                 const SizedBox(width: 8),
-                Text('Firing solution',
-                    style: theme.textTheme.titleMedium),
+                GlossaryLabel(
+                  text: 'Firing solution',
+                  glossaryTerm: 'DOPE',
+                  style: theme.textTheme.titleMedium,
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -4726,8 +5000,9 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                 Icon(Icons.air,
                     color: theme.colorScheme.primary, size: 18),
                 const SizedBox(width: 8),
-                Text(
-                  'Wind bracket',
+                GlossaryLabel(
+                  text: 'Wind bracket',
+                  glossaryTerm: 'Wind uncertainty',
                   style: theme.textTheme.titleMedium,
                 ),
               ],
@@ -4930,11 +5205,18 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       icon = Icons.error;
       verdict = 'Unstable';
     }
+    final glossaryHint = label.startsWith('Miller')
+        ? 'Miller stability formula'
+        : (label.startsWith('Pejsa') ? 'Pejsa stability' : null);
     return Row(
       children: [
         SizedBox(
           width: 110,
-          child: Text(label, style: theme.textTheme.bodyMedium),
+          child: GlossaryLabel(
+            text: label,
+            glossaryTerm: glossaryHint,
+            style: theme.textTheme.bodyMedium,
+          ),
         ),
         SizedBox(
           width: 56,
@@ -4979,8 +5261,9 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       children: [
         SizedBox(
           width: 110,
-          child: Text(
-            'Form factor (i7)',
+          child: GlossaryLabel(
+            text: 'Form factor (i7)',
+            glossaryTerm: 'Form factor (i7)',
             style: theme.textTheme.bodyMedium,
           ),
         ),
@@ -5163,8 +5446,11 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         children: [
           SizedBox(
             width: 48,
-            child: Text(
-              label,
+            // GlossaryLabel here surfaces the in-form definition modal
+            // for "Drop" / "Wind" stat tiles. Soft-fails to plain Text
+            // when no glossary entry resolves (e.g. acronym labels).
+            child: GlossaryLabel(
+              text: label,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -5196,19 +5482,43 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
 
   Widget _smallStat(String label, String value) {
     final theme = Theme.of(context);
+    // Map the short stat-tile labels ("Vel", "TOF") to their full
+    // glossary entries so the (?) glyph leads to the right definition.
+    final glossaryHint = _smallStatGlossaryHintFor(label);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            )),
+        GlossaryLabel(
+          text: label,
+          glossaryTerm: glossaryHint,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
         Text(value,
             style: theme.textTheme.titleMedium?.copyWith(
               fontFeatures: const [FontFeature.tabularFigures()],
             )),
       ],
     );
+  }
+
+  /// Map abbreviated stat-tile labels to their glossary entries.
+  /// Returning null causes GlossaryLabel to use the visible label as
+  /// the lookup key (which still soft-fails to plain Text on a miss).
+  String? _smallStatGlossaryHintFor(String label) {
+    switch (label) {
+      case 'Vel':
+        return 'Muzzle Velocity';
+      case 'Energy':
+        // No direct entry; surface "Drop" definition would be wrong.
+        // Return null so GlossaryLabel falls back to plain Text.
+        return null;
+      case 'TOF':
+        return null; // No glossary entry yet for time-of-flight.
+      default:
+        return null;
+    }
   }
 
   // ─────────────────────── DOPE card ───────────────────────
@@ -5480,6 +5790,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                           reticleDisplayUnit: reticleUnit,
                           rackChildren: _rackChildrenSpec,
                           activeRackChildIndex: _activeRackChildIndex,
+                          colorHexOverride: _selectedTargetColorHex,
                         ),
                       ],
                     );
@@ -5507,6 +5818,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                     reticleDisplayUnit: reticleUnit,
                     rackChildren: _rackChildrenSpec,
                     activeRackChildIndex: _activeRackChildIndex,
+                    colorHexOverride: _selectedTargetColorHex,
                   );
                 },
               )
@@ -5525,6 +5837,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                 reticleDisplayUnit: reticleUnit,
                 rackChildren: _rackChildrenSpec,
                 activeRackChildIndex: _activeRackChildIndex,
+                colorHexOverride: _selectedTargetColorHex,
               ),
             const SizedBox(height: 12),
             Row(
@@ -5802,8 +6115,11 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
               children: [
                 Icon(Icons.bar_chart, color: theme.colorScheme.primary),
                 const SizedBox(width: 8),
-                Text('Hit probability',
-                    style: theme.textTheme.titleMedium),
+                GlossaryLabel(
+                  text: 'Hit probability',
+                  glossaryTerm: 'Hit probability',
+                  style: theme.textTheme.titleMedium,
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -6393,6 +6709,10 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     required String angleText,
   }) {
     final theme = Theme.of(context);
+    // Map the abbreviated row label to its glossary entry so the (?)
+    // tap surfaces the right definition. Soft-fails to plain Text on
+    // unknown labels.
+    final glossaryHint = _groupStatGlossaryHintFor(label);
     return Tooltip(
       message: tooltip,
       child: Row(
@@ -6400,11 +6720,14 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
           Icon(icon, size: 16, color: theme.colorScheme.primary),
           const SizedBox(width: 8),
           SizedBox(
-            width: 64,
-            child: Text(label,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                )),
+            width: 72,
+            child: GlossaryLabel(
+              text: label,
+              glossaryTerm: glossaryHint,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ),
           Expanded(
             child: Text(
@@ -6696,10 +7019,15 @@ class _DopeHeaderCell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-      child: Text(text,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              )),
+      // Wrap DOPE table headers in GlossaryLabel so taps on "Drop" /
+      // "Wind" / "TOF" surface the right definition modal. Range and
+      // TOF soft-fail to plain Text since they have no glossary entry.
+      child: GlossaryLabel(
+        text: text,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+      ),
     );
   }
 }
@@ -6800,11 +7128,18 @@ class _BubbleLevelPainter extends CustomPainter {
 /// the screen's controllers.
 ///
 /// Stateful because the search field is interactive — every keystroke
-/// re-runs `CommonLoadsCatalog.search` and rebuilds the list. The
-/// catalog is a compile-time constant, so the search is O(n) over a
-/// list of ~20 entries, which is essentially free.
+/// filters the in-memory load list and rebuilds. The list is loaded
+/// once from [ManufacturedAmmoRepository] in `initState` (~17-row
+/// catalog — sub-millisecond on SQLite) and the search runs over the
+/// cached in-memory copy so each keystroke stays free.
 class _CommonLoadPickerSheet extends StatefulWidget {
-  const _CommonLoadPickerSheet();
+  const _CommonLoadPickerSheet({required this.repo});
+
+  /// Repository the sheet reads from. Provided by the caller (the
+  /// Range Day screen captures it from the inherited widget tree
+  /// before opening the sheet) so the sheet itself doesn't have to
+  /// walk for it.
+  final ManufacturedAmmoRepository repo;
 
   @override
   State<_CommonLoadPickerSheet> createState() =>
@@ -6815,6 +7150,25 @@ class _CommonLoadPickerSheetState extends State<_CommonLoadPickerSheet> {
   final _searchCtrl = TextEditingController();
   String _query = '';
 
+  /// Cached list of every load in the catalog. Populated once in
+  /// `initState` from the repo. While it's null the sheet renders a
+  /// spinner; if the repo returns an empty list we show the
+  /// "no common loads available" hint instead of the search list.
+  List<CommonLoad>? _allLoads;
+
+  @override
+  void initState() {
+    super.initState();
+    // ignore: discarded_futures
+    _loadCatalog();
+  }
+
+  Future<void> _loadCatalog() async {
+    final loads = await CommonLoadsCatalog.all(widget.repo);
+    if (!mounted) return;
+    setState(() => _allLoads = loads);
+  }
+
   @override
   void dispose() {
     _searchCtrl.dispose();
@@ -6822,11 +7176,22 @@ class _CommonLoadPickerSheetState extends State<_CommonLoadPickerSheet> {
   }
 
   /// Group whatever loads the active query selects, preserving the
-  /// catalog's natural cartridge ordering. We don't use
-  /// `CommonLoadsCatalog.byCartridge()` directly because it doesn't
-  /// know about the search filter.
+  /// catalog's natural cartridge ordering. Returns an empty map while
+  /// the catalog is still loading (caller renders a spinner) or when
+  /// the search query has no matches (caller renders the empty-hint).
   Map<String, List<CommonLoad>> _filteredGrouped() {
-    final filtered = CommonLoadsCatalog.search(_query);
+    final loads = _allLoads;
+    if (loads == null) return const {};
+    final q = _query.trim().toLowerCase();
+    final filtered = q.isEmpty
+        ? loads
+        : loads.where((l) {
+            if (l.cartridge.toLowerCase().contains(q)) return true;
+            if (l.name.toLowerCase().contains(q)) return true;
+            final n = l.notes;
+            if (n != null && n.toLowerCase().contains(q)) return true;
+            return false;
+          }).toList(growable: false);
     final grouped = <String, List<CommonLoad>>{};
     for (final l in filtered) {
       grouped.putIfAbsent(l.cartridge, () => <CommonLoad>[]).add(l);
@@ -6838,6 +7203,8 @@ class _CommonLoadPickerSheetState extends State<_CommonLoadPickerSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final grouped = _filteredGrouped();
+    final isLoading = _allLoads == null;
+    final isCatalogEmpty = _allLoads != null && _allLoads!.isEmpty;
     // Don't assert the list is non-empty — empty result for a typo
     // search query is a valid state. Render an inline empty hint
     // instead so the user can adjust the query.
@@ -6897,34 +7264,42 @@ class _CommonLoadPickerSheetState extends State<_CommonLoadPickerSheet> {
             ),
             const Divider(height: 1),
             Flexible(
-              child: grouped.isEmpty
-                  ? _emptySearchHint(theme)
-                  : ListView(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      children: [
-                        for (final cartridge in grouped.keys) ...[
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(
-                                16, 12, 16, 4),
-                            child: Text(
-                              cartridge,
-                              style:
-                                  theme.textTheme.labelLarge?.copyWith(
-                                color: theme.colorScheme.primary,
-                                fontWeight: FontWeight.w600,
-                              ),
+              child: isLoading
+                  ? const Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  : isCatalogEmpty
+                      ? _emptyCatalogHint(theme)
+                      : grouped.isEmpty
+                          ? _emptySearchHint(theme)
+                          : ListView(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 8),
+                              children: [
+                                for (final cartridge in grouped.keys) ...[
+                                  Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                        16, 12, 16, 4),
+                                    child: Text(
+                                      cartridge,
+                                      style: theme.textTheme.labelLarge
+                                          ?.copyWith(
+                                        color: theme.colorScheme.primary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                  for (final load in grouped[cartridge]!)
+                                    _LoadRow(
+                                      load: load,
+                                      onTap: () => Navigator.of(context)
+                                          .pop(load),
+                                    ),
+                                ],
+                                const SizedBox(height: 8),
+                              ],
                             ),
-                          ),
-                          for (final load in grouped[cartridge]!)
-                            _LoadRow(
-                              load: load,
-                              onTap: () =>
-                                  Navigator.of(context).pop(load),
-                            ),
-                        ],
-                        const SizedBox(height: 8),
-                      ],
-                    ),
             ),
           ],
         ),
@@ -6947,6 +7322,31 @@ class _CommonLoadPickerSheetState extends State<_CommonLoadPickerSheet> {
             const SizedBox(height: 8),
             Text(
               'No matches for "$_query"',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _emptyCatalogHint(ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.inventory_2_outlined,
+              size: 32,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'No common loads available yet',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

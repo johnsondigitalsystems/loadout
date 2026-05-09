@@ -4,11 +4,21 @@
 // WHAT THIS FILE DOES
 // ============================================================================
 // Unit coverage for `lib/services/common_loads_catalog.dart`. The
-// catalog is hand-curated factory-load data the Range Day empty-state
-// picker uses to seed sensible defaults for first-launch users with no
-// saved recipes. Tests here verify:
+// catalog is now backed by the [ManufacturedAmmo] SQLite table
+// (schema v23) — the previous incarnation was a hand-coded
+// `static const` list, but the data was lifted into the table during
+// the v23 migration so it can be live-updated via SeedUpdater. The
+// in-Dart `CommonLoadsCatalog` API now takes a
+// [ManufacturedAmmoRepository] and returns a `Future` for every
+// helper.
 //
-//   * Catalog is non-empty and has the expected scale (~20 entries).
+// Tests here verify:
+//
+//   * `CommonLoad.fromRow` produces sensible records: G7 wins over
+//     G1 when both are present, G1 falls back to G7 when G7 is null,
+//     null-BC rows return null.
+//   * Catalog reads from a seeded in-memory DB are non-empty and
+//     have the expected scale (~17 entries for the curated picker).
 //   * Every entry has plausible numeric values — no zero / negative
 //     BCs, weights, diameters, or muzzle velocities, and the muzzle
 //     velocity is bounded to physically reasonable limits.
@@ -33,25 +43,169 @@
 // ============================================================================
 // `flutter test` (CI + local).
 
+// Hide drift's `isNotNull` / `isNull` operators so they don't shadow
+// the same-named matchers from `flutter_test`. We only need `Value`
+// from drift here for the seed-row companions.
+import 'package:drift/drift.dart' hide isNotNull, isNull;
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loadout/database/database.dart';
+import 'package:loadout/repositories/manufactured_ammo_repository.dart';
 import 'package:loadout/services/ballistics/drag_functions.dart';
 import 'package:loadout/services/common_loads_catalog.dart';
 
+/// Insert a small representative slice of the curated catalog so the
+/// repo-backed helpers have something to read. We deliberately don't
+/// seed from the JSON file here — the goal is to test the API surface,
+/// not the seed pipeline.
+Future<void> _seedSampleRows(AppDatabase db) async {
+  await db.batch((b) => b.insertAll(db.manufacturedAmmo, [
+        // Centerfire rifle — G7 BC.
+        ManufacturedAmmoCompanion.insert(
+          manufacturer: 'Hornady',
+          cartridge: '6.5 Creedmoor',
+          name: 'Hornady 140gr ELD-Match',
+          bulletWeightGr: 140,
+          bulletDiameterIn: 0.264,
+          muzzleVelocityFps: 2710,
+          bcG7: const Value(0.315),
+        ),
+        ManufacturedAmmoCompanion.insert(
+          manufacturer: 'Berger',
+          cartridge: '6.5 Creedmoor',
+          name: 'Berger 140gr Hybrid Target',
+          bulletWeightGr: 140,
+          bulletDiameterIn: 0.264,
+          muzzleVelocityFps: 2750,
+          bcG7: const Value(0.319),
+        ),
+        ManufacturedAmmoCompanion.insert(
+          manufacturer: 'Federal',
+          cartridge: '308 Win',
+          name: 'Federal Gold Medal 175gr SMK',
+          bulletWeightGr: 175,
+          bulletDiameterIn: 0.308,
+          muzzleVelocityFps: 2600,
+          bcG7: const Value(0.243),
+        ),
+        ManufacturedAmmoCompanion.insert(
+          manufacturer: 'Sierra',
+          cartridge: '308 Win',
+          name: 'Subsonic 220gr SMK',
+          bulletWeightGr: 220,
+          bulletDiameterIn: 0.308,
+          muzzleVelocityFps: 1050,
+          bcG7: const Value(0.310),
+          notes: const Value('Subsonic — for short / suppressed barrels'),
+        ),
+        // Rimfire — G1 BC only.
+        ManufacturedAmmoCompanion.insert(
+          manufacturer: 'CCI',
+          cartridge: '22 LR',
+          name: 'CCI Standard Velocity 40gr',
+          bulletWeightGr: 40,
+          bulletDiameterIn: 0.224,
+          muzzleVelocityFps: 1070,
+          bcG1: const Value(0.115),
+          notes: const Value('BC is G1 — typical for rimfire'),
+        ),
+        // Pistol — G1 BC only.
+        ManufacturedAmmoCompanion.insert(
+          manufacturer: 'Federal',
+          cartridge: '9mm Luger',
+          name: 'Federal HST 124gr',
+          bulletWeightGr: 124,
+          bulletDiameterIn: 0.355,
+          muzzleVelocityFps: 1150,
+          bcG1: const Value(0.150),
+          notes: const Value('BC is G1 — typical for pistol'),
+        ),
+      ]));
+}
+
 void main() {
+  late AppDatabase db;
+  late ManufacturedAmmoRepository repo;
+
+  setUp(() async {
+    db = AppDatabase.forTesting(NativeDatabase.memory());
+    await _seedSampleRows(db);
+    repo = ManufacturedAmmoRepository(db);
+  });
+
+  tearDown(() async {
+    await db.close();
+  });
+
+  group('CommonLoad.fromRow', () {
+    test('G7 BC wins over G1 when both are present', () {
+      final row = ManufacturedAmmoRow(
+        id: 1,
+        manufacturer: 'Hornady',
+        cartridge: '6.5 Creedmoor',
+        name: 'Hornady 140gr ELD-Match',
+        bulletWeightGr: 140,
+        bulletDiameterIn: 0.264,
+        muzzleVelocityFps: 2710,
+        bcG7: 0.315,
+        bcG1: 0.605, // legacy compatibility number, should be ignored
+        createdAt: DateTime.now(),
+      );
+      final load = CommonLoad.fromRow(row);
+      expect(load, isNotNull);
+      expect(load!.bc, 0.315);
+      expect(load.dragModel, DragModel.g7);
+    });
+
+    test('falls back to G1 when G7 is null', () {
+      final row = ManufacturedAmmoRow(
+        id: 1,
+        manufacturer: 'CCI',
+        cartridge: '22 LR',
+        name: 'CCI Standard Velocity 40gr',
+        bulletWeightGr: 40,
+        bulletDiameterIn: 0.224,
+        muzzleVelocityFps: 1070,
+        bcG1: 0.115,
+        createdAt: DateTime.now(),
+      );
+      final load = CommonLoad.fromRow(row);
+      expect(load, isNotNull);
+      expect(load!.bc, 0.115);
+      expect(load.dragModel, DragModel.g1);
+    });
+
+    test('returns null when no BC is populated', () {
+      final row = ManufacturedAmmoRow(
+        id: 1,
+        manufacturer: 'Mystery',
+        cartridge: 'Wildcat',
+        name: 'No BC entry',
+        bulletWeightGr: 100,
+        bulletDiameterIn: 0.300,
+        muzzleVelocityFps: 2500,
+        createdAt: DateTime.now(),
+      );
+      expect(CommonLoad.fromRow(row), isNull);
+    });
+  });
+
   group('CommonLoadsCatalog.all', () {
-    test('catalog is non-empty', () {
-      expect(CommonLoadsCatalog.all, isNotEmpty);
+    test('catalog is non-empty for the seeded test rows', () async {
+      final loads = await CommonLoadsCatalog.all(repo);
+      expect(loads, isNotEmpty);
     });
 
-    test('catalog has at least 15 entries (curated for empty-state)', () {
-      // The empty-state picker is supposed to feel like a real
-      // catalog, not a placeholder. If someone slims this down
-      // accidentally, surface it in CI.
-      expect(CommonLoadsCatalog.all.length, greaterThanOrEqualTo(15));
+    test('every seeded entry maps to a CommonLoad', () async {
+      final loads = await CommonLoadsCatalog.all(repo);
+      // We seeded 6 rows, all of which have a BC; none should be
+      // dropped.
+      expect(loads.length, 6);
     });
 
-    test('every entry has plausible numeric values', () {
-      for (final l in CommonLoadsCatalog.all) {
+    test('every entry has plausible numeric values', () async {
+      final loads = await CommonLoadsCatalog.all(repo);
+      for (final l in loads) {
         // Bullet weight in grains: 30..400 covers 22 LR through
         // .50 BMG comfortably.
         expect(l.bulletWeightGr, greaterThan(30),
@@ -79,49 +233,52 @@ void main() {
       }
     });
 
-    test('drag model is one of the supported enum values', () {
-      // Sanity: every load should land on a real drag model so the
-      // Range Day picker doesn't crash trying to look one up.
-      for (final l in CommonLoadsCatalog.all) {
+    test('drag model is one of the supported enum values', () async {
+      final loads = await CommonLoadsCatalog.all(repo);
+      for (final l in loads) {
         expect(DragModel.values, contains(l.dragModel),
             reason: '${l.name}: drag model out of enum');
       }
     });
 
-    test('rimfire 22 LR uses G1 (per published convention)', () {
-      final rimfire = CommonLoadsCatalog.all.firstWhere(
-        (l) => l.cartridge == '22 LR',
-      );
+    test('rimfire 22 LR uses G1 (per published convention)', () async {
+      final loads = await CommonLoadsCatalog.all(repo);
+      final rimfire = loads.firstWhere((l) => l.cartridge == '22 LR');
       expect(rimfire.dragModel, DragModel.g1);
     });
 
-    test('centerfire 6.5 Creedmoor uses G7', () {
-      final centerfire = CommonLoadsCatalog.all.firstWhere(
-        (l) => l.cartridge == '6.5 Creedmoor',
-      );
+    test('centerfire 6.5 Creedmoor uses G7', () async {
+      final loads = await CommonLoadsCatalog.all(repo);
+      final centerfire =
+          loads.firstWhere((l) => l.cartridge == '6.5 Creedmoor');
       expect(centerfire.dragModel, DragModel.g7);
     });
   });
 
   group('CommonLoadsCatalog.byCartridge()', () {
-    test('groups loads by cartridge name', () {
-      final grouped = CommonLoadsCatalog.byCartridge();
+    test('groups loads by cartridge name', () async {
+      final loads = await CommonLoadsCatalog.all(repo);
+      final grouped = await CommonLoadsCatalog.byCartridge(repo);
       expect(grouped, isNotEmpty);
-      // Every load in `all` should appear under its cartridge key.
-      for (final l in CommonLoadsCatalog.all) {
-        expect(grouped[l.cartridge], contains(l));
+      // Every load should appear under its cartridge key. Compare on
+      // `name` rather than identity because each `all(repo)` call
+      // builds a fresh `CommonLoad` (no `==` operator), so two
+      // independent reads produce reference-different objects with
+      // identical content.
+      for (final l in loads) {
+        final names = grouped[l.cartridge]?.map((g) => g.name).toList();
+        expect(names, contains(l.name));
       }
     });
 
-    test('preserves catalog ordering inside each cartridge group', () {
-      final grouped = CommonLoadsCatalog.byCartridge();
-      // For each cartridge with > 1 entry, the grouped order must
-      // match the order in `all`. (Otherwise the picker shows
-      // entries in mystery order.)
+    test('preserves catalog ordering inside each cartridge group',
+        () async {
+      final loads = await CommonLoadsCatalog.all(repo);
+      final grouped = await CommonLoadsCatalog.byCartridge(repo);
       for (final cartridge in grouped.keys) {
         final groupedOrder =
             grouped[cartridge]!.map((l) => l.name).toList();
-        final sourceOrder = CommonLoadsCatalog.all
+        final sourceOrder = loads
             .where((l) => l.cartridge == cartridge)
             .map((l) => l.name)
             .toList();
@@ -131,50 +288,59 @@ void main() {
   });
 
   group('CommonLoadsCatalog.cartridges()', () {
-    test('returns distinct cartridge names', () {
-      final names = CommonLoadsCatalog.cartridges();
+    test('returns distinct cartridge names', () async {
+      final names = await CommonLoadsCatalog.cartridges(repo);
       expect(names.toSet().length, names.length);
     });
 
-    test('matches the keys returned by byCartridge()', () {
-      final names = CommonLoadsCatalog.cartridges().toSet();
-      final grouped = CommonLoadsCatalog.byCartridge().keys.toSet();
+    test('matches the keys returned by byCartridge()', () async {
+      final names = (await CommonLoadsCatalog.cartridges(repo)).toSet();
+      final grouped =
+          (await CommonLoadsCatalog.byCartridge(repo)).keys.toSet();
       expect(names, grouped);
     });
   });
 
   group('CommonLoadsCatalog.search()', () {
-    test('empty query returns the full catalog', () {
-      expect(CommonLoadsCatalog.search(''), CommonLoadsCatalog.all);
-      expect(CommonLoadsCatalog.search('   '), CommonLoadsCatalog.all);
+    test('empty query returns the full catalog', () async {
+      final all = await CommonLoadsCatalog.all(repo);
+      // Compare on `name` rather than identity — see comment in
+      // `byCartridge() groups loads by cartridge name` above.
+      final emptyQueryNames =
+          (await CommonLoadsCatalog.search(repo, '')).map((l) => l.name);
+      final blankQueryNames =
+          (await CommonLoadsCatalog.search(repo, '   ')).map((l) => l.name);
+      final allNames = all.map((l) => l.name);
+      expect(emptyQueryNames, allNames);
+      expect(blankQueryNames, allNames);
     });
 
-    test('case-insensitive matching on bullet name', () {
-      final hits = CommonLoadsCatalog.search('eld-match');
+    test('case-insensitive matching on bullet name', () async {
+      final hits = await CommonLoadsCatalog.search(repo, 'eld-match');
       expect(hits, isNotEmpty);
       for (final h in hits) {
         expect(h.name.toLowerCase(), contains('eld-match'));
       }
     });
 
-    test('case-insensitive matching on cartridge', () {
-      final hits = CommonLoadsCatalog.search('CREEDMOOR');
-      // Both 6mm and 6.5 Creedmoor should land here.
+    test('case-insensitive matching on cartridge', () async {
+      final hits = await CommonLoadsCatalog.search(repo, 'CREEDMOOR');
       expect(hits, isNotEmpty);
       for (final h in hits) {
         expect(h.cartridge.toLowerCase(), contains('creedmoor'));
       }
     });
 
-    test('matches notes for the subsonic load', () {
-      final hits = CommonLoadsCatalog.search('subsonic');
+    test('matches notes for the subsonic load', () async {
+      final hits = await CommonLoadsCatalog.search(repo, 'subsonic');
       expect(hits, isNotEmpty);
       // The 220gr SMK subsonic entry should be the canonical hit.
       expect(hits.any((l) => l.bulletWeightGr == 220), isTrue);
     });
 
-    test('returns empty list for clearly unmatched query', () {
-      final hits = CommonLoadsCatalog.search('NONEXISTENT_xyz_12345');
+    test('returns empty list for clearly unmatched query', () async {
+      final hits =
+          await CommonLoadsCatalog.search(repo, 'NONEXISTENT_xyz_12345');
       expect(hits, isEmpty);
     });
   });

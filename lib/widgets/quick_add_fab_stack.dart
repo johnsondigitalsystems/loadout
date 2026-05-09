@@ -124,11 +124,16 @@ class QuickAddFabStack extends StatelessWidget {
           foregroundColor: theme.colorScheme.onSecondaryContainer,
         ),
         const SizedBox(height: 12),
-        FloatingActionButton(
+        // Standard FAB now uses the same .extended shape as Quick so
+        // the user can tell them apart at a glance. A bare `+` next
+        // to a labeled "Quick" was confusing — the user couldn't tell
+        // which one opened the full form.
+        FloatingActionButton.extended(
           heroTag: '${tagPrefix}_add',
           tooltip: addTooltip,
           onPressed: onAddPressed,
-          child: const Icon(Icons.add),
+          icon: const Icon(Icons.add),
+          label: const Text('Standard'),
         ),
       ],
     );

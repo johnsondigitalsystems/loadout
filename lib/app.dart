@@ -131,6 +131,7 @@ import 'repositories/component_repository.dart';
 import 'repositories/drag_curve_repository.dart';
 import 'repositories/firearm_repository.dart';
 import 'repositories/load_development_repository.dart';
+import 'repositories/manufactured_ammo_repository.dart';
 import 'repositories/optics_repository.dart';
 import 'repositories/process_step_repository.dart';
 import 'repositories/range_day_repository.dart';
@@ -231,6 +232,12 @@ class LoadOutApp extends StatelessWidget {
         ),
         Provider<RangeDayRepository>(
           create: (_) => RangeDayRepository(database),
+        ),
+        // Curated manufactured-ammo catalog (schema v23). Read-only
+        // surface for the Range Day "Pick a common factory load"
+        // empty-state picker, mediated through `CommonLoadsCatalog`.
+        Provider<ManufacturedAmmoRepository>(
+          create: (_) => ManufacturedAmmoRepository(database),
         ),
         // Stateless service — provided once for the Range Day screen's
         // hit-probability gauge. Pure-functional, so a single instance is

@@ -23,6 +23,16 @@
                      android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"
                      android:maxSdkVersion="30" />
+
+    <!-- Camera permission. Used by:
+         1. Photo Import (handwritten-notebook OCR feature, free-tier).
+         2. Recipe QR Scanner (peer-to-peer recipe import via mobile_scanner).
+         The runtime prompt is triggered by the respective plugins
+         (image_picker / mobile_scanner). On Android 12+ the system also
+         needs the manifest declaration. The matching iOS string lives in
+         ios/Runner/Info.plist as NSCameraUsageDescription. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
     <application
         android:label="LoadOut"
         android:name="${applicationName}"

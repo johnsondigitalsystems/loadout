@@ -79,6 +79,7 @@ import '../../repositories/brass_lot_repository.dart';
 import '../../repositories/firearm_repository.dart';
 import '../../repositories/load_development_repository.dart';
 import '../../repositories/recipe_repository.dart';
+import '../../widgets/glossary_label.dart';
 import 'new_load_development_screen.dart';
 
 /// Per-session dashboard for a Load Development experiment.
@@ -891,7 +892,12 @@ class _RungEditorState extends State<_RungEditor> {
             controller: _notes,
             maxLines: 2,
             decoration: InputDecoration(
-              labelText: widget.isCharge ? 'Pressure Notes' : 'Notes',
+              label: GlossaryLabel(
+                text: widget.isCharge ? 'Pressure Notes' : 'Notes',
+                // "Pressure" is a glossary entry, "Notes" isn't —
+                // GlossaryLabel soft-fails for the non-pressure case.
+                glossaryTerm: widget.isCharge ? 'Pressure signs' : null,
+              ),
               hintText: widget.isCharge
                   ? 'Sticky bolt, ejector marks, primer flatness...'
                   : 'Wind, position, anything that affected the group',
@@ -939,7 +945,10 @@ class _RungEditorState extends State<_RungEditor> {
                   FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
                 ],
                 decoration: const InputDecoration(
-                  labelText: 'Velocity Avg (fps)',
+                  label: GlossaryLabel(
+                    text: 'Velocity Avg (fps)',
+                    glossaryTerm: 'Mean velocity',
+                  ),
                 ),
                 onChanged: (_) => _commit(),
               ),
@@ -954,7 +963,10 @@ class _RungEditorState extends State<_RungEditor> {
                   FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
                 ],
                 decoration: const InputDecoration(
-                  labelText: 'SD (fps)',
+                  label: GlossaryLabel(
+                    text: 'SD (fps)',
+                    glossaryTerm: 'MV Standard Deviation',
+                  ),
                 ),
                 onChanged: (_) => _commit(),
               ),
@@ -973,7 +985,10 @@ class _RungEditorState extends State<_RungEditor> {
                   FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
                 ],
                 decoration: const InputDecoration(
-                  labelText: 'ES (fps)',
+                  label: GlossaryLabel(
+                    text: 'ES (fps)',
+                    glossaryTerm: 'Extreme Spread',
+                  ),
                 ),
                 onChanged: (_) => _commit(),
               ),
@@ -1012,7 +1027,10 @@ class _RungEditorState extends State<_RungEditor> {
                   FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
                 ],
                 decoration: const InputDecoration(
-                  labelText: 'Group (MOA)',
+                  label: GlossaryLabel(
+                    text: 'Group (MOA)',
+                    glossaryTerm: 'Group MOA',
+                  ),
                 ),
                 onChanged: (_) => _commit(),
               ),
@@ -1027,7 +1045,10 @@ class _RungEditorState extends State<_RungEditor> {
                   FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
                 ],
                 decoration: const InputDecoration(
-                  labelText: 'Vertical (MOA)',
+                  label: GlossaryLabel(
+                    text: 'Vertical (MOA)',
+                    glossaryTerm: 'Group MOA',
+                  ),
                 ),
                 onChanged: (_) => _commit(),
               ),
@@ -1046,7 +1067,10 @@ class _RungEditorState extends State<_RungEditor> {
                   FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
                 ],
                 decoration: const InputDecoration(
-                  labelText: 'Horizontal (MOA)',
+                  label: GlossaryLabel(
+                    text: 'Horizontal (MOA)',
+                    glossaryTerm: 'Group MOA',
+                  ),
                 ),
                 onChanged: (_) => _commit(),
               ),
