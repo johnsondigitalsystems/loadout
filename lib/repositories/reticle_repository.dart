@@ -93,6 +93,63 @@ class ReticleRepository {
       (db.select(db.reticles)..where((r) => r.id.equals(id)))
           .getSingleOrNull();
 
+  /// Look up a reticle by a string "natural key" of the form
+  /// `<manufacturer_slug>_<model_slug>`. Both segments are matched
+  /// case-insensitively against `manufacturerId + '_' + model` after
+  /// the segments are flattened to a slug (lowercase, non-alphanumeric
+  /// runs collapsed to a single underscore, leading / trailing
+  /// underscores stripped).
+  ///
+  /// This is the integration point for screens that want to look up a
+  /// canonical row (e.g. the LoadOut-default Mil Tree archetype shipped
+  /// in `assets/seed_data/reticles.json` / `reticles_v2.json`) without
+  /// hardcoding a numeric id that depends on seed-insert ordering.
+  /// The seed JSON's top-level `id` field is the convention this method
+  /// matches against — currently the seed-loader does not persist that
+  /// `id` directly, so we recompute the slug from the persisted
+  /// (manufacturer, model) tuple.
+  ///
+  /// Returns null if no row matches. Soft-fails on a closed DB.
+  Future<ReticleRow?> byNaturalKey(String naturalKey) async {
+    try {
+      final target = _slugify(naturalKey);
+      if (target.isEmpty) return null;
+      final all = await db.select(db.reticles).get();
+      for (final row in all) {
+        final candidate =
+            _slugify('${row.manufacturerId}_${row.model}');
+        if (candidate == target) return row;
+      }
+      return null;
+    } catch (_) {
+      // Closed DB or other transient failure — caller treats null as
+      // "not in catalog yet" (e.g. fresh install before seed loader
+      // finishes, or the catalog overhaul agent hasn't published the
+      // archetype yet).
+      return null;
+    }
+  }
+
+  static String _slugify(String input) {
+    final lower = input.toLowerCase();
+    final buf = StringBuffer();
+    var pendingUnderscore = false;
+    for (final code in lower.codeUnits) {
+      final isLower = code >= 0x61 && code <= 0x7a; // a-z
+      final isDigit = code >= 0x30 && code <= 0x39; // 0-9
+      if (isLower || isDigit) {
+        if (pendingUnderscore && buf.isNotEmpty) {
+          buf.writeCharCode(0x5f); // '_'
+        }
+        buf.writeCharCode(code);
+        pendingUnderscore = false;
+      } else {
+        pendingUnderscore = true;
+      }
+    }
+    return buf.toString();
+  }
+
   /// Returns the default reticle for an optic, or null if the optic
   /// has no default linked (most catalog scopes can be ordered with
   /// multiple reticles, so most optics rows leave this empty).

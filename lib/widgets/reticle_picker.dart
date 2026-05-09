@@ -101,6 +101,7 @@ import '../data/reticle_library.dart';
 import '../data/reticle_tags.dart';
 import '../database/database.dart';
 import '../repositories/reticle_repository.dart';
+import 'find_by_scope_sheet.dart';
 import 'reticle_full_screen_view.dart';
 import 'reticle_renderer.dart';
 import 'reticle_thumbnail.dart';
@@ -337,7 +338,8 @@ class _ReticlePickerSheetState extends State<_ReticlePickerSheet> {
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: 'Search by name, brand, or tag (e.g. Tremor3)',
+                    hintText:
+                        'Search by name or category (e.g. mil tree, red dot)',
                     prefixIcon: const Icon(Icons.search),
                     isDense: true,
                     suffixIcon: _query.isEmpty
@@ -356,6 +358,30 @@ class _ReticlePickerSheetState extends State<_ReticlePickerSheet> {
                 ),
               ),
               const SizedBox(height: 8),
+              // "Find by my scope" affordance — opens a bottom sheet
+              // listing every scope in the catalog. The user picks
+              // their scope; the sheet returns the LoadOut archetype
+              // ID it maps to. We then auto-select that reticle from
+              // the picker's loaded list. This is the
+              // discoverability bridge for users who knew their
+              // branded reticle name (TReMoR3, EBR-7D, etc.) but
+              // can no longer find it directly because the catalog
+              // ships only LoadOut originals + public-domain
+              // patterns post-IP-scrub.
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () => _onFindByScope(context),
+                    icon: const Icon(Icons.search_outlined, size: 18),
+                    label: const Text('Find by my scope'),
+                    style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+                ),
+              ),
               // Popular-reticles chip row: brand-agnostic shortcuts.
               _popularChipsRow(theme),
               const Divider(height: 1),
@@ -424,6 +450,37 @@ class _ReticlePickerSheetState extends State<_ReticlePickerSheet> {
         ),
       ),
     );
+  }
+
+  /// Open the find-by-scope sheet. If the user picks a scope, resolve
+  /// the recommended LoadOut archetype id via the reticle repo's
+  /// natural-key lookup and pop the picker with that selection.
+  /// Soft-fails on missing recommendation (snackbar) — never throws.
+  Future<void> _onFindByScope(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final recommendedId = await showFindByScopeSheet(context);
+    if (recommendedId == null) return;
+    if (!mounted) return;
+    ReticleRow? match;
+    try {
+      match = await widget.repo.byNaturalKey(recommendedId);
+    } catch (_) {
+      match = null;
+    }
+    if (!mounted) return;
+    if (match == null) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'Could not find the recommended reticle '
+            '("$recommendedId"). Pick one from the list below.',
+          ),
+        ),
+      );
+      return;
+    }
+    navigator.pop(_ReticleSelection(row: match));
   }
 
   /// Brand-agnostic "Popular reticles" chip row. Each chip filters the

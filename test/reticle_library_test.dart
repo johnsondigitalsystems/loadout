@@ -15,8 +15,13 @@ void main() {
   test('every seeded reticle parses cleanly', () {
     final raw = File('assets/seed_data/reticles.json').readAsStringSync();
     final list = json.decode(raw) as List<dynamic>;
-    expect(list.length, greaterThanOrEqualTo(200),
-        reason: 'Library must have 200+ reticles per spec.');
+    // Catalog rewrite: branded reticles were replaced with LoadOut
+    // archetype designs + every public-domain pattern. Threshold lowered
+    // accordingly. The exact count today is 43 (24 LoadOut originals + 19
+    // public-domain), so we assert >= 40 to give a bit of headroom for
+    // future additions in either bucket.
+    expect(list.length, greaterThanOrEqualTo(40),
+        reason: 'Library must have 40+ reticles (LoadOut archetypes + PD).');
     final ids = <String>{};
     for (final entry in list) {
       final map = entry as Map<String, dynamic>;

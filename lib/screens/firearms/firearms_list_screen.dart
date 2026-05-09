@@ -11,10 +11,14 @@
 // Each row is a swipe-to-delete `Dismissible` `ListTile`. Title is the
 // user-supplied name (e.g. "Bergara B-14 HMR"); subtitle is a
 // dot-separated string composed from model and caliber where present.
-// The trailing area shows a compact "<n> shots" counter (round count
-// fired, sourced from `UserFirearmRow.shotsFired`) followed by the
-// chevron. Tapping a tile pushes `FirearmFormScreen(existing: f)`; the
-// FAB pushes a blank `FirearmFormScreen()`.
+// The trailing area shows a [FavoriteStarButton] (toggling the per-row
+// `isFavorite` boolean via `FirearmRepository.toggleFavorite`), a
+// compact "<n> shots" counter (round count fired, sourced from
+// `UserFirearmRow.shotsFired`), and the chevron. Favorited firearms
+// surface at the top of the list (alphabetical within the favorites
+// bucket); non-favorites keep their existing natural-sort order.
+// Tapping a tile pushes `FirearmFormScreen(existing: f)`; the FAB
+// pushes a blank `FirearmFormScreen()`.
 //
 // ============================================================================
 // WHY IT EXISTS IN THE ARCHITECTURE
@@ -58,7 +62,9 @@ import 'package:provider/provider.dart';
 
 import '../../database/database.dart';
 import '../../repositories/firearm_repository.dart';
+import '../../utils/natural_sort.dart';
 import '../../utils/responsive.dart';
+import '../../widgets/favorite_star_button.dart';
 import 'firearm_form_screen.dart';
 
 class FirearmsListScreen extends StatefulWidget {
@@ -155,12 +161,27 @@ class _FirearmsList extends StatelessWidget {
         if (snap.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        final firearms = snap.data ?? const <UserFirearmRow>[];
-        if (firearms.isEmpty) {
+        final raw = snap.data ?? const <UserFirearmRow>[];
+        if (raw.isEmpty) {
           return const Center(
             child: Text('No firearms yet. Tap + to add your first.'),
           );
         }
+        // Favorites-first sort. The underlying stream is already
+        // natural-sorted by name (see `FirearmRepository.watchAll`);
+        // we stable-partition so favorites surface at the top while
+        // preserving alphabetical order within both buckets.
+        final favorites = <UserFirearmRow>[];
+        final others = <UserFirearmRow>[];
+        for (final f in raw) {
+          if (f.isFavorite) {
+            favorites.add(f);
+          } else {
+            others.add(f);
+          }
+        }
+        favorites.sort((a, b) => naturalCompare(a.name, b.name));
+        final firearms = [...favorites, ...others];
         return ListView.separated(
           itemCount: firearms.length,
           separatorBuilder: (_, _) => const Divider(height: 1),
@@ -204,9 +225,18 @@ class _FirearmsList extends StatelessWidget {
               child: ListTile(
                 title: Text(f.name),
                 subtitle: subtitle.isEmpty ? null : Text(subtitle),
+                // Trailing slot is dense — favorite star + shots-fired
+                // chip + chevron. Compact density on the star keeps
+                // the row tight enough that a long firearm name still
+                // gets enough horizontal space.
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    FavoriteStarButton(
+                      isFavorite: f.isFavorite,
+                      compact: true,
+                      onToggle: () => repo.toggleFavorite(f.id),
+                    ),
                     Text(
                       '${f.shotsFired} shots',
                       style: theme.textTheme.bodySmall,

@@ -136,6 +136,7 @@ import '../../services/weather_service.dart';
 import '../../utils/responsive.dart';
 import '../../screens/atmosphere/atmosphere_presets_screen.dart';
 import '../../widgets/atmosphere_preset_picker.dart';
+import '../../widgets/favorite_star_button.dart';
 import '../../widgets/glossary_label.dart';
 import '../../widgets/pro_gate.dart';
 import '../../widgets/unsaved_changes_dispatcher.dart';
@@ -1598,7 +1599,24 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
         child: StreamBuilder<List<BallisticProfileRow>>(
           stream: _profilesStream,
           builder: (context, snap) {
-            final profiles = snap.data ?? const <BallisticProfileRow>[];
+            final raw = snap.data ?? const <BallisticProfileRow>[];
+            // Favorites-first sort. The repository's `watchAll` is
+            // already natural-sorted by name; we stable-partition so
+            // favorites surface at the top while preserving the
+            // alphabetic ordering within each bucket. The dropdown
+            // entries get a small `★ ` typographic glyph prefix
+            // (not an emoji — see `CLAUDE.md` § 6) so users can
+            // visually scan favorites at a glance.
+            final favorites = <BallisticProfileRow>[];
+            final others = <BallisticProfileRow>[];
+            for (final p in raw) {
+              if (p.isFavorite) {
+                favorites.add(p);
+              } else {
+                others.add(p);
+              }
+            }
+            final profiles = [...favorites, ...others];
             // Re-resolve _activeProfile by id whenever the stream emits
             // so an Update keeps the dropdown selection correct.
             BallisticProfileRow? selected;
@@ -1663,36 +1681,65 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                     ),
                   )
                 else
-                  DropdownButtonFormField<int?>(
-                    initialValue: selected?.id,
-                    isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Active Profile',
-                      isDense: true,
-                    ),
-                    items: <DropdownMenuItem<int?>>[
-                      const DropdownMenuItem<int?>(
-                        value: null,
-                        child: Text('— New / Unsaved —'),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<int?>(
+                          initialValue: selected?.id,
+                          isExpanded: true,
+                          decoration: const InputDecoration(
+                            labelText: 'Active Profile',
+                            isDense: true,
+                          ),
+                          items: <DropdownMenuItem<int?>>[
+                            const DropdownMenuItem<int?>(
+                              value: null,
+                              child: Text('— New / Unsaved —'),
+                            ),
+                            for (final p in profiles)
+                              DropdownMenuItem<int?>(
+                                value: p.id,
+                                // Prefix favorited entries with a "★ "
+                                // typographic glyph so users can spot
+                                // them when the dropdown is open. This
+                                // is NOT an emoji — `CLAUDE.md` § 6
+                                // explicitly allows the unicode star
+                                // for cases where an `Icon` widget
+                                // can't fit (DropdownMenuItem text
+                                // can't host a Row easily inside the
+                                // collapsed selected-item view).
+                                child: Text(
+                                  p.isFavorite ? '★ ${p.name}' : p.name,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                          ],
+                          onChanged: (id) {
+                            if (id == null) {
+                              setState(() => _activeProfile = null);
+                              return;
+                            }
+                            final picked = profiles.firstWhere(
+                                (p) => p.id == id,
+                                orElse: () => profiles.first);
+                            _applyProfile(picked);
+                          },
+                        ),
                       ),
-                      for (final p in profiles)
-                        DropdownMenuItem<int?>(
-                          value: p.id,
-                          child: Text(
-                            p.name,
-                            overflow: TextOverflow.ellipsis,
+                      // Star toggle for the currently-selected profile.
+                      // Disabled when no profile is selected — the
+                      // toggle has nothing to flip in that case.
+                      if (selected != null)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4),
+                          child: FavoriteStarButton(
+                            isFavorite: selected.isFavorite,
+                            onToggle: () => context
+                                .read<BallisticProfileRepository>()
+                                .toggleFavorite(selected!.id),
                           ),
                         ),
                     ],
-                    onChanged: (id) {
-                      if (id == null) {
-                        setState(() => _activeProfile = null);
-                        return;
-                      }
-                      final picked = profiles
-                          .firstWhere((p) => p.id == id, orElse: () => profiles.first);
-                      _applyProfile(picked);
-                    },
                   ),
                 const SizedBox(height: 8),
                 Wrap(

@@ -12,9 +12,14 @@
 // Each row is a `Dismissible` swipe-to-delete `ListTile`. The tile shows
 // the recipe name as the title and a dot-separated subtitle line composed
 // from caliber, powder charge (with a `gr` suffix), bullet, and COAL —
-// whichever fields are populated. Tapping a tile pushes
-// `RecipeFormScreen(existing: r)` for editing; the floating action button
-// pushes a blank `RecipeFormScreen()` for creating a new recipe.
+// whichever fields are populated. The trailing slot pairs a
+// [FavoriteStarButton] (toggling the per-row `isFavorite` boolean via
+// `RecipeRepository.toggleFavorite`) with the chevron. Favorited rows
+// surface at the top of the list (alphabetical within the favorites
+// bucket); non-favorites keep their existing `updatedAt DESC` ordering.
+// Tapping a tile pushes `RecipeFormScreen(existing: r)` for editing;
+// the floating action button pushes a blank `RecipeFormScreen()` for
+// creating a new recipe.
 //
 // Long-pressing any tile enters multi-select mode. In multi-select, taps
 // toggle inclusion in the selection set, an AppBar exposes "Share as PDF"
@@ -79,7 +84,9 @@ import 'package:provider/provider.dart';
 import '../../database/database.dart';
 import '../../repositories/recipe_repository.dart';
 import '../../services/recipe_pdf_service.dart';
+import '../../utils/natural_sort.dart';
 import '../../utils/responsive.dart';
+import '../../widgets/favorite_star_button.dart';
 import '../../widgets/quick_add_fab_stack.dart';
 import 'quick_add_recipe_screen.dart';
 import 'recipe_form_screen.dart';
@@ -373,14 +380,32 @@ class _RecipesList extends StatelessWidget {
         if (snap.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        final recipes = snap.data ?? const <UserLoadRow>[];
+        final raw = snap.data ?? const <UserLoadRow>[];
         // Tell the parent so it can prune stale selection ids.
-        onListChanged(recipes);
-        if (recipes.isEmpty) {
+        onListChanged(raw);
+        if (raw.isEmpty) {
           return const Center(
             child: Text('No recipes yet. Tap + to create your first.'),
           );
         }
+        // Favorites-first sort. The underlying stream is ordered by
+        // `updatedAt DESC` (see `RecipeRepository.watchAll`); we stable-
+        // partition so favorites surface at the top while preserving
+        // recency order within each bucket. Within the favorites bucket
+        // we then natural-sort by name so users with many favorites
+        // see a stable alphabetic listing rather than recipes
+        // re-shuffling on every save.
+        final favorites = <UserLoadRow>[];
+        final others = <UserLoadRow>[];
+        for (final r in raw) {
+          if (r.isFavorite) {
+            favorites.add(r);
+          } else {
+            others.add(r);
+          }
+        }
+        favorites.sort((a, b) => naturalCompare(a.name, b.name));
+        final recipes = [...favorites, ...others];
         return ListView.separated(
           itemCount: recipes.length,
           separatorBuilder: (_, _) => const Divider(height: 1),
@@ -404,9 +429,25 @@ class _RecipesList extends StatelessWidget {
                       onChanged: (_) => onTap(r),
                     )
                   : null,
+              // Trailing slot pairs the favorite star with the chevron
+              // (or shows nothing in multi-select mode so the row's
+              // checkbox-on-the-leading-side stays the only affordance).
+              // Compact density on the star keeps the chevron in
+              // place at the right edge.
               trailing: isSelecting
                   ? null
-                  : const Icon(Icons.chevron_right),
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        FavoriteStarButton(
+                          isFavorite: r.isFavorite,
+                          compact: true,
+                          onToggle: () =>
+                              repo.toggleFavorite(r.id),
+                        ),
+                        const Icon(Icons.chevron_right),
+                      ],
+                    ),
               selected: isSelectedForShare || isDetailSelected,
               selectedTileColor: isSelectedForShare
                   ? theme.colorScheme.primary.withValues(alpha: 0.18)

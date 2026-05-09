@@ -161,12 +161,21 @@ class TargetSpec {
   final double heightIn;
   final String colorHex;
 
-  /// Default target used when the user hasn't picked one yet — a
-  /// small white square that still gives the user something to tap on.
+  /// Default target used when the user hasn't picked one yet — an
+  /// 18 in × 30 in white silhouette. This matches the canonical IPSC
+  /// (USPSA Metric) competition cardboard target so a fresh user
+  /// opening Range Day sees a recognizable, distance-relevant target.
+  /// They can swap to any other catalog target via the picker.
+  ///
+  /// Color is pure white (`#ffffff`); the 18 × 30 inch dimensions
+  /// match the silhouette body envelope used by USPSA / IPSC. The
+  /// `silhouette` shape value flows through to the painter chain so
+  /// the target draws a torso + head outline rather than a flat
+  /// rectangle.
   factory TargetSpec.defaultPaper() => const TargetSpec(
-        shape: 'square',
-        widthIn: 12,
-        heightIn: 12,
+        shape: 'silhouette',
+        widthIn: 18,
+        heightIn: 30,
         colorHex: '#ffffff',
       );
 

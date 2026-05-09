@@ -88,6 +88,7 @@ import 'package:provider/provider.dart';
 import 'package:loadout/database/database.dart';
 import 'package:loadout/repositories/atmosphere_preset_repository.dart';
 import 'package:loadout/repositories/ballistic_profile_repository.dart';
+import 'package:loadout/repositories/favorites_repository.dart';
 import 'package:loadout/repositories/firearm_repository.dart';
 import 'package:loadout/repositories/manufactured_ammo_repository.dart';
 import 'package:loadout/repositories/optics_repository.dart';
@@ -335,6 +336,9 @@ Future<RangeDayHarness> pumpRangeDayScreen(
         ),
         Provider<ReticleRepository>(
           create: (_) => ReticleRepository(database),
+        ),
+        Provider<FavoritesRepository>(
+          create: (_) => FavoritesRepository(database),
         ),
         Provider<HitProbabilityService>(
           create: (_) => const HitProbabilityService(),

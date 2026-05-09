@@ -161,4 +161,23 @@ class FirearmRepository {
       ),
     );
   }
+
+  /// Flip the per-row [UserFirearms.isFavorite] boolean (added schema
+  /// v24). Returns the new state (`true` = now favorited, `false` =
+  /// now un-favorited). Returns `false` if no row matches [id].
+  /// Auto-bumps `updatedAt` so the firearm list re-sorts to keep the
+  /// freshly-toggled row visible. Powers the star icon the picker UI
+  /// agent will wire up.
+  Future<bool> toggleFavorite(int id) async {
+    final current = await getById(id);
+    if (current == null) return false;
+    final next = !current.isFavorite;
+    await (db.update(db.userFirearms)..where((f) => f.id.equals(id))).write(
+      UserFirearmsCompanion(
+        isFavorite: Value(next),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+    return next;
+  }
 }

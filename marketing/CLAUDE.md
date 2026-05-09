@@ -1,688 +1,1173 @@
-# CLAUDE.md — Marketing knowledge brief for LoadOut
+# CLAUDE.md — Marketing reference for LoadOut
 
-This file is the project knowledge for a Claude Project chat window
-focused on **marketing ideas, content, copy, and outreach** for the
-LoadOut precision-reloading app. Paste it into the Project's
-instructions / knowledge base.
+```
+================================================================================
+WHAT THIS FILE DOES
+================================================================================
+Internal marketing reference for LoadOut. The single source of truth for
+anyone writing copy: app-store listings, support replies, paywall pitch,
+landing pages, podcast sponsorships, social posts, comparison pages.
+Tone is direct + factual; this doc is the briefing, not the deliverable.
 
-The engineering CLAUDE.md (`/CLAUDE.md` at the repo root) is the
-implementation reference; this document is the pitch reference. Where
-they overlap, both must stay accurate — but their audiences differ.
+================================================================================
+WHY IT EXISTS IN THE ARCHITECTURE
+================================================================================
+The engineering CLAUDE.md (`/Users/general/Development/Applications/LoadOut/CLAUDE.md`)
+describes how LoadOut works. This file translates that into the precise
+language a marketer / copywriter / support agent needs to talk about the
+product without making claims that aren't true. When the two conflict,
+the engineering doc wins and this one gets corrected.
+
+================================================================================
+WHY THIS IS HARDER THAN IT LOOKS
+================================================================================
+- Reloaders are skeptical of marketing copy. Vague adjectives lose them;
+  numbers + specifics earn trust. "258 reticles" beats "many reticles."
+- We have a multi-layered IP posture (reticles are LoadOut original /
+  public domain only — no trademarked reticle names ship in the catalog).
+  Marketing copy that name-drops a trademarked reticle is wrong AND
+  legally risky.
+- "Free" alone is misleading because we have a Pro tier. Always say
+  "free tier" or describe what's free.
+- Some features are scaffolded but not shipped (Apple Watch / Wear OS,
+  AI Reloading Assistant chat). Marketing copy MUST flag these as
+  "Coming Soon" rather than imply they're live.
+- The privacy claim is structurally true ("we don't run a backend that
+  stores reloading data") but has narrow exceptions (Firebase Auth
+  tokens, RevenueCat purchase events, opt-in Crashlytics, opt-in AI
+  Smart Import, opt-in weather pull). Glossing the exceptions reads as
+  dishonesty to the audience that cares most.
+
+================================================================================
+WHO CONSUMES THIS FILE
+================================================================================
+- Anyone writing marketing copy, landing pages, app-store listings,
+  support replies, or product comparisons.
+- The Claude Project chat window we run for marketing brainstorming.
+- New team members onboarding to "what is LoadOut, exactly?"
+
+================================================================================
+SIDE EFFECTS
+================================================================================
+None. Pure documentation.
+```
 
 ---
 
-## 1. The one-line pitch
+## 1. Identity, voice, brand promises
 
-**LoadOut is the precision-reloading workspace for shooters who want
-to win matches, conserve their barrel, and stop tracking their loads
-on paper.**
-
-For a longer pitch: "LoadOut is a local-first ammo reloading and
-ballistics app for iOS, Android, macOS, web, Apple Watch, and Wear OS.
-It catalogs every load, firearm, brass lot, and range-day session
-without sending your data off the device — then layers a 6-DOF
-ballistic solver, 290+ scope reticles, 2,500+ factory ammo entries,
-real Hornady 4DOF measured drag curves, and Bluetooth integrations
-with Kestrel, Garmin Xero, and every major rangefinder on top."
-
-## 2. The brand frame
+### Names and identifiers
 
 | | |
 |---|---|
-| App name | **LoadOut** |
-| Store name | **LoadOut: Precision Reloading** |
-| Tagline (working) | "Your reloading bench, in your pocket." |
-| Alt tagline | "Precision reloading. Local-first. No tracking." |
-| Brand colors | Charcoal `#1F2937` + brass `#C5A572` (deliberate gun-leather + brass-cartridge palette) |
-| Voice | Direct, confident, technical-but-not-jargon-soaked. Treats reloaders as adults. Never patronizing about safety; always explicit that loads must be verified against a manual. |
+| App name (in-app) | **LoadOut** |
+| App Store / Play Store name | **LoadOut: Precision Reloading** |
+| Apple Bundle ID | `com.johnsondigital.loadout` |
+| Android package | `com.johnsondigital.loadout` |
+| Watch bundle | `com.johnsondigital.loadout.watchkitapp` |
+| Wear OS package | `com.johnsondigital.loadout.wear` |
+| Firebase project | `loadout-precision-reloading` |
+| Marketing host | `loadout-precision-reloading.web.app` |
+| Support email | `support@loadoutapp.com` |
+| Brand colors | Charcoal `#1F2937` + brass `#C5A572` |
+| Wordmark | Brass-tinted serif on charcoal |
 
-**Avoid in copy:** "revolutionary," "game-changing," "AI-powered" (we
-have AI but the framing is utility, not buzz), "for everyone" (we
-have a specific audience), "easy" without qualification (reloading is
-a serious activity; "easier than your notebook" is fine).
+### Voice
 
-## 3. Who we're talking to (target demographics)
+Direct, technical-but-not-jargon-soaked, respectful of the reloading
+craft. Reloaders are adults; speak to them as such.
 
-In priority order:
+- **Use:** "reloader," "shooter," "user." All interchangeable.
+- **Avoid:** "customer" (too transactional), "client" (too B2B),
+  "consumer" (insulting in this audience).
+- **Use specific numbers** instead of adjectives. "203 cartridges with
+  full SAAMI specs" beats "extensive cartridge library."
+- **Say what's true** about Coming Soon features. "Shipping in v1.1"
+  beats "available now" if it isn't.
+- **Cite the source** when the math is borrowed. Litz, McCoy, Miller,
+  ICAO — name the paper / book and let readers verify.
 
-### A. Competition shooters (highest value, highest conversion)
-PRS, NRL, F-Class, Bench Rest, 3-Gun, Service Rifle. They reload to
-control velocity SD, group consistency, and cost-per-shot. Already
-live in apps (timers, ballistics, range cards). Will pay for tools
-that win matches. The Watch / Wear stage timer + glanceable DOPE
-exists for them. The BLE Kestrel + rangefinder integrations exist
-for them.
+Avoid in copy: "revolutionary," "game-changing," "AI-powered" (we have
+narrow AI but it's a translation tool, not an assistant), "easy"
+without qualification (reloading is a serious activity), "for everyone"
+(we have a specific audience), exclamation points in headlines, emoji
+in landing pages or App Store copy.
 
-**Acquisition channels:** Sniper's Hide, AccurateShooter forum,
-PrecisionRifleSeries.com, NRL Hunter Discord, r/longrange,
-r/precisionrifle, PRS Match podcast sponsorship.
+### The local-first promise
 
-**Conversion pitch:** "Strelok stopped at the calculator. We give
-you the calculator + the workspace where the loads that drive that
-calculator actually live."
-
-### B. Reloaders generally (broadest market, mid value)
-Hunters, target shooters, plinkers who reload to save money or
-control terminal performance. Recipe management, brass lifecycle,
-SAAMI reference, glossary. Beginner Mode lowers the activation
-barrier.
-
-**Acquisition channels:** r/reloading, Cast Boolits forum,
-Hodgdon / Hornady / Sierra Twitter audiences, hunting podcasts,
-local gun-club Facebook groups.
-
-**Conversion pitch:** "You already track this stuff somewhere — a
-notebook, a spreadsheet, your head. LoadOut keeps it organized,
-imports what you have, and never sends a byte to a server."
-
-### C. Younger reloaders, 18–45 (active conversion target)
-More open to mobile tools. Coming from spreadsheets or no tracking
-at all. Most likely to go fully mobile with reloading.
-
-**Acquisition channels:** Instagram Reels (reloading content has
-strong organic reach), TikTok, YouTube tutorials, Discord servers
-for shooting communities.
-
-**Conversion pitch:** "You shouldn't have to learn Excel to track a
-load. Open the app, tap +, type 'H4350 41.5 gr', save. Done."
-
-### D. Pen-and-paper reloaders (active conversion target — biggest cohort by raw count)
-Survey data: 66% of reloaders track loads on paper. Often older
-(60+), notoriously loyal to their methods, but the ones who *would*
-try an app haven't because the activation cost looks too high. We
-make that cost approach zero.
-
-**Conversion pitch:** "Snap a photo of any page from your notebook.
-We read your handwriting on this device — never online — and turn
-it into editable recipes in 60 seconds. Keep using paper if you want;
-photo a page when you finish a session."
-
-This persona has its own dedicated onboarding path ("I have a
-notebook") and a printable sample-paper-page PDF feature. We're not
-asking them to abandon paper; we're asking them to add a layer.
-
-### E. Shooting course / instructor adoption (strategic)
-Instructors teaching precision rifle, reloading basics, or
-competitive disciplines can use LoadOut as the reference workspace
-for their students. Glossary + SAAMI reference + Beginner Mode +
-workflow templates make it teachable.
-
-**Acquisition channels:** Mil/LE training community, Rifles Only,
-Magpul Dynamics-adjacent instructor networks, NRA instructor
-mailing lists.
-
-### F. Who we're NOT targeting
-Active app-haters, users without smartphones, users in regulated
-environments where mobile devices are prohibited at the bench. They
-exist; we don't bend product decisions around them.
-
-## 4. The competitive landscape
-
-### Primary competitor — Strelok / Ballistic Calculator 2026
-
-The historical Strelok ballistic calculator was discontinued; the
-nearest active replacement on Google Play is
-`com.ballistic.calculator.strelok`, listed as "Ballistic Calculator
-2026" with 100K+ downloads. **Caveat: BC2026 is published by
-"Educational apps LLC", not by Strelok's original developer (Igor
-Borisov).** The "same engine, modern packaging" framing is folklore
-that hasn't been independently confirmed — see
-`marketing/competitive_audit.md` for citation discussion. Their
-claim to fame:
-
-- **~4,000 cartridge / factory-load library**
-- **~3,000 scope reticle library** with hold-over visualization
-- **Bluetooth ecosystem** (Kestrel, rangefinders, magnetometers)
-- **Custom Drag Models (CDM)** for measured-bullet input
-- **14 years of solver pedigree** trusted by mil/LE
-- **Multi-language** (Russian + many)
-
-Their pricing: **$19.99 / 3-month, $59.99 / year, $34.99 welcome
-offer, no lifetime.**
-
-### Where we beat Strelok (lead with these in marketing)
-
-| Their feature | Our equivalent | Marketing angle |
-|---|---|---|
-| Ballistics calculator | Same 6-DOF solver + hit probability + post-shot correction + group stats | "We do the math AND tell you why your shot missed." |
-| 4,000 cartridges | 200+ cartridges + **2,500+ factory ammo SKUs** | "Pick your factory ammo by the box label." |
-| 3,000 reticles | 258 reticles + **Scope View Pro** with what-if probability rings + tap-a-hash callouts | "Their reticle viewer is static. Ours shows you where your shot will land." |
-| Strelok loads on Android only | iOS + Android + macOS + web + Apple Watch + Wear OS | "Take it from the bench to the bag to the wrist." |
-| Calculator-only | **Recipe management, brass lifecycle, batch tracking, lot tracking, range-day workspace** | "Strelok stopped at the calculator. We give you the workbench." |
-| Russian-origin (sensitive post-2022) | US-based (Johnson Digital Systems) | Subtle in copy. Don't overplay. |
-| No data sync | **Local-first + optional end-to-end encrypted Cloud Sync to YOUR cloud** | "Your data lives on your device. Sync it across devices through your own iCloud / Drive / OneDrive — we never see it." |
-| $59.99/yr | **$39.99/yr + $79.99 lifetime + $24.99 first-year welcome offer** | "33% cheaper, with a lifetime option Strelok dropped." |
-
-### Where Strelok still beats us (acknowledge candidly)
-
-| Their advantage | Our gap | Closing it |
-|---|---|---|
-| 4,000 factory ammo entries | 2,500 today | Ongoing data work; Hornady 4DOF scrape covered 300 measured curves |
-| 14 years of mil/LE field validation | New product | Build it via reviews, beta testers, podcast sponsorships |
-| Multi-language already shipped | We ship 6 languages (English + DE/ES/FR/IT/RU); strings only ~30% migrated to ARB | v1.1 |
-
-### Other competitors to know
-
-- **Hornady 4DOF app** — free Hornady-specific calculator. Limited to Hornady bullets but pulls from the same dataset we now ingest.
-- **Applied Ballistics Mobile** — premium ballistics, $120/year. More accurate than Strelok in some cases. Niche audience.
-- **GeoBallistics BallisticsARC** — desktop-first, mil/LE focus.
-- **Reloader's Reference / The Reloader's Log** — reloading-tracking-only apps with no ballistics. We win on integration.
-
-## 5. Feature catalog (what we ship)
-
-Group features by user job. Use these headings in landing-page copy.
-
-### Track every load
-
-- Recipe management with 60+ optional fields (powder, charge, bullet,
-  primer, brass, COAL, CBTO, seating depth, mandrel size, shoulder
-  bump, bushing size, jump to lands, custom fields)
-- Lot tracking (powder lot, primer lot, bullet lot, brass lot — each
-  with manufacturer, lot number, purchase date, notes)
-- Brass lifecycle (firings count, anneal history, neck wall, retired
-  flag) — lot-aware so you can track a 200-piece lot of Lapua across
-  20 firings without losing history
-- Batch tracking (rounds loaded by date, by recipe, by firearm)
-- Custom fields (add your own data points beyond what we ship)
-- Auto-save (no scrolling to a Save button — every keystroke saves)
-
-### Catalog of components and reference data
-
-- **4,100+ factory ammo SKUs** with published MV + G1 / G7 BC (92.6% have G1 BC, 17.6% have G7 BC; expanded to parity with Strelok 2026-05-08)
-- **300+ measured Hornady 4DOF custom drag curves** (real Cd-vs-Mach
-  data, not derived)
-- **200+ cartridges with SAAMI specs** (case dimensions, neck angle,
-  shoulder angle, max pressure, primer size)
-- **156 scope optics across 21 brands** (Vortex, Leupold, Nightforce,
-  S&B, Trijicon, Burris, Bushnell, Sig, Athlon, Steiner, Maven,
-  Kahles, Swarovski, Zeiss, EOTech, Aimpoint, Holosun, Primary Arms,
-  US Optics, Riton, Hawke)
-- **258 reticles with subtension data** + hold-over visualization
-- **55 target shapes** (paper, cardboard, steel, reactive, game
-  silhouettes from Caldwell, Birchwood Casey, AR500, Action Target)
-- 7 reloading workflow templates (PRS, F-Class, Bench Rest, 3-Gun,
-  Hunting, Plinking, Silhouette) — each pre-configures recipe +
-  target + distance + zero range
-
-### Ballistic calculator (the math)
-
-- 6-DOF Modified Point Mass solver (RK4 integration)
-- G1, G7, G2, G5, G6, G8 drag tables — interpolated with Fritsch-
-  Carlson PCHIP (cubic Hermite, smoother than linear in transonic
-  region)
-- **Custom Drag Models (CDM)** — bring your own measured curve
-- **Real Hornady 4DOF data** for 300+ bullets
-- ICAO standard atmosphere + Tetens humid-air density
-- Coriolis effect (horizontal + Eötvös vertical)
-- Spin drift (Litz formula)
-- Aerodynamic jump (wind-cross-component pitch)
-- Spin stability (Miller formula) — surfaces a stability factor so
-  shooters can warn before firing a marginal load
-- True-north azimuth correction via World Magnetic Model lookup
-- Cant correction (live tilt sensor)
-- Sight scale factor (vertical + horizontal) — for scopes that don't
-  track exactly to their advertised increments
-- Powder temperature sensitivity (fps per °C)
-- Zero atmosphere (separate from runtime atmosphere — eliminates "I
-  zeroed at sea level but I'm shooting at 5,000 ft" error)
-- Incline / decline angle (improved rifleman's rule)
-- Output: drop, drift, time of flight, velocity, energy, stability
-  factor, Mach number, contributing-component breakdown
-
-### Range Day workspace
-
-- Live ballistic solution as you change wind / distance / target
-- Reticle picker + scope view (Pro)
-- Aim-point placement on target before the shot
-- **Hit probability calculation** based on ballistics + group MOA +
-  wind uncertainty + range estimation error (Monte Carlo dispersion
-  model)
-- **Post-shot correction** ("hold 1.2 mil left, 0.4 mil up") in the
-  user's preferred unit (MIL / MOA / inches)
-- **Group stats** (extreme spread, mean radius, group MOA at
-  distance) — updates live as shots are tapped
-- Movable reticle (Pro) — drag aim point, see predicted impact
-- Skill-level shoot timing (Pro) — beginner / intermediate / advanced
-  / expert windows for moving-target shots
-- Animated mover with leading-edge / center-mass ambush guides (Pro)
-- Cant + magnetometer + inclinometer one-tap capture
-- GPS-aware altitude + station pressure pull (Pro weather button)
-
-### Pen-and-paper conversion suite
-
-- **Photo OCR (free, on-device)** — snap a notebook page, ML Kit
-  reads handwriting + printed text, our parser extracts caliber,
-  powder, charge, bullet, weight, COAL, CBTO, primer, brass, notes
-- **Multi-page batch import** — point at a notebook, get up to 50
-  recipes in one pass
-- **Handwriting alias dictionary** (444 entries) — recognizes
-  "H4350" / "h 4350" / "Hodgdon 4350" as the same powder; same for
-  bullets, calibers, primers
-- **Mixed-fraction parsing** ("41 ½" → 41.5 gr)
-- **Page-context inference** — if "6.5 CM" is written once at the
-  top, the parser propagates that caliber to every row on the page
-- **Smart CSV / Excel import** — pick file, confirm column-to-field
-  mappings (auto-suggested via fuzzy match), import 50–500+ recipes
-  in one wizard
-- **Sample notebook PDF** — print our paper-friendly template,
-  reload at the bench, photo it back into the app
-- **Quick Add forms** — minimal 5-field forms for rapid entry
-
-### Cross-platform
-
-- iOS (universal — phone + iPad)
-- Android phone + tablet
-- macOS native
-- **Web** (drift WASM + IndexedDB / OPFS) — full app in the browser
-- **Apple Watch** — stage timer with haptic + audio beeps,
-  glanceable DOPE card with digital crown range scrolling, motion +
-  swipe shot capture
-- **Wear OS** — same three features, native Compose for Wear OS
-
-### Bluetooth ecosystem (all Pro)
-
-- **Kestrel 5xxx Link** — live BLE temperature, station pressure,
-  humidity, wind, density altitude
-- **Garmin Xero C1 Pro** — `.fit` file import for chronograph
-  velocities + ES + SD
-- **Bushnell BDX**
-- **Sig Sauer KILO BDX**
-- **Vortex Razor HD 4000 / Fury HD AB**
-- **Leica Geovid Pro**
-- **Vectronix Terrapin X** — mil/LE-grade laser rangefinder,
-  publishes LOS distance + incline + magnetic azimuth in one
-  frame; the only rangefinder we support that prefills the shot
-  azimuth field for Coriolis math
-
-### Cloud sync (Pro)
-
-- Continuous end-to-end encrypted sync to the user's own iCloud
-  Drive / Google Drive / Microsoft OneDrive
-- AES-256-GCM with PBKDF2-200k passphrase derivation
-- Auto-syncs on AutoSave / manual save
-- Manual sync button + multi-device "newer changes available"
-  banner
-- LoadOut never sees the encrypted blob, runs no backend, has no way
-  to access user data
-
-### Authentication
-
-- 7 sign-in methods: email/password, email-link (passwordless),
-  anonymous, Google, Apple, Microsoft, Yahoo
-- Sign-in is **optional** — anonymous users get every feature
-  except continuous Cloud Sync (manual one-shot encrypted backup
-  is still free)
-
-## 6. The privacy story (this is a marketing asset)
-
-This is our biggest differentiator from cloud-first competitors.
-Memorize it; quote it accurately:
+This is the headline brand promise. It is structurally true; it is the
+biggest single differentiator vs every cloud-first competitor. Memorize
+the exact wording:
 
 > **Your reloading data lives only on your device. We don't run a
 > backend that stores recipes, firearms, or range-day sessions. We
-> don't track what you do in the app. We don't sell your data. We
-> don't have your data.**
+> don't track what you do in the app. We don't sell your data.**
 
-What we DO see, narrowly scoped:
+The narrow, honest exceptions:
 
-- **Firebase Auth** processes your email + OAuth tokens during
-  sign-in only (when you sign in — sign-in is optional).
-- **RevenueCat** sees your purchase events when you upgrade to Pro
-  (this is how IAP works).
-- **Crashlytics** sees fatal crash stack traces if you opt in
-  (default ON; you can turn it off in Settings; PII redacted by
-  the SDK).
-- **open-meteo.com** sees your latitude / longitude when you tap
-  the weather pull button (Pro feature; opt-in per use).
-
-What we explicitly DO NOT see:
-
-- Your recipes, loads, lots, brass, batches, range-day sessions,
-  ballistic profiles, custom fields, AI chats.
-- Your firearms inventory.
-- What features you use, how long you use them, how often you open
-  the app.
-- Your photos (photo OCR runs entirely on-device via ML Kit).
-- Your CSV / Excel imports (parsed on-device).
-- Your encrypted backup or Cloud Sync blob — we never have the key
-  to decrypt it; only your passphrase does.
-
-This isn't a privacy policy disclaimer — it's the actual product
-design. Competitors that store your data on their servers
-**cannot** make this claim. Lead with it.
-
-## 7. Pricing
-
-### Current decision
-
-| Tier | Price | What it gates |
+| Exception | When | What we see |
 |---|---|---|
-| Free | $0 | Recipe management, ballistic calculator, range day basics, photo OCR, smart import, watch / wear, manual encrypted backup, every catalog, glossary, SAAMI |
-| **3-month** | **$14.99** | Captures seasonal users (single PRS / hunting season). Unlocks Pro features. |
-| **Yearly** | **$39.99 / year** | Default plan. |
-| **Yearly welcome offer** | **$24.99 first year**, then $39.99/yr | First-time subscribers only. App Store Connect Introductory Offer / Play Console Subscription Offer. |
-| **Lifetime** | **$79.99 once** | One-time. Pays for itself in 2 years vs yearly. Strelok dropped lifetime entirely; we keep it as a major differentiator. |
+| Firebase Auth | When user signs in (sign-in is **optional**) | Email + OAuth tokens |
+| RevenueCat | When user buys / restores Pro | Purchase event + UID |
+| Crashlytics | If user opted in (default ON, off-able in Settings) | Fatal crash stack traces, PII redacted by SDK |
+| open-meteo.com | Pro user taps "Pull weather" | Lat/lon, no identity |
+| AI Smart Import (opt-in) | Pro user taps "Improve with AI" on a single import | OCR'd text from one photo only |
+| Cloud Backup / Cloud Sync | User opts in, picks provider, sets passphrase | **Encrypted blob only — we hold no key** |
 
-### Pricing math vs Strelok
+What we explicitly do NOT see: recipes, loads, lots, brass, batches,
+range-day sessions, ballistic profiles, custom fields, photos, CSV /
+Excel imports, AI chat history (the chat surface isn't shipped),
+firearms inventory, or any usage telemetry.
 
-| | Strelok BC 2026 | LoadOut | Margin |
-|---|---|---|---|
-| 3-month | $19.99 | $14.99 | **−$5** |
-| Yearly | $59.99 | $39.99 | **−$20** |
-| Welcome | $34.99 | $24.99 | **−$10** |
-| Lifetime | not offered | $79.99 | **unique** |
+### "No proprietary lock-in"
 
-**Marketing angle:** "Cheaper at every tier. Plus a lifetime option
-they don't sell."
+Local-first is sibling to "your data is portable." Concretely:
 
-### What goes in the Pro pitch
+- The on-device store is SQLite (`drift`). The user can read it.
+- Local export is plain JSON — included in the free tier.
+- Cloud backup / sync blobs are end-to-end encrypted with a
+  user-chosen passphrase. If LoadOut shut down tomorrow, the user
+  retains every byte locally and can decrypt their own backups.
+- No "tier-locked export" gimmick. Free users export the same JSON
+  Pro users do.
 
-Six clear feature buckets, in this order. The in-app paywall
-(`lib/screens/paywall/paywall_screen.dart` `_FeaturesShowcase`) renders
-them as bordered benefit cards, top-to-bottom, in the same order:
-
-1. **Cross-device cloud sync** — iCloud / Drive / OneDrive. Encrypted
-   on device with the user's passphrase. We never see the blob.
-2. **Real Hornady 4DOF + custom drag curves** — 300+ measured
-   Cd-vs-Mach curves from Hornady's Doppler radar dataset. More
-   accurate than G7 BC alone in the transonic region.
-3. **Bluetooth devices** — Kestrel 5xxx Link, Garmin Xero (.fit),
-   Bushnell BDX, Sig KILO, Vortex Razor, Leica Geovid, **and
-   Vectronix Terrapin X**. Live data, no manual entry.
-4. **Scope View Pro + training mode** — reticle hold-over
-   visualization, free-aim drag with predicted impact, skill-level
-   timing for movers, animated targets with ambush guides.
-5. **Live weather + GPS altitude** — pull station pressure,
-   temperature, humidity, wind, and altitude from the user's
-   location in one tap. Auto-fills the firing solution.
-6. **AI Smart Import** — reads messy handwriting from reloading
-   notebook photos and turns it into structured recipes.
-   **Reading-only — no chat, no training.** This framing is
-   load-bearing: our user research says reloaders are skeptical of
-   AI assistants, so we explicitly position Smart Import as a
-   one-way reading tool, not a conversational AI.
-
-The **AI Reloading Assistant** stays out of this pitch on purpose.
-It's still Coming Soon at v1.0 and the chat framing trips the
-"AI-powered" allergy. Mention it in roadmap copy, but don't lead
-with it.
-
-### Free vs Pro feature pricing table
-
-Authoritative list of which features land in which tier. When the
-in-app `ProGate` set drifts from this table the pitch goes wrong;
-keep them aligned.
-
-| Feature | Free | Pro |
-|---|---|---|
-| Recipe management (CRUD, beginner mode, custom fields *limited*) | yes | unlimited custom fields |
-| Firearm management | yes | yes |
-| Brass-lot tracking | yes | yes |
-| Batch checklist + process steps | yes | yes |
-| Glossary, SAAMI catalog, cartridge & chamber drawings | yes | yes |
-| Photo OCR (on-device ML Kit, Tier 1 — printed text and clean handwriting) | yes | yes |
-| Smart Import (CSV / Excel wizard) | yes | yes |
-| Manual one-shot encrypted backup (export the JSON, upload yourself) | yes | yes |
-| Local JSON export | yes | yes |
-| Apple Watch / Wear OS companion apps | yes | yes |
-| Ballistics calculator core (G1/G7 + standard solver) | yes | yes |
-| Range Day workspace (shot logging, hit probability, group stats) | yes | yes |
-| Sensors-only environment capture (cant, azimuth, incline) | yes | — |
-| **Cross-device cloud sync** (iCloud / Drive / OneDrive, automatic) | — | **yes** |
-| **Hornady 4DOF custom drag curves** (300+ measured Cd-vs-Mach) | — | **yes** |
-| **Bluetooth devices** (Kestrel, Garmin Xero, rangefinders) | — | **yes** |
-| **Scope View Pro + training mode** (free-aim, skill timing, animated mover, ambush guides) | — | **yes** |
-| **Moving target lead computation** | — | **yes** |
-| **Live weather pull** (station pressure, temp, humidity, wind) | — | **yes** |
-| **GPS-derived altitude** for the firing solution | — | **yes** |
-| **AI Smart Import** (translation tool — improves messy handwriting on photo import; opt-in per use; toggle off by default) | — | **yes** |
-| Load development (charge ladder, seating ladder, node analysis) | — | **yes** |
-| AI Reloading Assistant chat (v1.1, Coming Soon) | — | **yes** when shipped |
-
-## 8. Decisions log (the "why")
-
-Reverse-chronological. When marketing copy needs the rationale
-behind a positioning choice, it's here.
-
-- **2026-05-08 — Pen-and-paper users elevated to active conversion target.** They were "welcomed but not optimized for"; survey data shows they're 66% of the reloader market. We added a dedicated "I have a notebook" onboarding path, photo OCR alias dictionary (444 entries), sample-notebook PDF, and multi-page batch import. Marketing should now actively pitch them.
-- **2026-05-08 — Crashlytics-only analytics policy.** No Google Analytics, no Mixpanel, no usage event tracking. Even anonymized event analytics violates the privacy promise. The marketing copy can lean hard on "we don't track you" because we structurally can't.
-- **2026-05-08 — Three-tier + welcome offer pricing.** Strelok's replacement (Ballistic Calculator 2026) shipped at $59.99/year and dropped lifetime. We undercut on every tier and keep lifetime.
-- **2026-05-07 — Watch / Wear features stay free.** They're a hook to drive phone-app downloads, not a feature in themselves. The marketing pitch: "The only ballistics calculator on your wrist."
-- **2026-05-07 — Real Hornady 4DOF integration.** Pulled 300 measured Cd-vs-Mach curves from Hornady's Azure backend. Replaces our prior G7-derived approximations. Differentiator: "We use Hornady's measured radar data, not a math approximation."
-- **2026-05-07 — Web platform shipped.** Flutter web with drift WASM + IndexedDB/OPFS. Adds the "open it in any browser" entry point.
-- **2026-05-06 — Apple Watch + Wear OS scaffolding shipped.** Native (SwiftUI / Compose for Wear OS). Three flagship features: timer, DOPE, motion shot capture.
-- **2026-05-06 — Reticle library 290 entries + Scope View Pro.** Surpasses any reloading-app competitor; matches Strelok's reticle scope without copying their UX.
-- **2026-05-06 — Cloud Sync (Pro) shipped.** Continuous, end-to-end encrypted, multi-provider (iCloud + Drive + OneDrive). Auto-syncs on save.
-- **2026-05-05 — Range Day workspace shipped.** 6th tab, 55 targets, shot tracking, hit probability, post-shot correction, moving target lead, group stats.
-- **2026-05-08 — AI Smart Import (Pro, opt-in per use) shipped.** Hybrid hosted-key + BYOK model. Hosted Cloudflare Worker proxy with per-user 20-imports/month cap; Pro users can override with their own Anthropic key (BYOK) for unlimited use. Scoped narrowly to "improve a low-confidence on-device parse" — never sends saved recipes, firearms, or anything else. Toggle is off by default. Reloader-skeptic framing throughout: "translates messy handwriting into structured recipe fields, nothing more." Operator deploy is a single `wrangler deploy` step (see `cloud_worker/anthropic-proxy/README.md`); the client gracefully no-ops while the Worker is undeployed.
-- **2026-05-05 — Smart Import (CSV + Excel).** Wizard with auto-mapping, ~100% accuracy on test workloads.
-- **2026-05-05 — Photo OCR Tier 1 (on-device).** Free, privacy-aligned. Tier 2 (AI Smart Import for messier handwriting) is Pro — superseded by the 2026-05-08 entry above.
-- **2026-05-04 — Multi-language scaffolding (DE/ES/FR/IT/RU).** ARB infrastructure + ~30 strings migrated. Native-speaker review pre-launch.
-- **2026-05-04 — Beginner Mode toggle.** Recipe form opens in Basic detail level. Quick Add becomes the default new-recipe path. Aimed squarely at the conversion personas.
-- **2026-05-03 — 6-DOF solver expanded.** Coriolis + spin drift + aero jump + Miller stability + cant + sight scale + powder temp sensitivity + zero atmosphere + incline angle. Surpasses Strelok in physical-model breadth (we have aero jump, sight scale, zero atmosphere; they don't surface these explicitly).
-
-## 9. Pro features shipped (lead with these)
-
-These are the surfaces that already exist behind a `ProGate` /
-`ensurePro` in the app and have been tested in private builds.
-Marketing copy should lead with them.
-
-- **Cross-device Cloud Sync** — iCloud / Google Drive / OneDrive,
-  encrypted on device with user passphrase, automatic on every save.
-- **Real Hornady 4DOF custom drag curves** — 300 measured Cd-vs-Mach
-  curves from Hornady's Doppler radar dataset, gated behind Pro on
-  the ballistics screen and the per-bullet "Custom drag available"
-  badge. Free users keep G1 / G7 with the bullet's published BC.
-- **Bluetooth devices** — Kestrel 5xxx Link, Garmin Xero (.fit
-  parser), Bushnell BDX, Sig KILO, Vortex Razor, Leica Geovid,
-  Vectronix Terrapin X. Every major rangefinder.
-- **Scope View Pro + training mode** — reticle visualization with
-  free-aim drag, skill-level timing window for movers, animated
-  target playback, leading-edge / center-mass ambush guides.
-- **Live weather pull** — station pressure, temperature, humidity,
-  wind from the user's location via open-meteo. Plus the GPS
-  altitude → station-pressure derivation that powers the firing
-  solution. Range Day's "Capture environment from sensors" still
-  pulls cant / heading / incline for free users — only the GPS
-  altitude piece is Pro.
-- **AI Smart Import** — translates messy handwriting into structured
-  recipe fields, nothing more. Triggers only when the on-device
-  parser is uncertain AND the user explicitly taps "Improve with AI"
-  on a single import; toggle is **off by default** in Settings →
-  AI. Hybrid hosted-key + BYOK model: hosted Cloudflare Worker
-  proxy with a 20-imports-per-month cap; Pro users can override
-  with their own Anthropic key (BYOK) for unlimited use. **Reading
-  only** — only the OCR'd text from the imported photo is sent.
-  No chat, no training, no exfil of saved recipes / firearms /
-  brass lots / anything else. Reloaders are skeptical of AI
-  assistants in their workflow; framing this as a "translation
-  tool" instead of an "assistant" is what makes it land.
-- **Load development** — charge ladders, seating ladders, automatic
-  node analysis.
-- **Cartridge & Chamber drawings, Custom fields, Future Pro
-  features included** — evergreen.
-
-## 10. What's coming (don't market hard yet)
-
-- **AI Reloading Assistant** (v1.1) — Anthropic-powered chat trained
-  on reloading data. Coming Soon screen + "Notify me" button live
-  in the app today. Stays out of the headline pitch.
-- **Native-speaker translation review** — 5 ARBs flagged
-  `// TRANSLATOR-REVIEW`; pre-launch task.
-- **Multi-page notebook OCR Tier 3** improvements — automatic page-
-  break detection at 50+ entries per import.
-- **Apple Watch + Wear OS feature additions** — analytics on stage
-  timing, multi-stage match recap.
-- **Real-time atmosphere variation along the trajectory** — for ELR
-  shooters; current model treats atmosphere as constant.
-- **Custom reticle drawing tool** — let users sketch a custom
-  reticle for scopes we don't have in the library.
-
-These are signaling-only in marketing — they're roadmap, not promises.
-
-## 11. Marketing channels + content angles
-
-### Forums / communities (priority order)
-
-1. **Sniper's Hide** — long-range / PRS audience. Honest reviewers.
-   Pitch via thread in "Optics" or "Reloading" sub-forum.
-2. **AccurateShooter forum** — bench rest / F-Class. Slightly older
-   demographic; lifetime tier resonates.
-3. **PrecisionRifleSeries.com** — PRS-focused. Watch / Wear stage
-   timer is the lead feature.
-4. **r/longrange** — younger, mobile-native.
-5. **r/precisionrifle** — overlapping audience.
-6. **r/reloading** — broadest reloader audience. Lead with the
-   privacy story and pen-and-paper conversion pitch.
-7. **r/handloading** — overlap with reloading; same pitch.
-8. **NRL Hunter Discord** — niche but engaged.
-9. **Cast Boolits forum** — older bullet casters; lifetime tier +
-   privacy promise both resonate.
-10. **Hodgdon Burn Rate Society Facebook group** — powder enthusiasts.
-
-### Social
-
-- **Instagram Reels** — short videos showing photo OCR converting a
-  notebook page to a saved recipe in 30 seconds.
-- **TikTok** — same pattern; "60-second reloading bench tour."
-- **YouTube** — long-form: "From notebook to LoadOut in 5 minutes,"
-  "Setting up your first PRS load," "Range day with LoadOut +
-  Kestrel."
-- **X / Twitter** — minimal; the audience is fragmented.
-
-### Influencer / podcast partners
-
-- Erik Cortina (PRS / F-Class)
-- Frank Galli (Sniper's Hide podcast host)
-- Mil Spec Mom (3-Gun / training)
-- Gunwerks ballistics content team
-- Cal Zant (PrecisionRifleBlog)
-- Hodgdon-sponsored content creators
-
-### Content series ideas
-
-- "From notebook to app" video tutorial
-- "Why your scope doesn't track what it claims" (sight scale factor explainer)
-- "What's actually happening in a 1,000-yard shot" (Coriolis,
-  spin drift, aero jump visualization explainer using our
-  contribution breakdown)
-- "Powder temperature sensitivity: how cold mornings move your zero"
-- "Setting up your DOPE card on Apple Watch in 5 minutes"
-- "Reading a Hornady 4DOF curve" (educational + product placement)
-
-### App Store / Play Store
-
-- Title (≤30 chars): "LoadOut · Precision Reloading"
-- Subtitle (≤30 chars): "Reloading + Ballistics App"
-- Keywords (≤100 chars):
-  `reloading,ballistics,reload,ammo,reloader,powder,bullet,gun,rifle,precision,prs,scope`
-- Screenshots: 8 per device size (iPhone, iPad, Android phone,
-  tablet) showing — recipe form, ballistic calculator output, range
-  day workspace with hit probability, scope view pro with reticle,
-  watch glanceable DOPE, photo OCR review screen, smart CSV import,
-  privacy posture statement.
-
-## 12. Brand voice + style guide for marketing copy
-
-- **Direct, second-person.** "You" not "the user."
-- **Specific numbers over adjectives.** "258 reticles" not "many
-  reticles"; "0.10 mil agreement with Hornady's measured curve" not
-  "highly accurate"; "$20 cheaper than Strelok" not "great value."
-- **Show the math when it earns trust.** "We use Fritsch-Carlson
-  PCHIP for drag-table interpolation" is fine in long-form copy
-  aimed at the technical audience; cut it for landing-page hero copy.
-- **Privacy as a feature, not a disclaimer.** "Your data lives on
-  your device" reads as a benefit, not a legal hedge.
-- **No emojis in landing pages, App Store copy, or formal channels.**
-  Limited use in social ok (one or two per post).
-- **No exclamation marks in headlines.** Reloaders are deliberate;
-  matching their tone earns credibility. Save them for casual social.
-- **Always include the safety frame for any specific load data.**
-  "These values are starting points from published reloading data.
-  Always verify against your current reloading manual before
-  loading. Never start at maximum charge." — same wording as the
-  in-app disclaimer.
-
-## 13. What NOT to claim (compliance + safety)
-
-- **Never publish specific load data** as marketing content without
-  the verify-against-manual disclaimer adjacent.
-- **Never claim accuracy or velocity figures** as guarantees. The
-  ballistic calculator is a tool; the shooter validates.
-- **Never use "we don't track" without the precise scope.** We do
-  see auth events, purchase events, opt-in crash logs, and weather-
-  pull lat/lon. The privacy claim is "we don't see your reloading
-  data" not "we don't see anything."
-- **Never claim parity with a manufacturer's official data** without
-  attribution. Hornady 4DOF curves: "courtesy of Hornady" attribution
-  in the app and in any marketing reference.
-- **Avoid suggesting LoadOut replaces a reloading manual.** It
-  augments. Manuals are still the safety reference; we're the
-  tracking + math layer.
-- **Don't claim "patented" or "proprietary" anything.** We use
-  established public-domain ballistic models (G7 drag, Litz spin
-  drift, ICAO atmosphere). Honesty here builds trust with the
-  technical audience.
-
-## 14. Useful stats + numbers for copy
-
-Cite these directly. They're current as of 2026-05-08:
-
-- **4,100+ factory ammo SKUs** across 37+ manufacturers (parity with Strelok's ~4,000 factory-load library reached 2026-05-08)
-- **300+ measured Hornady 4DOF curves** (real Cd-vs-Mach radar data)
-- **258 reticles** across 24 brands
-- **156 optics** across 21 brands
-- **200+ cartridges** with full SAAMI specs
-- **55 target shapes** seeded
-- **138+ tests** in the codebase ensure solver math accuracy
-- **0.10 mil** — agreement between our derived G7 path and Hornady's
-  measured 4DOF curve at 1,000 yd (sanity benchmark)
-- **66%** of reloaders use pen-and-paper today (survey)
-- **6 platforms** — iOS, Android, macOS, web, Apple Watch, Wear OS
-- **5 languages** at launch (English + DE/ES/FR/IT/RU); native
-  review in progress
-- **7 sign-in providers** including anonymous (sign-in is optional)
-- **6-DOF solver** with Coriolis + spin drift + aero jump + Miller
-  stability
-- **AES-256-GCM + PBKDF2-200k** encryption for cloud sync / backup
-- **End-to-end encrypted Cloud Sync** — no LoadOut-operated backend
-  receives reloading data
-
-## 15. Standard objections + responses
-
-| Objection | Response |
-|---|---|
-| "Strelok is cheaper / I already have Strelok." | "Strelok is a calculator. LoadOut is the workspace where the loads going into that calculator actually live — recipes, brass, batches, range day. We're 33% cheaper at the yearly tier ($39.99 vs $59.99) and offer a lifetime they don't." |
-| "I don't trust apps with my data." | "Your reloading data never leaves your device unless you explicitly turn on Cloud Sync. Even then, it's encrypted with your passphrase before it leaves your phone, and we never have the passphrase. We have no backend that stores your loads. We can't see what we don't have." |
-| "I'm too set in my ways to switch." | "You don't have to switch. Snap a photo of your notebook page when you finish a session — we'll extract the recipes in 60 seconds. Keep using paper if you want. The app becomes a searchable backup of your paper logs." |
-| "I'm not technical." | "Open it. Tap the lightning-bolt FAB. Type your load like you'd write it on paper. Save. Done. Beginner Mode hides every advanced field; turn it off when you're ready." |
-| "What if you go out of business?" | "Your data is local SQLite + JSON export at any time. If we shut down tomorrow, you keep everything. We can't lock you in because we don't host you." |
-| "Why should I pay for a subscription on top of the lifetime?" | "You don't have to. The free tier covers recipe management, the ballistic calculator, range day basics, photo OCR import, watch / wear features, and the entire catalog. Pro adds Bluetooth Kestrel + rangefinders, real Hornady 4DOF curves, Cloud Sync, and the AI assistant when it ships. The lifetime is for users who want all of that forever." |
-
-## 16. Hard truths we're up-front about
-
-These come up in long-form / forum threads. Don't dodge them.
-
-- **App Store reviewers can be slow on reloading apps.** Submission
-  may take 2–3 review cycles to clear; the disclaimer screen and
-  safety messaging must be airtight. We've designed the app
-  conservatively for this reason.
-- **The AI assistant is not yet live.** "Coming in v1.1" — set
-  user expectations honestly. Don't market AI features that don't
-  ship today.
-- **Native-speaker translation review hasn't happened yet.** Don't
-  claim "fluent in 6 languages" until the review is done.
-- **iOS 26 simulator support is in flux** for builds because of
-  GoogleMLKit's slice availability. Doesn't affect end users (they
-  use real devices); only matters for our build pipeline.
-- **The Hornady 4DOF data is sourced from a publicly-accessible
-  Azure endpoint.** Attribution is preserved in the app; if Hornady
-  ever objects, we have a clean migration path back to G7-derived
-  curves.
+Use this in copy as the rebuttal to "what if you go out of business?"
 
 ---
 
-This file should be updated whenever a major decision lands in the
-engineering CLAUDE.md. The two files mirror each other from
-different angles — engineering describes how it works, this one
-describes what to say about it.
+## 2. What LoadOut actually IS today
+
+A local-first ammo reloading + ballistics tracker on **iOS, Android,
+macOS, and the web.** The same Dart codebase compiles for all four
+through Flutter; data lives in on-device SQLite via `drift` (and OPFS /
+IndexedDB through drift's WASM build on web).
+
+### Five primary tabs
+
+The bottom-nav shell hosts five tabs in this order:
+
+1. **Recipes** — load / handload management.
+2. **Firearms** — rifle / pistol inventory + zero / ballistic defaults.
+3. **Batches** — multi-recipe batch tracking and process logging.
+4. **Ballistics** — the solver + DOPE + WEZ / hit probability tooling.
+5. **Range Day** — the day-of-shooting workspace.
+
+**SAAMI Specs** used to be a sixth bottom-nav tab. As of the current
+build it lives at **Settings → SAAMI Specs**. Reference data isn't a
+daily-use destination; the bottom nav was decluttered. Marketing copy
+should not refer to SAAMI as a primary tab.
+
+### Companion apps (scaffolded — Coming Soon)
+
+- **Apple Watch** — SwiftUI scaffold, watchOS 10.0+, transport activated
+  (`WCSession`), payloads not yet sent. Source: `ios/RunnerWatchApp/`.
+- **Wear OS** — Compose for Wear OS, Wear OS 3 / Android 11+, Gradle
+  module wired, payloads not yet sent. Source: `android/wear/`.
+
+Both are placeholder UIs today. Be honest in copy: "companion apps in
+development" is correct; "ships with Apple Watch app" is misleading.
+
+### Drawer (secondary destinations)
+
+The hamburger drawer lists: How It Works, Reloading Guide, Glossary,
+Brass Lots, Load Development, Reloading Steps, AI Reloading Assistant
+(Coming Soon), Backup & Export, Privacy Policy, Sign Out.
+
+---
+
+## 3. The Pro tier
+
+**One paid tier. Two SKUs. No monthly. No "Pro Plus."**
+
+| Plan | Price | Notes |
+|---|---|---|
+| Free | $0 | Generous; see Free vs Pro table below. |
+| Pro Yearly | **$39.99 / yr** | Default plan. |
+| Pro Lifetime | **$79.99 once** | Pays for itself in 2 yr vs yearly. |
+
+RevenueCat product IDs: `loadout_pro_yearly`, `loadout_pro_lifetime`.
+Single entitlement: `pro`. Linked to Firebase Auth UID at sign-in so a
+user who buys Pro on iOS sees Pro on Android with the same account.
+
+### Pro features (canonical list)
+
+This list mirrors `/Users/general/Development/Applications/LoadOut/CLAUDE.md`
+§ Monetization. When the in-app `ProGate` set drifts from this list,
+the pitch goes wrong; keep them aligned.
+
+| Feature | What it gates |
+|---|---|
+| **Cloud Sync** | Continuous, end-to-end encrypted sync to user's iCloud Drive / Google Drive / OneDrive |
+| **Cloud Backup (manual)** | One-shot encrypted backup to user's own cloud |
+| **Hornady 4DOF / custom drag curves** | Doppler-radar measured Cd-vs-Mach curves; CDM imports |
+| **Bluetooth devices** | Kestrel 5xxx Link, Garmin Xero (.fit), 5 BLE rangefinders |
+| **Scope View Pro** | Reticle visualization with hold-off rendering |
+| **Scope View training mode** | Free-aim drag, skill-level timing, animated mover, ambush guides |
+| **Moving Target Lead** | Lead computation in mil / MOA / inches |
+| **Live weather pull (ballistics)** | open-meteo lookup on the ballistics screen |
+| **Live weather pull (firearm zero)** | Same lookup from the firearm form's Zero Atmosphere |
+| **GPS altitude (Range Day sensors)** | Altitude → station-pressure derivation |
+| **AI Smart Import** | OCR-improvement Anthropic call (opt-in per use) |
+| **AI Reloading Assistant chat** | Coming Soon at v1.0; Pro when shipped |
+| **Load Development** | Charge / seating ladders, OCW analysis |
+| **Custom fields (unlimited)** | Per-recipe / per-firearm / per-batch user-defined fields |
+
+The free tier ships **everything else** — recipes, firearms, batches,
+the full ballistics solver core, Range Day basics, on-device photo
+OCR, local JSON export, all reference catalogs, the glossary, SAAMI
+specs, manual encrypted backup (export + upload-yourself), and the
+companion-app scaffolds.
+
+### What the paywall pitch leads with
+
+The in-app paywall (`lib/screens/paywall/paywall_screen.dart`
+`_FeaturesShowcase`) renders six cards in this order. Use the same
+order in landing-page hero copy:
+
+1. **Cross-device cloud sync** — encrypted on device with the user's
+   passphrase; we never see the blob.
+2. **Real Hornady 4DOF measured drag curves** — Doppler-radar Cd-vs-Mach,
+   not a math approximation.
+3. **Bluetooth devices** — Kestrel + Garmin Xero + every major rangefinder
+   incl. Vectronix Terrapin X.
+4. **Scope View Pro + training mode.**
+5. **Live weather + GPS altitude.**
+6. **AI Smart Import** — translation tool. Reading-only. Off by default.
+
+The **AI Reloading Assistant** stays out of this pitch on purpose. It's
+Coming Soon at v1.0 and the chat framing trips reloaders' "AI-powered"
+allergy. Mention it in roadmap copy; never lead with it.
+
+---
+
+## 4. Recipes
+
+The recipe surface is the heart of the app — the thing reloaders open
+the most.
+
+### Two FAB buttons: Quick + Standard
+
+Tap **+** in Recipes and you get a stacked FAB cluster:
+
+- **Quick** (extended FAB, brass-tinted) — opens `QuickAddRecipeScreen`
+  for fast notebook-style capture.
+- **+ Standard** (round FAB) — opens the full `RecipeFormScreen`.
+
+The Quick form intentionally drops the advanced fields (COAL, CBTO,
+seating depth, mandrel, shoulder bump). It's for capturing a load while
+your hands are still messy from the bench.
+
+### Recipe name is OPTIONAL
+
+Both forms generate a fallback name from the load-defining fields if
+the user doesn't type one — e.g. **"6.5 CM 140gr H4350 — May 9 8:42 PM"**.
+The fallback is computed at save time, so the user can always change it
+later. **"Switch to Regular" from the Quick form does NOT require a
+name** — the auto-generated name applies to the regular form too.
+
+### Detail level toggle: Core / Extended / Full
+
+The Standard recipe form has a three-position segmented control labeled
+**Core / Extended / Full** (renamed from the older "Basic / Detailed /
+Full" labels — copy must use the current labels).
+
+- **Core** — recipe name, caliber, powder, charge, bullet, primer,
+  brass, notes. The fields a reloader can write on a notebook line.
+- **Extended** — adds CBTO, seating depth, primer / brass setup, lot
+  pickers.
+- **Full** — adds pressure indicators, process notes, temperature
+  sensitivity, jump to lands, mandrel size, etc.
+
+Beginner Mode (a separate Settings toggle) anchors the form at Core
+and hides the segmented control.
+
+### Imports section (collapsed into one)
+
+Both Quick and Regular now expose imports in a single **Imports**
+section. Sources covered today:
+
+- **Spreadsheet** (CSV / Excel) — fuzzy header mapping wizard.
+- **Photo** (on-device OCR) — ML Kit text recognition + 444-entry
+  handwriting alias dictionary.
+- **File** — re-import LoadOut JSON exports.
+- **Another reloading app** — CSV with format detection (Hornady 4DOF
+  export, GRT, QuickLOAD, Strelok export shapes recognized).
+- **Paste from clipboard** — best-effort heuristic parse.
+- **AI Smart Import** (Pro) — only fires when on-device parser flags
+  low confidence, AND the user explicitly taps "Improve with AI."
+- **iCloud Drive / Google Drive / OneDrive** — alongside the system
+  file picker, so the user can pull a CSV directly from their cloud.
+- **QR scan** — scan another LoadOut user's recipe QR.
+
+### Auto-save (Settings → App Preferences)
+
+Two prefs control auto-save behavior across recipe + ballistic profile
+forms (Range Day uses its own flow):
+
+| Frequency option | Behavior |
+|---|---|
+| Off | Save only when user taps Done / Save |
+| After Any Change | 2-second debounce after each edit |
+| Every 1 Minute | Periodic timer; saves dirty form |
+| Every 5 Minutes | Periodic timer |
+| Every 10 Minutes | Periodic timer |
+
+Default for new installs: **After Any Change**.
+
+| Unsaved-changes-on-pop policy | Behavior |
+|---|---|
+| Ask each time | Save / Discard / Cancel dialog |
+| Discard | Silently throw away changes |
+| Save automatically | Silently flush on pop |
+
+When auto-save is **Off**, the form shows a TWO-button toolbar — **Save**
+(stays on the page) and **Done** (saves + leaves). At any other
+frequency the screen has a single Done button because saves happen in
+the background.
+
+### Recipe sharing
+
+- **PDF** — single recipe export to a printable card. Free.
+- **QR code** — `LO1:`-prefixed magic string, scannable by the QR
+  scanner in another LoadOut user's recipe-import flow. Free.
+
+### Custom fields (Pro)
+
+Unlimited user-defined fields per recipe / per firearm / per batch. Free
+users see existing custom fields read-only; Pro users add and edit them.
+
+---
+
+## 5. Firearms
+
+Per-firearm tracking includes:
+
+- **Shots-fired counter.** Auto-increments when a Range Day shot is
+  logged against the firearm.
+- **Sight scale calibration** (vertical + horizontal). Exposed as a
+  static field today; the DPC auto-calibration wizard is on the
+  roadmap.
+- **Default zero** (distance + atmosphere preset).
+- **Default muzzle velocity** + temperature sensitivity.
+- **Default sight height** above bore.
+- **Twist rate** + barrel length — feed Miller stability + spin drift
+  in the solver.
+
+### Favorites (new)
+
+Star a firearm and it bubbles to the top of every picker (Range Day,
+Recipe form, Batch form). Stars work directly in dropdowns AND in list
+views. See § 13 below.
+
+---
+
+## 6. Batches
+
+Multi-recipe batch tracking. Less prominent in the UI than Recipes /
+Range Day, but lives at the same level — its own bottom-nav tab. Use
+case: tracking 100 rounds loaded across two recipes for a match
+weekend. Less interesting in marketing copy than Recipes; mention but
+don't lead with it.
+
+---
+
+## 7. Ballistics
+
+The solver and the math are documented openly in
+`/Users/general/Development/Applications/LoadOut/lib/services/ballistics/`.
+
+### Solver core
+
+- **Modified Point Mass (MPM)** with Cash-Karp adaptive RK45
+  integration (1e-4 m tolerance). McCoy-style differential equations
+  with Litz-style add-ons.
+- **Drag tables:** G1, G2, G5, G6, G7, G8 (all six standard tables).
+- **Custom drag curves** (Pro): Hornady 4DOF measured curves
+  pre-shipped, plus user-imported CDM files. Interpolated with
+  Fritsch-Carlson PCHIP (smoother than linear in the transonic
+  region).
+
+### Litz precision corrections (all on by default)
+
+- **Spin drift** (Litz published formula).
+- **Coriolis** — horizontal + Eötvös vertical (full 3D `−2 Ω × v`).
+- **Aerodynamic jump** from cross-wind — explicit per-sample
+  correction, plus the cant×crosswind angular term from *Modern
+  Advancements* Vol. III.
+- **Pejsa stability** as an alternate spin-drift model.
+- **Miller stability** — velocity-corrected gyroscopic stability factor.
+- **Form factor i7** — computed internally; surfaced on the bullet
+  detail screen as info.
+
+### Two-tier solver test tolerance
+
+The test suite enforces:
+
+- **Self-consistency:** ±0.01 mil agreement between solver runs across
+  refactors.
+- **Litz cross-check:** ±0.1 mil agreement against the published
+  example tables in *Applied Ballistics for Long-Range Shooting* 4th
+  ed. (citation in test file).
+
+### Atmosphere
+
+- ICAO standard atmosphere as fallback.
+- Station pressure (vs sea-level) — separate input.
+- Density altitude derivation.
+- Tetens humid-air vapor-pressure correction.
+- **Atmosphere presets** — saved named profiles (e.g. "Camp Perry
+  June," "Whittington July") with a picker that swaps every
+  environment field at once.
+- **Zero atmosphere** held separately from runtime atmosphere on the
+  ballistic profile, so a sea-level zero applies correctly at altitude.
+
+### Pro analysis services
+
+- **WEZ analysis** — Monte Carlo hit probability across the engagement
+  window with sensitivity breakdown (which input drives misses?).
+  Pro-gated.
+- **BC truing** — paste observed drops at distance, get a corrected
+  ballistic coefficient via bisection / golden-section search.
+  Pro-gated.
+- **Sight calibration** — DPC scope-tracking calibration via
+  tall-target test. Pro-gated.
+
+### Free analysis services (still substantial)
+
+- **Wind bracket** — base ± low / high holds.
+- **Hit probability (single aim point)** — Monte Carlo dispersion with
+  per-source breakdown (group / wind / range / MV).
+- **Group statistics** — extreme spread, mean radius, σ horizontal /
+  vertical, group MOA, **90% confidence interval band once N≥3**,
+  centroid + zero-adjust recommendation.
+- **Last-shot correction** — "hold up X mil, right Y" to bring next
+  shot back to the aim point.
+
+---
+
+## 8. Range Day
+
+The day-of-shooting workspace. The screen the user lives in WHILE at
+the range.
+
+### Behavior
+
+- **Always opens fresh on tab tap.** "Tapping Range Day always starts a
+  brand-new session" was an explicit product requirement. Saved
+  sessions live in a History menu in the AppBar.
+- **AppBar title is constant "Range Day."** Per-session names live in
+  the History list, not the AppBar.
+- **AppBar actions:** History (saved-sessions list), Recalculate.
+  *(A Quick / Full mode toggle in the AppBar is a planned UX — see
+  factual gaps note at the bottom of this file.)*
+- **Auto-saves on every field change** (debounced); rack picks now
+  persist across app restarts.
+
+### Sections (top-down on phone, two-column on tablet)
+
+1. **Solution strip** (pinned at top, slim) — active load + distance +
+   target + wind + drop + windage. "Glance → fire → glance" without
+   scrolling.
+2. **Setup** — target picker (with shape filter: Circle / Square /
+   Rectangle / Silhouette), distance, ballistic profile, load,
+   firearm, reticle. Shot azimuth + Incline / Decline are full-mode-only.
+3. **Environment** — temp, pressure, humidity, elevation, wind. Pull
+   from weather (Pro), atmosphere preset picker, live Kestrel toggle
+   when paired.
+4. **Solution** — drop, wind, time of flight, velocity, energy. Largest
+   text on the screen. Wind Bracket, Hit Probability gauge, Target Plot.
+5. **Group stats** — ES, MR, group MOA, σh / σv, 90% CI band (N≥3),
+   centroid + zero-adjust.
+6. **Last shot correction** — only renders once shots > 0.
+7. **DOPE card** — 100 yd-step trajectory ladder.
+8. **Moving Target** (Pro) — speed + direction → lead computation. *Now
+   a pushed route, not an inline card.*
+9. **Notes.**
+10. **Advanced Analysis** (renamed from "Litz Analysis") — pushed routes
+    for WEZ Analysis, BC Truing, Sight Calibration.
+
+Group Stats and Moving Target moved from inline cards to **pushed
+routes** for screen-real-estate reasons.
+
+### Defaults (fresh session)
+
+- **Default reticle:** **LoadOut Default Mil Tree** — a LoadOut original
+  archetype, NOT a branded reticle. ID: `loadout_default_mil_tree`.
+- **Default target:** **18 in × 30 in white IPSC silhouette.**
+- **Default load (empty state):** the load picker offers 19 curated
+  factory cartridges in a "Pick a Common Load" bottom sheet (see § 12).
+- **User favorites override defaults** — a favorited reticle / target
+  on a fresh session bumps the LoadOut default out.
+
+### Target Plot view modes
+
+Two view modes for the Target Plot widget (toggle persists across app
+restarts via `SharedPreferences`):
+
+- **Realistic** — scope ring overlay + sky / grass / dirt backdrop;
+  single targets sit on a pole, KYL racks hang from chains.
+- **Target-Focused** — target dominates the frame for accurate dot
+  placement.
+
+### Rack support (schema-level)
+
+The Range Day target picker has a **single / rack** segmented toggle.
+Six rack types ship today (`assets/seed_data/target_racks.json`):
+
+- 5-Plate KYL
+- 5-Plate Equal Rack
+- 5-Plate Square Rack
+- 5-Pepper Popper Rack
+- 3-Plate Decreasing
+- IDPA Open Stage
+
+Rack mode shows an "active child" picker so the shooter can sequence
+through plates within the rack. The persisted state survives app
+restarts.
+
+---
+
+## 9. Reticles & scopes
+
+This is the most legally sensitive section in the app. **Read it
+carefully before writing any copy that names a reticle.**
+
+### The IP posture: LoadOut original + public domain only
+
+The reticle catalog ships **only LoadOut-original archetypes and
+public-domain reticles**. **No trademarked or licensed reticle names
+appear in the catalog.** This is a deliberate, recent change driven by
+IP / licensing risk analysis (see
+`/Users/general/Development/Applications/LoadOut/docs/RETICLE_LICENSING.md`).
+
+The risks we are deliberately not taking:
+
+- **Horus Vision LLC** (TReMoR / H59 series) is litigious. Reproducing
+  geometry — even approximate — could be claimed as design-patent or
+  copyright infringement.
+- **Brand-specific reticle marks** (EBR, MOAR, MIL-XT, P4F, ACOG,
+  ACSS, etc.) carry trademark + design-patent exposure.
+- Other ballistic apps (Strelok Pro, AB Quantum) ship the brand names;
+  they have a licensing posture or operating risk we don't share.
+
+### What ships today (43 reticles total)
+
+**24 LoadOut-original archetypes** (`loadout_*` IDs):
+
+- Mil Tree family — Default, Compact, Medium, Dense, Christmas Tree,
+  Hash (6 variants).
+- MOA Tree family — same six variants.
+- MOA Hash, Mil Hash.
+- SFP Mil-Drop, SFP MOA-Drop, BDC.
+- Combat, Combat with BDC, DMR-BDC, Hunting BDC.
+- Red Dot 2 / 4 / 6 MOA, Red Dot + Ring.
+- Holographic Ring + Dot.
+
+**19 public-domain reticles** (`pd_*` IDs):
+
+- Mil-Dot (USMC), Mil Hash (Generic).
+- Plex, Crosshair (fine / medium / heavy).
+- German #1 / #4 / #4A / #8.
+- Post and Crosshair, Picket Post.
+- Circle and Dot, Circle and Cross.
+- Chevron, Dotted Crosshair, Iron Sight Ring.
+- Post and Dot, Diamond.
+
+### Scope NAMES are kept (factual identification)
+
+We ship 47 scopes across 26 brands today
+(`assets/seed_data/scopes.json`). Naming a scope is **factual product
+identification** — saying "Vortex Razor HD Gen III 6-36x56 FFP" is
+descriptive, not infringing. This is also nominative fair use under US
+trademark doctrine: you can't identify the product without the name.
+
+Brands shipped: Vortex Optics, Nightforce Optics, Schmidt & Bender,
+Leupold, Tangent Theta, Zero Compromise Optic, Hensoldt, Kahles,
+Bushnell, Sig Sauer, Athlon Optics, Element Optics, Burris, Arken
+Optics, Primary Arms, Aimpoint, EOTech, Trijicon, Holosun, ZeroTech
+Optics, Riton Optics, Swarovski Optik, Carl Zeiss, Meopta, DEON
+Optical Design (March), Sightron.
+
+### "Find by my scope"
+
+The reticle picker has a **"Find by my scope"** affordance — the user
+types their scope (e.g. "Schmidt & Bender PMII 5-25x56") and the picker
+maps it to the LoadOut-original archetype that does the equivalent
+hold-off math. The mapping is approximate; the math (subtensions) is
+accurate. This is the bridge that makes a brand-agnostic catalog usable
+to a shooter who's only ever held the branded reticle.
+
+### Marketing rules for reticles
+
+- **Never name a trademarked reticle** in copy as if we ship it. We
+  don't.
+- **Do** describe scopes by their actual product name when comparing.
+- **Do** describe LoadOut reticles by their LoadOut name ("LoadOut
+  Default Mil Tree," "LoadOut Christmas Tree MOA").
+- For copy that needs a "we cover the equivalents" pitch, say
+  something like: "If your scope ships with a TReMoR3 or an EBR-7C,
+  use the LoadOut Default Mil Tree — same hold-off math, no
+  licensing complications." That's accurate AND honest.
+
+---
+
+## 10. Targets
+
+`assets/seed_data/targets.json` ships 52 entries across 4 shape
+families: Circle, Square, Rectangle, Silhouette.
+
+- **Default for fresh Range Day sessions:** 18 in × 30 in **white** IPSC
+  silhouette.
+- **5-color override palette** in the picker: White / Orange / Brown /
+  Yellow / Red. Black silhouettes render via the `silhouette` shape
+  primitive itself, not via tint.
+- Categories: paper, steel, reactive, game-silhouette.
+- Rack support (6 rack types — see § 8) for KYL plates, IDPA stages,
+  pepper poppers.
+
+---
+
+## 11. Glossary (in-app)
+
+`assets/seed_data/`-free, lives in source code at
+`lib/screens/glossary/glossary_screen.dart`.
+
+- **142 terms** across **10 categories:**
+  - Cartridge anatomy & dimensions
+  - Ballistics
+  - Range day & shooting
+  - Optics & reticles
+  - Load development
+  - Powder & burn behavior
+  - Primers
+  - Brass & case prep
+  - Reloading process
+  - Firearm-side
+- Search bar at the top, alphabetical within each category.
+- **34 entries** include a worked example (1–3 sentence walkthrough
+  with concrete values) that expands on tap.
+- **Tappable labels app-wide.** Every domain term in the recipe /
+  ballistic / load development / Range Day forms is wrapped in a
+  `GlossaryLabel` widget. Tap the label → bottom sheet with the
+  definition + an "Open in Glossary" button that pre-filters the
+  glossary screen on that term.
+
+The glossary is **always free** — no paywall, no sign-in. Same for
+SAAMI specs.
+
+---
+
+## 12. The two-database model — bullets vs ammunition
+
+A nuance worth understanding before writing copy. We ship **two distinct
+catalogs of bullet-related data**:
+
+### Catalog A: Bullets (the projectile alone)
+
+- Used by: **Recipes** + ballistic profiles.
+- Example: Berger 109gr Hybrid Target.
+- The reloader picks a bullet, then supplies powder + powder charge
+  separately.
+- File: `assets/seed_data/bullets.json` (10 manufacturers).
+
+### Catalog B: Manufactured Ammunition (factory cartridges)
+
+- Used by: **Ballistic profiles** + Range Day "Common Loads" picker.
+- Example: Hornady 6.5 CM 140gr ELD-Match (factory-loaded round).
+- No powder data (manufacturer doesn't publish it). DOES carry MV +
+  BC + standard deviation.
+- File: `assets/seed_data/manufactured_ammo.json` — **19 curated
+  factory loads today**, in `lib/services/common_loads_catalog.dart`'s
+  Range Day empty-state picker. Brands: Hornady, Berger, Federal, CCI,
+  Sierra.
+- Plus a much larger reference catalog at
+  `assets/seed_data/factory_loads.json` — **4,143 factory ammo SKUs
+  across 37 manufacturers** with published MV + G1 / G7 BC. Used for
+  reference / lookups, not the empty-state picker.
+
+The two databases never cross-consume. A recipe needs powder; a factory
+load doesn't.
+
+---
+
+## 13. Favorites
+
+A simple but high-impact UX layer. Wherever a reference list shows up,
+a star icon bubbles favorited entries to the top.
+
+Surfaces with favorite-star support:
+
+- Recipes (list + detail).
+- Firearms (list + detail).
+- Ballistic Profiles (list + picker).
+- Cartridges (in the SAAMI screen).
+- Reticles (Range Day + firearm-form picker).
+- Targets (Range Day picker).
+
+### Behavior
+
+- Stars work directly in the dropdown / list view, not just the detail
+  screen.
+- A favorited reticle on a fresh Range Day session becomes the default
+  reticle (overriding the LoadOut Default Mil Tree).
+- A favorited target on a fresh Range Day session becomes the default
+  target (overriding the 18×30 silhouette).
+- Reference-data favorites live in a `UserFavorites` join table; the
+  catalog rows themselves are read-only.
+
+In marketing copy: "Star your go-to load and it's at the top of every
+picker. Star a target and it's pre-selected on every Range Day open."
+
+---
+
+## 14. Auto-save
+
+See § 4 for the user-facing behavior. For copy purposes:
+
+- **Frequency:** Off / After Any Change / 1 min / 5 min / 10 min.
+- **Unsaved-changes-on-pop policy:** Ask each time / Discard / Save
+  automatically.
+- Recipe + Ballistic Profile share one implementation
+  (`UnsavedChangesScope` widget + `AutoSaveController`).
+- Range Day uses its own auto-save flow (debounced per-field-change).
+
+In copy: "You will not lose work to a back-button. Auto-save is on by
+default; how aggressive it is is your call."
+
+---
+
+## 15. AI Smart Import (Pro, opt-in per use)
+
+The **only** Anthropic-using surface in the app today.
+
+### What it is
+
+A translation tool. Takes the on-device OCR's draft of a notebook
+photo and asks Claude to fix the messy bits — handwriting the device's
+ML Kit couldn't parse cleanly, ambiguous fractions, smudged digits.
+Returns a structured patch on the recipe shape. Nothing else.
+
+### How it works
+
+- Default: **OFF** in Settings → AI. User has to flip a master toggle
+  AND tap "Improve with AI" per-import to fire it.
+- **Hosted mode** (default for Pro users): request goes through a
+  Cloudflare Worker proxy at
+  `anthropic-proxy.loadout-precision-reloading.workers.dev` with the
+  user's Firebase ID token. Per-Pro-user cap of **20 imports / month**.
+- **BYOK mode**: user pastes their own Anthropic API key
+  (`flutter_secure_storage` keyed `byok_anthropic_key`); requests go
+  straight to `api.anthropic.com`. Skips the proxy and the cap. Free
+  users with BYOK can use the feature too.
+
+### Privacy contract (verbatim)
+
+- The Worker logs **timestamp, short UID prefix, status code, latency,
+  token counts** — **never the request body**.
+- The only data sent: OCR'd text from the photo + on-device parser's
+  draft + (optional) reference-catalog hints.
+- **Never sent:** saved recipes, firearms, brass lots, batches,
+  ballistic profiles, custom fields, anything else from the on-device
+  DB.
+- BYOK mode: key lives in iOS Keychain / Android Keystore.
+- Anthropic's API terms forbid training on API requests; verify
+  before each renewal.
+
+### Marketing language
+
+Use these exact phrases:
+
+- "Translation tool, not an assistant."
+- "Reads OCR'd text from photos you took. Nothing else."
+- "Off by default. Per-import opt-in."
+- "Anthropic does not train on API requests."
+- Avoid: "AI assistant," "AI-powered," "smart" (the feature name is
+  "AI Smart Import"; don't extend the adjective elsewhere).
+
+The reloader skeptic framing is load-bearing. Marketing must reflect
+it.
+
+---
+
+## 16. AI Reloading Assistant (planned, Coming Soon)
+
+A separate Anthropic surface from AI Smart Import. **Not shipped today.**
+
+The drawer entry "AI Reloading Assistant" routes to a Coming Soon
+placeholder. Marketing copy must say "Coming Soon" or "Shipping in
+v1.1" — never imply it's live.
+
+When shipped, it will be Pro-gated and have its own privacy section,
+its own service, and its own risk surface. It is NOT a multi-turn
+extension of AI Smart Import. Treat them as two unrelated features
+that share a vendor.
+
+---
+
+## 17. Bluetooth devices (Pro)
+
+**7 BLE-enabled devices supported.** All are gated behind the Pro
+entitlement because manual entry is always free elsewhere in the app
+and the firmware integrations cost real engineering per brand. All
+device adapters live in `lib/services/ble/`.
+
+| Device | Channels | Status |
+|---|---|---|
+| **Kestrel 5xxx Link** | Live temp, station pressure, humidity, wind speed/direction, density altitude | Validated |
+| **Garmin Xero C1 Pro** | Per-shot velocity, average FPS, ES, SD (via .fit file import) | Validated |
+| **Sig Sauer KILO BDX** | LOS distance, incline, shoot-to range | BETA — reverse-engineered |
+| **Bushnell BDX** | LOS distance, sometimes incline | BETA — reverse-engineered |
+| **Vortex Razor HD 4000 / Fury HD AB** | LOS distance, incline, shoot-to range | BETA — reverse-engineered |
+| **Leica Geovid Pro** | LOS distance, incline, shoot-to range | BETA — reverse-engineered |
+| **Vectronix Terrapin X** | LOS distance, incline, **+ magnetic azimuth** | BETA — reverse-engineered |
+
+### Vectronix is the unique one
+
+The Vectronix Terrapin X is the only rangefinder LoadOut supports that
+**publishes a magnetic azimuth alongside LOS distance**. Range Day's
+quick-fill affordance offers a single-tap "Use distance + azimuth"
+button that fills the distance field, the incline-corrected range, AND
+the shot azimuth field — saving the shooter a separate compass-capture
+step. This is mil/LE-grade equipment and worth highlighting in copy
+aimed at that audience.
+
+### Marketing rules for BLE
+
+- Use the BETA badge in copy when describing reverse-engineered
+  rangefinders. The badge is in the app itself; honesty is the right
+  posture.
+- "Every major rangefinder" is fine for headline copy. The list above
+  is the long-form.
+- Don't claim an integration we don't ship. We don't have MagnetoSpeed,
+  LabRadar, Calypso wind meters, or WeatherFlow — competitors do.
+
+---
+
+## 18. Cloud Sync + Cloud Backup
+
+Both are Pro features. Same encryption, different cadence.
+
+### Encryption model (identical for both)
+
+- **AES-256-GCM** content encryption.
+- **PBKDF2 with 200,000 iterations** for passphrase derivation.
+- The user picks the passphrase; LoadOut never sees it.
+- The encrypted blob lives in the user's own iCloud Drive / Google
+  Drive / Microsoft OneDrive container.
+- LoadOut runs no backend that receives this blob.
+- **Lost passphrase = lost data.** The Cloud Sync screen has a red
+  warning to that effect. This is by design.
+
+### Cloud Backup (manual)
+
+- One-shot export, encrypted, uploaded to user's chosen provider.
+- "Backup now" button. "Restore from backup" picks the file back up.
+
+### Cloud Sync (continuous)
+
+- Auto-syncs ~5 seconds after each AutoSave fires (debounced).
+- Pulls on app launch + a manual "Sync Now" button.
+- Conflict policy: **last-writer-wins by row `updatedAt`**. Tables
+  without `updatedAt` fall back to `createdAt`; if neither has a clock,
+  remote wins (preserves manual-restore semantics).
+- Decryption failure leaves the local DB untouched, surfaces a
+  "passphrase needed" status.
+- Schema-version mismatch (incoming > local) is rejected — user is
+  told to update the app on this device.
+- AppBar indicator dot shows sync state.
+
+### Marketing claim language
+
+- "Encrypted on your device with a passphrase only you know."
+- "Uploaded to YOUR own iCloud Drive, Google Drive, or OneDrive."
+- "We never see the encrypted blob."
+- "We can't recover a lost passphrase, by design."
+
+The "by design" framing is important — we aren't sloppy, we're
+deliberately limiting our own capability.
+
+---
+
+## 19. Anti-positioning (what we DON'T do, deliberately)
+
+This list is as important as the feature list. Reloaders read product
+copy for what's omitted as much as what's included.
+
+- **No general analytics.** No Google Analytics, Mixpanel, Amplitude,
+  Segment, anything. Even anonymized event analytics violates the
+  "we don't track you" promise. Crashlytics is the one exception
+  (opt-out fatal-crash reporting only, PII redacted).
+- **No social-feed surfaces.** No likes, comments, shares, follows on
+  reloading data. We are not building "Instagram for guns." Future
+  shared-recipe / community-library features are deferred — too much
+  surface for launch.
+- **No proprietary export format.** Always JSON (free tier). No
+  "tier-locked" format gimmick.
+- **No subscription tiers above Pro.** No "Pro Plus." No "Elite." One
+  paid tier, two SKUs, done.
+- **No Doppler-radar custom drag models we make ourselves.** That's
+  Applied Ballistics' moat — they have the Doppler radar and the
+  partnerships. We aggregate publicly-available manufacturer 4DOF
+  data (Hornady), let users true their own BC, and ship quality G7
+  defaults. Honest framing: "we don't have an in-house Doppler
+  facility" beats pretending we do.
+- **No phone-home for license verification.** Pro entitlement check is
+  RevenueCat client-side; a sign-in is what links it across devices.
+- **No mandatory account.** Sign-in is optional. Anonymous users get
+  every core feature except continuous Cloud Sync (manual backup is
+  still free).
+
+---
+
+## 20. Disclosures + IP posture (matters legally + as marketing asset)
+
+### "Data Sources & Credits" screen
+
+Settings → Data Sources & Credits is a respectful in-app
+acknowledgment of every brand whose published data underpins our
+catalog. Source: `lib/screens/disclaimers/data_sources_screen.dart`.
+
+Categories with brand lists:
+
+- **Powder** — Accurate, Alliant, Hodgdon, IMR, Lovex / Sellier &
+  Bellot, Norma, Ramshot, Shooter's World, Vihtavuori, Winchester.
+- **Primers** — CCI, Federal, Fiocchi, Ginex, Murom, Remington, RWS,
+  Sellier & Bellot, Tula, Vihtavuori, Winchester, Wolf.
+- **Brass** — ADG / Atlas Development Group, Alpha Munitions,
+  Capstone / Berger, Federal, Hornady, IMI, Lapua, Norma, Nosler,
+  Peterson Cartridge, PPU, Remington, Sako, Sellier & Bellot,
+  Starline, Top Brass, Weatherby, Winchester.
+- **Bullets** — Barnes, Berger, Federal, Hammer Bullets, Hornady,
+  Lapua, Lehigh Defense, Nosler, Sierra, Speer.
+- **Cartridge specifications** — SAAMI + CIP.
+- **Firearms** — 40 brands (Accuracy International through Winchester).
+- **Optics** — 26 brands (see § 9).
+- **Firearm parts & accessories** — 50+ brands.
+- **Manufactured ammunition** — Berger, CCI, Federal, Hornady, Sierra.
+- **Ballistic-math literature** — Bryan Litz published works, Robert
+  L. McCoy's *Modern Exterior Ballistics* (1999), Don Miller's 2005
+  *Precision Shooting* stability paper, ICAO standard atmosphere.
+- **Open-source software** — Flutter, drift, sqlite3, etc.
+
+### Standard non-affiliation disclaimer
+
+Required adjacent to any list of brand names in marketing copy:
+
+> All product names, model designations, and specifications belong
+> to their respective owners. LoadOut is not affiliated with,
+> sponsored by, or endorsed by any company listed.
+
+The in-app version adds a corrections email
+(`support@loadoutapp.com`). Use the same channel in marketing for
+brand-correction requests.
+
+### Reticle posture (re-stating)
+
+The reticle catalog is **LoadOut original + public domain only**. No
+trademarked or licensed reticle names. See § 9.
+
+---
+
+## 21. Competitive position
+
+Source of truth:
+`/Users/general/Development/Applications/LoadOut/marketing/competitive_audit_v2.md`.
+Don't recap that doc here — read it before writing comparison copy.
+The four-column audit (LoadOut vs Strelok / BC2026, AB Quantum,
+Ballistic AE) is current as of 2026-05-08.
+
+### One-line frames per competitor
+
+- **Strelok / Ballistic Calculator 2026** — calculator with a deeper
+  cartridge / reticle catalog. We win on: reloading workspace, encrypted
+  cloud sync, Hornady 4DOF curves, lifetime pricing, photo OCR,
+  6 platforms, disclosed solver. They win on: raw catalog count, brand
+  pedigree (19 yr).
+- **Applied Ballistics Quantum** — chief-ballistician's product;
+  Litz-authored math, Doppler-radar CDM library, $700+ Kestrel hardware
+  unlocks Pro. We win on: reloading workspace, photo OCR, lifetime
+  pricing, free-tier scope, multi-platform, **passphrase-only Cloud
+  Sync** (theirs is server-decryptable). They win on: Doppler CDM
+  library, full WEZ + sensitivity, Litz-authored brand, AB Spotter
+  AI, AB Learn.
+- **Ballistic AE** — premium iOS solver; JBM engine, 5,000 projectile
+  library, $30 one-time + $9.99 Kestrel IAP. We win on:
+  cross-platform (they're iOS-only), reloading workspace, photo OCR,
+  Hornady 4DOF, full WEZ. They win on: raw projectile count,
+  Apple-ecosystem polish, lower 5-yr cost.
+- **Hornady 4DOF app** — free, Hornady-bullet only. Niche; we ingest
+  the same dataset under the Pro tier and pair it with a workspace.
+- **GeoBallistics BalisticArc** — desktop / mil-LE focus.
+- **JBM Ballistics** — open math, low-fidelity UI; the engine
+  underneath Ballistic AE.
+- **GRT / QuickLOAD** — load development simulators (gun and
+  cartridge interior ballistics). We're the workspace and the
+  exterior solver, not the interior simulator. We import their CSV.
+
+### Honest framing rules
+
+- **Don't claim parity with Doppler-CDM data we don't have.** AB
+  Quantum has it; we don't. We compete on workspace + free-tier
+  generosity + privacy, not Doppler depth.
+- **Don't claim Strelok's 19-year track record.** It's their moat.
+- **Do** claim Litz-aware. Use of his published math is correct;
+  "Litz-endorsed" or "Litz-affiliated" is not.
+- **Do** lead with the "no LoadOut backend ever sees your data"
+  claim against AB Quantum specifically. Their AB Quantum Sync is
+  almost certainly server-decryptable; we're not.
+
+---
+
+## 22. Marketing voice rules (style guide)
+
+A short tactical checklist for any copy review:
+
+1. **Direct, second-person.** "You" not "the user."
+2. **Specific numbers over adjectives.** "203 cartridges with full
+   SAAMI specs," not "extensive cartridge library."
+3. **No emojis** in landing pages, App Store / Play Store copy, paywall
+   copy, in-app surfaces, this doc, or formal channels. Limited use OK
+   in casual social (one or two per post).
+4. **No exclamation marks in headlines.** Reloaders are deliberate.
+5. **Cite the source** for borrowed math. "Bryan Litz, *Applied
+   Ballistics for Long-Range Shooting* 2nd ed., 2016" — cite the
+   BOOK, not the company. We use his published methodology, not his
+   commercial product.
+6. **Privacy as a feature, not a disclaimer.** "Your data lives on
+   your device" reads as a benefit, not a legal hedge.
+7. **Always include the safety frame** for any specific load data:
+   *"These values are starting points from published reloading data.
+   Always verify against your current reloading manual before
+   loading. Never start at maximum charge."* Same wording as the
+   in-app disclaimer.
+8. **Don't slap "AI" on everything.** AI Smart Import is the only AI
+   feature that ships. The chat is Coming Soon. Be precise.
+9. **"Free" alone is misleading.** Use "free tier" or describe what
+   the free tier includes. Avoid "free with Pro upgrade" framing —
+   that reads as a bait-and-switch.
+10. **Reloader / shooter / user are interchangeable.** Pick one per
+    paragraph; don't switch mid-thought.
+
+---
+
+## 23. Useful stats + numbers for copy
+
+Cite these directly. Counts current as of 2026-05-09 from
+`assets/seed_data/`:
+
+- **203 cartridges** with full SAAMI specs (`cartridges.json`).
+- **4,143 factory ammo SKUs** across 37 manufacturers
+  (`factory_loads.json`) — reference catalog.
+- **19 curated factory loads** in the Range Day "Common Loads"
+  picker (`manufactured_ammo.json`).
+- **300+ Hornady 4DOF measured Cd-vs-Mach curves**
+  (`drag_curves/curves.json`) — Pro.
+- **47 scopes across 26 brands** (`scopes.json`).
+- **43 reticles** (24 LoadOut-original + 19 public-domain) — see § 9.
+- **52 target shapes** across 4 shape families (`targets.json`).
+- **6 target rack types** (`target_racks.json`).
+- **142 glossary terms across 10 categories**, with **34 worked
+  examples**.
+- **40 firearm brands** in the reference library (`firearms.json`).
+- **50+ firearm-parts brands** in the parts catalog
+  (`firearm_parts.json`).
+- **7 sign-in methods** including anonymous (sign-in is **optional**).
+- **4 platforms shipping today** — iOS, Android, macOS, web.
+- **2 companion apps scaffolded** (Apple Watch + Wear OS — Coming Soon).
+- **Modified Point-Mass solver** with Cash-Karp adaptive RK45
+  (1e-4 m tolerance), all 6 standard drag tables (G1, G2, G5, G6, G7, G8),
+  plus PCHIP-interpolated custom drag curves.
+- **AES-256-GCM + PBKDF2-200k** encryption for Cloud Sync / Cloud
+  Backup.
+- **One Pro tier, two SKUs:** $39.99 / yr or $79.99 lifetime.
+
+Numbers to NOT cite without verification:
+
+- "258 reticles" — outdated; we ship 43 today after the LoadOut-
+  original / public-domain rebuild.
+- "156 optics across 21 brands" — outdated; we ship 47 across 26.
+- "290 reticles" / "290+ reticles" — outdated.
+- "200+ cartridges" is OK; the precise count is 203.
+- "6 platforms" — outdated until Apple Watch / Wear OS ship payloads.
+  Today it's 4.
+- "55 target shapes" — outdated; the count is 52.
+
+---
+
+## 24. Standard objections + responses
+
+| Objection | Response |
+|---|---|
+| "Strelok is cheaper / I already have Strelok." | "Strelok is a calculator. LoadOut is the workspace where the loads going into the calculator actually live — recipes, brass, batches, range day. We're 33% cheaper at the yearly tier ($39.99 vs $59.99) and offer a lifetime they don't." |
+| "I don't trust apps with my data." | "Your reloading data never leaves your device unless you explicitly turn on Cloud Sync. Even then, it's encrypted with your passphrase before it leaves your phone, and we never have the passphrase. We have no backend that stores your loads. We can't see what we don't have." |
+| "I'm too set in my ways to switch." | "You don't have to switch. Snap a photo of your notebook page when you finish a session — we'll extract the recipes in 60 seconds, on your device. Keep using paper if you want. The app becomes a searchable backup of your paper logs." |
+| "I'm not technical." | "Open it. Tap the Quick FAB. Type your load like you'd write it on paper. Save. Done. Beginner Mode hides every advanced field; turn it off when you're ready." |
+| "What if you go out of business?" | "Your data is local SQLite + JSON export at any time. If we shut down tomorrow, you keep everything. We can't lock you in because we don't host you." |
+| "Why pay a subscription if there's a lifetime?" | "You don't have to. The free tier covers recipes, the ballistics solver, Range Day basics, photo OCR, every reference catalog, and the glossary. Pro adds Bluetooth devices, Hornady 4DOF curves, Cloud Sync, training-mode tooling, and the AI assistant when it ships. Pick whichever fits — yearly if you want to try it, lifetime if you're sure." |
+| "Doesn't AB Quantum already do this with Litz's math?" | "AB Quantum is an excellent ballistics calculator with a Doppler-radar drag library we don't try to match. It also has zero recipe / brass / batch tracking, requires a $700+ Kestrel to unlock Pro features for hardware buyers, and ships sync we'd describe differently than they do. We're the workspace; they're the math. Different jobs." |
+
+---
+
+## 25. Reference files (where the canonical facts live)
+
+Keep this doc in sync with the source.
+
+- `/Users/general/Development/Applications/LoadOut/CLAUDE.md` —
+  engineering reference. **Authoritative when this doc disagrees.**
+- `/Users/general/Development/Applications/LoadOut/docs/RETICLE_LICENSING.md`
+  — IP posture for reticles.
+- `/Users/general/Development/Applications/LoadOut/marketing/competitive_audit_v2.md`
+  — competitive positioning.
+- `/Users/general/Development/Applications/LoadOut/marketing/app_store_connect.md`
+  — App Store listing copy.
+- `/Users/general/Development/Applications/LoadOut/marketing/play_store.md`
+  — Play Store listing copy.
+- `/Users/general/Development/Applications/LoadOut/lib/services/common_loads_catalog.dart`
+  — the 19 curated factory loads in the Range Day picker.
+- `/Users/general/Development/Applications/LoadOut/lib/services/auto_save_service.dart`
+  — auto-save model and frequencies.
+- `/Users/general/Development/Applications/LoadOut/lib/screens/range_day/range_day_detail_screen.dart`
+  — Range Day model. Read the file header, not the body.
+- `/Users/general/Development/Applications/LoadOut/lib/screens/disclaimers/data_sources_screen.dart`
+  — the in-app credits screen and the canonical brand lists.
+- `/Users/general/Development/Applications/LoadOut/lib/screens/glossary/glossary_screen.dart`
+  — glossary terms (`kGlossaryTerms`) and category definitions.
+- `/Users/general/Development/Applications/LoadOut/assets/seed_data/`
+  — every reference catalog (cartridges, scopes, reticles, targets,
+  factory loads, etc.).
+- `/Users/general/Development/Applications/LoadOut/lib/screens/paywall/paywall_screen.dart`
+  — the Pro pitch as the user sees it.
+
+---
+
+## 26. Factual gaps / open items
+
+Items where this doc lacks a definitive answer. Resolve these before
+launch copy goes out.
+
+1. **Range Day Quick / Full mode toggle.** The product spec calls for
+   an AppBar toggle that switches Range Day between a minimal "Setup +
+   Solution" view (Quick) and the full layout (Full). The code today
+   has only History + Recalculate in the Range Day AppBar — no mode
+   toggle is shipped yet. Either the toggle ships before launch and
+   this section gets updated, or marketing copy that mentions
+   "Quick mode for fast field use" is premature.
+2. **Apple Watch / Wear OS feature payloads.** Both companion apps are
+   scaffolded with placeholder UIs. The wire protocol is defined
+   (see engineering CLAUDE.md § 15) but no live feature payloads are
+   shipping yet. Don't claim these as live.
+3. **AI Reloading Assistant ship date.** "v1.1" in earlier copy; not
+   confirmed. Use "Coming Soon" rather than a version number.
+4. **Per-Pro AI Smart Import monthly cap.** Engineering doc § 20 says
+   the default cap is 30; the older marketing draft said 20. The
+   Cloudflare Worker config controls this. Verify the deployed value
+   before any copy that names a number.
+5. **Translation review.** Six languages scaffolded (English + DE /
+   ES / FR / IT / RU); a native-speaker review hasn't happened. Don't
+   advertise "fluent in 6 languages." Safer claim: "available in
+   English; additional languages in beta."
+6. **Marketing screenshots.** App Store / Play Store screenshots
+   should be regenerated against the current Range Day, Recipes-with-
+   two-FABs, and reticle-picker UI before next submission. The
+   reticle-picker change in particular invalidates older screenshots
+   that show branded reticle names.

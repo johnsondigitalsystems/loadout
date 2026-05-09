@@ -27,6 +27,17 @@
 // * `_DisclaimerFooter` — italicised reminder that values are
 //   reference, not gospel.
 //
+// Favorites surface (schema v24): the picker dropdown options each
+// carry a trailing [FavoriteStarButton] that toggles the row's
+// favorite flag in [UserFavorites] via
+// [FavoritesRepository.toggleFavorite]. The pinned selected-name
+// chip carries the same star button, so both the picker and the
+// detail surface stay in sync. A "Favorites only" filter chip
+// appears above the autocomplete once the user has at least one
+// favorited cartridge — the catalog itself stays alphabetical
+// (favorites are NOT pulled to the top of the picker), since
+// alphabetical order is more useful for a reference reader.
+//
 // The whole layout lives inside a single `CustomScrollView`. The
 // picker is a non-pinned `SliverToBoxAdapter` at the top; the
 // currently-selected cartridge name is a small pinned
@@ -122,7 +133,9 @@ import '../../database/database.dart';
 import '../../services/unit_service.dart';
 import '../../utils/natural_sort.dart';
 import '../../repositories/component_repository.dart';
+import '../../repositories/favorites_repository.dart';
 import '../../widgets/cartridge_diagram.dart';
+import '../../widgets/favorite_star_button.dart';
 import '../../widgets/pro_gate.dart';
 
 // Public PDF URLs for the four ANSI/SAAMI standard documents. Anything
@@ -182,9 +195,19 @@ class SaamiScreen extends StatefulWidget {
 class _SaamiScreenState extends State<SaamiScreen> {
   String? _selectedName;
 
+  /// "Show favorites only" toggle for the cartridge picker. When true,
+  /// the autocomplete options list filters down to cartridges the
+  /// user has starred via [FavoritesRepository.toggleFavorite]. The
+  /// selected detail card is unaffected — once a cartridge is open
+  /// the user can still see its full spec regardless of favorite
+  /// state. Defaults to `false` (full catalog) so first-time users
+  /// aren't presented with an empty list.
+  bool _favoritesOnly = false;
+
   @override
   Widget build(BuildContext context) {
     final repo = context.read<ComponentRepository>();
+    final favoritesRepo = context.read<FavoritesRepository>();
     return Scaffold(
       body: StreamBuilder<List<CartridgeRow>>(
         stream: repo.watchCartridges(),
@@ -213,56 +236,85 @@ class _SaamiScreenState extends State<SaamiScreen> {
               ? null
               : cartridges.firstWhere((c) => c.name == _selectedName);
 
-          // The picker uses Autocomplete, which positions an overlay below
-          // the field. Wrapping it in a pinned SliverPersistentHeader breaks
-          // the overlay positioning and triggers a layout-loop assertion
-          // (`!semantics.parentDataDirty`). Keep the picker as a normal
-          // (non-pinned) sliver at the top, and only pin the small cartridge
-          // name chip — that one is static text with no overlay or focus
-          // concerns, so it's safe inside a SliverPersistentHeader.
-          return CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                  child: _CartridgePicker(
-                    cartridges: cartridges,
-                    selectedName: _selectedName,
-                    onChanged: (name) => setState(() => _selectedName = name),
+          // Wrap in a second StreamBuilder for the live favorites set.
+          // Using [watchFavoriteIds] (rather than `isFavorite` snapshots)
+          // means the star icon flips immediately when the user taps
+          // it, even on rows that aren't the currently-selected one.
+          return StreamBuilder<Set<int>>(
+            stream: favoritesRepo.watchFavoriteIds(kFavoriteCartridge),
+            builder: (context, favSnap) {
+              final favIds = favSnap.data ?? const <int>{};
+              // The picker uses Autocomplete, which positions an overlay
+              // below the field. Wrapping it in a pinned
+              // SliverPersistentHeader breaks the overlay positioning
+              // and triggers a layout-loop assertion
+              // (`!semantics.parentDataDirty`). Keep the picker as a
+              // normal (non-pinned) sliver at the top, and only pin
+              // the small cartridge name chip — that one is static
+              // text with no overlay or focus concerns, so it's safe
+              // inside a SliverPersistentHeader.
+              return CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                      child: _CartridgePicker(
+                        cartridges: cartridges,
+                        favoriteIds: favIds,
+                        favoritesOnly: _favoritesOnly,
+                        selectedName: _selectedName,
+                        onChanged: (name) =>
+                            setState(() => _selectedName = name),
+                        onToggleFavorite: (id) =>
+                            favoritesRepo.toggleFavorite(
+                          kFavoriteCartridge,
+                          id,
+                        ),
+                        onFavoritesOnlyChanged: (v) =>
+                            setState(() => _favoritesOnly = v),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              if (selected != null)
-                SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _SelectedNameHeaderDelegate(name: selected.name),
-                ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                sliver: SliverList.list(
-                  children: selected == null
-                      ? [const _EmptyState()]
-                      : [
-                          _HeaderCard(cartridge: selected),
-                          const SizedBox(height: 12),
-                          if (selected.type != 'shotgun') ...[
-                            _DimensionsCard(cartridge: selected),
-                            const SizedBox(height: 12),
-                            _BoreRiflingCard(cartridge: selected),
-                            const SizedBox(height: 12),
-                            _PressurePrimingCard(cartridge: selected),
-                            const SizedBox(height: 12),
-                          ] else ...[
-                            _ShotgunCard(cartridge: selected),
-                            const SizedBox(height: 12),
-                          ],
-                          _DiagramsSection(cartridge: selected),
-                          const SizedBox(height: 16),
-                          const _DisclaimerFooter(),
-                        ],
-                ),
-              ),
-            ],
+                  if (selected != null)
+                    SliverPersistentHeader(
+                      pinned: true,
+                      delegate: _SelectedNameHeaderDelegate(
+                        name: selected.name,
+                        isFavorite: favIds.contains(selected.id),
+                        onToggleFavorite: () => favoritesRepo.toggleFavorite(
+                          kFavoriteCartridge,
+                          selected.id,
+                        ),
+                      ),
+                    ),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                    sliver: SliverList.list(
+                      children: selected == null
+                          ? [const _EmptyState()]
+                          : [
+                              _HeaderCard(cartridge: selected),
+                              const SizedBox(height: 12),
+                              if (selected.type != 'shotgun') ...[
+                                _DimensionsCard(cartridge: selected),
+                                const SizedBox(height: 12),
+                                _BoreRiflingCard(cartridge: selected),
+                                const SizedBox(height: 12),
+                                _PressurePrimingCard(cartridge: selected),
+                                const SizedBox(height: 12),
+                              ] else ...[
+                                _ShotgunCard(cartridge: selected),
+                                const SizedBox(height: 12),
+                              ],
+                              _DiagramsSection(cartridge: selected),
+                              const SizedBox(height: 16),
+                              const _DisclaimerFooter(),
+                            ],
+                    ),
+                  ),
+                ],
+              );
+            },
           );
         },
       ),
@@ -273,8 +325,14 @@ class _SaamiScreenState extends State<SaamiScreen> {
 // ─────────────────────── Sticky header ───────────────────────
 
 class _SelectedNameHeaderDelegate extends SliverPersistentHeaderDelegate {
-  _SelectedNameHeaderDelegate({required this.name});
+  _SelectedNameHeaderDelegate({
+    required this.name,
+    required this.isFavorite,
+    required this.onToggleFavorite,
+  });
   final String name;
+  final bool isFavorite;
+  final Future<void> Function() onToggleFavorite;
 
   @override
   double get minExtent => 44;
@@ -289,26 +347,42 @@ class _SelectedNameHeaderDelegate extends SliverPersistentHeaderDelegate {
       color: theme.scaffoldBackgroundColor,
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
       alignment: Alignment.centerLeft,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.primary.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          name,
-          style: theme.textTheme.titleMedium?.copyWith(
-            color: theme.colorScheme.primary,
-            fontWeight: FontWeight.w600,
+      child: Row(
+        children: [
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                name,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ),
-        ),
+          // Star toggle for the selected cartridge — fires
+          // [FavoritesRepository.toggleFavorite] under the hood, so the
+          // pinned chip stays in sync with the picker dropdown's
+          // favorite indicators.
+          FavoriteStarButton(
+            isFavorite: isFavorite,
+            compact: true,
+            onToggle: onToggleFavorite,
+          ),
+        ],
       ),
     );
   }
 
   @override
   bool shouldRebuild(_SelectedNameHeaderDelegate oldDelegate) =>
-      oldDelegate.name != name;
+      oldDelegate.name != name || oldDelegate.isFavorite != isFavorite;
 }
 
 // ─────────────────────── Picker ───────────────────────
@@ -316,13 +390,34 @@ class _SelectedNameHeaderDelegate extends SliverPersistentHeaderDelegate {
 class _CartridgePicker extends StatefulWidget {
   const _CartridgePicker({
     required this.cartridges,
+    required this.favoriteIds,
+    required this.favoritesOnly,
     required this.selectedName,
     required this.onChanged,
+    required this.onToggleFavorite,
+    required this.onFavoritesOnlyChanged,
   });
 
   final List<CartridgeRow> cartridges;
+
+  /// Live set of favorited cartridge ids. Drives the per-row star
+  /// indicator in the dropdown options view; also gates the
+  /// `favoritesOnly` filter.
+  final Set<int> favoriteIds;
+
+  /// When true, the autocomplete options list filters down to only
+  /// rows whose `id` is in [favoriteIds].
+  final bool favoritesOnly;
+
   final String? selectedName;
   final ValueChanged<String?> onChanged;
+
+  /// Toggles the favorite flag for the given cartridge row id. Wired
+  /// to [FavoritesRepository.toggleFavorite] by the parent.
+  final Future<void> Function(int id) onToggleFavorite;
+
+  /// Fired when the user flips the "Favorites only" filter chip.
+  final ValueChanged<bool> onFavoritesOnlyChanged;
 
   @override
   State<_CartridgePicker> createState() => _CartridgePickerState();
@@ -417,86 +512,143 @@ class _CartridgePickerState extends State<_CartridgePicker> {
 
   @override
   Widget build(BuildContext context) {
-    return Autocomplete<CartridgeRow>(
-      initialValue:
-          TextEditingValue(text: widget.selectedName ?? ''),
-      displayStringForOption: (c) => c.name,
-      optionsBuilder: (te) {
-        final query = te.text.trim().toLowerCase();
-        final tokens = query
-            .split(RegExp(r'\s+'))
-            .where((t) => t.isNotEmpty)
-            .toList(growable: false);
-        // No query → show all cartridges (already alphabetized upstream).
-        if (tokens.isEmpty) return widget.cartridges;
-
-        // Score every cartridge against the query, drop zeros, sort
-        // descending, then cap to keep the dropdown manageable.
-        final scored = <({CartridgeRow row, int score})>[];
-        for (final c in widget.cartridges) {
-          final s = _score(c, query, tokens);
-          if (s > 0) scored.add((row: c, score: s));
-        }
-        scored.sort((a, b) {
-          final cmp = b.score.compareTo(a.score);
-          if (cmp != 0) return cmp;
-          // Tie-break with natural sort so .22 < 5.56 < 6mm < 9mm < 10mm.
-          return naturalCompare(a.row.name, b.row.name);
-        });
-        return scored.take(_maxResults).map((e) => e.row);
-      },
-      fieldViewBuilder: (context, textCtrl, focusNode, onFieldSubmitted) {
-        return TextFormField(
-          controller: textCtrl,
-          focusNode: focusNode,
-          // Turn off the OS-level autocorrect / autocomplete suggestions
-          // ("get x" chip the user reported). Cartridge names are short
-          // technical strings that the OS shouldn't be guessing at.
-          autocorrect: false,
-          enableSuggestions: false,
-          textCapitalization: TextCapitalization.none,
-          decoration: InputDecoration(
-            labelText: 'Cartridge',
-            prefixIcon: const Icon(Icons.search),
-            // Clear button when there's text.
-            suffixIcon: textCtrl.text.isEmpty
-                ? null
-                : IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () {
-                      textCtrl.clear();
-                      widget.onChanged(null);
-                    },
+    final theme = Theme.of(context);
+    // The "Favorites only" chip lives ABOVE the autocomplete so its
+    // toggle doesn't collide with the autocomplete's overlay panel.
+    // The chip is hidden when the user has no favorites yet — there
+    // is nothing to filter to.
+    final hasFavorites = widget.favoriteIds.isNotEmpty;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (hasFavorites)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: [
+                FilterChip(
+                  label: const Text('Favorites only'),
+                  avatar: Icon(
+                    widget.favoritesOnly
+                        ? Icons.star
+                        : Icons.star_border,
+                    size: 16,
+                    color: widget.favoritesOnly
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurfaceVariant,
                   ),
-          ),
-          onFieldSubmitted: (_) => onFieldSubmitted(),
-        );
-      },
-      onSelected: (c) => widget.onChanged(c.name),
-      optionsViewBuilder: (context, onSelected, options) {
-        return Align(
-          alignment: Alignment.topLeft,
-          child: Material(
-            elevation: 4,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 360),
-              child: ListView.builder(
-                shrinkWrap: true,
-                padding: EdgeInsets.zero,
-                itemCount: options.length,
-                itemBuilder: (context, i) {
-                  final c = options.elementAt(i);
-                  return ListTile(
-                    dense: true,
-                    title: Text(c.name),
-                    onTap: () => onSelected(c),
-                  );
-                },
-              ),
+                  selected: widget.favoritesOnly,
+                  onSelected: widget.onFavoritesOnlyChanged,
+                ),
+              ],
             ),
           ),
-        );
-      },
+        Autocomplete<CartridgeRow>(
+          initialValue: TextEditingValue(text: widget.selectedName ?? ''),
+          displayStringForOption: (c) => c.name,
+          optionsBuilder: (te) {
+            final query = te.text.trim().toLowerCase();
+            final tokens = query
+                .split(RegExp(r'\s+'))
+                .where((t) => t.isNotEmpty)
+                .toList(growable: false);
+            // Apply the favorites-only filter at the top of the
+            // pipeline so it survives whether or not the user has
+            // typed a query.
+            final pool = widget.favoritesOnly
+                ? widget.cartridges
+                    .where((c) => widget.favoriteIds.contains(c.id))
+                    .toList(growable: false)
+                : widget.cartridges;
+
+            // No query → show the (filtered) pool, already alphabetized
+            // upstream.
+            if (tokens.isEmpty) return pool;
+
+            // Score every cartridge against the query, drop zeros,
+            // sort descending, then cap to keep the dropdown
+            // manageable.
+            final scored = <({CartridgeRow row, int score})>[];
+            for (final c in pool) {
+              final s = _score(c, query, tokens);
+              if (s > 0) scored.add((row: c, score: s));
+            }
+            scored.sort((a, b) {
+              final cmp = b.score.compareTo(a.score);
+              if (cmp != 0) return cmp;
+              // Tie-break with natural sort so .22 < 5.56 < 6mm <
+              // 9mm < 10mm.
+              return naturalCompare(a.row.name, b.row.name);
+            });
+            return scored.take(_maxResults).map((e) => e.row);
+          },
+          fieldViewBuilder: (context, textCtrl, focusNode, onFieldSubmitted) {
+            return TextFormField(
+              controller: textCtrl,
+              focusNode: focusNode,
+              // Turn off the OS-level autocorrect / autocomplete
+              // suggestions ("get x" chip the user reported).
+              // Cartridge names are short technical strings that
+              // the OS shouldn't be guessing at.
+              autocorrect: false,
+              enableSuggestions: false,
+              textCapitalization: TextCapitalization.none,
+              decoration: InputDecoration(
+                labelText: 'Cartridge',
+                prefixIcon: const Icon(Icons.search),
+                // Clear button when there's text.
+                suffixIcon: textCtrl.text.isEmpty
+                    ? null
+                    : IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () {
+                          textCtrl.clear();
+                          widget.onChanged(null);
+                        },
+                      ),
+              ),
+              onFieldSubmitted: (_) => onFieldSubmitted(),
+            );
+          },
+          onSelected: (c) => widget.onChanged(c.name),
+          optionsViewBuilder: (context, onSelected, options) {
+            return Align(
+              alignment: Alignment.topLeft,
+              child: Material(
+                elevation: 4,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 360),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    padding: EdgeInsets.zero,
+                    itemCount: options.length,
+                    itemBuilder: (context, i) {
+                      final c = options.elementAt(i);
+                      final isFav = widget.favoriteIds.contains(c.id);
+                      // The trailing star on the option row toggles
+                      // the favorite WITHOUT dismissing the dropdown
+                      // (the option stays visible so the user can
+                      // continue scrolling). Tapping the title (or
+                      // anywhere else on the tile) still picks the
+                      // option per the standard autocomplete behavior.
+                      return ListTile(
+                        dense: true,
+                        title: Text(c.name),
+                        trailing: FavoriteStarButton(
+                          isFavorite: isFav,
+                          compact: true,
+                          onToggle: () => widget.onToggleFavorite(c.id),
+                        ),
+                        onTap: () => onSelected(c),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 }

@@ -193,6 +193,25 @@ class RecipeRepository {
   Future<int> delete(int id) =>
       (db.delete(db.userLoads)..where((l) => l.id.equals(id))).go();
 
+  /// Flip the per-row [UserLoads.isFavorite] boolean (added schema v24).
+  /// Returns the new state (`true` = now favorited, `false` = now
+  /// un-favorited). Returns `false` if no row matches [id]. Auto-bumps
+  /// `updatedAt` so the recipe list re-sorts to keep the freshly-toggled
+  /// row visible. Powers the star icon the picker UI agent will wire up.
+  Future<bool> toggleFavorite(int id) async {
+    final row = await (db.select(db.userLoads)..where((l) => l.id.equals(id)))
+        .getSingleOrNull();
+    if (row == null) return false;
+    final next = !row.isFavorite;
+    await (db.update(db.userLoads)..where((l) => l.id.equals(id))).write(
+      UserLoadsCompanion(
+        isFavorite: Value(next),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+    return next;
+  }
+
   // ─────────────────────── Powder Lots ───────────────────────
 
   Future<List<PowderLotRow>> allPowderLots() async {

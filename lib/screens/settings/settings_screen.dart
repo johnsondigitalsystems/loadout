@@ -30,6 +30,7 @@
 //   │     ├─ Export my data
 //   │     ├─ Delete my data
 //   │     └─ Privacy / Terms / Disclaimer
+//   ├─ Data Sources & Credits   ← DataSourcesScreen
 //   └─ Help & Support           ← HelpSupportScreen
 //         ├─ Email support
 //         ├─ Print sample notebook
@@ -63,6 +64,8 @@
 import 'package:flutter/material.dart';
 
 import '../devices/devices_screen.dart';
+import '../disclaimers/data_sources_screen.dart';
+import '../saami/saami_screen.dart';
 import '../sync/cloud_sync_screen.dart';
 import 'account_settings_screen.dart';
 import 'ai_settings_screen.dart';
@@ -137,11 +140,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
         destinationBuilder: (_) => const AiSettingsScreen(),
       ),
       _SettingsTileSpec(
+        icon: Icons.straighten_outlined,
+        title: 'SAAMI Specs',
+        subtitle:
+            'Reference dimensions and pressures for every cartridge in '
+            'the SAAMI catalog.',
+        destinationBuilder: (_) => const SaamiScreen(),
+      ),
+      _SettingsTileSpec(
         icon: Icons.privacy_tip_outlined,
         title: 'Privacy & Data',
         subtitle:
             'Crashlytics, export, delete, privacy policy / disclaimer.',
         destinationBuilder: (_) => const PrivacyDataScreen(),
+      ),
+      _SettingsTileSpec(
+        icon: Icons.handshake_outlined,
+        title: 'Data Sources & Credits',
+        subtitle:
+            'The companies whose data made LoadOut possible.',
+        destinationBuilder: (_) => const DataSourcesScreen(),
       ),
       _SettingsTileSpec(
         icon: Icons.help_outline,

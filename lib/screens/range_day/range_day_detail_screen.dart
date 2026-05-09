@@ -52,6 +52,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/reticle_library.dart';
 import '../../database/database.dart';
 import '../../repositories/ballistic_profile_repository.dart';
+import '../../repositories/favorites_repository.dart';
 import '../../repositories/firearm_repository.dart';
 import '../../repositories/manufactured_ammo_repository.dart';
 import '../../repositories/optics_repository.dart';
@@ -85,6 +86,7 @@ import '../../services/sensors/inclinometer_service.dart';
 import '../../services/sensors/magnetometer_service.dart';
 import '../../services/unit_service.dart';
 import '../../widgets/empty_state_card.dart';
+import '../../widgets/favorite_star_button.dart';
 import '../../widgets/range_day_safety.dart';
 import '../../services/weather_service.dart';
 import '../../utils/responsive.dart';
@@ -158,6 +160,14 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   String _targetCategoryFilter = 'all';
   Future<List<TargetRow>>? _targetsFuture;
 
+  /// Live set of favorited target ids. Drives the favorite-first sort
+  /// in the target dropdown plus the inline star toggle next to the
+  /// selected target preview. Reference-data favorites live in the
+  /// `UserFavorites` join table (see [FavoritesRepository]) rather
+  /// than on `TargetRow` itself, which is why this screen reads them
+  /// from a separate stream instead of from the row directly.
+  Stream<Set<int>>? _targetFavoriteIdsStream;
+
   // ─────────────────────── Target racks (in-memory only) ───────────────────────
   //
   // Picking a rack is mutually-exclusive with picking a single target —
@@ -208,7 +218,12 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   Stream<List<BallisticProfileRow>>? _profilesStream;
 
   UserLoadRow? _selectedLoad;
-  Future<List<UserLoadRow>>? _loadsFuture;
+  // Live stream rather than a one-shot future so toggling a load's
+  // favorite flag (or saving a new recipe in another tab) re-renders
+  // the dropdown without an explicit refresh. Same pattern as
+  // `_profilesStream`. Re-assigned on a soft retry after a stream
+  // error (`onRetry` in the FutureBuilder→StreamBuilder transition).
+  Stream<List<UserLoadRow>>? _loadsStream;
 
   /// Non-persistent label for a [CommonLoad] the user picked from the
   /// empty-state catalog. Mirrored into the load picker as a "Using
@@ -220,7 +235,11 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   String? _appliedCommonLoadName;
 
   UserFirearmRow? _selectedFirearm;
-  Future<List<UserFirearmRow>>? _firearmsFuture;
+  // Live stream — same rationale as `_loadsStream`. The dropdown
+  // re-sorts immediately when the user toggles a firearm's favorite
+  // flag, and a freshly added firearm (e.g. from the parallel
+  // FirearmFormScreen path) appears without a manual refresh.
+  Stream<List<UserFirearmRow>>? _firearmsStream;
 
   // ─────────────────────── Distance / range ───────────────────────
   final _distanceCtrl = TextEditingController(text: '500');
@@ -444,14 +463,21 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     _capabilityRangeUncertaintyCtrl =
         TextEditingController(text: _trimZeros(_rangeUncertaintyYd));
     _targetsFuture = context.read<TargetRepository>().allTargets();
+    // Live stream of favorited target ids — drives the favorite-first
+    // sort in the dropdown and the star toggle next to the selected
+    // target preview. Reference-data favorites (cartridge, reticle,
+    // target) live in `UserFavorites`, not on the source row, so we
+    // need a parallel stream the picker can react to.
+    _targetFavoriteIdsStream =
+        context.read<FavoritesRepository>().watchFavoriteIds(kFavoriteTarget);
     // Kick off the rack catalog read up-front so the rack tab of the
     // target picker doesn't show a spinner the first time the user
     // toggles into it. The picker still surfaces a soft error if the
     // future rejects — see `_rackTargetPickerBody`.
     _racksFuture = context.read<TargetRepository>().allRacks();
     _profilesStream = context.read<BallisticProfileRepository>().watchAll();
-    _loadsFuture = _loadAllRecipes();
-    _firearmsFuture = context.read<FirearmRepository>().allFirearms();
+    _loadsStream = context.read<RecipeRepository>().watchAll();
+    _firearmsStream = context.read<FirearmRepository>().watchAll();
     // Default the per-session correction unit to the global angle pref.
     final units = context.read<UnitService>();
     _correctionUnit =
@@ -477,6 +503,15 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         _scheduleSolve();
         _scheduleHitProb();
       });
+      // Fresh session: try the user's most-recent favorited reticle /
+      // target first, fall back to the LoadOut default Mil Tree
+      // archetype / TargetSpec.defaultPaper when the user has no
+      // favorites yet. Both lookups are fire-and-forget and soft-
+      // fail — a missing favorite can never block the screen.
+      // ignore: discarded_futures
+      _seedDefaultsFromFavoritesIfPresent();
+      // ignore: discarded_futures
+      _seedDefaultReticleIfMissing();
     }
     // Pull the persisted Target Plot view mode (Realistic vs
     // Target-Focused). Default is `targetFocused`; the read swaps in
@@ -485,6 +520,96 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     // completes and switches in place once it lands.
     // ignore: discarded_futures
     _hydrateTargetPlotViewMode();
+  }
+
+  /// On a fresh session, pre-populate the reticle and target with the
+  /// user's most-recently-favorited entry of each (when one exists).
+  /// Called fire-and-forget from `initState` only when no `sessionId`
+  /// was passed in, so existing sessions still hydrate from their
+  /// persisted ids untouched.
+  ///
+  /// Soft-fail policy: any failure (favorite row points at a deleted
+  /// reference catalog row, repository throws, the FavoritesRepository
+  /// is mid-Cloud-Sync transaction) leaves the screen in its existing
+  /// LoadOut Default state — the next call to
+  /// [_seedDefaultReticleIfMissing] still runs and falls through to the
+  /// `loadout_default_mil_tree` archetype, and the target slot stays
+  /// at `null` (the empty-state path uses `TargetSpec.defaultPaper`).
+  ///
+  /// Both lookups are guarded against the user picking something
+  /// before this future settles — the assignment is skipped if the
+  /// `_selectedReticleRow` / `_selectedTarget` slot is already set
+  /// when the future resolves.
+  Future<void> _seedDefaultsFromFavoritesIfPresent() async {
+    try {
+      final favoritesRepo = context.read<FavoritesRepository>();
+      final reticleRepo = context.read<ReticleRepository>();
+      final targetRepo = context.read<TargetRepository>();
+
+      final favoriteReticleId =
+          await favoritesRepo.mostRecentFavoriteId(kFavoriteReticle);
+      if (mounted &&
+          favoriteReticleId != null &&
+          _selectedReticleRow == null) {
+        try {
+          final row = await reticleRepo.byId(favoriteReticleId);
+          if (mounted && row != null && _selectedReticleRow == null) {
+            setState(() {
+              _selectedReticleRow = row;
+              _selectedReticle = reticleRepo.definitionFromRow(row);
+            });
+          }
+        } catch (e) {
+          debugPrint(
+              '[range_day] _seedDefaultsFromFavorites reticle lookup failed: $e');
+        }
+      }
+
+      final favoriteTargetId =
+          await favoritesRepo.mostRecentFavoriteId(kFavoriteTarget);
+      if (mounted && favoriteTargetId != null && _selectedTarget == null) {
+        try {
+          final row = await targetRepo.getById(favoriteTargetId);
+          if (mounted && row != null && _selectedTarget == null) {
+            setState(() => _selectedTarget = row);
+            _scheduleSolve();
+          }
+        } catch (e) {
+          debugPrint(
+              '[range_day] _seedDefaultsFromFavorites target lookup failed: $e');
+        }
+      }
+    } catch (e) {
+      debugPrint(
+          '[range_day] _seedDefaultsFromFavoritesIfPresent failed: $e');
+    }
+  }
+
+  /// Look up the canonical LoadOut Default Mil Tree archetype and
+  /// stash it as `_selectedReticle`. Called from `initState` for
+  /// fresh sessions and from `_hydrateFromSessionInner` when a saved
+  /// session has no reticle id.
+  ///
+  /// TODO(loadout-default): catalog must include
+  /// `loadout_default_mil_tree`. Until the parallel catalog overhaul
+  /// publishes the archetype, this method silently no-ops and the
+  /// picker stays unset — the rest of the screen is fully usable.
+  Future<void> _seedDefaultReticleIfMissing() async {
+    try {
+      final repo = context.read<ReticleRepository>();
+      final row = await repo.byNaturalKey('loadout_default_mil_tree');
+      if (!mounted || row == null) return;
+      // Only populate if the user hasn't already picked one between
+      // initState firing and this future settling.
+      if (_selectedReticleRow != null) return;
+      setState(() {
+        _selectedReticleRow = row;
+        _selectedReticle = repo.definitionFromRow(row);
+      });
+    } catch (e) {
+      debugPrint(
+          '[range_day] _seedDefaultReticleIfMissing failed: $e');
+    }
   }
 
   /// Read the persisted [TargetPlotViewMode] from SharedPreferences and
@@ -516,13 +641,6 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     } catch (e) {
       debugPrint('[range_day] _persistTargetPlotViewMode failed: $e');
     }
-  }
-
-  Future<List<UserLoadRow>> _loadAllRecipes() async {
-    final repo = context.read<RecipeRepository>();
-    final stream = repo.watchAll();
-    final first = await stream.first;
-    return first;
   }
 
   Future<void> _hydrateFromSession(int id) async {
@@ -714,7 +832,11 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         _applyLoadDefaults(r);
       }
     }
-    // v11 — hydrate reticle (if any).
+    // v11 — hydrate reticle (if any). When the saved session has no
+    // reticle picked, fall back to the LoadOut Default Mil Tree
+    // archetype so the target plot still renders something useful
+    // out of the box. Fire-and-forget; the helper soft-fails when
+    // the catalog hasn't seeded the archetype yet.
     if (s.reticleId != null) {
       final reticleRow = await reticleRepo.byId(s.reticleId!);
       if (mounted && reticleRow != null) {
@@ -723,6 +845,9 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
           _selectedReticle = reticleRepo.definitionFromRow(reticleRow);
         });
       }
+    } else {
+      // ignore: discarded_futures
+      _seedDefaultReticleIfMissing();
     }
     // Pull in existing shots so the in-memory list is never stale during
     // recompute.
@@ -2876,23 +3001,86 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   // ─────────────────────── Reticle picker ───────────────────────
 
   Widget _reticlePicker() {
-    return ReticlePickerField(
-      selected: _selectedReticleRow,
-      restrictToOpticId: _selectedFirearm?.opticsId,
-      onChanged: (row) {
-        if (row == null) {
-          setState(() {
-            _selectedReticleRow = null;
-            _selectedReticle = null;
-          });
-        } else {
-          final repo = context.read<ReticleRepository>();
-          setState(() {
-            _selectedReticleRow = row;
-            _selectedReticle = repo.definitionFromRow(row);
-          });
-        }
-        _scheduleAutoSave();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ReticlePickerField(
+          selected: _selectedReticleRow,
+          restrictToOpticId: _selectedFirearm?.opticsId,
+          onChanged: (row) {
+            if (row == null) {
+              setState(() {
+                _selectedReticleRow = null;
+                _selectedReticle = null;
+              });
+            } else {
+              final repo = context.read<ReticleRepository>();
+              setState(() {
+                _selectedReticleRow = row;
+                _selectedReticle = repo.definitionFromRow(row);
+              });
+            }
+            _scheduleAutoSave();
+          },
+        ),
+        // Inline favorite-star toggle for the picked reticle. Lives
+        // outside the ReticlePickerField widget itself because that
+        // widget is shared with the firearm form / future surfaces
+        // and is owned by the parallel reticle-picker agent. We
+        // surface the affordance here in Range Day so a user who
+        // finds their preferred reticle at the range can star it
+        // and have new sessions default to it (see
+        // [_seedDefaultsFromFavoritesIfPresent]).
+        if (_selectedReticleRow != null)
+          _selectedReticleFavoriteRow(_selectedReticleRow!),
+      ],
+    );
+  }
+
+  /// Compact "Currently selected: `reticle name`  [star]" row that
+  /// hangs beneath the [ReticlePickerField]. Watches the
+  /// `kFavoriteReticle` set so the star reflects the live state of
+  /// `UserFavorites` even after the user toggles it elsewhere
+  /// (e.g. SAAMI screen, firearm form). Stays out of the picker
+  /// widget itself because that widget is owned by the parallel
+  /// agent — see [_reticlePicker].
+  Widget _selectedReticleFavoriteRow(ReticleRow row) {
+    final theme = Theme.of(context);
+    final favoritesRepo = context.read<FavoritesRepository>();
+    return StreamBuilder<Set<int>>(
+      stream: favoritesRepo.watchFavoriteIds(kFavoriteReticle),
+      initialData: const <int>{},
+      builder: (context, snap) {
+        final favIds = snap.data ?? const <int>{};
+        final isFav = favIds.contains(row.id);
+        return Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Row(
+            children: [
+              Icon(Icons.crop_free_outlined,
+                  size: 16, color: theme.colorScheme.onSurfaceVariant),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  '${row.manufacturerId} ${row.model}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              FavoriteStarButton(
+                isFavorite: isFav,
+                compact: true,
+                onToggle: () async {
+                  await favoritesRepo.toggleFavorite(
+                      kFavoriteReticle, row.id);
+                },
+              ),
+            ],
+          ),
+        );
       },
     );
   }
@@ -3157,137 +3345,214 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        FutureBuilder<List<TargetRow>>(
-          future: _targetsFuture,
-          builder: (context, snap) {
-            if (snap.hasError) {
-              return RangeDayInlineError(
-                message: 'Could not load targets: ${snap.error}',
-                onRetry: () {
-                  setState(() {
-                    _targetsFuture =
-                        context.read<TargetRepository>().allTargets();
-                  });
-                },
-              );
-            }
-            if (snap.connectionState == ConnectionState.waiting) {
-              return const LinearProgressIndicator();
-            }
-            final all = snap.data ?? const <TargetRow>[];
-            final filtered = _targetCategoryFilter == 'all'
-                ? all
-                : all.where((t) => t.category == _targetCategoryFilter).toList();
-            // Build the dropdown items, always including the currently-
-            // selected target even when the category filter would hide
-            // it.
-            //
-            // Without this guard, the dropdown crashes the screen when
-            // the user picks a target in one category, then switches
-            // the category-filter chips: `initialValue` becomes a
-            // stale id not present in `items`, and Flutter's
-            // `DropdownButtonFormField` asserts "There should be
-            // exactly one item with [DropdownButton]'s value: <id>"
-            // (Either zero or 2 or more) at layout time.
-            //
-            // The fix: keep `_selectedTarget` as a stable piece of
-            // state regardless of the filter, and inject it into the
-            // items list with a clarifying "(picked — hidden by
-            // filter)" suffix when the active filter would otherwise
-            // exclude it. The user's selection is preserved across
-            // filter taps and they always see what they have chosen.
-            //
-            // The same Stale-id guard pattern protects against a
-            // saved-session `_selectedTarget.id` that's no longer in
-            // the catalog after a re-seed: collapse to null so
-            // Flutter's "exactly one item with this value" assertion
-            // is satisfied.
-            final selected = _selectedTarget;
-            final stillInCatalog =
-                selected != null && all.any((t) => t.id == selected.id);
-            final selectedHiddenByFilter = selected != null &&
-                stillInCatalog &&
-                !filtered.any((t) => t.id == selected.id);
-            final items = <DropdownMenuItem<int?>>[
-              const DropdownMenuItem<int?>(
-                value: null,
-                child: Text('— None —'),
-              ),
-              if (selectedHiddenByFilter)
-                DropdownMenuItem<int?>(
-                  value: selected.id,
-                  child: Text(
-                    '${selected.name} (picked — hidden by filter)',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ...filtered.map((t) => DropdownMenuItem<int?>(
-                    value: t.id,
-                    child: Text(
-                      t.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  )),
-            ];
-            if (filtered.isEmpty && !selectedHiddenByFilter) {
-              return Text(
-                'No targets in this category yet.',
-                style: theme.textTheme.bodySmall,
-              );
-            }
-            final dropdownValue =
-                (selected != null && stillInCatalog) ? selected.id : null;
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                DropdownButtonFormField<int?>(
-                  initialValue: dropdownValue,
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    hintText: 'Pick a target',
-                  ),
-                  items: items,
-                  onChanged: (id) {
-                    if (id == null) {
-                      setState(() => _selectedTarget = null);
-                      _scheduleAutoSave();
-                      return;
-                    }
-                    // Look up against the union of (filtered + currently
-                    // selected) so picking the "(picked — hidden by
-                    // filter)" pseudo-item is a no-op rather than a
-                    // `StateError` from `firstWhere`.
-                    final picked = filtered.firstWhere(
-                      (t) => t.id == id,
-                      orElse: () => selected!,
-                    );
-                    setState(() => _selectedTarget = picked);
-                    _scheduleAutoSave();
-                  },
-                ),
-                // Preview tile — the user reported they couldn't tell
-                // what target they had selected after picking from the
-                // dropdown. This row mirrors the selection back to them
-                // with the target's shape, name, and dimensions so it's
-                // unambiguous before they scroll down to see the
-                // computed solution.
-                if (selected != null && stillInCatalog)
-                  _selectedTargetPreview(selected),
-                // Color swatch row — five circular tappable swatches.
-                // Tapping one writes `_selectedTargetColorHex`, which
-                // overrides the target's natural color in the
-                // TargetPlot painters via `colorHexOverride`. Null
-                // means "use the target's natural colorHex".
-                _targetColorSwatchRow(),
-              ],
+        // Outer StreamBuilder watches the favorited target id set so
+        // every favorite/unfavorite tap re-sorts the dropdown without
+        // a manual setState. The inner FutureBuilder loads the actual
+        // catalog rows (one-shot, since the seed catalog doesn't
+        // mutate at runtime). The two combine in
+        // `_buildTargetDropdown` below.
+        StreamBuilder<Set<int>>(
+          stream: _targetFavoriteIdsStream,
+          initialData: const <int>{},
+          builder: (context, favSnap) {
+            final favIds = favSnap.data ?? const <int>{};
+            return FutureBuilder<List<TargetRow>>(
+              future: _targetsFuture,
+              builder: (context, snap) {
+                if (snap.hasError) {
+                  return RangeDayInlineError(
+                    message: 'Could not load targets: ${snap.error}',
+                    onRetry: () {
+                      setState(() {
+                        _targetsFuture =
+                            context.read<TargetRepository>().allTargets();
+                      });
+                    },
+                  );
+                }
+                if (snap.connectionState == ConnectionState.waiting) {
+                  return const LinearProgressIndicator();
+                }
+                final all = snap.data ?? const <TargetRow>[];
+                return _buildTargetDropdown(theme, all, favIds);
+              },
             );
           },
         ),
       ],
     );
+  }
+
+  /// Body of the single-target dropdown — split out from
+  /// [_singleTargetPickerBody] so the FutureBuilder + StreamBuilder
+  /// nesting up there stays readable. Receives the loaded `all`
+  /// catalog plus the live `favIds` set, applies the category
+  /// filter, sorts favorites first (preserving the existing
+  /// natural-sort within each tier), and renders the dropdown +
+  /// preview tile + inline favorite-star toggle + color swatch row.
+  ///
+  /// Favorited rows are surfaced two ways: they sort to the top of
+  /// the dropdown menu, AND they get a `★ ` prefix glyph on the
+  /// menu-item label so the user can tell what's favorited even
+  /// while scrolling through the list. There's no inline-tap-to-
+  /// favorite inside the dropdown items themselves —
+  /// `DropdownMenuItem` doesn't render trailing actions cleanly —
+  /// so the per-target favorite toggle lives next to the selected-
+  /// target preview tile below the dropdown instead. That trades a
+  /// click off (the user has to pick the row first, then tap the
+  /// star) against not breaking the dropdown's tap target.
+  Widget _buildTargetDropdown(
+    ThemeData theme,
+    List<TargetRow> all,
+    Set<int> favIds,
+  ) {
+    final filtered = _targetCategoryFilter == 'all'
+        ? all
+        : all.where((t) => t.category == _targetCategoryFilter).toList();
+    // Favorite-first sort. We deliberately stable-sort: the
+    // existing natural-name order from `TargetRepository.allTargets`
+    // is preserved within each tier (favorites then non-favorites),
+    // so picking the same target twice in a row doesn't move the
+    // dropdown's other rows around.
+    final orderedFiltered = _sortFavoritesFirst<TargetRow>(
+      filtered,
+      (t) => favIds.contains(t.id),
+    );
+    // Build the dropdown items, always including the currently-
+    // selected target even when the category filter would hide
+    // it.
+    //
+    // Without this guard, the dropdown crashes the screen when
+    // the user picks a target in one category, then switches
+    // the category-filter chips: `initialValue` becomes a
+    // stale id not present in `items`, and Flutter's
+    // `DropdownButtonFormField` asserts "There should be
+    // exactly one item with [DropdownButton]'s value: <id>"
+    // (Either zero or 2 or more) at layout time.
+    //
+    // The fix: keep `_selectedTarget` as a stable piece of
+    // state regardless of the filter, and inject it into the
+    // items list with a clarifying "(picked — hidden by
+    // filter)" suffix when the active filter would otherwise
+    // exclude it. The user's selection is preserved across
+    // filter taps and they always see what they have chosen.
+    //
+    // The same Stale-id guard pattern protects against a
+    // saved-session `_selectedTarget.id` that's no longer in
+    // the catalog after a re-seed: collapse to null so
+    // Flutter's "exactly one item with this value" assertion
+    // is satisfied.
+    final selected = _selectedTarget;
+    final stillInCatalog =
+        selected != null && all.any((t) => t.id == selected.id);
+    final selectedHiddenByFilter = selected != null &&
+        stillInCatalog &&
+        !filtered.any((t) => t.id == selected.id);
+    final items = <DropdownMenuItem<int?>>[
+      const DropdownMenuItem<int?>(
+        value: null,
+        child: Text('— None —'),
+      ),
+      if (selectedHiddenByFilter)
+        DropdownMenuItem<int?>(
+          value: selected.id,
+          child: Text(
+            '${favIds.contains(selected.id) ? '★ ' : ''}'
+            '${selected.name} (picked — hidden by filter)',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ...orderedFiltered.map((t) => DropdownMenuItem<int?>(
+            value: t.id,
+            child: Text(
+              favIds.contains(t.id) ? '★ ${t.name}' : t.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          )),
+    ];
+    if (filtered.isEmpty && !selectedHiddenByFilter) {
+      return Text(
+        'No targets in this category yet.',
+        style: theme.textTheme.bodySmall,
+      );
+    }
+    final dropdownValue =
+        (selected != null && stillInCatalog) ? selected.id : null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        DropdownButtonFormField<int?>(
+          initialValue: dropdownValue,
+          isExpanded: true,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            hintText: 'Pick a target',
+          ),
+          items: items,
+          onChanged: (id) {
+            if (id == null) {
+              setState(() => _selectedTarget = null);
+              _scheduleAutoSave();
+              return;
+            }
+            // Look up against the union of (filtered + currently
+            // selected) so picking the "(picked — hidden by
+            // filter)" pseudo-item is a no-op rather than a
+            // `StateError` from `firstWhere`.
+            final picked = filtered.firstWhere(
+              (t) => t.id == id,
+              orElse: () => selected!,
+            );
+            setState(() => _selectedTarget = picked);
+            _scheduleAutoSave();
+          },
+        ),
+        // Preview tile — the user reported they couldn't tell
+        // what target they had selected after picking from the
+        // dropdown. This row mirrors the selection back to them
+        // with the target's shape, name, and dimensions so it's
+        // unambiguous before they scroll down to see the
+        // computed solution.
+        //
+        // Trailing slot now also carries a [FavoriteStarButton] so
+        // the user can star / unstar the picked target without
+        // round-tripping to a different screen. Toggle is wired
+        // through [FavoritesRepository] (the join table, not the
+        // row) because targets ship as seeded reference data.
+        if (selected != null && stillInCatalog)
+          _selectedTargetPreview(selected, favIds),
+        // Color swatch row — five circular tappable swatches.
+        // Tapping one writes `_selectedTargetColorHex`, which
+        // overrides the target's natural color in the
+        // TargetPlot painters via `colorHexOverride`. Null
+        // means "use the target's natural colorHex".
+        _targetColorSwatchRow(),
+      ],
+    );
+  }
+
+  /// Stable favorite-first sort. Returns a new list with rows
+  /// where `isFav(row)` is true coming first (in their original
+  /// order), followed by non-favorites (also in their original
+  /// order). Used by every Range Day picker to surface starred
+  /// rows at the top of the menu without disturbing the
+  /// repository's natural-name sort within each tier.
+  List<T> _sortFavoritesFirst<T>(
+    List<T> items,
+    bool Function(T) isFav,
+  ) {
+    final favorites = <T>[];
+    final others = <T>[];
+    for (final item in items) {
+      if (isFav(item)) {
+        favorites.add(item);
+      } else {
+        others.add(item);
+      }
+    }
+    return [...favorites, ...others];
   }
 
   /// Five-color target tint palette. Locked to the colors a real
@@ -3813,12 +4078,18 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   /// stays within the Setup card — it's intentionally compact (no
   /// elevation, no card chrome) so it reads as a confirmation of the
   /// dropdown selection rather than a distinct widget.
-  Widget _selectedTargetPreview(TargetRow t) {
+  /// Mirrors the picked single target back to the user with shape +
+  /// dimensions + an inline favorite-star toggle. The `favIds` set
+  /// is passed in so the star reflects the live state of the
+  /// `UserFavorites` join table without this widget needing its
+  /// own subscription.
+  Widget _selectedTargetPreview(TargetRow t, Set<int> favIds) {
     final theme = Theme.of(context);
     final dims = _targetDimensionLabel(t);
     final categoryLabel = t.category == 'game-silhouette'
         ? 'Game'
         : (t.category[0].toUpperCase() + t.category.substring(1));
+    final isFav = favIds.contains(t.id);
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: Container(
@@ -3828,7 +4099,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
           ),
           borderRadius: BorderRadius.circular(8),
         ),
-        padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+        padding: const EdgeInsets.fromLTRB(10, 4, 4, 4),
         child: Row(
           children: [
             _targetShapeIcon(t.shape, theme),
@@ -3855,6 +4126,14 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                   ),
                 ],
               ),
+            ),
+            FavoriteStarButton(
+              isFavorite: isFav,
+              compact: true,
+              onToggle: () async {
+                final repo = context.read<FavoritesRepository>();
+                await repo.toggleFavorite(kFavoriteTarget, t.id);
+              },
             ),
           ],
         ),
@@ -4151,6 +4430,16 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
               );
             }
             final profiles = snap.data ?? const <BallisticProfileRow>[];
+            // Favorite-first sort. `BallisticProfileRow.isFavorite` is
+            // a per-row boolean (schema v24), so unlike the target
+            // picker we don't need a separate stream — the watch
+            // already re-emits whenever the row's `isFavorite` flag
+            // flips. Stable sort preserves the existing
+            // alphabetical-by-name order within each tier.
+            final ordered = _sortFavoritesFirst<BallisticProfileRow>(
+              profiles,
+              (p) => p.isFavorite,
+            );
             // Stale-id guard: if the previously-selected profile has
             // been deleted (or the stream is mid-refresh), pinning
             // `initialValue` to its id would crash the dropdown with
@@ -4161,38 +4450,91 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
             // again or the deleted-row state resolves itself.
             final selectedProfileExists = _selectedProfile != null &&
                 profiles.any((p) => p.id == _selectedProfile!.id);
-            return DropdownButtonFormField<int?>(
-              initialValue:
-                  selectedProfileExists ? _selectedProfile!.id : null,
-              isExpanded: true,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'Pick a saved profile',
-              ),
-              items: [
-                const DropdownMenuItem<int?>(
-                  value: null,
-                  child: Text('— None —'),
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                DropdownButtonFormField<int?>(
+                  initialValue:
+                      selectedProfileExists ? _selectedProfile!.id : null,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Pick a saved profile',
+                  ),
+                  items: [
+                    const DropdownMenuItem<int?>(
+                      value: null,
+                      child: Text('— None —'),
+                    ),
+                    ...ordered.map((p) => DropdownMenuItem<int?>(
+                          value: p.id,
+                          child: Text(
+                            p.isFavorite ? '★ ${p.name}' : p.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        )),
+                  ],
+                  onChanged: (id) {
+                    if (id == null) {
+                      setState(() => _selectedProfile = null);
+                      return;
+                    }
+                    final p = profiles.firstWhere((p) => p.id == id);
+                    _applyProfile(p);
+                    _scheduleAutoSave();
+                  },
                 ),
-                ...profiles.map((p) => DropdownMenuItem<int?>(
-                      value: p.id,
-                      child: Text(p.name,
-                          maxLines: 1, overflow: TextOverflow.ellipsis),
-                    )),
+                // Inline star toggle for the picked profile. The row
+                // already has an `isFavorite` boolean; the live
+                // `_profilesStream` re-emits on every flip so the
+                // visual stays in sync without an extra subscription.
+                if (selectedProfileExists)
+                  _selectedProfileFavoriteRow(_selectedProfile!),
               ],
-              onChanged: (id) {
-                if (id == null) {
-                  setState(() => _selectedProfile = null);
-                  return;
-                }
-                final p = profiles.firstWhere((p) => p.id == id);
-                _applyProfile(p);
-                _scheduleAutoSave();
-              },
             );
           },
         ),
       ],
+    );
+  }
+
+  /// Compact "Currently selected: `name`  [star]" row beneath the
+  /// profile dropdown. Lets the user star / unstar the picked
+  /// profile without leaving the screen. Mirrors the same star
+  /// affordance the recipe / firearm pickers expose. Wrapped in a
+  /// SafeRow so it doesn't try to expand inside the parent
+  /// `Column.stretch` — the inner content uses `Expanded` for the
+  /// label, the star button is naturally finite-width.
+  Widget _selectedProfileFavoriteRow(BallisticProfileRow p) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Row(
+        children: [
+          Icon(Icons.bookmark_outline,
+              size: 16, color: theme.colorScheme.onSurfaceVariant),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              p.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          FavoriteStarButton(
+            isFavorite: p.isFavorite,
+            compact: true,
+            onToggle: () async {
+              final repo = context.read<BallisticProfileRepository>();
+              await repo.toggleFavorite(p.id);
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -4202,16 +4544,16 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       children: [
         Text('Load', style: Theme.of(context).textTheme.labelLarge),
         const SizedBox(height: 6),
-        FutureBuilder<List<UserLoadRow>>(
-          future: _loadsFuture,
+        StreamBuilder<List<UserLoadRow>>(
+          stream: _loadsStream,
           builder: (context, snap) {
             if (snap.hasError) {
               return RangeDayInlineError(
                 message: 'Could not load recipes: ${snap.error}',
                 onRetry: () {
                   setState(() {
-                    _loadsFuture =
-                        context.read<RecipeRepository>().watchAll().first;
+                    _loadsStream =
+                        context.read<RecipeRepository>().watchAll();
                   });
                 },
               );
@@ -4228,6 +4570,15 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
             if (loads.isEmpty) {
               return _loadPickerEmptyState();
             }
+            // Favorite-first sort. `UserLoadRow.isFavorite` (schema
+            // v24) is the per-row boolean; the live stream re-emits
+            // when it flips so the dropdown re-orders without an
+            // explicit setState. Stable sort preserves the
+            // newest-edited-first ordering inside each tier.
+            final orderedLoads = _sortFavoritesFirst<UserLoadRow>(
+              loads,
+              (l) => l.isFavorite,
+            );
             // Stale-id guard — see `_profilePicker` for the rationale.
             // Protects against the user deleting a recipe while a Range
             // Day session still references it (or the recipe stream
@@ -4241,6 +4592,13 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
             final hintText = _appliedCommonLoadName != null
                 ? 'Using $_appliedCommonLoadName defaults'
                 : 'Optional — link a recipe';
+            // Re-resolve the selected row from the latest stream
+            // emission so the inline favorite-star reflects the
+            // up-to-date `isFavorite` value (the cached
+            // `_selectedLoad` was captured at pick time).
+            final liveSelected = selectedLoadExists
+                ? loads.firstWhere((l) => l.id == _selectedLoad!.id)
+                : null;
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -4261,10 +4619,13 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                       value: null,
                       child: Text('— None —'),
                     ),
-                    ...loads.map((l) => DropdownMenuItem<int?>(
+                    ...orderedLoads.map((l) => DropdownMenuItem<int?>(
                           value: l.id,
-                          child: Text(l.name,
-                              maxLines: 1, overflow: TextOverflow.ellipsis),
+                          child: Text(
+                            l.isFavorite ? '★ ${l.name}' : l.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         )),
                   ],
                   onChanged: (id) {
@@ -4285,11 +4646,50 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                     _scheduleAutoSave();
                   },
                 ),
+                if (liveSelected != null)
+                  _selectedLoadFavoriteRow(liveSelected),
               ],
             );
           },
         ),
       ],
+    );
+  }
+
+  /// Compact "Currently selected: `name`  [star]" row beneath the
+  /// load dropdown. Lets the user star / unstar the picked recipe
+  /// without leaving Range Day. Mirrors the affordance the recipe
+  /// list screen exposes; the live stream re-emits on every flip
+  /// so the icon stays in sync.
+  Widget _selectedLoadFavoriteRow(UserLoadRow l) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Row(
+        children: [
+          Icon(Icons.science_outlined,
+              size: 16, color: theme.colorScheme.onSurfaceVariant),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              l.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          FavoriteStarButton(
+            isFavorite: l.isFavorite,
+            compact: true,
+            onToggle: () async {
+              final repo = context.read<RecipeRepository>();
+              await repo.toggleFavorite(l.id);
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -4420,19 +4820,16 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   /// profile end-to-end. We push directly via MaterialPageRoute (no
   /// named-route lookup) because `lib/app.dart` doesn't define a
   /// routes table — every screen-to-screen jump in the app is an
-  /// explicit `MaterialPageRoute`. After the user pops back, refresh
-  /// the loads future so any newly-saved recipe shows up in the
-  /// dropdown.
+  /// explicit `MaterialPageRoute`. The load picker now subscribes
+  /// to the live `RecipeRepository.watchAll()` stream, so any
+  /// newly-saved recipe shows up automatically when the user pops
+  /// back — no manual refresh needed.
   Future<void> _openBallisticsScreen() async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => const BallisticsScreen(),
       ),
     );
-    if (!mounted) return;
-    setState(() {
-      _loadsFuture = _loadAllRecipes();
-    });
   }
 
   /// Opens the saved-sessions list (a.k.a. Range Day History) on top of
@@ -4462,58 +4859,116 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       children: [
         Text('Firearm', style: Theme.of(context).textTheme.labelLarge),
         const SizedBox(height: 6),
-        FutureBuilder<List<UserFirearmRow>>(
-          future: _firearmsFuture,
+        StreamBuilder<List<UserFirearmRow>>(
+          stream: _firearmsStream,
           builder: (context, snap) {
             if (snap.hasError) {
               return RangeDayInlineError(
                 message: 'Could not load firearms: ${snap.error}',
                 onRetry: () {
                   setState(() {
-                    _firearmsFuture =
-                        context.read<FirearmRepository>().allFirearms();
+                    _firearmsStream =
+                        context.read<FirearmRepository>().watchAll();
                   });
                 },
               );
             }
             final firearms = snap.data ?? const <UserFirearmRow>[];
+            // Favorite-first sort. `UserFirearmRow.isFavorite`
+            // (schema v24) is the per-row boolean; the live
+            // stream re-emits whenever it flips.
+            final orderedFirearms = _sortFavoritesFirst<UserFirearmRow>(
+              firearms,
+              (f) => f.isFavorite,
+            );
             // Stale-id guard — see `_profilePicker` for the rationale.
             final selectedFirearmExists = _selectedFirearm != null &&
                 firearms.any((f) => f.id == _selectedFirearm!.id);
-            return DropdownButtonFormField<int?>(
-              initialValue:
-                  selectedFirearmExists ? _selectedFirearm!.id : null,
-              isExpanded: true,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'Optional — pick the rifle',
-              ),
-              items: [
-                const DropdownMenuItem<int?>(
-                  value: null,
-                  child: Text('— None —'),
+            // Re-resolve so the inline favorite-star reflects the
+            // up-to-date `isFavorite` value.
+            final liveSelected = selectedFirearmExists
+                ? firearms.firstWhere((f) => f.id == _selectedFirearm!.id)
+                : null;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                DropdownButtonFormField<int?>(
+                  initialValue:
+                      selectedFirearmExists ? _selectedFirearm!.id : null,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Optional — pick the rifle',
+                  ),
+                  items: [
+                    const DropdownMenuItem<int?>(
+                      value: null,
+                      child: Text('— None —'),
+                    ),
+                    ...orderedFirearms.map((f) => DropdownMenuItem<int?>(
+                          value: f.id,
+                          child: Text(
+                            f.isFavorite ? '★ ${f.name}' : f.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        )),
+                  ],
+                  onChanged: (id) {
+                    if (id == null) {
+                      setState(() => _selectedFirearm = null);
+                      _scheduleAutoSave();
+                      return;
+                    }
+                    final f = firearms.firstWhere((f) => f.id == id);
+                    setState(() => _selectedFirearm = f);
+                    _applyFirearmDefaults(f);
+                    _scheduleAutoSave();
+                  },
                 ),
-                ...firearms.map((f) => DropdownMenuItem<int?>(
-                      value: f.id,
-                      child: Text(f.name,
-                          maxLines: 1, overflow: TextOverflow.ellipsis),
-                    )),
+                if (liveSelected != null)
+                  _selectedFirearmFavoriteRow(liveSelected),
               ],
-              onChanged: (id) {
-                if (id == null) {
-                  setState(() => _selectedFirearm = null);
-                  _scheduleAutoSave();
-                  return;
-                }
-                final f = firearms.firstWhere((f) => f.id == id);
-                setState(() => _selectedFirearm = f);
-                _applyFirearmDefaults(f);
-                _scheduleAutoSave();
-              },
             );
           },
         ),
       ],
+    );
+  }
+
+  /// Compact "Currently selected: `name`  [star]" row beneath the
+  /// firearm dropdown. Mirrors [_selectedLoadFavoriteRow] /
+  /// [_selectedProfileFavoriteRow]; the stream-driven rebuild keeps
+  /// the icon in sync with [UserFirearms.isFavorite].
+  Widget _selectedFirearmFavoriteRow(UserFirearmRow f) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Row(
+        children: [
+          Icon(Icons.outdoor_grill_outlined,
+              size: 16, color: theme.colorScheme.onSurfaceVariant),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              f.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          FavoriteStarButton(
+            isFavorite: f.isFavorite,
+            compact: true,
+            onToggle: () async {
+              final repo = context.read<FirearmRepository>();
+              await repo.toggleFavorite(f.id);
+            },
+          ),
+        ],
+      ),
     );
   }
 

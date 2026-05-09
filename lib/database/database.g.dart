@@ -8490,6 +8490,21 @@ class $UserLoadsTable extends UserLoads
         requiredDuringInsert: false,
         defaultValue: const Constant(15.6),
       );
+  static const VerificationMeta _isFavoriteMeta = const VerificationMeta(
+    'isFavorite',
+  );
+  @override
+  late final GeneratedColumn<bool> isFavorite = GeneratedColumn<bool>(
+    'is_favorite',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_favorite" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -8553,6 +8568,7 @@ class $UserLoadsTable extends UserLoads
     loadedBy,
     powderTempSensitivityFpsPerCelsius,
     powderReferenceTempCelsius,
+    isFavorite,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -9057,6 +9073,12 @@ class $UserLoadsTable extends UserLoads
         ),
       );
     }
+    if (data.containsKey('is_favorite')) {
+      context.handle(
+        _isFavoriteMeta,
+        isFavorite.isAcceptableOrUnknown(data['is_favorite']!, _isFavoriteMeta),
+      );
+    }
     return context;
   }
 
@@ -9310,6 +9332,10 @@ class $UserLoadsTable extends UserLoads
         DriftSqlType.double,
         data['${effectivePrefix}powder_reference_temp_celsius'],
       )!,
+      isFavorite: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_favorite'],
+      )!,
     );
   }
 
@@ -9405,6 +9431,14 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
   /// reference temperature. The solver computes the runtime MV
   /// adjustment as `(currentTempC - referenceTempC) × sensitivity`.
   final double powderReferenceTempCelsius;
+
+  /// User-toggled "starred" flag. Recipe lists sort favorites first when
+  /// this is true; the recipe form, picker dropdowns, and Range Day
+  /// recipe pickers all consult it via the new `isFavorite` column.
+  /// Defaults to false so existing rows after the migration remain
+  /// un-favorited. The toggle lives on
+  /// `RecipeRepository.toggleFavorite(id)`.
+  final bool isFavorite;
   const UserLoadRow({
     required this.id,
     required this.name,
@@ -9467,6 +9501,7 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
     this.loadedBy,
     this.powderTempSensitivityFpsPerCelsius,
     required this.powderReferenceTempCelsius,
+    required this.isFavorite,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -9638,6 +9673,7 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
     map['powder_reference_temp_celsius'] = Variable<double>(
       powderReferenceTempCelsius,
     );
+    map['is_favorite'] = Variable<bool>(isFavorite);
     return map;
   }
 
@@ -9803,6 +9839,7 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
           ? const Value.absent()
           : Value(powderTempSensitivityFpsPerCelsius),
       powderReferenceTempCelsius: Value(powderReferenceTempCelsius),
+      isFavorite: Value(isFavorite),
     );
   }
 
@@ -9907,6 +9944,7 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
       powderReferenceTempCelsius: serializer.fromJson<double>(
         json['powderReferenceTempCelsius'],
       ),
+      isFavorite: serializer.fromJson<bool>(json['isFavorite']),
     );
   }
   @override
@@ -9986,6 +10024,7 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
       'powderReferenceTempCelsius': serializer.toJson<double>(
         powderReferenceTempCelsius,
       ),
+      'isFavorite': serializer.toJson<bool>(isFavorite),
     };
   }
 
@@ -10051,6 +10090,7 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
     Value<String?> loadedBy = const Value.absent(),
     Value<double?> powderTempSensitivityFpsPerCelsius = const Value.absent(),
     double? powderReferenceTempCelsius,
+    bool? isFavorite,
   }) => UserLoadRow(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -10173,6 +10213,7 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
         : this.powderTempSensitivityFpsPerCelsius,
     powderReferenceTempCelsius:
         powderReferenceTempCelsius ?? this.powderReferenceTempCelsius,
+    isFavorite: isFavorite ?? this.isFavorite,
   );
   UserLoadRow copyWithCompanion(UserLoadsCompanion data) {
     return UserLoadRow(
@@ -10322,6 +10363,9 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
       powderReferenceTempCelsius: data.powderReferenceTempCelsius.present
           ? data.powderReferenceTempCelsius.value
           : this.powderReferenceTempCelsius,
+      isFavorite: data.isFavorite.present
+          ? data.isFavorite.value
+          : this.isFavorite,
     );
   }
 
@@ -10390,7 +10434,8 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
           ..write(
             'powderTempSensitivityFpsPerCelsius: $powderTempSensitivityFpsPerCelsius, ',
           )
-          ..write('powderReferenceTempCelsius: $powderReferenceTempCelsius')
+          ..write('powderReferenceTempCelsius: $powderReferenceTempCelsius, ')
+          ..write('isFavorite: $isFavorite')
           ..write(')'))
         .toString();
   }
@@ -10458,6 +10503,7 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
     loadedBy,
     powderTempSensitivityFpsPerCelsius,
     powderReferenceTempCelsius,
+    isFavorite,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -10524,7 +10570,8 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
           other.loadedBy == this.loadedBy &&
           other.powderTempSensitivityFpsPerCelsius ==
               this.powderTempSensitivityFpsPerCelsius &&
-          other.powderReferenceTempCelsius == this.powderReferenceTempCelsius);
+          other.powderReferenceTempCelsius == this.powderReferenceTempCelsius &&
+          other.isFavorite == this.isFavorite);
 }
 
 class UserLoadsCompanion extends UpdateCompanion<UserLoadRow> {
@@ -10589,6 +10636,7 @@ class UserLoadsCompanion extends UpdateCompanion<UserLoadRow> {
   final Value<String?> loadedBy;
   final Value<double?> powderTempSensitivityFpsPerCelsius;
   final Value<double> powderReferenceTempCelsius;
+  final Value<bool> isFavorite;
   const UserLoadsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -10651,6 +10699,7 @@ class UserLoadsCompanion extends UpdateCompanion<UserLoadRow> {
     this.loadedBy = const Value.absent(),
     this.powderTempSensitivityFpsPerCelsius = const Value.absent(),
     this.powderReferenceTempCelsius = const Value.absent(),
+    this.isFavorite = const Value.absent(),
   });
   UserLoadsCompanion.insert({
     this.id = const Value.absent(),
@@ -10714,6 +10763,7 @@ class UserLoadsCompanion extends UpdateCompanion<UserLoadRow> {
     this.loadedBy = const Value.absent(),
     this.powderTempSensitivityFpsPerCelsius = const Value.absent(),
     this.powderReferenceTempCelsius = const Value.absent(),
+    this.isFavorite = const Value.absent(),
   }) : name = Value(name);
   static Insertable<UserLoadRow> custom({
     Expression<int>? id,
@@ -10777,6 +10827,7 @@ class UserLoadsCompanion extends UpdateCompanion<UserLoadRow> {
     Expression<String>? loadedBy,
     Expression<double>? powderTempSensitivityFpsPerCelsius,
     Expression<double>? powderReferenceTempCelsius,
+    Expression<bool>? isFavorite,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -10855,6 +10906,7 @@ class UserLoadsCompanion extends UpdateCompanion<UserLoadRow> {
             powderTempSensitivityFpsPerCelsius,
       if (powderReferenceTempCelsius != null)
         'powder_reference_temp_celsius': powderReferenceTempCelsius,
+      if (isFavorite != null) 'is_favorite': isFavorite,
     });
   }
 
@@ -10920,6 +10972,7 @@ class UserLoadsCompanion extends UpdateCompanion<UserLoadRow> {
     Value<String?>? loadedBy,
     Value<double?>? powderTempSensitivityFpsPerCelsius,
     Value<double>? powderReferenceTempCelsius,
+    Value<bool>? isFavorite,
   }) {
     return UserLoadsCompanion(
       id: id ?? this.id,
@@ -10989,6 +11042,7 @@ class UserLoadsCompanion extends UpdateCompanion<UserLoadRow> {
           this.powderTempSensitivityFpsPerCelsius,
       powderReferenceTempCelsius:
           powderReferenceTempCelsius ?? this.powderReferenceTempCelsius,
+      isFavorite: isFavorite ?? this.isFavorite,
     );
   }
 
@@ -11200,6 +11254,9 @@ class UserLoadsCompanion extends UpdateCompanion<UserLoadRow> {
         powderReferenceTempCelsius.value,
       );
     }
+    if (isFavorite.present) {
+      map['is_favorite'] = Variable<bool>(isFavorite.value);
+    }
     return map;
   }
 
@@ -11268,7 +11325,8 @@ class UserLoadsCompanion extends UpdateCompanion<UserLoadRow> {
           ..write(
             'powderTempSensitivityFpsPerCelsius: $powderTempSensitivityFpsPerCelsius, ',
           )
-          ..write('powderReferenceTempCelsius: $powderReferenceTempCelsius')
+          ..write('powderReferenceTempCelsius: $powderReferenceTempCelsius, ')
+          ..write('isFavorite: $isFavorite')
           ..write(')'))
         .toString();
   }
@@ -11617,6 +11675,21 @@ class $UserFirearmsTable extends UserFirearms
     type: DriftSqlType.double,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _isFavoriteMeta = const VerificationMeta(
+    'isFavorite',
+  );
+  @override
+  late final GeneratedColumn<bool> isFavorite = GeneratedColumn<bool>(
+    'is_favorite',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_favorite" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -11650,6 +11723,7 @@ class $UserFirearmsTable extends UserFirearms
     zeroPressureInHg,
     zeroTemperatureF,
     zeroHumidityPct,
+    isFavorite,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -11902,6 +11976,12 @@ class $UserFirearmsTable extends UserFirearms
         ),
       );
     }
+    if (data.containsKey('is_favorite')) {
+      context.handle(
+        _isFavoriteMeta,
+        isFavorite.isAcceptableOrUnknown(data['is_favorite']!, _isFavoriteMeta),
+      );
+    }
     return context;
   }
 
@@ -12035,6 +12115,10 @@ class $UserFirearmsTable extends UserFirearms
         DriftSqlType.double,
         data['${effectivePrefix}zero_humidity_pct'],
       ),
+      isFavorite: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_favorite'],
+      )!,
     );
   }
 
@@ -12128,6 +12212,12 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
   /// Relative humidity (%) at the time the rifle was zeroed. See
   /// [zeroPressureInHg] for behaviour.
   final double? zeroHumidityPct;
+
+  /// User-toggled "starred" flag. Firearm lists / pickers sort favorites
+  /// first when this is true. Defaults to false so existing rows after
+  /// the migration remain un-favorited. The toggle lives on
+  /// `FirearmRepository.toggleFavorite(id)`.
+  final bool isFavorite;
   const UserFirearmRow({
     required this.id,
     required this.name,
@@ -12160,6 +12250,7 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
     this.zeroPressureInHg,
     this.zeroTemperatureF,
     this.zeroHumidityPct,
+    required this.isFavorite,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -12247,6 +12338,7 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
     if (!nullToAbsent || zeroHumidityPct != null) {
       map['zero_humidity_pct'] = Variable<double>(zeroHumidityPct);
     }
+    map['is_favorite'] = Variable<bool>(isFavorite);
     return map;
   }
 
@@ -12329,6 +12421,7 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
       zeroHumidityPct: zeroHumidityPct == null && nullToAbsent
           ? const Value.absent()
           : Value(zeroHumidityPct),
+      isFavorite: Value(isFavorite),
     );
   }
 
@@ -12385,6 +12478,7 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
       zeroPressureInHg: serializer.fromJson<double?>(json['zeroPressureInHg']),
       zeroTemperatureF: serializer.fromJson<double?>(json['zeroTemperatureF']),
       zeroHumidityPct: serializer.fromJson<double?>(json['zeroHumidityPct']),
+      isFavorite: serializer.fromJson<bool>(json['isFavorite']),
     );
   }
   @override
@@ -12428,6 +12522,7 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
       'zeroPressureInHg': serializer.toJson<double?>(zeroPressureInHg),
       'zeroTemperatureF': serializer.toJson<double?>(zeroTemperatureF),
       'zeroHumidityPct': serializer.toJson<double?>(zeroHumidityPct),
+      'isFavorite': serializer.toJson<bool>(isFavorite),
     };
   }
 
@@ -12463,6 +12558,7 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
     Value<double?> zeroPressureInHg = const Value.absent(),
     Value<double?> zeroTemperatureF = const Value.absent(),
     Value<double?> zeroHumidityPct = const Value.absent(),
+    bool? isFavorite,
   }) => UserFirearmRow(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -12521,6 +12617,7 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
     zeroHumidityPct: zeroHumidityPct.present
         ? zeroHumidityPct.value
         : this.zeroHumidityPct,
+    isFavorite: isFavorite ?? this.isFavorite,
   );
   UserFirearmRow copyWithCompanion(UserFirearmsCompanion data) {
     return UserFirearmRow(
@@ -12593,6 +12690,9 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
       zeroHumidityPct: data.zeroHumidityPct.present
           ? data.zeroHumidityPct.value
           : this.zeroHumidityPct,
+      isFavorite: data.isFavorite.present
+          ? data.isFavorite.value
+          : this.isFavorite,
     );
   }
 
@@ -12631,7 +12731,8 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
           ..write('sightScaleHorizontal: $sightScaleHorizontal, ')
           ..write('zeroPressureInHg: $zeroPressureInHg, ')
           ..write('zeroTemperatureF: $zeroTemperatureF, ')
-          ..write('zeroHumidityPct: $zeroHumidityPct')
+          ..write('zeroHumidityPct: $zeroHumidityPct, ')
+          ..write('isFavorite: $isFavorite')
           ..write(')'))
         .toString();
   }
@@ -12669,6 +12770,7 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
     zeroPressureInHg,
     zeroTemperatureF,
     zeroHumidityPct,
+    isFavorite,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -12705,7 +12807,8 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
           other.sightScaleHorizontal == this.sightScaleHorizontal &&
           other.zeroPressureInHg == this.zeroPressureInHg &&
           other.zeroTemperatureF == this.zeroTemperatureF &&
-          other.zeroHumidityPct == this.zeroHumidityPct);
+          other.zeroHumidityPct == this.zeroHumidityPct &&
+          other.isFavorite == this.isFavorite);
 }
 
 class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
@@ -12740,6 +12843,7 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
   final Value<double?> zeroPressureInHg;
   final Value<double?> zeroTemperatureF;
   final Value<double?> zeroHumidityPct;
+  final Value<bool> isFavorite;
   const UserFirearmsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -12772,6 +12876,7 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
     this.zeroPressureInHg = const Value.absent(),
     this.zeroTemperatureF = const Value.absent(),
     this.zeroHumidityPct = const Value.absent(),
+    this.isFavorite = const Value.absent(),
   });
   UserFirearmsCompanion.insert({
     this.id = const Value.absent(),
@@ -12805,6 +12910,7 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
     this.zeroPressureInHg = const Value.absent(),
     this.zeroTemperatureF = const Value.absent(),
     this.zeroHumidityPct = const Value.absent(),
+    this.isFavorite = const Value.absent(),
   }) : name = Value(name);
   static Insertable<UserFirearmRow> custom({
     Expression<int>? id,
@@ -12838,6 +12944,7 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
     Expression<double>? zeroPressureInHg,
     Expression<double>? zeroTemperatureF,
     Expression<double>? zeroHumidityPct,
+    Expression<bool>? isFavorite,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -12880,6 +12987,7 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
       if (zeroPressureInHg != null) 'zero_pressure_in_hg': zeroPressureInHg,
       if (zeroTemperatureF != null) 'zero_temperature_f': zeroTemperatureF,
       if (zeroHumidityPct != null) 'zero_humidity_pct': zeroHumidityPct,
+      if (isFavorite != null) 'is_favorite': isFavorite,
     });
   }
 
@@ -12915,6 +13023,7 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
     Value<double?>? zeroPressureInHg,
     Value<double?>? zeroTemperatureF,
     Value<double?>? zeroHumidityPct,
+    Value<bool>? isFavorite,
   }) {
     return UserFirearmsCompanion(
       id: id ?? this.id,
@@ -12951,6 +13060,7 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
       zeroPressureInHg: zeroPressureInHg ?? this.zeroPressureInHg,
       zeroTemperatureF: zeroTemperatureF ?? this.zeroTemperatureF,
       zeroHumidityPct: zeroHumidityPct ?? this.zeroHumidityPct,
+      isFavorite: isFavorite ?? this.isFavorite,
     );
   }
 
@@ -13060,6 +13170,9 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
     if (zeroHumidityPct.present) {
       map['zero_humidity_pct'] = Variable<double>(zeroHumidityPct.value);
     }
+    if (isFavorite.present) {
+      map['is_favorite'] = Variable<bool>(isFavorite.value);
+    }
     return map;
   }
 
@@ -13098,7 +13211,8 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
           ..write('sightScaleHorizontal: $sightScaleHorizontal, ')
           ..write('zeroPressureInHg: $zeroPressureInHg, ')
           ..write('zeroTemperatureF: $zeroTemperatureF, ')
-          ..write('zeroHumidityPct: $zeroHumidityPct')
+          ..write('zeroHumidityPct: $zeroHumidityPct, ')
+          ..write('isFavorite: $isFavorite')
           ..write(')'))
         .toString();
   }
@@ -19263,6 +19377,21 @@ class $BallisticProfilesTable extends BallisticProfiles
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _isFavoriteMeta = const VerificationMeta(
+    'isFavorite',
+  );
+  @override
+  late final GeneratedColumn<bool> isFavorite = GeneratedColumn<bool>(
+    'is_favorite',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_favorite" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -19292,6 +19421,7 @@ class $BallisticProfilesTable extends BallisticProfiles
     notes,
     createdAt,
     updatedAt,
+    isFavorite,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -19540,6 +19670,12 @@ class $BallisticProfilesTable extends BallisticProfiles
         updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
       );
     }
+    if (data.containsKey('is_favorite')) {
+      context.handle(
+        _isFavoriteMeta,
+        isFavorite.isAcceptableOrUnknown(data['is_favorite']!, _isFavoriteMeta),
+      );
+    }
     return context;
   }
 
@@ -19657,6 +19793,10 @@ class $BallisticProfilesTable extends BallisticProfiles
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
       )!,
+      isFavorite: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_favorite'],
+      )!,
     );
   }
 
@@ -19697,6 +19837,12 @@ class BallisticProfileRow extends DataClass
   final String? notes;
   final DateTime createdAt;
   final DateTime updatedAt;
+
+  /// User-toggled "starred" flag. Picker / list UIs sort favorites first
+  /// when this is true. Defaults to false so existing rows after the
+  /// migration remain un-favorited. The toggle lives on
+  /// `BallisticProfileRepository.toggleFavorite(id)`.
+  final bool isFavorite;
   const BallisticProfileRow({
     required this.id,
     required this.name,
@@ -19725,6 +19871,7 @@ class BallisticProfileRow extends DataClass
     this.notes,
     required this.createdAt,
     required this.updatedAt,
+    required this.isFavorite,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -19782,6 +19929,7 @@ class BallisticProfileRow extends DataClass
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['is_favorite'] = Variable<bool>(isFavorite);
     return map;
   }
 
@@ -19840,6 +19988,7 @@ class BallisticProfileRow extends DataClass
           : Value(notes),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
+      isFavorite: Value(isFavorite),
     );
   }
 
@@ -19878,6 +20027,7 @@ class BallisticProfileRow extends DataClass
       notes: serializer.fromJson<String?>(json['notes']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      isFavorite: serializer.fromJson<bool>(json['isFavorite']),
     );
   }
   @override
@@ -19911,6 +20061,7 @@ class BallisticProfileRow extends DataClass
       'notes': serializer.toJson<String?>(notes),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'isFavorite': serializer.toJson<bool>(isFavorite),
     };
   }
 
@@ -19942,6 +20093,7 @@ class BallisticProfileRow extends DataClass
     Value<String?> notes = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
+    bool? isFavorite,
   }) => BallisticProfileRow(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -19976,6 +20128,7 @@ class BallisticProfileRow extends DataClass
     notes: notes.present ? notes.value : this.notes,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
+    isFavorite: isFavorite ?? this.isFavorite,
   );
   BallisticProfileRow copyWithCompanion(BallisticProfilesCompanion data) {
     return BallisticProfileRow(
@@ -20042,6 +20195,9 @@ class BallisticProfileRow extends DataClass
       notes: data.notes.present ? data.notes.value : this.notes,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      isFavorite: data.isFavorite.present
+          ? data.isFavorite.value
+          : this.isFavorite,
     );
   }
 
@@ -20074,7 +20230,8 @@ class BallisticProfileRow extends DataClass
           ..write('rangeMaxYd: $rangeMaxYd, ')
           ..write('notes: $notes, ')
           ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('isFavorite: $isFavorite')
           ..write(')'))
         .toString();
   }
@@ -20108,6 +20265,7 @@ class BallisticProfileRow extends DataClass
     notes,
     createdAt,
     updatedAt,
+    isFavorite,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -20139,7 +20297,8 @@ class BallisticProfileRow extends DataClass
           other.rangeMaxYd == this.rangeMaxYd &&
           other.notes == this.notes &&
           other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt);
+          other.updatedAt == this.updatedAt &&
+          other.isFavorite == this.isFavorite);
 }
 
 class BallisticProfilesCompanion extends UpdateCompanion<BallisticProfileRow> {
@@ -20170,6 +20329,7 @@ class BallisticProfilesCompanion extends UpdateCompanion<BallisticProfileRow> {
   final Value<String?> notes;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
+  final Value<bool> isFavorite;
   const BallisticProfilesCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -20198,6 +20358,7 @@ class BallisticProfilesCompanion extends UpdateCompanion<BallisticProfileRow> {
     this.notes = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.isFavorite = const Value.absent(),
   });
   BallisticProfilesCompanion.insert({
     this.id = const Value.absent(),
@@ -20227,6 +20388,7 @@ class BallisticProfilesCompanion extends UpdateCompanion<BallisticProfileRow> {
     this.notes = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.isFavorite = const Value.absent(),
   }) : name = Value(name),
        bulletWeightGr = Value(bulletWeightGr),
        bulletDiameterIn = Value(bulletDiameterIn),
@@ -20266,6 +20428,7 @@ class BallisticProfilesCompanion extends UpdateCompanion<BallisticProfileRow> {
     Expression<String>? notes,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
+    Expression<bool>? isFavorite,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -20296,6 +20459,7 @@ class BallisticProfilesCompanion extends UpdateCompanion<BallisticProfileRow> {
       if (notes != null) 'notes': notes,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (isFavorite != null) 'is_favorite': isFavorite,
     });
   }
 
@@ -20327,6 +20491,7 @@ class BallisticProfilesCompanion extends UpdateCompanion<BallisticProfileRow> {
     Value<String?>? notes,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
+    Value<bool>? isFavorite,
   }) {
     return BallisticProfilesCompanion(
       id: id ?? this.id,
@@ -20356,6 +20521,7 @@ class BallisticProfilesCompanion extends UpdateCompanion<BallisticProfileRow> {
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      isFavorite: isFavorite ?? this.isFavorite,
     );
   }
 
@@ -20445,6 +20611,9 @@ class BallisticProfilesCompanion extends UpdateCompanion<BallisticProfileRow> {
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
+    if (isFavorite.present) {
+      map['is_favorite'] = Variable<bool>(isFavorite.value);
+    }
     return map;
   }
 
@@ -20477,7 +20646,8 @@ class BallisticProfilesCompanion extends UpdateCompanion<BallisticProfileRow> {
           ..write('rangeMaxYd: $rangeMaxYd, ')
           ..write('notes: $notes, ')
           ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('isFavorite: $isFavorite')
           ..write(')'))
         .toString();
   }
@@ -33121,6 +33291,318 @@ class ManufacturedAmmoCompanion extends UpdateCompanion<ManufacturedAmmoRow> {
   }
 }
 
+class $UserFavoritesTable extends UserFavorites
+    with TableInfo<$UserFavoritesTable, UserFavoriteRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $UserFavoritesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _entityTypeMeta = const VerificationMeta(
+    'entityType',
+  );
+  @override
+  late final GeneratedColumn<String> entityType = GeneratedColumn<String>(
+    'entity_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _entityIdMeta = const VerificationMeta(
+    'entityId',
+  );
+  @override
+  late final GeneratedColumn<int> entityId = GeneratedColumn<int>(
+    'entity_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, entityType, entityId, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'user_favorites';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<UserFavoriteRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('entity_type')) {
+      context.handle(
+        _entityTypeMeta,
+        entityType.isAcceptableOrUnknown(data['entity_type']!, _entityTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_entityTypeMeta);
+    }
+    if (data.containsKey('entity_id')) {
+      context.handle(
+        _entityIdMeta,
+        entityId.isAcceptableOrUnknown(data['entity_id']!, _entityIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_entityIdMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {entityType, entityId},
+  ];
+  @override
+  UserFavoriteRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return UserFavoriteRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      entityType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entity_type'],
+      )!,
+      entityId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}entity_id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $UserFavoritesTable createAlias(String alias) {
+    return $UserFavoritesTable(attachedDatabase, alias);
+  }
+}
+
+class UserFavoriteRow extends DataClass implements Insertable<UserFavoriteRow> {
+  final int id;
+
+  /// Discriminator: 'cartridge', 'reticle', 'target'. Not enforced at
+  /// the SQLite level — callers use the constants exposed on
+  /// `FavoritesRepository` (`kFavoriteCartridge`, `kFavoriteReticle`,
+  /// `kFavoriteTarget`) to keep typos out of production data.
+  final String entityType;
+
+  /// Reference-table row id this favorite points at. e.g. a row in the
+  /// `Cartridges` / `Reticles` / `Targets` table.
+  final int entityId;
+  final DateTime createdAt;
+  const UserFavoriteRow({
+    required this.id,
+    required this.entityType,
+    required this.entityId,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['entity_type'] = Variable<String>(entityType);
+    map['entity_id'] = Variable<int>(entityId);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  UserFavoritesCompanion toCompanion(bool nullToAbsent) {
+    return UserFavoritesCompanion(
+      id: Value(id),
+      entityType: Value(entityType),
+      entityId: Value(entityId),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory UserFavoriteRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return UserFavoriteRow(
+      id: serializer.fromJson<int>(json['id']),
+      entityType: serializer.fromJson<String>(json['entityType']),
+      entityId: serializer.fromJson<int>(json['entityId']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'entityType': serializer.toJson<String>(entityType),
+      'entityId': serializer.toJson<int>(entityId),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  UserFavoriteRow copyWith({
+    int? id,
+    String? entityType,
+    int? entityId,
+    DateTime? createdAt,
+  }) => UserFavoriteRow(
+    id: id ?? this.id,
+    entityType: entityType ?? this.entityType,
+    entityId: entityId ?? this.entityId,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  UserFavoriteRow copyWithCompanion(UserFavoritesCompanion data) {
+    return UserFavoriteRow(
+      id: data.id.present ? data.id.value : this.id,
+      entityType: data.entityType.present
+          ? data.entityType.value
+          : this.entityType,
+      entityId: data.entityId.present ? data.entityId.value : this.entityId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserFavoriteRow(')
+          ..write('id: $id, ')
+          ..write('entityType: $entityType, ')
+          ..write('entityId: $entityId, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, entityType, entityId, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is UserFavoriteRow &&
+          other.id == this.id &&
+          other.entityType == this.entityType &&
+          other.entityId == this.entityId &&
+          other.createdAt == this.createdAt);
+}
+
+class UserFavoritesCompanion extends UpdateCompanion<UserFavoriteRow> {
+  final Value<int> id;
+  final Value<String> entityType;
+  final Value<int> entityId;
+  final Value<DateTime> createdAt;
+  const UserFavoritesCompanion({
+    this.id = const Value.absent(),
+    this.entityType = const Value.absent(),
+    this.entityId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  UserFavoritesCompanion.insert({
+    this.id = const Value.absent(),
+    required String entityType,
+    required int entityId,
+    this.createdAt = const Value.absent(),
+  }) : entityType = Value(entityType),
+       entityId = Value(entityId);
+  static Insertable<UserFavoriteRow> custom({
+    Expression<int>? id,
+    Expression<String>? entityType,
+    Expression<int>? entityId,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (entityType != null) 'entity_type': entityType,
+      if (entityId != null) 'entity_id': entityId,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  UserFavoritesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? entityType,
+    Value<int>? entityId,
+    Value<DateTime>? createdAt,
+  }) {
+    return UserFavoritesCompanion(
+      id: id ?? this.id,
+      entityType: entityType ?? this.entityType,
+      entityId: entityId ?? this.entityId,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (entityType.present) {
+      map['entity_type'] = Variable<String>(entityType.value);
+    }
+    if (entityId.present) {
+      map['entity_id'] = Variable<int>(entityId.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserFavoritesCompanion(')
+          ..write('id: $id, ')
+          ..write('entityType: $entityType, ')
+          ..write('entityId: $entityId, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -33183,6 +33665,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ManufacturedAmmoTable manufacturedAmmo = $ManufacturedAmmoTable(
     this,
   );
+  late final $UserFavoritesTable userFavorites = $UserFavoritesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -33227,6 +33710,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     scopeModels,
     scopeReticleOptions,
     manufacturedAmmo,
+    userFavorites,
   ];
 }
 
@@ -39185,6 +39669,7 @@ typedef $$UserLoadsTableCreateCompanionBuilder =
       Value<String?> loadedBy,
       Value<double?> powderTempSensitivityFpsPerCelsius,
       Value<double> powderReferenceTempCelsius,
+      Value<bool> isFavorite,
     });
 typedef $$UserLoadsTableUpdateCompanionBuilder =
     UserLoadsCompanion Function({
@@ -39249,6 +39734,7 @@ typedef $$UserLoadsTableUpdateCompanionBuilder =
       Value<String?> loadedBy,
       Value<double?> powderTempSensitivityFpsPerCelsius,
       Value<double> powderReferenceTempCelsius,
+      Value<bool> isFavorite,
     });
 
 final class $$UserLoadsTableReferences
@@ -39730,6 +40216,11 @@ class $$UserLoadsTableFilterComposer
 
   ColumnFilters<double> get powderReferenceTempCelsius => $composableBuilder(
     column: $table.powderReferenceTempCelsius,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isFavorite => $composableBuilder(
+    column: $table.isFavorite,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -40247,6 +40738,11 @@ class $$UserLoadsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isFavorite => $composableBuilder(
+    column: $table.isFavorite,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$PowderLotsTableOrderingComposer get powderLotId {
     final $$PowderLotsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -40597,6 +41093,11 @@ class $$UserLoadsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get isFavorite => $composableBuilder(
+    column: $table.isFavorite,
+    builder: (column) => column,
+  );
+
   $$PowderLotsTableAnnotationComposer get powderLotId {
     final $$PowderLotsTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -40917,6 +41418,7 @@ class $$UserLoadsTableTableManager
                 Value<double?> powderTempSensitivityFpsPerCelsius =
                     const Value.absent(),
                 Value<double> powderReferenceTempCelsius = const Value.absent(),
+                Value<bool> isFavorite = const Value.absent(),
               }) => UserLoadsCompanion(
                 id: id,
                 name: name,
@@ -40980,6 +41482,7 @@ class $$UserLoadsTableTableManager
                 powderTempSensitivityFpsPerCelsius:
                     powderTempSensitivityFpsPerCelsius,
                 powderReferenceTempCelsius: powderReferenceTempCelsius,
+                isFavorite: isFavorite,
               ),
           createCompanionCallback:
               ({
@@ -41045,6 +41548,7 @@ class $$UserLoadsTableTableManager
                 Value<double?> powderTempSensitivityFpsPerCelsius =
                     const Value.absent(),
                 Value<double> powderReferenceTempCelsius = const Value.absent(),
+                Value<bool> isFavorite = const Value.absent(),
               }) => UserLoadsCompanion.insert(
                 id: id,
                 name: name,
@@ -41108,6 +41612,7 @@ class $$UserLoadsTableTableManager
                 powderTempSensitivityFpsPerCelsius:
                     powderTempSensitivityFpsPerCelsius,
                 powderReferenceTempCelsius: powderReferenceTempCelsius,
+                isFavorite: isFavorite,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -41381,6 +41886,7 @@ typedef $$UserFirearmsTableCreateCompanionBuilder =
       Value<double?> zeroPressureInHg,
       Value<double?> zeroTemperatureF,
       Value<double?> zeroHumidityPct,
+      Value<bool> isFavorite,
     });
 typedef $$UserFirearmsTableUpdateCompanionBuilder =
     UserFirearmsCompanion Function({
@@ -41415,6 +41921,7 @@ typedef $$UserFirearmsTableUpdateCompanionBuilder =
       Value<double?> zeroPressureInHg,
       Value<double?> zeroTemperatureF,
       Value<double?> zeroHumidityPct,
+      Value<bool> isFavorite,
     });
 
 final class $$UserFirearmsTableReferences
@@ -41719,6 +42226,11 @@ class $$UserFirearmsTableFilterComposer
 
   ColumnFilters<double> get zeroHumidityPct => $composableBuilder(
     column: $table.zeroHumidityPct,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isFavorite => $composableBuilder(
+    column: $table.isFavorite,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -42037,6 +42549,11 @@ class $$UserFirearmsTableOrderingComposer
     column: $table.zeroHumidityPct,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get isFavorite => $composableBuilder(
+    column: $table.isFavorite,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$UserFirearmsTableAnnotationComposer
@@ -42176,6 +42693,11 @@ class $$UserFirearmsTableAnnotationComposer
 
   GeneratedColumn<double> get zeroHumidityPct => $composableBuilder(
     column: $table.zeroHumidityPct,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isFavorite => $composableBuilder(
+    column: $table.isFavorite,
     builder: (column) => column,
   );
 
@@ -42400,6 +42922,7 @@ class $$UserFirearmsTableTableManager
                 Value<double?> zeroPressureInHg = const Value.absent(),
                 Value<double?> zeroTemperatureF = const Value.absent(),
                 Value<double?> zeroHumidityPct = const Value.absent(),
+                Value<bool> isFavorite = const Value.absent(),
               }) => UserFirearmsCompanion(
                 id: id,
                 name: name,
@@ -42432,6 +42955,7 @@ class $$UserFirearmsTableTableManager
                 zeroPressureInHg: zeroPressureInHg,
                 zeroTemperatureF: zeroTemperatureF,
                 zeroHumidityPct: zeroHumidityPct,
+                isFavorite: isFavorite,
               ),
           createCompanionCallback:
               ({
@@ -42467,6 +42991,7 @@ class $$UserFirearmsTableTableManager
                 Value<double?> zeroPressureInHg = const Value.absent(),
                 Value<double?> zeroTemperatureF = const Value.absent(),
                 Value<double?> zeroHumidityPct = const Value.absent(),
+                Value<bool> isFavorite = const Value.absent(),
               }) => UserFirearmsCompanion.insert(
                 id: id,
                 name: name,
@@ -42499,6 +43024,7 @@ class $$UserFirearmsTableTableManager
                 zeroPressureInHg: zeroPressureInHg,
                 zeroTemperatureF: zeroTemperatureF,
                 zeroHumidityPct: zeroHumidityPct,
+                isFavorite: isFavorite,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -46773,6 +47299,7 @@ typedef $$BallisticProfilesTableCreateCompanionBuilder =
       Value<String?> notes,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
+      Value<bool> isFavorite,
     });
 typedef $$BallisticProfilesTableUpdateCompanionBuilder =
     BallisticProfilesCompanion Function({
@@ -46803,6 +47330,7 @@ typedef $$BallisticProfilesTableUpdateCompanionBuilder =
       Value<String?> notes,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
+      Value<bool> isFavorite,
     });
 
 class $$BallisticProfilesTableFilterComposer
@@ -46946,6 +47474,11 @@ class $$BallisticProfilesTableFilterComposer
 
   ColumnFilters<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isFavorite => $composableBuilder(
+    column: $table.isFavorite,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -47093,6 +47626,11 @@ class $$BallisticProfilesTableOrderingComposer
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get isFavorite => $composableBuilder(
+    column: $table.isFavorite,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$BallisticProfilesTableAnnotationComposer
@@ -47220,6 +47758,11 @@ class $$BallisticProfilesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get isFavorite => $composableBuilder(
+    column: $table.isFavorite,
+    builder: (column) => column,
+  );
 }
 
 class $$BallisticProfilesTableTableManager
@@ -47289,6 +47832,7 @@ class $$BallisticProfilesTableTableManager
                 Value<String?> notes = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
+                Value<bool> isFavorite = const Value.absent(),
               }) => BallisticProfilesCompanion(
                 id: id,
                 name: name,
@@ -47317,6 +47861,7 @@ class $$BallisticProfilesTableTableManager
                 notes: notes,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                isFavorite: isFavorite,
               ),
           createCompanionCallback:
               ({
@@ -47347,6 +47892,7 @@ class $$BallisticProfilesTableTableManager
                 Value<String?> notes = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
+                Value<bool> isFavorite = const Value.absent(),
               }) => BallisticProfilesCompanion.insert(
                 id: id,
                 name: name,
@@ -47375,6 +47921,7 @@ class $$BallisticProfilesTableTableManager
                 notes: notes,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                isFavorite: isFavorite,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -55151,6 +55698,183 @@ typedef $$ManufacturedAmmoTableProcessedTableManager =
       ManufacturedAmmoRow,
       PrefetchHooks Function()
     >;
+typedef $$UserFavoritesTableCreateCompanionBuilder =
+    UserFavoritesCompanion Function({
+      Value<int> id,
+      required String entityType,
+      required int entityId,
+      Value<DateTime> createdAt,
+    });
+typedef $$UserFavoritesTableUpdateCompanionBuilder =
+    UserFavoritesCompanion Function({
+      Value<int> id,
+      Value<String> entityType,
+      Value<int> entityId,
+      Value<DateTime> createdAt,
+    });
+
+class $$UserFavoritesTableFilterComposer
+    extends Composer<_$AppDatabase, $UserFavoritesTable> {
+  $$UserFavoritesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get entityType => $composableBuilder(
+    column: $table.entityType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get entityId => $composableBuilder(
+    column: $table.entityId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$UserFavoritesTableOrderingComposer
+    extends Composer<_$AppDatabase, $UserFavoritesTable> {
+  $$UserFavoritesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get entityType => $composableBuilder(
+    column: $table.entityType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get entityId => $composableBuilder(
+    column: $table.entityId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$UserFavoritesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $UserFavoritesTable> {
+  $$UserFavoritesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get entityType => $composableBuilder(
+    column: $table.entityType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get entityId =>
+      $composableBuilder(column: $table.entityId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$UserFavoritesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $UserFavoritesTable,
+          UserFavoriteRow,
+          $$UserFavoritesTableFilterComposer,
+          $$UserFavoritesTableOrderingComposer,
+          $$UserFavoritesTableAnnotationComposer,
+          $$UserFavoritesTableCreateCompanionBuilder,
+          $$UserFavoritesTableUpdateCompanionBuilder,
+          (
+            UserFavoriteRow,
+            BaseReferences<_$AppDatabase, $UserFavoritesTable, UserFavoriteRow>,
+          ),
+          UserFavoriteRow,
+          PrefetchHooks Function()
+        > {
+  $$UserFavoritesTableTableManager(_$AppDatabase db, $UserFavoritesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$UserFavoritesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$UserFavoritesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$UserFavoritesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> entityType = const Value.absent(),
+                Value<int> entityId = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => UserFavoritesCompanion(
+                id: id,
+                entityType: entityType,
+                entityId: entityId,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String entityType,
+                required int entityId,
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => UserFavoritesCompanion.insert(
+                id: id,
+                entityType: entityType,
+                entityId: entityId,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$UserFavoritesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $UserFavoritesTable,
+      UserFavoriteRow,
+      $$UserFavoritesTableFilterComposer,
+      $$UserFavoritesTableOrderingComposer,
+      $$UserFavoritesTableAnnotationComposer,
+      $$UserFavoritesTableCreateCompanionBuilder,
+      $$UserFavoritesTableUpdateCompanionBuilder,
+      (
+        UserFavoriteRow,
+        BaseReferences<_$AppDatabase, $UserFavoritesTable, UserFavoriteRow>,
+      ),
+      UserFavoriteRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -55236,4 +55960,6 @@ class $AppDatabaseManager {
       $$ScopeReticleOptionsTableTableManager(_db, _db.scopeReticleOptions);
   $$ManufacturedAmmoTableTableManager get manufacturedAmmo =>
       $$ManufacturedAmmoTableTableManager(_db, _db.manufacturedAmmo);
+  $$UserFavoritesTableTableManager get userFavorites =>
+      $$UserFavoritesTableTableManager(_db, _db.userFavorites);
 }

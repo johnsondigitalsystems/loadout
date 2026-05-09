@@ -11,12 +11,17 @@
 // being thrown away on every navigation.
 //
 // The five tabs are (in order): `RecipesListScreen`, `FirearmsListScreen`,
-// `BatchesListScreen`, `BallisticsScreen`, `SaamiScreen`. The `AppBar`
-// updates its title from `_titles[_index]` and exposes a single trailing
-// action — a Pro icon (`Icons.workspace_premium`) that opens
-// `PaywallScreen` as a fullscreen dialog. The icon style switches based on
-// `EntitlementNotifier.isPro` so existing Pro subscribers see a filled
+// `BatchesListScreen`, `BallisticsScreen`, `RangeDayDetailScreen`. The
+// AppBar updates its title from `_titles[_index]` and exposes a single
+// trailing action — a Pro icon (`Icons.workspace_premium`) that opens
+// `PaywallScreen` as a fullscreen dialog. The icon style switches based
+// on `EntitlementNotifier.isPro` so existing Pro subscribers see a filled
 // medallion.
+//
+// SAAMI Specs used to be a sixth bottom-nav tab. It moved to Settings
+// (Settings → SAAMI Specs) to declutter the bottom navigation —
+// reference data isn't a daily-use destination. The `SaamiScreen` widget
+// itself is unchanged; only its entry point moved.
 //
 // `_MainDrawer` is the left side drawer reachable from the AppBar's leading
 // hamburger. It hosts every secondary destination that didn't earn a slot in
@@ -41,7 +46,7 @@
 // and is the mechanism behind topic CTAs in `HowItWorksScreen` — those
 // screens push themselves onto the navigator, then on completion pop and
 // call `HomeScreen.switchTab(context, 4)` to deep-link the user into, say,
-// the SAAMI tab.
+// the Range Day tab.
 //
 // ============================================================================
 // WHY THIS IS HARDER THAN IT LOOKS
@@ -125,7 +130,6 @@ import '../how_it_works/how_it_works_screen.dart';
 import '../paywall/paywall_screen.dart';
 import '../privacy/privacy_screen.dart';
 import '../recipes/recipes_list_screen.dart';
-import '../saami/saami_screen.dart';
 import '../settings/settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -174,7 +178,6 @@ class HomeScreenState extends State<HomeScreen> {
     'Batches',
     'Ballistics',
     'Range Day',
-    'SAAMI Specs',
   ];
 
   /// Builds the per-tab pages that back the [IndexedStack]. The Range
@@ -199,7 +202,6 @@ class HomeScreenState extends State<HomeScreen> {
       RangeDayDetailScreen(
         key: ValueKey<int>(_rangeDayEpoch),
       ),
-      const SaamiScreen(),
     ];
   }
 
@@ -229,17 +231,16 @@ class HomeScreenState extends State<HomeScreen> {
       icon: Icons.gps_fixed,
       selectedIcon: Icons.gps_fixed,
     ),
-    _NavItemData(
-      label: 'SAAMI',
-      icon: Icons.straighten_outlined,
-      selectedIcon: Icons.straighten,
-    ),
+    // SAAMI Specs moved to Settings → "SAAMI Specs" to declutter the
+    // bottom-nav. Reference data isn't a daily-use destination — most
+    // shooters open it once or twice when picking a cartridge.
   ];
 
   /// Public so [HowItWorksScreen] CTAs can jump to a tab via
   /// [HomeScreen.switchTab]. Bounds-checked and a no-op if [index]
   /// is out of range. Valid indexes: 0=Recipes, 1=Firearms,
-  /// 2=Batches, 3=Ballistics, 4=Range Day, 5=SAAMI.
+  /// 2=Batches, 3=Ballistics, 4=Range Day. (SAAMI Specs moved to
+  /// Settings.)
   ///
   /// Routes through [_onTabSelected] so a deep-link into Range Day
   /// from a topic CTA also bumps the epoch counter and shows a fresh

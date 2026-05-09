@@ -211,6 +211,7 @@ class _NewLoadDevelopmentScreenState extends State<NewLoadDevelopmentScreen> {
                 ejectorMarks: false,
                 crateredPrimers: false,
                 powderReferenceTempCelsius: 15.6,
+                isFavorite: false,
               )
             : refs.recipes.first,
       );

@@ -4,19 +4,19 @@
 // WHAT THIS FILE DOES
 // ============================================================================
 // Public types for the LoadOut reticle library. A "reticle" is the etched
-// or projected aiming pattern inside a rifle scope, red-dot, or LPVO
-// (e.g. Vortex EBR-7C MRAD, Nightforce MIL-XT, the legacy USMC Mil-Dot).
-// Every brand publishes a different mix of crosshair lines, hash marks,
-// holdover dots, and floating numbers; this file defines the smallest
-// vocabulary of element types we need to reproduce a recognisable
-// rendering of any of them.
+// or projected aiming pattern inside a rifle scope, red-dot, or LPVO.
+// Every reticle archetype publishes a different mix of crosshair lines,
+// hash marks, holdover dots, and floating numbers; this file defines
+// the smallest vocabulary of element types we need to reproduce a
+// recognisable rendering of any of them.
 //
-// The seed catalog (`assets/seed_data/reticles.json`) and the on-device
-// SQLite reference table (`Reticles`, schema v11) both store reticle
-// elements as JSON arrays whose entries match `ReticleElement.toJson()`
-// here. The renderer (`lib/widgets/reticle_renderer.dart`) reads the
-// decoded `ReticleDefinition` and paints it onto a `CustomPainter`
-// canvas using the conversion described below.
+// The seed catalog (`assets/seed_data/reticles.json`,
+// `assets/seed_data/reticles_v2.json`) and the on-device SQLite
+// reference table (`Reticles`, schema v11) both store reticle elements
+// as JSON arrays whose entries match `ReticleElement.toJson()` here.
+// The renderer (`lib/widgets/reticle_renderer.dart`) reads the decoded
+// `ReticleDefinition` and paints it onto a `CustomPainter` canvas using
+// the conversion described below.
 //
 // ============================================================================
 // DESIGN NOTES
@@ -39,10 +39,10 @@
 // (floating numbers) are converted using the standard mil ↔ MOA
 // conversion (1 mil = 3.43775 MOA).
 //
-// `maxExtentUnits` is approximate — a Mil-Dot reticle is typically drawn
-// out to 4-5 mil per side, an EBR-7C ranges to 10 mil per side, and most
-// MOA reticles publish out to 30 MOA. Those are the values used for
-// most of the seed entries.
+// `maxExtentUnits` is approximate — a mil-dot reticle is typically drawn
+// out to 4-5 mil per side, dense mil tree archetypes range to 10 mil
+// per side, and most MOA reticles publish out to 30 MOA. Those are
+// the values used for most of the seed entries.
 //
 // ============================================================================
 // ELEMENT TYPES
@@ -81,10 +81,10 @@
 //
 // ```
 // {
-//   "id": "vortex_ebr7c_mrad",
-//   "manufacturer": "Vortex",
-//   "model": "EBR-7C MRAD",
-//   "family": "Razor HD Gen II reticles",
+//   "id": "loadout_mil_tree_medium",
+//   "manufacturer": "LoadOut",
+//   "model": "Mil Tree - Medium",
+//   "family": "LoadOut Mil reticles",
 //   "type": "ffp",
 //   "nativeUnit": "mil",
 //   "maxExtentUnits": 10,
@@ -93,7 +93,7 @@
 //     {"type":"hash","x":1,"y":0,"length":0.4,"thickness":0.04,"axis":"horizontal"},
 //     ...
 //   ],
-//   "notes": "Vortex's most popular precision-rifle MRAD reticle."
+//   "notes": "Medium-density LoadOut mil tree archetype."
 // }
 // ```
 
@@ -108,11 +108,10 @@ import 'dart:convert';
 enum ReticleType { firstFocalPlane, secondFocalPlane, fixed }
 
 /// The reticle's native angular unit. Most precision rifle reticles are
-/// either `mil` (Vortex EBR-7C, Nightforce MIL-XT, Schmidt & Bender P4F)
-/// or `moa` (Leupold TMOA, Vortex EBR-2D MOA). `ipsc` and `bdc` are
-/// included for shape-specific reticles (Trijicon BAC chevron, Dead-Hold
-/// BDC) where the subtensions are tied to the reticle's calibrated load
-/// rather than a true angular unit.
+/// either `mil` or `moa`. `ipsc` and `bdc` are included for shape-
+/// specific reticles (chevron, hunting BDC ladders) where the
+/// subtensions are tied to the reticle's calibrated load rather than a
+/// true angular unit.
 enum ReticleNativeUnit { mil, moa, ipsc, bdc }
 
 /// Whether a hash mark is drawn perpendicular to the horizontal axis
@@ -184,7 +183,7 @@ sealed class ReticleElement {
 /// A straight line from (`startX`,`startY`) to (`endX`,`endY`) in the
 /// reticle's native units, with center at (0, 0). Used for both
 /// horizontal and vertical crosshairs and any auxiliary lines (e.g.
-/// floating wind brackets in a Tremor reticle).
+/// floating wind brackets in a dense Christmas-tree reticle).
 ///
 /// `primary` is a hint to the renderer / future zoom logic: primary
 /// lines stay visible at all zoom levels, secondary lines may disappear
@@ -312,9 +311,10 @@ class FloatingNumber extends ReticleElement {
       };
 }
 
-/// A holdover dot on a BDC-style reticle. Renders identically to a
-/// filled `CenterDot` but kept as a distinct type so seed data can
-/// declare intent (and a future renderer can highlight it on hover).
+/// A holdover dot on a BDC-style or Christmas-tree reticle. Renders
+/// identically to a filled `CenterDot` but kept as a distinct type so
+/// seed data can declare intent (and a future renderer can highlight
+/// it on hover).
 class HoldoverDot extends ReticleElement {
   const HoldoverDot({
     required this.x,
@@ -410,15 +410,15 @@ class ReticleDefinition {
   /// nullability contract as [sourceUrl].
   final DateTime? verifiedAt;
 
-  /// Designer / patent holder for licensed designs (e.g. "Horus Vision
-  /// LLC" for every Tremor3 / Tremor5 / H59 / H37 row regardless of
-  /// the scope brand the row is wired to). Free-form text. Null for
-  /// reticles whose designer is the same as the manufacturer.
+  /// Designer / authority for the row (e.g. "LoadOut" for the
+  /// LoadOut-original archetype reticles, "Public domain" for entries
+  /// whose geometry pre-dates modern IP). Free-form text. Null when
+  /// the designer is the same as the manufacturer.
   final String? designer;
 
-  /// License attribution to display next to the reticle in the picker
-  /// (e.g. "Horus Vision LLC"). Free-form text. Null for in-house
-  /// brand reticles.
+  /// License attribution string to display next to the reticle in the
+  /// picker. Free-form text. Null for entries that don't carry a
+  /// per-row license (LoadOut originals, public-domain patterns).
   final String? license;
 
   /// Optional patent-holder / manufacturer subtension dictionary.

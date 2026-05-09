@@ -129,6 +129,7 @@ import 'repositories/batch_repository.dart';
 import 'repositories/brass_lot_repository.dart';
 import 'repositories/component_repository.dart';
 import 'repositories/drag_curve_repository.dart';
+import 'repositories/favorites_repository.dart';
 import 'repositories/firearm_repository.dart';
 import 'repositories/load_development_repository.dart';
 import 'repositories/manufactured_ammo_repository.dart';
@@ -223,6 +224,14 @@ class LoadOutApp extends StatelessWidget {
         ),
         Provider<BallisticProfileRepository>(
           create: (_) => BallisticProfileRepository(database),
+        ),
+        // User favorites against reference data (cartridges, reticles,
+        // targets) — schema v24. Per-row `isFavorite` columns on
+        // UserLoads, UserFirearms, and BallisticProfiles continue to
+        // live on those tables; this repository only owns the join
+        // table for read-only seed data the user can't mutate.
+        Provider<FavoritesRepository>(
+          create: (_) => FavoritesRepository(database),
         ),
         Provider<AtmospherePresetRepository>(
           create: (_) => AtmospherePresetRepository(database),

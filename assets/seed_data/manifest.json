@@ -39,7 +39,7 @@
       "filename": "targets.json"
     },
     "reticles": {
-      "version": 3,
+      "version": 4,
       "filename": "reticles.json"
     },
     "drag_curves": {
@@ -51,11 +51,11 @@
       "filename": "scopes.json"
     },
     "reticles_v2": {
-      "version": 4,
+      "version": 5,
       "filename": "reticles_v2.json"
     },
     "scope_reticle_options": {
-      "version": 4,
+      "version": 5,
       "filename": "scope_reticle_options.json"
     },
     "manufactured_ammo": {

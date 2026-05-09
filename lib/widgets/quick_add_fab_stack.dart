@@ -108,34 +108,43 @@ class QuickAddFabStack extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        FloatingActionButton.extended(
-          heroTag: '${tagPrefix}_quick',
-          onPressed: onQuickPressed,
-          icon: Icon(quickIcon),
-          label: Text(quickLabel),
-          // Brass-tinted variant — uses the secondary container so the
-          // Quick FAB reads as related-but-distinct from the standard
-          // primary `+` FAB.
-          backgroundColor: theme.colorScheme.secondaryContainer,
-          foregroundColor: theme.colorScheme.onSecondaryContainer,
-        ),
-        const SizedBox(height: 12),
-        // Standard FAB now uses the same .extended shape as Quick so
-        // the user can tell them apart at a glance. A bare `+` next
-        // to a labeled "Quick" was confusing — the user couldn't tell
-        // which one opened the full form.
-        FloatingActionButton.extended(
-          heroTag: '${tagPrefix}_add',
-          tooltip: addTooltip,
-          onPressed: onAddPressed,
-          icon: const Icon(Icons.add),
-          label: const Text('Standard'),
-        ),
-      ],
+    // IntrinsicWidth + Column(crossAxisAlignment: stretch) makes both
+    // FABs adopt the wider one's natural width — so "Quick" (shorter)
+    // stretches to match "Standard" (wider), or vice-versa if the
+    // labels ever flip. Without this, the .extended FABs each size
+    // to their own content and visually wobble between two
+    // different widths in the FAB stack, which the user flagged as
+    // distracting.
+    return IntrinsicWidth(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          FloatingActionButton.extended(
+            heroTag: '${tagPrefix}_quick',
+            onPressed: onQuickPressed,
+            icon: Icon(quickIcon),
+            label: Text(quickLabel),
+            // Brass-tinted variant — uses the secondary container so the
+            // Quick FAB reads as related-but-distinct from the standard
+            // primary `+` FAB.
+            backgroundColor: theme.colorScheme.secondaryContainer,
+            foregroundColor: theme.colorScheme.onSecondaryContainer,
+          ),
+          const SizedBox(height: 12),
+          // Standard FAB now uses the same .extended shape as Quick so
+          // the user can tell them apart at a glance. A bare `+` next
+          // to a labeled "Quick" was confusing — the user couldn't tell
+          // which one opened the full form.
+          FloatingActionButton.extended(
+            heroTag: '${tagPrefix}_add',
+            tooltip: addTooltip,
+            onPressed: onAddPressed,
+            icon: const Icon(Icons.add),
+            label: const Text('Standard'),
+          ),
+        ],
+      ),
     );
   }
 }

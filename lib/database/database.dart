@@ -36,7 +36,7 @@
 // methods plus generated companions like `UserLoadsCompanion` for
 // constructing rows.
 //
-// `schemaVersion` is currently 18. The `MigrationStrategy` defines two
+// `schemaVersion` is currently 24. The `MigrationStrategy` defines two
 // callbacks: `onCreate` runs on a fresh install (creates every table, then
 // seeds the 8 standard reloading process steps), and `onUpgrade` runs
 // when an installed user opens a build with a newer `schemaVersion`. The
@@ -354,6 +354,14 @@ class BallisticProfiles extends Table {
   TextColumn get notes => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  // ── Favorites (added schema v24) ──
+  /// User-toggled "starred" flag. Picker / list UIs sort favorites first
+  /// when this is true. Defaults to false so existing rows after the
+  /// migration remain un-favorited. The toggle lives on
+  /// `BallisticProfileRepository.toggleFavorite(id)`.
+  BoolColumn get isFavorite =>
+      boolean().withDefault(const Constant(false))();
 }
 
 /// Reference catalog of rifle scopes / optics. Seeded from
@@ -1014,6 +1022,16 @@ class UserLoads extends Table {
   /// adjustment as `(currentTempC - referenceTempC) × sensitivity`.
   RealColumn get powderReferenceTempCelsius =>
       real().withDefault(const Constant(15.6))();
+
+  // ── Favorites (added schema v24) ──
+  /// User-toggled "starred" flag. Recipe lists sort favorites first when
+  /// this is true; the recipe form, picker dropdowns, and Range Day
+  /// recipe pickers all consult it via the new `isFavorite` column.
+  /// Defaults to false so existing rows after the migration remain
+  /// un-favorited. The toggle lives on
+  /// `RecipeRepository.toggleFavorite(id)`.
+  BoolColumn get isFavorite =>
+      boolean().withDefault(const Constant(false))();
 }
 
 @DataClassName('UserFirearmRow')
@@ -1099,6 +1117,14 @@ class UserFirearms extends Table {
   /// Relative humidity (%) at the time the rifle was zeroed. See
   /// [zeroPressureInHg] for behaviour.
   RealColumn get zeroHumidityPct => real().nullable()();
+
+  // ── Favorites (added schema v24) ──
+  /// User-toggled "starred" flag. Firearm lists / pickers sort favorites
+  /// first when this is true. Defaults to false so existing rows after
+  /// the migration remain un-favorited. The toggle lives on
+  /// `FirearmRepository.toggleFavorite(id)`.
+  BoolColumn get isFavorite =>
+      boolean().withDefault(const Constant(false))();
 }
 
 // ─────────────────────── Batches (user, schema v4, feature #12) ───────────────────────
@@ -1693,6 +1719,44 @@ class UserCustomFieldValues extends Table {
       ];
 }
 
+// ─────────────────────── User Favorites (schema v24) ───────────────────────
+//
+// Per-user "starred" flag for reference-data rows the user can't mutate
+// directly (cartridges, reticles, targets, and any future read-only
+// catalog). User-data tables (UserLoads, UserFirearms, BallisticProfiles)
+// keep their own `isFavorite` boolean column on the row itself; this join
+// table is for the rest. Pickers consume this to compute "is this row
+// favorited" and to sort favorites first; the Range Day workspace also
+// reads `mostRecentFavoriteId` to seed new sessions with the user's most
+// recently favorited reticle / target.
+
+/// User-owned join table mapping a reference-data row to a "favorited"
+/// flag. One row per (entityType, entityId) pair — the unique constraint
+/// keeps duplicates out and lets `toggleFavorite` use a simple
+/// read-then-write pattern. Created in schema v24.
+@DataClassName('UserFavoriteRow')
+class UserFavorites extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  /// Discriminator: 'cartridge', 'reticle', 'target'. Not enforced at
+  /// the SQLite level — callers use the constants exposed on
+  /// `FavoritesRepository` (`kFavoriteCartridge`, `kFavoriteReticle`,
+  /// `kFavoriteTarget`) to keep typos out of production data.
+  TextColumn get entityType => text()();
+
+  /// Reference-table row id this favorite points at. e.g. a row in the
+  /// `Cartridges` / `Reticles` / `Targets` table.
+  IntColumn get entityId => integer()();
+
+  DateTimeColumn get createdAt =>
+      dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {entityType, entityId},
+      ];
+}
+
 // ─────────────────────── Database ───────────────────────
 
 @DriftDatabase(
@@ -1751,6 +1815,10 @@ class UserCustomFieldValues extends Table {
     // the Range Day "Pick a common factory load" picker, plus rack
     // mode persistence on RangeDaySessions).
     ManufacturedAmmo,
+    // Schema v24 additions (per-row `isFavorite` columns on UserLoads,
+    // UserFirearms, BallisticProfiles plus a join table covering
+    // reference-data favorites — cartridges, reticles, targets).
+    UserFavorites,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -1759,7 +1827,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 23;
+  int get schemaVersion => 24;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -2189,6 +2257,36 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(
                 rangeDaySessions, rangeDaySessions.rackChildPosition);
           }
+          if (from < 24) {
+            // v24 — User favorites. Two coordinated additions, all
+            // additive so existing user data is preserved:
+            //
+            //   1. New `isFavorite` boolean column on [UserLoads],
+            //      [UserFirearms], and [BallisticProfiles]. Each
+            //      defaults to `false` so every existing row starts
+            //      un-favorited; the user opts in by tapping the
+            //      star icon the UI agent will wire up.
+            //   2. New [UserFavorites] join table for reference-data
+            //      favorites — cartridges, reticles, and targets,
+            //      where the row itself is read-only seed data and
+            //      can't carry its own boolean column. The unique
+            //      key on (entityType, entityId) prevents duplicate
+            //      stars and lets the toggle helper round-trip
+            //      reads + writes safely. Created empty on upgrade
+            //      so the user starts with no reference-data
+            //      favorites.
+            //
+            // The reticle / target favorites become the default for
+            // new Range Day sessions (other agents wire that — this
+            // migration just lays the storage in place via the
+            // `mostRecentFavoriteId(entityType)` helper on
+            // `FavoritesRepository`).
+            await m.addColumn(userLoads, userLoads.isFavorite);
+            await m.addColumn(userFirearms, userFirearms.isFavorite);
+            await m.addColumn(
+                ballisticProfiles, ballisticProfiles.isFavorite);
+            await m.createTable(userFavorites);
+          }
         },
       );
 
@@ -2310,6 +2408,12 @@ class AppDatabase extends _$AppDatabase {
       await delete(userLoads).go();
       await delete(customComponents).go();
       await delete(ballisticProfiles).go();
+      // v24 — favorites against reference data. The per-row `isFavorite`
+      // booleans on UserLoads / UserFirearms / BallisticProfiles are
+      // wiped along with the rows above; this drops the join-table
+      // entries pointing at the (preserved) reference catalog so the
+      // user starts clean after a wipe.
+      await delete(userFavorites).go();
       await delete(userProcessSteps).go();
       await _seedStandardProcessSteps();
     });

@@ -441,7 +441,18 @@ class _CartridgeDiagramPainter extends CustomPainter {
     final rimYTop = centerY - half(usedRimDia);
     final bodyYTop = centerY - half(bodyDia);
 
-    top.moveTo(x(0), rimYTop);
+    // Trace the silhouette starting at the centerline at x=0, going UP
+    // to the top of the rim FIRST. The path used to start at
+    // (0, rimYTop) and never explicitly closed the left edge — fill
+    // worked (path-fill auto-closes) but the STROKE skipped the back
+    // wall, so the rendered diagram looked open at the case head. By
+    // starting at the centerline and immediately drawing the vertical
+    // back-wall segment, the stroke includes that edge. The mirrored
+    // bottom half draws its own back-wall segment from (0, centerY)
+    // down to its mirrored rim, and the two collinear segments meet
+    // at the centerline to form one continuous back wall.
+    top.moveTo(x(0), centerY);
+    top.lineTo(x(0), rimYTop);
     top.lineTo(x(usedRimThk), rimYTop);
     top.lineTo(x(usedRimThk), bodyYTop);
 
@@ -612,11 +623,17 @@ class _CartridgeDiagramPainter extends CustomPainter {
       );
     }
 
-    // Body diameter — small label near the body section.
+    // Body diameter — placed ABOVE the rim's top edge so the text
+    // doesn't render across the body's top stroke. The previous
+    // position (`centerY - half(bodyDia) - 6`) put the label centered
+    // 6 px above the body wall — the 10-pt text spans ~12 px tall, so
+    // the label visually crossed the wall. Moving above the rim
+    // (which is wider than the body for typical cases) gives an
+    // honest 6 px gap from the silhouette.
     _drawDiameterLabel(
       canvas,
       labelX: x(usedRimThk + 0.04),
-      labelY: centerY - half(bodyDia) - 6,
+      labelY: centerY - half(usedRimDia) - 18,
       text: '${_formatDiameter(bodyDia)} body',
       color: textColor,
     );
@@ -691,10 +708,17 @@ class _CartridgeDiagramPainter extends CustomPainter {
         pocketPaint,
       );
       // Label: "Small Rifle primer", "Large Pistol primer", etc.
+      // Placed BELOW the rim, on its own row beneath the rim-thickness
+      // dimension, so the text reads cleanly outside the silhouette.
+      // The previous Y of `centerY - 5` placed the label at the dead
+      // center of the case head — visually inside the cartridge
+      // outline, with the 10-pt text overlapping the case fill. Below
+      // the rim is the most natural spot once the back wall is drawn:
+      // it's the visual "outside" of the case head.
       _drawDiameterLabel(
         canvas,
-        labelX: x(usedRimThk) + 4,
-        labelY: centerY - 5,
+        labelX: x(0) + 6,
+        labelY: centerY + half(usedRimDia) + 28,
         text: '${_humanPrimer(primerType)} primer',
         color: textColor,
       );

@@ -38,6 +38,19 @@
 // in many forms (`"6mm"`, `"6 mm"`, `".308"`, `"308 Win"`) and want them
 // all to find the right row.
 //
+// Favorite-cartridge sorting (schema v24): when `kind == 'cartridge'`,
+// the widget subscribes to
+// `FavoritesRepository.watchFavoriteIds(kFavoriteCartridge)` and
+// re-orders the dropdown options so favorited cartridges appear first
+// (alphabetical within each bucket — the upstream
+// `componentLabels('cartridge')` is already natural-sorted, so
+// stable-partitioning preserves that ordering inside each bucket).
+// Each favorited row in the dropdown carries a small filled-star icon
+// in the trailing slot as a visual indicator only — taps still pick
+// the row, since toggling favorites lives on the SAAMI screen to
+// keep this dropdown un-cluttered. Other component kinds (powder,
+// bullet, primer, brass) skip the favorites subscription entirely.
+//
 // State tracked inside `_ComponentFieldState`:
 //   - `_futureOptions`     — the list of catalog labels for the configured
 //                             `kind`, fetched once during `initState` from
@@ -142,6 +155,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../repositories/component_repository.dart';
+import '../repositories/favorites_repository.dart';
 
 /// Text field with autocomplete suggestions from a component catalog.
 /// Users can pick a suggestion or type a new value; values not in the
@@ -184,6 +198,15 @@ class ComponentField extends StatefulWidget {
 class _ComponentFieldState extends State<ComponentField> {
   late Future<List<String>> _futureOptions;
 
+  /// For `kind == 'cartridge'` we additionally fetch the cartridge
+  /// rows so we can map an option label back to a cartridge id and
+  /// check whether it's currently favorited. The bullet/powder/primer
+  /// /brass kinds do NOT have a per-row favorite contract today —
+  /// favorites for reference data only cover cartridges (plus reticles
+  /// and targets, which aren't reachable from this widget). When the
+  /// future is null the dropdown renders without star indicators.
+  Future<Map<String, int>>? _futureCartridgeNameToId;
+
   /// The TextEditingController owned by [Autocomplete] — captured the
   /// first time `fieldViewBuilder` runs so we can attach the listener
   /// exactly once.
@@ -193,8 +216,21 @@ class _ComponentFieldState extends State<ComponentField> {
   @override
   void initState() {
     super.initState();
-    _futureOptions =
-        context.read<ComponentRepository>().componentLabels(widget.kind);
+    final repo = context.read<ComponentRepository>();
+    _futureOptions = repo.componentLabels(widget.kind);
+    if (widget.kind == 'cartridge') {
+      // Build a label → id lookup for the cartridge catalog so we can
+      // resolve a dropdown option string back to a row id and check
+      // whether it's favorited. The catalog is small (~200 rows) and
+      // fetched once during the field's lifetime.
+      _futureCartridgeNameToId = repo.allCartridges().then((rows) {
+        final map = <String, int>{};
+        for (final c in rows) {
+          map[c.name] = c.id;
+        }
+        return map;
+      });
+    }
   }
 
   @override
@@ -235,73 +271,160 @@ class _ComponentFieldState extends State<ComponentField> {
       future: _futureOptions,
       builder: (context, snap) {
         final options = snap.data ?? const <String>[];
-        return Autocomplete<String>(
-          initialValue: TextEditingValue(text: widget.controller.text),
-          optionsBuilder: (te) {
-            final query = te.text.trim().toLowerCase();
-            if (query.isEmpty) return options.take(60);
-            final tokens = query
-                .split(RegExp(r'\s+'))
-                .where((t) => t.isNotEmpty)
-                .toList(growable: false);
-            if (tokens.isEmpty) return options.take(60);
-            return options.where((o) {
-              final lower = o.toLowerCase();
-              for (final t in tokens) {
-                if (!lower.contains(t)) return false;
-              }
-              return true;
-            }).take(60);
-          },
-          fieldViewBuilder: (context, textCtrl, focusNode, _) {
-            // Wire up exactly once — repeated builds of fieldViewBuilder
-            // would otherwise keep adding listeners and slow down taps.
-            _ensureWiring(textCtrl);
-            return TextFormField(
-              controller: textCtrl,
-              focusNode: focusNode,
-              // Turn off OS-level autocorrect / autocomplete chips. Component
-              // names are technical strings ("6mm GT", "Federal #210M") that
-              // the keyboard should not be guessing at — the in-app
-              // suggestions list is the source of truth.
-              autocorrect: false,
-              enableSuggestions: false,
-              textCapitalization: TextCapitalization.none,
-              decoration: InputDecoration(
-                labelText: widget.label,
-                helperText: widget.helper ?? 'Pick from list or type your own',
-              ),
-              validator: widget.validator,
+        // For non-cartridge kinds we render the original autocomplete
+        // (no favorites, no star indicators) — favorites for reference
+        // data only cover cartridges today.
+        if (widget.kind != 'cartridge') {
+          return _buildAutocomplete(
+            options: options,
+            favoriteCartridgeIds: const <int>{},
+            cartridgeNameToId: const <String, int>{},
+          );
+        }
+        // Cartridge kind: layer in the live favorites set + the
+        // name→id map and re-sort favorites to the top of the
+        // dropdown options.
+        return FutureBuilder<Map<String, int>>(
+          future: _futureCartridgeNameToId,
+          builder: (context, mapSnap) {
+            final nameToId = mapSnap.data ?? const <String, int>{};
+            return StreamBuilder<Set<int>>(
+              stream: context
+                  .read<FavoritesRepository>()
+                  .watchFavoriteIds(kFavoriteCartridge),
+              builder: (context, favSnap) {
+                final favIds = favSnap.data ?? const <int>{};
+                return _buildAutocomplete(
+                  options: options,
+                  favoriteCartridgeIds: favIds,
+                  cartridgeNameToId: nameToId,
+                );
+              },
             );
           },
-          onSelected: (sel) {
-            widget.controller.text = sel;
-            widget.onSelected?.call(sel);
-          },
-          optionsViewBuilder: (context, onSelected, options) {
-            return Align(
-              alignment: Alignment.topLeft,
-              child: Material(
-                elevation: 4,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 280),
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    padding: EdgeInsets.zero,
-                    itemCount: options.length,
-                    itemBuilder: (context, i) {
-                      final opt = options.elementAt(i);
-                      return ListTile(
-                        dense: true,
-                        title: Text(opt),
-                        onTap: () => onSelected(opt),
-                      );
-                    },
-                  ),
-                ),
+        );
+      },
+    );
+  }
+
+  /// Internal helper that builds the actual `Autocomplete<String>`.
+  /// When [favoriteCartridgeIds] is non-empty the options builder
+  /// floats favorited entries to the top of the dropdown, and the
+  /// options view renders a small star icon next to each favorited
+  /// row. The star is purely a visual indicator — taps on the row
+  /// still select the cartridge, matching the existing component-
+  /// field behavior. Favorites toggling lives on the SAAMI screen so
+  /// the dropdown stays uncluttered.
+  Widget _buildAutocomplete({
+    required List<String> options,
+    required Set<int> favoriteCartridgeIds,
+    required Map<String, int> cartridgeNameToId,
+  }) {
+    // Pre-compute the favorited label set. Doing this once per build
+    // is cheaper than checking inside every itemBuilder rebuild.
+    final favoriteLabels = <String>{
+      for (final entry in cartridgeNameToId.entries)
+        if (favoriteCartridgeIds.contains(entry.value)) entry.key,
+    };
+
+    /// Apply favorites-first ordering to the post-filter list of
+    /// candidate options. Stable: order within each bucket is
+    /// preserved from the input (the input is already sorted
+    /// upstream by `componentLabels`).
+    Iterable<String> withFavoritesFirst(Iterable<String> filtered) {
+      if (favoriteLabels.isEmpty) return filtered;
+      final favs = <String>[];
+      final rest = <String>[];
+      for (final o in filtered) {
+        if (favoriteLabels.contains(o)) {
+          favs.add(o);
+        } else {
+          rest.add(o);
+        }
+      }
+      return [...favs, ...rest];
+    }
+
+    return Autocomplete<String>(
+      initialValue: TextEditingValue(text: widget.controller.text),
+      optionsBuilder: (te) {
+        final query = te.text.trim().toLowerCase();
+        if (query.isEmpty) return withFavoritesFirst(options).take(60);
+        final tokens = query
+            .split(RegExp(r'\s+'))
+            .where((t) => t.isNotEmpty)
+            .toList(growable: false);
+        if (tokens.isEmpty) return withFavoritesFirst(options).take(60);
+        final filtered = options.where((o) {
+          final lower = o.toLowerCase();
+          for (final t in tokens) {
+            if (!lower.contains(t)) return false;
+          }
+          return true;
+        });
+        return withFavoritesFirst(filtered).take(60);
+      },
+      fieldViewBuilder: (context, textCtrl, focusNode, _) {
+        // Wire up exactly once — repeated builds of fieldViewBuilder
+        // would otherwise keep adding listeners and slow down taps.
+        _ensureWiring(textCtrl);
+        return TextFormField(
+          controller: textCtrl,
+          focusNode: focusNode,
+          // Turn off OS-level autocorrect / autocomplete chips. Component
+          // names are technical strings ("6mm GT", "Federal #210M") that
+          // the keyboard should not be guessing at — the in-app
+          // suggestions list is the source of truth.
+          autocorrect: false,
+          enableSuggestions: false,
+          textCapitalization: TextCapitalization.none,
+          decoration: InputDecoration(
+            labelText: widget.label,
+            helperText: widget.helper ?? 'Pick from list or type your own',
+          ),
+          validator: widget.validator,
+        );
+      },
+      onSelected: (sel) {
+        widget.controller.text = sel;
+        widget.onSelected?.call(sel);
+      },
+      optionsViewBuilder: (context, onSelected, options) {
+        final theme = Theme.of(context);
+        return Align(
+          alignment: Alignment.topLeft,
+          child: Material(
+            elevation: 4,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 280),
+              child: ListView.builder(
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                itemCount: options.length,
+                itemBuilder: (context, i) {
+                  final opt = options.elementAt(i);
+                  final isFav = favoriteLabels.contains(opt);
+                  return ListTile(
+                    dense: true,
+                    title: Text(opt),
+                    // Visual-only star — favorites toggling lives on
+                    // the SAAMI screen so the dropdown can stay
+                    // un-cluttered. Showing the indicator here gives
+                    // recipe-form users a way to recognize their
+                    // pinned cartridges at a glance.
+                    trailing: isFav
+                        ? Icon(
+                            Icons.star,
+                            size: 16,
+                            color: theme.colorScheme.primary,
+                          )
+                        : null,
+                    onTap: () => onSelected(opt),
+                  );
+                },
               ),
-            );
-          },
+            ),
+          ),
         );
       },
     );

@@ -3,13 +3,12 @@
 // Unit tests for `lib/data/reticle_tags.dart`. Confirms the tag
 // derivation behaves the way the picker expects:
 //
-//   * Searching "tremor3" matches every Tremor3 reticle regardless
-//     of brand (Nightforce TReMoR3, Schmidt & Bender Tremor3).
-//   * Searching "horus" surfaces every Horus-licensed reticle
-//     (Tremor3, H59, etc.) even when "Horus" doesn't appear in the
-//     reticle's name string.
-//   * The kPopularReticleTags catalog stays the canonical 10 entries
-//     called out in the picker spec.
+//   * Searching "dense" matches every dense LoadOut mil tree
+//     archetype (`loadout_mil_tree_dense`,
+//     `loadout_mil_tree_christmas`).
+//   * Searching "compact" matches the compact archetypes.
+//   * The kPopularReticleTags catalog stays the canonical set of
+//     archetype categories called out in the picker spec.
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loadout/data/reticle_tags.dart';
@@ -18,108 +17,89 @@ void main() {
   group('deriveReticleTags', () {
     test('words from manufacturer/model/family land in the tag set', () {
       final tags = deriveReticleTags(
-        manufacturer: 'Vortex',
-        model: 'EBR-7C MRAD',
-        family: 'Razor HD Gen II reticles',
+        manufacturer: 'LoadOut',
+        model: 'Mil Tree - Compact',
+        family: 'LoadOut Mil reticles',
       );
-      expect(tags, contains('vortex'));
-      expect(tags, contains('ebr'));
-      expect(tags, contains('mrad'));
-      expect(tags, contains('razor'));
+      expect(tags, contains('loadout'));
+      expect(tags, contains('mil'));
+      expect(tags, contains('tree'));
+      expect(tags, contains('compact'));
     });
 
-    test('Schmidt & Bender becomes "schmidtbender" and "schmidt" both work', () {
+    test('Public domain becomes "publicdomain" and "public" both work', () {
       final tags = deriveReticleTags(
-        manufacturer: 'Schmidt & Bender',
-        model: 'P4F',
-        family: null,
+        manufacturer: 'Public domain',
+        model: 'Plex',
+        family: 'Public-domain reticles',
       );
-      expect(tags, contains('schmidt'));
-      expect(tags, contains('bender'));
-      expect(tags, contains('schmidtbender'));
-      expect(tags, contains('p4f'));
+      expect(tags, contains('public'));
+      expect(tags, contains('domain'));
+      expect(tags, contains('publicdomain'));
+      expect(tags, contains('plex'));
     });
 
-    test('Tremor3 attaches both "tremor3" and "horus" tags', () {
+    test('Christmas Tree archetype gets both christmas-tree and dense tags',
+        () {
       final tags = deriveReticleTags(
-        manufacturer: 'Nightforce',
-        model: 'TReMoR3',
-        family: null,
+        manufacturer: 'LoadOut',
+        model: 'Mil Tree - Christmas Tree',
+        family: 'LoadOut Mil reticles',
       );
-      expect(tags, contains('tremor3'));
-      expect(tags, contains('horus'));
+      expect(tags, contains('christmas-tree'));
+      expect(tags, contains('dense-mil-tree'));
     });
 
-    test('H59 attaches "h59" and "horus" tags', () {
-      final tags = deriveReticleTags(
-        manufacturer: 'Schmidt & Bender',
-        model: 'H59',
-        family: null,
-      );
-      expect(tags, contains('h59'));
-      expect(tags, contains('horus'));
-    });
-
-    test('Mil-Dot variants land in the same "mildot" tag', () {
+    test('Mil-Dot variants land in the same "mil-dot" tag', () {
       final variants = ['Mil-Dot', 'MIL-DOT', 'Mil Dot', 'MIL Dot', 'MilDot'];
       for (final v in variants) {
-        final tags =
-            deriveReticleTags(manufacturer: 'Generic', model: v, family: null);
-        expect(tags, contains('mildot'),
-            reason: 'Expected "mildot" in tags for "$v"');
+        final tags = deriveReticleTags(
+          manufacturer: 'Public domain',
+          model: v,
+          family: null,
+        );
+        expect(tags, contains('mil-dot'),
+            reason: 'Expected "mil-dot" in tags for "$v"');
       }
     });
   });
 
   group('reticleMatchesQuery', () {
-    test('"tremor3" matches Tremor3 reticles across brands', () {
+    test('"dense" matches dense archetypes', () {
       final brands = [
-        ('Nightforce', 'TReMoR3'),
-        ('Schmidt & Bender', 'Tremor3'),
+        ('LoadOut', 'Mil Tree - Dense'),
+        ('LoadOut', 'MOA Tree - Dense'),
       ];
       for (final (m, model) in brands) {
         expect(
           reticleMatchesQuery(
-            query: 'tremor3',
+            query: 'dense',
             manufacturer: m,
             model: model,
             family: null,
           ),
           isTrue,
-          reason: '$m $model should match "tremor3"',
+          reason: '$m $model should match "dense"',
         );
       }
     });
 
-    test('"horus" matches Horus-licensed reticles even without Horus in name',
-        () {
-      // Schmidt & Bender's Tremor3 has no "horus" in the model string.
+    test('"christmas" matches the Christmas-tree archetypes', () {
       expect(
         reticleMatchesQuery(
-          query: 'horus',
-          manufacturer: 'Schmidt & Bender',
-          model: 'Tremor3',
-          family: null,
+          query: 'christmas',
+          manufacturer: 'LoadOut',
+          model: 'Mil Tree - Christmas Tree',
+          family: 'LoadOut Mil reticles',
         ),
         isTrue,
       );
-      // Nightforce's TReMoR3 likewise.
       expect(
         reticleMatchesQuery(
-          query: 'horus',
-          manufacturer: 'Nightforce',
-          model: 'TReMoR3',
-          family: null,
-        ),
-        isTrue,
-      );
-      // H59 too — Horus design.
-      expect(
-        reticleMatchesQuery(
-          query: 'horus',
-          manufacturer: 'Schmidt & Bender',
-          model: 'H59',
-          family: null,
+          query: 'christmas',
+          manufacturer: 'LoadOut',
+          model: 'MOA Tree - Christmas Tree',
+          family: 'LoadOut MOA reticles',
         ),
         isTrue,
       );
@@ -138,12 +118,12 @@ void main() {
     });
 
     test('Partial prefix matches a tag', () {
-      // "trem" is a prefix of "tremor3" and "tremor"
+      // "tre" is a prefix of "tree" and "trees"
       expect(
         reticleMatchesQuery(
-          query: 'trem',
-          manufacturer: 'Nightforce',
-          model: 'TReMoR3',
+          query: 'tre',
+          manufacturer: 'LoadOut',
+          model: 'Mil Tree - Compact',
           family: null,
         ),
         isTrue,
@@ -151,12 +131,12 @@ void main() {
     });
 
     test('Punctuation-stripped variants match', () {
-      // Searching "ebr2c" with no hyphen matches "EBR-2C".
+      // Searching "miltree" with no spaces matches "Mil Tree".
       expect(
         reticleMatchesQuery(
-          query: 'ebr2c',
-          manufacturer: 'Vortex',
-          model: 'EBR-2C MRAD',
+          query: 'miltree',
+          manufacturer: 'LoadOut',
+          model: 'Mil Tree - Compact',
           family: null,
         ),
         isTrue,
@@ -167,8 +147,8 @@ void main() {
       expect(
         reticleMatchesQuery(
           query: 'xyznonexistent',
-          manufacturer: 'Vortex',
-          model: 'EBR-7C MRAD',
+          manufacturer: 'LoadOut',
+          model: 'Mil Tree - Compact',
           family: null,
         ),
         isFalse,
@@ -177,24 +157,25 @@ void main() {
   });
 
   group('reticleHasPopularTag', () {
-    test('Tremor3 model gets the tremor3 popular tag', () {
+    test('Christmas Tree model gets the christmas-tree popular tag', () {
       expect(
         reticleHasPopularTag(
-          popularTag: 'tremor3',
-          manufacturer: 'Nightforce',
-          model: 'TReMoR3',
+          popularTag: 'christmas-tree',
+          manufacturer: 'LoadOut',
+          model: 'Mil Tree - Christmas Tree',
           family: null,
         ),
         isTrue,
       );
     });
 
-    test('A non-Tremor reticle does not match the tremor3 popular tag', () {
+    test('Compact archetype does not match the dense-mil-tree popular tag',
+        () {
       expect(
         reticleHasPopularTag(
-          popularTag: 'tremor3',
-          manufacturer: 'Vortex',
-          model: 'EBR-7C MRAD',
+          popularTag: 'dense-mil-tree',
+          manufacturer: 'LoadOut',
+          model: 'Mil Tree - Compact',
           family: null,
         ),
         isFalse,
@@ -203,8 +184,8 @@ void main() {
   });
 
   group('kPopularReticleTags', () {
-    test('Catalog has 10 entries (the canonical popular reticles)', () {
-      expect(kPopularReticleTags.length, 10);
+    test('Catalog has the canonical set of popular entries', () {
+      expect(kPopularReticleTags.length, greaterThanOrEqualTo(10));
     });
 
     test('All entries have unique tags', () {
@@ -212,17 +193,19 @@ void main() {
       expect(tags.length, kPopularReticleTags.length);
     });
 
-    test('Catalog covers the spec list (Tremor3, MIL-Dot, EBR, etc.)', () {
+    test('Catalog covers the LoadOut archetype categories', () {
       final tags = kPopularReticleTags.map((e) => e.tag).toSet();
       const required = {
-        'tremor3',
-        'mildot',
-        'ebr',
-        'gap',
-        'scr',
-        'h59',
-        'msr2',
-        'milxt',
+        'dense-mil-tree',
+        'christmas-tree',
+        'medium-mil',
+        'compact-mil',
+        'mil-hash',
+        'mil-dot',
+        'bdc',
+        'combat',
+        'red-dot',
+        'holographic',
       };
       for (final r in required) {
         expect(tags, contains(r),

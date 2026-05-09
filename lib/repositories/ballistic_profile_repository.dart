@@ -81,4 +81,26 @@ class BallisticProfileRepository {
 
   Future<int> delete(int id) =>
       (db.delete(db.ballisticProfiles)..where((p) => p.id.equals(id))).go();
+
+  /// Flip the per-row [BallisticProfiles.isFavorite] boolean (added
+  /// schema v24). Returns the new state (`true` = now favorited,
+  /// `false` = now un-favorited). Returns `false` if no row matches
+  /// [id]. Auto-bumps `updatedAt` so the profile picker re-sorts to
+  /// keep the freshly-toggled row visible. Powers the star icon the
+  /// picker UI agent will wire up.
+  Future<bool> toggleFavorite(int id) async {
+    final row =
+        await (db.select(db.ballisticProfiles)..where((p) => p.id.equals(id)))
+            .getSingleOrNull();
+    if (row == null) return false;
+    final next = !row.isFavorite;
+    await (db.update(db.ballisticProfiles)..where((p) => p.id.equals(id)))
+        .write(
+      BallisticProfilesCompanion(
+        isFavorite: Value(next),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+    return next;
+  }
 }
