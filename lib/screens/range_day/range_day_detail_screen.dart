@@ -462,6 +462,29 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   final ScrollController _wideLeftScrollCtrl = ScrollController();
   final ScrollController _wideRightScrollCtrl = ScrollController();
 
+  /// Cached references to the three sensor services so [dispose] can
+  /// stop them without calling `context.read<>` on a deactivated
+  /// element (the cause of the "Looking up a deactivated widget's
+  /// ancestor is unsafe" framework assert). Captured the first time
+  /// [didChangeDependencies] runs — the providers are app-root
+  /// singletons so the references stay valid for the screen's
+  /// lifetime even if the widget is rebuilt.
+  CantService? _cachedCantService;
+  MagnetometerService? _cachedMagnetometerService;
+  InclinometerService? _cachedInclinometerService;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Cache the sensor service references for `dispose` to use.
+    // Reading `context.read<>` here is safe (the element is active);
+    // doing it later in `dispose` is not. Idempotent — overwriting
+    // with the same singleton on each dependency change is a no-op.
+    _cachedCantService = context.read<CantService>();
+    _cachedMagnetometerService = context.read<MagnetometerService>();
+    _cachedInclinometerService = context.read<InclinometerService>();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -931,14 +954,19 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     // ignore: discarded_futures
     _kestrelSub?.cancel();
     // Stop the device sensors when leaving the screen so the OS can
-    // clock-gate the radio. All three services are app-singletons
-    // (provided in lib/app.dart) so we stop rather than dispose.
+    // clock-gate the radio. The cached service references are
+    // captured in [_cachedCantService] / etc. via
+    // [didChangeDependencies] — calling `context.read<>` here would
+    // throw "Looking up a deactivated widget's ancestor is unsafe"
+    // because the element is already deactivated by the time
+    // `dispose` runs (see Flutter framework docs on
+    // `Element.deactivate` ordering).
     // ignore: discarded_futures
-    context.read<CantService>().stop();
+    _cachedCantService?.stop();
     // ignore: discarded_futures
-    context.read<MagnetometerService>().stop();
+    _cachedMagnetometerService?.stop();
     // ignore: discarded_futures
-    context.read<InclinometerService>().stop();
+    _cachedInclinometerService?.stop();
     for (final c in [
       _distanceCtrl,
       _shotAzimuthCtrl,
@@ -4911,6 +4939,8 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
+      // Keep the sheet content below the status bar / Dynamic Island.
+      useSafeArea: true,
       builder: (sheetContext) => _CommonLoadPickerSheet(repo: repo),
     );
     if (picked != null && mounted) {

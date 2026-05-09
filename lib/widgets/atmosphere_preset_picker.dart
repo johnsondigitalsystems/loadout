@@ -178,6 +178,7 @@ class AtmospherePresetPicker extends StatelessWidget {
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
+      useSafeArea: true,
       builder: (_) => _AtmospherePickerSheet(
         presets: presets,
         selectedId: selected?.id,

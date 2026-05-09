@@ -272,6 +272,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.read<AuthService>();
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: const Text('LoadOut')),
       body: Center(
@@ -284,6 +285,39 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // Prominent "Continue as Guest" affordance at the
+                  // top of the screen. Sign-in is always required to
+                  // enter the app, but anonymous is one of the
+                  // always-available options — surfacing it here
+                  // rather than tucking it at the bottom matches the
+                  // product policy: "a user should always be logged
+                  // in, even if it's just the anonymous login."
+                  // Tapping signs the user in anonymously immediately;
+                  // the auth-state stream then routes them to
+                  // HomeScreen via _AuthGate. They can upgrade the
+                  // anonymous account to a real one later from
+                  // Settings → Account.
+                  _GuestCta(
+                    busy: _busy,
+                    onPressed: () => _runAuth(auth.signInAnonymously),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Expanded(child: Divider()),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(
+                          'or sign in to back up + sync',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                      const Expanded(child: Divider()),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
                   TextFormField(
                     controller: _emailController,
                     decoration: const InputDecoration(labelText: 'Email'),
@@ -390,15 +424,87 @@ class _LoginScreenState extends State<LoginScreen> {
                     icon: const Icon(Icons.help_outline),
                     label: const Text('Get help signing in'),
                   ),
-                  TextButton(
-                    onPressed: _busy
-                        ? null
-                        : () => _runAuth(auth.signInAnonymously),
-                    child: const Text('Continue as Guest'),
-                  ),
+                  // The "Continue as Guest" affordance now lives at
+                  // the TOP of this screen as a primary call to
+                  // action — see [_GuestCta] above. The bottom-of-
+                  // screen TextButton was removed so the form has
+                  // exactly one entry point per sign-in method.
                 ],
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Prominent "Continue as Guest" call-to-action rendered at the top
+/// of [LoginScreen]. Anonymous sign-in is always available; surfacing
+/// it as a labeled outlined button (instead of the prior subtle
+/// `TextButton` at the bottom of the page) matches the product
+/// policy that "a user should always be logged in — even if it's
+/// just the anonymous login."
+///
+/// Visually distinct from the email/password FilledButton below it
+/// so users understand the two are alternatives, not a sequence.
+class _GuestCta extends StatelessWidget {
+  const _GuestCta({required this.busy, required this.onPressed});
+
+  final bool busy;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      elevation: 0,
+      color: theme.colorScheme.surfaceContainerHighest,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: theme.colorScheme.outlineVariant),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: busy ? null : onPressed,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.no_accounts_outlined,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Continue as Guest',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward,
+                    size: 20,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'No email, no password — your data stays on this device. '
+                'You can upgrade to a real account later if you want '
+                'cloud backup or cross-device sync.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
           ),
         ),
       ),

@@ -47,6 +47,8 @@
 	<string>LoadOut connects to your Bluetooth chronograph (Garmin Xero) and weather meter (Kestrel) to import shot velocity and weather data.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>LoadOut connects to your Bluetooth chronograph (Garmin Xero) and weather meter (Kestrel) to import shot velocity and weather data.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>LoadOut uses Face ID to unlock the app on your device. The unlock is local — your face data never leaves the phone.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

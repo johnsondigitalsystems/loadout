@@ -24,6 +24,16 @@
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"
                      android:maxSdkVersion="30" />
 
+    <!-- Biometric unlock (fingerprint / Face Unlock / iris on supported
+         devices). Used solely to gate the app's HomeScreen behind a
+         local biometric prompt when the user opts into Settings →
+         Account → "Unlock with biometrics". The local_auth plugin
+         relies on USE_BIOMETRIC for API 28+; USE_FINGERPRINT remains
+         declared for the long tail of older devices that still ship
+         only the legacy fingerprint API. See lib/services/biometric_service.dart. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+
     <!-- Camera permission. Used by:
          1. Photo Import (handwritten-notebook OCR feature, free-tier).
          2. Recipe QR Scanner (peer-to-peer recipe import via mobile_scanner).

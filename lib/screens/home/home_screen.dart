@@ -130,6 +130,7 @@ import '../how_it_works/how_it_works_screen.dart';
 import '../paywall/paywall_screen.dart';
 import '../privacy/privacy_screen.dart';
 import '../recipes/recipes_list_screen.dart';
+import '../resources/resources_screen.dart';
 import '../settings/settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -709,6 +710,19 @@ class _MainDrawer extends StatelessWidget {
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => const GlossaryScreen(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.library_books_outlined),
+              title: const Text('Resources'),
+              subtitle: const Text('SAAMI specs and reference material'),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const ResourcesScreen(),
                   ),
                 );
               },

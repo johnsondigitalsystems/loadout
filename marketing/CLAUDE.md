@@ -157,21 +157,121 @@ build it lives at **Settings → SAAMI Specs**. Reference data isn't a
 daily-use destination; the bottom nav was decluttered. Marketing copy
 should not refer to SAAMI as a primary tab.
 
-### Companion apps (scaffolded — Coming Soon)
+### Companion apps (transport live — Coming Soon for shipped payloads)
 
-- **Apple Watch** — SwiftUI scaffold, watchOS 10.0+, transport activated
-  (`WCSession`), payloads not yet sent. Source: `ios/RunnerWatchApp/`.
-- **Wear OS** — Compose for Wear OS, Wear OS 3 / Android 11+, Gradle
-  module wired, payloads not yet sent. Source: `android/wear/`.
+- **Apple Watch** — SwiftUI scaffold, watchOS 10.0+. Phone-side
+  bridge (`WatchSessionBridge.swift`) is now activated automatically
+  by `AppDelegate.didInitializeImplicitFlutterEngine`; the
+  `WatchConnectivity` channels respond to `isWatchPaired` /
+  `isReachable` queries the moment the engine is up. The watch app
+  target itself still needs the manual Xcode wiring documented in
+  engineering CLAUDE.md § 15. Source: `ios/RunnerWatchApp/`.
+- **Wear OS** — Compose for Wear OS, Wear OS 3 / Android 11+. Gradle
+  module + bridge are wired automatically by
+  `MainActivity.configureFlutterEngine` (Google Play Services
+  Wearable Data Layer). Source: `android/wear/`.
 
-Both are placeholder UIs today. Be honest in copy: "companion apps in
-development" is correct; "ships with Apple Watch app" is misleading.
+Both are placeholder UIs today (DOPE / Active Load / Stage Timer
+screens compile but no live payloads are sent yet from the phone).
+Be honest in copy: "companion apps in development" is correct;
+"ships with Apple Watch app" is misleading. The wire protocol is
+defined and the channels are alive — what's missing is the
+phone-side code that pushes recipe / DOPE / firearm-glance state
+into the bridge on every save.
 
 ### Drawer (secondary destinations)
 
 The hamburger drawer lists: How It Works, Reloading Guide, Glossary,
-Brass Lots, Load Development, Reloading Steps, AI Reloading Assistant
-(Coming Soon), Backup & Export, Privacy Policy, Sign Out.
+**Resources** (new — SAAMI Specs and other reference material;
+moved out of Settings), Brass Lots, Load Development, Reloading
+Steps, AI Reloading Assistant (Coming Soon), Backup & Export,
+Settings, Privacy Policy, Sign Out.
+
+**Resources vs Settings:** Resources holds *read-only reference
+material* (SAAMI cartridge specs today; future: Reloading Guide,
+Powder Burn-Rate Chart). Settings holds *preferences and account*
+(account, app prefs, watch & wear, connected devices, AI features,
+privacy & data, data sources, help & support). The split keeps
+Settings focused on configuration the user changes, while reference
+material lives where users actually look for it.
+
+### Authentication & sign-in
+
+**Sign-in is required to enter the app — but anonymous is one of
+the always-available options.** Every launch routes to LoginScreen
+unless the device already has a Firebase Auth session cached. There
+is no "use the app without signing in at all" path; what we offer
+instead is a one-tap **Continue as Guest** that creates an
+anonymous Firebase user. A guest user has full access to recipes,
+firearms, batches, ballistics, Range Day, SAAMI specs, the AI chat
+(when shipped), and local JSON export. Cloud Sync, Cloud Backup,
+and Pro entitlement restore require a real account; we surface the
+upgrade path on those features only.
+
+**LoginScreen layout (top-down):**
+
+1. **Continue as Guest** card — primary call-to-action with an
+   icon, title, and one-line privacy note ("No email, no password —
+   your data stays on this device. You can upgrade to a real
+   account later if you want cloud backup or cross-device sync.").
+2. "or sign in to back up + sync" divider.
+3. Email / password fields, "Sign In" / "Create Account"
+   FilledButton, "Forgot password?" link.
+4. Divider.
+5. Social provider buttons — Continue with **Google**, **Apple**,
+   **Microsoft**, **Yahoo**.
+6. **Email Me a Sign-In Link** affordance (passwordless, deep-link
+   based).
+7. Get help signing in (mailto support).
+
+**First-launch enforcement.** On iOS, Firebase Auth's refresh token
+persists in the system Keychain across app uninstalls — so a
+"fresh install" was previously already-signed-in. On the very
+first launch on a given install (detected via the
+`app_launched_before` SharedPreferences flag), `main.dart` calls
+`FirebaseAuth.instance.signOut()` to clear any cached session. The
+flag is set BEFORE the sign-out so a crash mid-flow can't loop the
+user. Subsequent launches see the marker and skip — returning users
+go straight to HomeScreen via the cached refresh token.
+
+**Biometric unlock (optional, opt-in).** Settings → Account exposes
+a **"Unlock with biometrics"** toggle (hidden when the device has
+no Face ID / Touch ID / fingerprint sensor enrolled). When enabled,
+every launch after the user is signed in goes through a
+[BiometricLockScreen] gate before HomeScreen — auto-prompts for
+Face ID / Touch ID on mount, with retry and "Sign out" fallback if
+biometric fails. Biometric is a **local unlock gate** on top of
+Firebase's cached session, NOT a re-authentication: the user's
+Firebase identity (email, Google, anonymous, whichever) is
+unchanged; biometric just decides whether to render HomeScreen vs
+the lock screen. No biometric data leaves the device — the OS does
+the match in the secure enclave.
+
+**iOS-specific permissions:** `NSFaceIDUsageDescription` shipped in
+`Info.plist` ("LoadOut uses Face ID to unlock the app on your
+device. The unlock is local — your face data never leaves the
+phone.").
+
+**Android-specific permissions:** `USE_BIOMETRIC` and
+`USE_FINGERPRINT` declared in the manifest. `MainActivity` extends
+`FlutterFragmentActivity` (required by the `local_auth` plugin's
+biometric prompt fragment).
+
+**Marketing language:**
+
+- "Sign in once. Unlock with Face ID or Touch ID after that."
+- "Don't want an account? Continue as Guest — your data stays on
+  this device."
+- "Biometric is a local gate. We never see your face, fingerprint,
+  or password."
+
+**What we DON'T claim:**
+
+- We don't say "biometric login" without context (it's not a
+  separate authentication method — it's an unlock gate on top of
+  Firebase auth). "Biometric unlock" is the right term.
+- We don't say "Face ID required" — the toggle is opt-in and
+  hidden on devices without biometric support.
 
 ---
 
@@ -280,6 +380,51 @@ Full" labels — copy must use the current labels).
 
 Beginner Mode (a separate Settings toggle) anchors the form at Core
 and hides the segmented control.
+
+**Full mode is now navigable rather than one long scroll.** In Full
+mode the form starts with only the two primary sections (Load
+Identification and Powder) expanded; the other seven (Primer,
+Bullet, Brass, Loaded Round Dimensions, Pressure Indicators,
+Process / Equipment / Provenance, Custom Fields, Notes) collapse
+by default. Users navigate by tapping section headers. **Switching
+modes preserves data AND landing position:** every controller
+survives a Core ↔ Extended ↔ Full switch (no field is ever
+discarded), and the form auto-scrolls back to the section the user
+last expanded — so editing Powder in Core then flipping to Full
+lands the user inside the expanded Powder section, not at the top
+of the form.
+
+### Empty-state next-action cards
+
+Every primary list — Recipes, Firearms, Brass Lots, Batches —
+shows an `EmptyStateCard` instead of a one-liner when the list has
+zero rows. Each card has a heading, a one-paragraph explanation,
+and inline action buttons that mirror the FAB. Recipes shows two
+side-by-side buttons: **Quick** (FilledButton, ⚡ icon) and
+**Standard** (OutlinedButton, + icon). Firearms / Brass Lots /
+Batches each show a single primary button. The cards disappear the
+moment the user adds their first row.
+
+### Smart defaults that learn
+
+Component pickers (caliber, powder, bullet, primer, brass) sort
+options by **Favorites → Frequently used → general (alphabetical)**.
+
+- **Favorites** — for cartridge: the user's `UserFavorites`
+  rows (toggled from the SAAMI screen). For powder / bullet /
+  primer / brass: name-keyed favorites in the
+  `UserComponentFavorites` drift table (toggled by tapping the
+  star next to a row in the dropdown). Favorites participate in
+  Cloud Sync and exports.
+- **Frequently used** — derived from a `GROUP BY` over the user's
+  `UserLoads` rows (top 5 most-used names per kind). Renders with
+  a small history-clock icon as the leading indicator in the
+  dropdown.
+- **General** — the rest, in upstream alphabetical order.
+
+In marketing copy: "What you usually shoot is at the top of every
+picker. The app learns the powders, primers, bullets, and brass
+you actually use."
 
 ### Imports section (collapsed into one)
 
@@ -457,9 +602,19 @@ the range.
   sessions live in a History menu in the AppBar.
 - **AppBar title is constant "Range Day."** Per-session names live in
   the History list, not the AppBar.
-- **AppBar actions:** History (saved-sessions list), Recalculate.
-  *(A Quick / Full mode toggle in the AppBar is a planned UX — see
-  factual gaps note at the bottom of this file.)*
+- **AppBar actions:** Quick / Full mode toggle, History
+  (saved-sessions list), Recalculate.
+- **Quick / Full mode toggle (live).** A compact two-segment
+  control in the AppBar (⚡ Quick / 🎚 Full). Quick mode collapses
+  the screen to **Setup + Firing Solution** — the bare minimum a
+  shooter needs at the line. Full mode reveals every advanced
+  card (Environment, Wind Bracket, Hit Probability, Target Plot,
+  Group Stats, Last Shot Correction, Moving Target, DOPE, Notes).
+  Choice persists across visits via SharedPreferences
+  (`range_day_mode` key); fresh installs default to Quick. On wide
+  layouts (tablet / desktop), Quick mode collapses the two-column
+  layout to a single 720px-capped centered column; Full mode keeps
+  the two-column layout.
 - **Auto-saves on every field change** (debounced); rack picks now
   persist across app restarts.
 

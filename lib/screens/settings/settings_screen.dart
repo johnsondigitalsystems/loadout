@@ -65,7 +65,6 @@ import 'package:flutter/material.dart';
 
 import '../devices/devices_screen.dart';
 import '../disclaimers/data_sources_screen.dart';
-import '../saami/saami_screen.dart';
 import '../sync/cloud_sync_screen.dart';
 import 'account_settings_screen.dart';
 import 'ai_settings_screen.dart';
@@ -139,14 +138,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             'Optional AI assist for messy handwriting in Smart Import.',
         destinationBuilder: (_) => const AiSettingsScreen(),
       ),
-      _SettingsTileSpec(
-        icon: Icons.straighten_outlined,
-        title: 'SAAMI Specs',
-        subtitle:
-            'Reference dimensions and pressures for every cartridge in '
-            'the SAAMI catalog.',
-        destinationBuilder: (_) => const SaamiScreen(),
-      ),
+      // SAAMI Specs moved to the new "Resources" drawer destination
+      // (lib/screens/resources/resources_screen.dart) — reference
+      // material isn't a setting, and grouping it under Resources
+      // matches user expectation. Settings keeps strictly the
+      // "preferences and account" surface.
       _SettingsTileSpec(
         icon: Icons.privacy_tip_outlined,
         title: 'Privacy & Data',

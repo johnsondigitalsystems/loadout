@@ -77,6 +77,11 @@ Future<String?> showFindByScopeSheet(BuildContext context) {
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
+    // Inset below the status bar / Dynamic Island. Without this the
+    // sheet's title + search field render behind the system UI on
+    // tall iOS phones, which is the reason the user couldn't see
+    // the filter text area.
+    useSafeArea: true,
     builder: (_) => const _FindByScopeSheet(),
   );
 }

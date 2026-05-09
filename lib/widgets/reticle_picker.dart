@@ -197,7 +197,8 @@ class ReticlePickerField extends StatelessWidget {
                   Text(
                     selected == null
                         ? 'None / iron sights'
-                        : '${selected!.manufacturerId} ${selected!.model}',
+                        : '${_displayManufacturer(selected!.manufacturerId)} '
+                            '${selected!.model}',
                     style: theme.textTheme.bodyLarge,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -224,6 +225,10 @@ class ReticlePickerField extends StatelessWidget {
     final result = await showModalBottomSheet<_ReticleSelection>(
       context: context,
       isScrollControlled: true,
+      // Tell the framework to inset the sheet below the status bar /
+      // Dynamic Island. Without this the sheet's title + search field
+      // can render behind the system UI on tall iOS phones.
+      useSafeArea: true,
       builder: (ctx) => _ReticlePickerSheet(
         repo: repo,
         selectedId: selected?.id,
@@ -699,14 +704,33 @@ enum _ReticleCategory { mil, moa, publicDomain, combat, redDots }
 
 extension on _ReticleCategory {
   /// Section-header label rendered above the rows. Sentence case to
-  /// match the rest of the LoadOut form vocabulary.
+  /// match the rest of the LoadOut form vocabulary. The category
+  /// formerly displayed as "Public domain" is now labelled
+  /// "Classic" — the legalistic phrasing was confusing to non-
+  /// technical users (and reads as boilerplate rather than as
+  /// "these are the time-tested reticles every shooter knows").
+  /// The underlying database column / seed manufacturer string is
+  /// still "Public domain" in some rows; [_displayManufacturer]
+  /// rewrites that for rendering, so the user only ever sees
+  /// "Classic" in the UI.
   String get label => switch (this) {
         _ReticleCategory.mil => 'Mil reticles',
         _ReticleCategory.moa => 'MOA reticles',
-        _ReticleCategory.publicDomain => 'Public domain',
+        _ReticleCategory.publicDomain => 'Classic',
         _ReticleCategory.combat => 'Combat / Tactical',
         _ReticleCategory.redDots => 'Red dots',
       };
+}
+
+/// Friendly user-facing manufacturer label. Maps the legacy seed
+/// value "Public domain" to "Classic" for display so existing
+/// installs (whose Reticles table rows still say "Public domain"
+/// under `manufacturerId`) see the same label as fresh installs
+/// without a destructive DB migration. Every other manufacturer
+/// passes through unchanged.
+String _displayManufacturer(String raw) {
+  if (raw.toLowerCase().trim() == 'public domain') return 'Classic';
+  return raw;
 }
 
 /// Display order. Mil reticles come first because they're the modern
@@ -817,7 +841,7 @@ class _ReticleListRow extends StatelessWidget {
         ),
       ),
       title: Text(
-        '${row.manufacturerId} ${row.model}',
+        '${_displayManufacturer(row.manufacturerId)} ${row.model}',
         style: theme.textTheme.bodyLarge,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,

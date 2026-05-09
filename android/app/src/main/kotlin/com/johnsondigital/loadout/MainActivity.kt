@@ -34,10 +34,16 @@
 
 package com.johnsondigital.loadout
 
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 
-class MainActivity : FlutterActivity() {
+// Extends `FlutterFragmentActivity` (not `FlutterActivity`) because
+// the `local_auth` plugin's biometric prompt is rendered as an
+// AndroidX Fragment. Without a FragmentActivity host, the prompt
+// throws a runtime exception about "no FragmentManager." Switching
+// the host activity is the canonical fix per the plugin docs and is
+// behaviour-equivalent to FlutterActivity for every other use case.
+class MainActivity : FlutterFragmentActivity() {
     private var watchBridge: WatchBridge? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {

@@ -393,6 +393,12 @@ class _RecipesList extends StatelessWidget {
           // with the FAB can ignore the card and tap as usual.
           return SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+            // Wrap the actions in a single Row(Expanded, Expanded) so
+            // the Quick + Standard buttons always render side-by-side
+            // — even on a 360px-wide phone where the default Wrap
+            // would otherwise stack them. The buttons share width
+            // equally, which reads as "two equally-valid choices"
+            // rather than "primary + secondary stacked."
             child: EmptyStateCard(
               heading: 'Add your first recipe',
               body:
@@ -400,27 +406,36 @@ class _RecipesList extends StatelessWidget {
                   'bullet, primer, brass. Quick captures the four '
                   'fields that matter; Standard opens the full form.',
               actions: [
-                FilledButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const QuickAddRecipeScreen(),
+                Row(
+                  children: [
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const QuickAddRecipeScreen(),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.bolt),
+                        label: const Text('Quick'),
                       ),
-                    );
-                  },
-                  icon: const Icon(Icons.bolt),
-                  label: const Text('Quick recipe'),
-                ),
-                OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const RecipeFormScreen(),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const RecipeFormScreen(),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.add),
+                        label: const Text('Standard'),
                       ),
-                    );
-                  },
-                  icon: const Icon(Icons.add),
-                  label: const Text('Standard recipe'),
+                    ),
+                  ],
                 ),
               ],
             ),

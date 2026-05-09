@@ -1757,6 +1757,63 @@ class UserFavorites extends Table {
       ];
 }
 
+/// Schema v25: name-keyed favorites for component kinds that don't
+/// have stable reference-table row ids (powder / bullet / primer /
+/// brass). Cartridge favorites continue to live in [UserFavorites]
+/// because cartridges are int-row-id keyed and the SAAMI screen
+/// already provides a toggle UI on top of that schema.
+///
+/// Why a separate table:
+///   * Components are picked by NAME (the upstream
+///     `componentLabels` returns String). Catalog rows AND
+///     custom user-added components share the same picker, so a
+///     row-id-keyed favorite would either cover only catalog
+///     entries OR break when the user renames a custom
+///     component. Name-keyed favorites survive both flows.
+///   * Including this in the encrypted Cloud Sync payload is the
+///     point of moving from SharedPreferences to drift — the
+///     existing sync pipeline (`ExportService.exportToJson` →
+///     `CloudSyncService.syncUp`) walks every table in
+///     [kUserDataTableOrder] and applies last-writer-wins on the
+///     remote pull. Name-keyed rows fit that pipeline as long as
+///     we treat (kind, name) as the natural key.
+///
+/// Migration from SharedPreferences happens once at first launch
+/// after the upgrade in [ComponentFavoritesService._migrateFromPrefs].
+@DataClassName('UserComponentFavoriteRow')
+class UserComponentFavorites extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  /// Component-kind discriminator: 'powder', 'bullet', 'primer',
+  /// 'brass'. Cartridge favorites live in [UserFavorites] (int
+  /// row-id keyed) — see the `UserComponentFavorites` table
+  /// docstring for why the two systems coexist.
+  TextColumn get kind => text()();
+
+  /// User-facing component label (e.g. "Hodgdon Varget", "Sierra
+  /// MatchKing 175gr"). Whitespace-trimmed at write time by
+  /// [ComponentFavoritesService] so "Varget" and "Varget " can't
+  /// duplicate.
+  TextColumn get name => text()();
+
+  /// Last update — Cloud Sync's last-writer-wins reconciler reads
+  /// this to decide which side to keep when the same
+  /// (kind, name) row exists on both devices. Bumped on every
+  /// toggle insert (deletion is `DELETE FROM ...`, not an
+  /// updatedAt bump, so a delete on device A wins over a create
+  /// on device B only if A's delete arrives after the create).
+  DateTimeColumn get updatedAt =>
+      dateTime().withDefault(currentDateAndTime)();
+
+  DateTimeColumn get createdAt =>
+      dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {kind, name},
+      ];
+}
+
 // ─────────────────────── Database ───────────────────────
 
 @DriftDatabase(
@@ -1819,6 +1876,11 @@ class UserFavorites extends Table {
     // UserFirearms, BallisticProfiles plus a join table covering
     // reference-data favorites — cartridges, reticles, targets).
     UserFavorites,
+    // Schema v25 additions (name-keyed favorites for powder /
+    // bullet / primer / brass components — moved from
+    // SharedPreferences to drift so they participate in
+    // ExportService and Cloud Sync).
+    UserComponentFavorites,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -1827,7 +1889,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 24;
+  int get schemaVersion => 25;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -2286,6 +2348,16 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(
                 ballisticProfiles, ballisticProfiles.isFavorite);
             await m.createTable(userFavorites);
+          }
+          if (from < 25) {
+            // v25 — UserComponentFavorites: name-keyed favorites for
+            // powder / bullet / primer / brass components. Created
+            // empty; the existing-data migration from the legacy
+            // SharedPreferences storage runs lazily on first launch
+            // via `ComponentFavoritesService._migrateFromPrefs`,
+            // not here, because SharedPreferences is async-only and
+            // shouldn't block a synchronous migration step.
+            await m.createTable(userComponentFavorites);
           }
         },
       );

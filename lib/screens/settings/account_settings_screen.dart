@@ -39,6 +39,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../services/auth_service.dart';
+import '../../services/biometric_service.dart';
 import '../../services/entitlement_notifier.dart';
 import '../../services/purchases_service.dart';
 import '../../services/support.dart';
@@ -99,6 +100,15 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                 ),
                 onTap: _signOut,
               ),
+            // Biometric unlock toggle. Connected automatically to
+            // whichever Firebase account the user is currently
+            // signed into — biometric is a local "unlock the app"
+            // gate on top of Firebase's cached refresh token. Hidden
+            // entirely on devices that don't support biometric
+            // (no Face ID / Touch ID / fingerprint sensor) so the
+            // toggle never appears as a non-functional dead end.
+            // See [BiometricService] for the full contract.
+            _BiometricTile(busy: _busy, setBusy: (v) => setState(() => _busy = v)),
             ListTile(
               leading: const Icon(Icons.workspace_premium_outlined),
               title: const Text('Restore purchases'),
@@ -204,5 +214,61 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
         SnackBar(content: Text('No email app available — write to $supportEmail.')),
       );
     }
+  }
+}
+
+/// Settings tile for the "Use biometrics to unlock LoadOut" toggle.
+/// Hidden when the device reports no biometric support (no Face ID
+/// / Touch ID / fingerprint sensor enrolled) so the toggle never
+/// appears as a non-functional control. Reads / writes through
+/// [BiometricService]; the service itself runs a confirmation
+/// biometric prompt as part of the enable flow so we never enable
+/// a feature the user can't actually use.
+class _BiometricTile extends StatelessWidget {
+  const _BiometricTile({required this.busy, required this.setBusy});
+
+  final bool busy;
+  final void Function(bool) setBusy;
+
+  @override
+  Widget build(BuildContext context) {
+    final svc = context.watch<BiometricService>();
+    if (!svc.isHydrated || !svc.isAvailable) {
+      // Not yet probed, or device doesn't expose biometric. Either
+      // way we render nothing — the user shouldn't see a toggle they
+      // can't engage. Once hydration completes a rebuild fires
+      // automatically (the service is a ChangeNotifier).
+      return const SizedBox.shrink();
+    }
+    return SwitchListTile(
+      secondary: const Icon(Icons.fingerprint),
+      title: const Text('Unlock with biometrics'),
+      subtitle: const Text(
+        "Use Face ID, Touch ID, or your device's fingerprint to "
+        'unlock LoadOut. Connected to your current sign-in — no '
+        'separate password to remember.',
+      ),
+      value: svc.isEnabled,
+      onChanged: busy
+          ? null
+          : (value) async {
+              setBusy(true);
+              try {
+                final ok = await svc.setEnabled(value);
+                if (!ok && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Biometric authentication did not complete. '
+                        'Toggle stayed off.',
+                      ),
+                    ),
+                  );
+                }
+              } finally {
+                setBusy(false);
+              }
+            },
+    );
   }
 }

@@ -139,6 +139,7 @@ import 'repositories/range_day_repository.dart';
 import 'repositories/recipe_repository.dart';
 import 'repositories/reticle_repository.dart';
 import 'repositories/target_repository.dart';
+import 'screens/auth/biometric_lock_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/disclaimer/disclaimer_screen.dart';
 import 'screens/home/home_screen.dart';
@@ -146,6 +147,7 @@ import 'services/ai_smart_import_service.dart';
 import 'services/auth_service.dart';
 import 'services/auto_save_service.dart';
 import 'services/beginner_mode_service.dart';
+import 'services/biometric_service.dart';
 import 'services/ble/ble_service.dart';
 import 'services/ble/bushnell_rangefinder_service.dart';
 import 'services/ble/kestrel_service.dart';
@@ -274,6 +276,16 @@ class LoadOutApp extends StatelessWidget {
         ChangeNotifierProvider<BeginnerModeService>(
           create: (_) => BeginnerModeService(),
         ),
+        // Local biometric unlock gate. See [BiometricService] for the
+        // contract (Firebase-cached session is the actual sign-in;
+        // biometric is a local "prove this is you" gate that runs
+        // between auth state and HomeScreen). Provided as a
+        // ChangeNotifier so [_AuthGate] can `context.watch` and
+        // rebuild between [BiometricLockScreen] and [HomeScreen]
+        // when the user successfully unlocks.
+        ChangeNotifierProvider<BiometricService>(
+          create: (_) => BiometricService(),
+        ),
         // Session-scoped (in-memory) registry of glossary terms the
         // user has already encountered. Backs the first-occurrence
         // emphasis behaviour in [GlossaryLabel] when Beginner Mode
@@ -289,7 +301,7 @@ class LoadOutApp extends StatelessWidget {
         // the file header on [ComponentFavoritesService] for why
         // the two systems coexist.
         ChangeNotifierProvider<ComponentFavoritesService>(
-          create: (_) => ComponentFavoritesService(),
+          create: (ctx) => ComponentFavoritesService(ctx.read<AppDatabase>()),
         ),
         ChangeNotifierProvider<UnitService>(
           create: (_) => UnitService(),
@@ -635,7 +647,38 @@ class _AuthGateState extends State<_AuthGate> {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<User?>();
-    return user == null ? const LoginScreen() : const HomeScreen();
+    // Three branches:
+    //   1. No Firebase user — show LoginScreen so the user can
+    //      sign in with any provider (including the prominent
+    //      "Continue as Guest" / anonymous option). Sign-in is
+    //      always required to enter the app, but anonymous is one
+    //      of the always-available options, so users who don't
+    //      want a real account can still proceed in one tap.
+    //   2. Firebase user + biometric enabled but session not yet
+    //      unlocked — show [BiometricLockScreen] until the user
+    //      passes the platform biometric prompt. The user is
+    //      "always signed in" (per the product policy) — biometric
+    //      is a local gate, not a re-authentication.
+    //   3. Otherwise — proceed to HomeScreen.
+    if (user == null) {
+      return const LoginScreen();
+    }
+    final biometric = context.watch<BiometricService>();
+    // Brief loading state on cold start: the BiometricService reads
+    // its `isEnabled` preference asynchronously from
+    // SharedPreferences. Without this guard the user briefly sees
+    // HomeScreen before the lock screen flashes in once hydration
+    // completes — visually janky and a minor security smell. A
+    // CircularProgressIndicator covers the ~50ms gap.
+    if (!biometric.isHydrated) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (biometric.isEnabled && !biometric.isUnlocked) {
+      return const BiometricLockScreen();
+    }
+    return const HomeScreen();
   }
 }
 

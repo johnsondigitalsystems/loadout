@@ -33603,6 +33603,372 @@ class UserFavoritesCompanion extends UpdateCompanion<UserFavoriteRow> {
   }
 }
 
+class $UserComponentFavoritesTable extends UserComponentFavorites
+    with TableInfo<$UserComponentFavoritesTable, UserComponentFavoriteRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $UserComponentFavoritesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, kind, name, updatedAt, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'user_component_favorites';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<UserComponentFavoriteRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {kind, name},
+  ];
+  @override
+  UserComponentFavoriteRow map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return UserComponentFavoriteRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $UserComponentFavoritesTable createAlias(String alias) {
+    return $UserComponentFavoritesTable(attachedDatabase, alias);
+  }
+}
+
+class UserComponentFavoriteRow extends DataClass
+    implements Insertable<UserComponentFavoriteRow> {
+  final int id;
+
+  /// Component-kind discriminator: 'powder', 'bullet', 'primer',
+  /// 'brass'. Cartridge favorites live in [UserFavorites] (int
+  /// row-id keyed) — see the `UserComponentFavorites` table
+  /// docstring for why the two systems coexist.
+  final String kind;
+
+  /// User-facing component label (e.g. "Hodgdon Varget", "Sierra
+  /// MatchKing 175gr"). Whitespace-trimmed at write time by
+  /// [ComponentFavoritesService] so "Varget" and "Varget " can't
+  /// duplicate.
+  final String name;
+
+  /// Last update — Cloud Sync's last-writer-wins reconciler reads
+  /// this to decide which side to keep when the same
+  /// (kind, name) row exists on both devices. Bumped on every
+  /// toggle insert (deletion is `DELETE FROM ...`, not an
+  /// updatedAt bump, so a delete on device A wins over a create
+  /// on device B only if A's delete arrives after the create).
+  final DateTime updatedAt;
+  final DateTime createdAt;
+  const UserComponentFavoriteRow({
+    required this.id,
+    required this.kind,
+    required this.name,
+    required this.updatedAt,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['kind'] = Variable<String>(kind);
+    map['name'] = Variable<String>(name);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  UserComponentFavoritesCompanion toCompanion(bool nullToAbsent) {
+    return UserComponentFavoritesCompanion(
+      id: Value(id),
+      kind: Value(kind),
+      name: Value(name),
+      updatedAt: Value(updatedAt),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory UserComponentFavoriteRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return UserComponentFavoriteRow(
+      id: serializer.fromJson<int>(json['id']),
+      kind: serializer.fromJson<String>(json['kind']),
+      name: serializer.fromJson<String>(json['name']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'kind': serializer.toJson<String>(kind),
+      'name': serializer.toJson<String>(name),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  UserComponentFavoriteRow copyWith({
+    int? id,
+    String? kind,
+    String? name,
+    DateTime? updatedAt,
+    DateTime? createdAt,
+  }) => UserComponentFavoriteRow(
+    id: id ?? this.id,
+    kind: kind ?? this.kind,
+    name: name ?? this.name,
+    updatedAt: updatedAt ?? this.updatedAt,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  UserComponentFavoriteRow copyWithCompanion(
+    UserComponentFavoritesCompanion data,
+  ) {
+    return UserComponentFavoriteRow(
+      id: data.id.present ? data.id.value : this.id,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      name: data.name.present ? data.name.value : this.name,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserComponentFavoriteRow(')
+          ..write('id: $id, ')
+          ..write('kind: $kind, ')
+          ..write('name: $name, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, kind, name, updatedAt, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is UserComponentFavoriteRow &&
+          other.id == this.id &&
+          other.kind == this.kind &&
+          other.name == this.name &&
+          other.updatedAt == this.updatedAt &&
+          other.createdAt == this.createdAt);
+}
+
+class UserComponentFavoritesCompanion
+    extends UpdateCompanion<UserComponentFavoriteRow> {
+  final Value<int> id;
+  final Value<String> kind;
+  final Value<String> name;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime> createdAt;
+  const UserComponentFavoritesCompanion({
+    this.id = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.name = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  UserComponentFavoritesCompanion.insert({
+    this.id = const Value.absent(),
+    required String kind,
+    required String name,
+    this.updatedAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : kind = Value(kind),
+       name = Value(name);
+  static Insertable<UserComponentFavoriteRow> custom({
+    Expression<int>? id,
+    Expression<String>? kind,
+    Expression<String>? name,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (kind != null) 'kind': kind,
+      if (name != null) 'name': name,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  UserComponentFavoritesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? kind,
+    Value<String>? name,
+    Value<DateTime>? updatedAt,
+    Value<DateTime>? createdAt,
+  }) {
+    return UserComponentFavoritesCompanion(
+      id: id ?? this.id,
+      kind: kind ?? this.kind,
+      name: name ?? this.name,
+      updatedAt: updatedAt ?? this.updatedAt,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserComponentFavoritesCompanion(')
+          ..write('id: $id, ')
+          ..write('kind: $kind, ')
+          ..write('name: $name, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -33666,6 +34032,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $UserFavoritesTable userFavorites = $UserFavoritesTable(this);
+  late final $UserComponentFavoritesTable userComponentFavorites =
+      $UserComponentFavoritesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -33711,6 +34079,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     scopeReticleOptions,
     manufacturedAmmo,
     userFavorites,
+    userComponentFavorites,
   ];
 }
 
@@ -55875,6 +56244,219 @@ typedef $$UserFavoritesTableProcessedTableManager =
       UserFavoriteRow,
       PrefetchHooks Function()
     >;
+typedef $$UserComponentFavoritesTableCreateCompanionBuilder =
+    UserComponentFavoritesCompanion Function({
+      Value<int> id,
+      required String kind,
+      required String name,
+      Value<DateTime> updatedAt,
+      Value<DateTime> createdAt,
+    });
+typedef $$UserComponentFavoritesTableUpdateCompanionBuilder =
+    UserComponentFavoritesCompanion Function({
+      Value<int> id,
+      Value<String> kind,
+      Value<String> name,
+      Value<DateTime> updatedAt,
+      Value<DateTime> createdAt,
+    });
+
+class $$UserComponentFavoritesTableFilterComposer
+    extends Composer<_$AppDatabase, $UserComponentFavoritesTable> {
+  $$UserComponentFavoritesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$UserComponentFavoritesTableOrderingComposer
+    extends Composer<_$AppDatabase, $UserComponentFavoritesTable> {
+  $$UserComponentFavoritesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$UserComponentFavoritesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $UserComponentFavoritesTable> {
+  $$UserComponentFavoritesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$UserComponentFavoritesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $UserComponentFavoritesTable,
+          UserComponentFavoriteRow,
+          $$UserComponentFavoritesTableFilterComposer,
+          $$UserComponentFavoritesTableOrderingComposer,
+          $$UserComponentFavoritesTableAnnotationComposer,
+          $$UserComponentFavoritesTableCreateCompanionBuilder,
+          $$UserComponentFavoritesTableUpdateCompanionBuilder,
+          (
+            UserComponentFavoriteRow,
+            BaseReferences<
+              _$AppDatabase,
+              $UserComponentFavoritesTable,
+              UserComponentFavoriteRow
+            >,
+          ),
+          UserComponentFavoriteRow,
+          PrefetchHooks Function()
+        > {
+  $$UserComponentFavoritesTableTableManager(
+    _$AppDatabase db,
+    $UserComponentFavoritesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$UserComponentFavoritesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$UserComponentFavoritesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$UserComponentFavoritesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => UserComponentFavoritesCompanion(
+                id: id,
+                kind: kind,
+                name: name,
+                updatedAt: updatedAt,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String kind,
+                required String name,
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => UserComponentFavoritesCompanion.insert(
+                id: id,
+                kind: kind,
+                name: name,
+                updatedAt: updatedAt,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$UserComponentFavoritesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $UserComponentFavoritesTable,
+      UserComponentFavoriteRow,
+      $$UserComponentFavoritesTableFilterComposer,
+      $$UserComponentFavoritesTableOrderingComposer,
+      $$UserComponentFavoritesTableAnnotationComposer,
+      $$UserComponentFavoritesTableCreateCompanionBuilder,
+      $$UserComponentFavoritesTableUpdateCompanionBuilder,
+      (
+        UserComponentFavoriteRow,
+        BaseReferences<
+          _$AppDatabase,
+          $UserComponentFavoritesTable,
+          UserComponentFavoriteRow
+        >,
+      ),
+      UserComponentFavoriteRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -55962,4 +56544,9 @@ class $AppDatabaseManager {
       $$ManufacturedAmmoTableTableManager(_db, _db.manufacturedAmmo);
   $$UserFavoritesTableTableManager get userFavorites =>
       $$UserFavoritesTableTableManager(_db, _db.userFavorites);
+  $$UserComponentFavoritesTableTableManager get userComponentFavorites =>
+      $$UserComponentFavoritesTableTableManager(
+        _db,
+        _db.userComponentFavorites,
+      );
 }

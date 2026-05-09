@@ -209,6 +209,12 @@ class _SaamiScreenState extends State<SaamiScreen> {
     final repo = context.read<ComponentRepository>();
     final favoritesRepo = context.read<FavoritesRepository>();
     return Scaffold(
+      // AppBar gives the screen a system-aware top inset so the
+      // cartridge-picker search field is no longer hidden behind
+      // the status bar / Dynamic Island on tall iOS phones. Title
+      // doubles as a back-button anchor for users who reached this
+      // screen from the new Resources menu.
+      appBar: AppBar(title: const Text('SAAMI Specs')),
       body: StreamBuilder<List<CartridgeRow>>(
         stream: repo.watchCartridges(),
         builder: (context, snap) {

@@ -211,8 +211,14 @@ const List<String> kUserDataTableOrder = <String>[
   'load_development_sessions',
   // Schema v8 — ballistic profiles. Nullable FKs to UserFirearms (`firearmId`)
   // and the seeded Bullets reference table (`bulletId`), so it must land
-  // after `user_firearms`. Listed last because nothing else references it.
+  // after `user_firearms`.
   'ballistic_profiles',
+  // Schema v25 — name-keyed component favorites (powder / bullet /
+  // primer / brass). No foreign keys (the favorited component is
+  // identified by string name, not row id, so catalog-vs-custom
+  // path-mixing doesn't break across export/import). Listed last
+  // because nothing else references it.
+  'user_component_favorites',
 ];
 
 /// Per-table summary returned from [ExportService.importFromJson]. Lets the
@@ -319,6 +325,7 @@ class ExportService {
     tables['user_custom_field_values'] = await _dumpCustomFieldValues();
     tables['load_development_sessions'] = await _dumpLoadDevelopmentSessions();
     tables['ballistic_profiles'] = await _dumpBallisticProfiles();
+    tables['user_component_favorites'] = await _dumpComponentFavorites();
 
     final wrapper = <String, dynamic>{
       'loadout_export_version': kLoadOutExportVersion,
@@ -498,6 +505,15 @@ class ExportService {
     return rows.map((r) => r.toJson()).toList(growable: false);
   }
 
+  /// Schema v25 — name-keyed component favorites (powder / bullet
+  /// / primer / brass). Persisted via [UserComponentFavorites].
+  /// Cartridge favorites live in `user_favorites` (different table,
+  /// row-id keyed) and aren't dumped here.
+  Future<List<Map<String, dynamic>>> _dumpComponentFavorites() async {
+    final rows = await db.select(db.userComponentFavorites).get();
+    return rows.map((r) => r.toJson()).toList(growable: false);
+  }
+
   // ─────────────── per-table import dispatch ───────────────
 
   Future<ImportTableSummary> _importTable({
@@ -618,6 +634,14 @@ class ExportService {
         await db
             .into(db.ballisticProfiles)
             .insert(BallisticProfileRow.fromJson(json), mode: insertMode);
+        return true;
+      case 'user_component_favorites':
+        await db
+            .into(db.userComponentFavorites)
+            .insert(
+              UserComponentFavoriteRow.fromJson(json),
+              mode: insertMode,
+            );
         return true;
       default:
         // Forward-compatibility: silently ignore unknown tables so a backup

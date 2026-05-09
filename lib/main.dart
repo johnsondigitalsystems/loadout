@@ -100,6 +100,7 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
@@ -122,6 +123,16 @@ const String kCrashlyticsEnabledPrefKey = 'crashlytics_enabled';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Detect the very first launch on this install (or a launch after a
+  // fresh reinstall on iOS, where Firebase's refresh token persists in
+  // the system Keychain across uninstalls and would otherwise auto-
+  // restore a stale "logged in" state). When the marker pref is
+  // missing we sign Firebase Auth out — the user lands on
+  // LoginScreen and explicitly chooses an option. The marker is set
+  // immediately so a crash mid-launch doesn't loop us into repeated
+  // sign-outs.
+  await _enforceLoginOnFirstLaunch();
 
   // Crashlytics is opt-in. Read the SharedPreferences flag (default
   // false → collection OFF) and wire the global error handlers only
@@ -181,6 +192,46 @@ bool get _isPurchasesSupported {
 bool get _isCrashlyticsSupported {
   if (kIsWeb) return false;
   return Platform.isIOS || Platform.isAndroid;
+}
+
+/// SharedPreferences key marking that the app has launched at least
+/// once on this install. Drives [_enforceLoginOnFirstLaunch].
+const String _kLaunchedBeforePrefKey = 'app_launched_before';
+
+/// Force the user to the LoginScreen on the first launch of every
+/// install — including fresh reinstalls on iOS, where Firebase's
+/// refresh token persists in the system Keychain across uninstalls
+/// and would otherwise silently restore a stale signed-in state.
+///
+/// The marker pref `app_launched_before` is set BEFORE the
+/// `signOut()` call so a crash between sign-out and `runApp` doesn't
+/// loop the user into repeated sign-outs. Subsequent launches see the
+/// marker and skip this entirely; the auth gate then routes returning
+/// users straight to HomeScreen via the cached refresh token.
+///
+/// Soft-fails on every error (SharedPreferences unavailable, Firebase
+/// not yet ready, signOut throwing). The fallback is "behave like
+/// before" — the auth gate still routes to LoginScreen if the user
+/// is null, just doesn't proactively force the sign-out.
+Future<void> _enforceLoginOnFirstLaunch() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final hasLaunchedBefore = prefs.getBool(_kLaunchedBeforePrefKey) ?? false;
+    if (hasLaunchedBefore) return;
+    // Mark FIRST so a crash mid-flow doesn't trap the user.
+    await prefs.setBool(_kLaunchedBeforePrefKey, true);
+    final cached = FirebaseAuth.instance.currentUser;
+    if (cached != null) {
+      debugPrint(
+        'main: first launch — clearing cached Firebase user '
+        '(uid prefix ${cached.uid.substring(0, cached.uid.length.clamp(0, 6))}) '
+        'so LoginScreen shows.',
+      );
+      await FirebaseAuth.instance.signOut();
+    }
+  } catch (e) {
+    debugPrint('main: first-launch sign-out check failed: $e');
+  }
 }
 
 /// Read the user's opt-in choice and wire global error handlers if
