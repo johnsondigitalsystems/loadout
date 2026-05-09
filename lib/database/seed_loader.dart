@@ -191,6 +191,12 @@ class SeedLoader {
         firstRun || await db.reticlesAreEmpty || flag('reticles');
     final dragCurvesReseed =
         firstRun || await db.dragCurvesAreEmpty || flag('drag_curves');
+    // Target racks ship as a sibling reference catalog to the
+    // single-target [Targets] table. Re-seed when the table is empty
+    // (first run / post-migration) or when SeedUpdater flagged a new
+    // download via the 'target_racks' pref key.
+    final targetRacksReseed =
+        firstRun || await db.targetRacksAreEmpty || flag('target_racks');
 
     final any = cartridgesReseed ||
         powdersReseed ||
@@ -202,7 +208,8 @@ class SeedLoader {
         opticsReseed ||
         targetsReseed ||
         reticlesReseed ||
-        dragCurvesReseed;
+        dragCurvesReseed ||
+        targetRacksReseed;
     if (!any) return;
 
     await db.transaction(() async {
@@ -302,6 +309,17 @@ class SeedLoader {
         }
         await _seedDragCurves();
       }
+      if (targetRacksReseed) {
+        // Target racks are independent of `Manufacturers`. Children
+        // are FK-linked to their parent rack, so wipe children FIRST
+        // to satisfy the FK constraint, then wipe parents, then
+        // re-seed.
+        if (!firstRun) {
+          await db.delete(db.targetRackChildren).go();
+          await db.delete(db.targetRacks).go();
+        }
+        await _seedTargetRacks();
+      }
       // Re-seed primers if they're missing — the v3 migration intentionally
       // clears them so the new productLine field gets populated for
       // upgrading users without nuking the rest of the DB. The forced
@@ -340,6 +358,7 @@ class SeedLoader {
     await clearIf(targetsReseed, 'targets');
     await clearIf(reticlesReseed, 'reticles');
     await clearIf(dragCurvesReseed, 'drag_curves');
+    await clearIf(targetRacksReseed, 'target_racks');
   }
 
   Future<int> _manufacturerId(
@@ -686,6 +705,54 @@ class SeedLoader {
       ));
     }
     await db.batch((b) => b.insertAll(db.targets, batch));
+  }
+
+  /// Seed the [TargetRacks] / [TargetRackChildren] reference catalog
+  /// from `assets/seed_data/target_racks.json`. The JSON shape is an
+  /// object with a top-level `racks` array; each rack carries a
+  /// `children` array describing the in-rack layout.
+  ///
+  /// We insert each parent first to learn its auto-incremented id,
+  /// then batch-insert its children with that id as `rackId`. Per-rack
+  /// inserts are slower than one big batch but keep the FK wiring
+  /// trivial — the seed dataset is tiny (single-digit racks) so the
+  /// extra round-trips don't matter.
+  Future<void> _seedTargetRacks() async {
+    final root = await _readJsonObject('target_racks.json');
+    final racks = (root['racks'] as List<dynamic>? ?? const <dynamic>[]);
+    if (racks.isEmpty) return;
+
+    for (final entry in racks) {
+      final m = entry as Map<String, dynamic>;
+      final rackId = await db.into(db.targetRacks).insert(
+            TargetRacksCompanion.insert(
+              name: m['name'] as String,
+              description: Value(m['description'] as String?),
+              rackKind: m['rack_kind'] as String,
+              totalWidthIn: (m['total_width_in'] as num).toDouble(),
+              totalHeightIn: (m['total_height_in'] as num).toDouble(),
+              notes: Value(m['notes'] as String?),
+            ),
+          );
+      final children = (m['children'] as List<dynamic>? ?? const <dynamic>[]);
+      if (children.isEmpty) continue;
+      final childBatch = <TargetRackChildrenCompanion>[];
+      for (final c in children) {
+        final cm = c as Map<String, dynamic>;
+        childBatch.add(TargetRackChildrenCompanion.insert(
+          rackId: rackId,
+          position: cm['position'] as int,
+          name: cm['name'] as String,
+          shape: cm['shape'] as String,
+          widthIn: (cm['width_in'] as num).toDouble(),
+          heightIn: (cm['height_in'] as num).toDouble(),
+          offsetXIn: (cm['offset_x_in'] as num).toDouble(),
+          offsetYIn: (cm['offset_y_in'] as num).toDouble(),
+          colorHex: cm['color_hex'] as String,
+        ));
+      }
+      await db.batch((b) => b.insertAll(db.targetRackChildren, childBatch));
+    }
   }
 
   /// Seed the [Reticles] reference catalog from

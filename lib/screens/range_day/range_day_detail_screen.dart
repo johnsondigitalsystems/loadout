@@ -96,6 +96,14 @@ import 'sight_calibration_screen.dart';
 import 'wez_analysis_screen.dart';
 import 'widgets/target_plot.dart';
 
+/// Which kind of "target" the Setup picker is configuring. Mutually
+/// exclusive — picking a single target nulls out any rack selection,
+/// and vice versa, so downstream code only has to disambiguate via
+/// the `_active*` helpers on the screen state. Lives at file scope so
+/// it can be referenced from the state class without leaking it into
+/// the public surface of the screen.
+enum _TargetPickerMode { single, rack }
+
 class RangeDayDetailScreen extends StatefulWidget {
   const RangeDayDetailScreen({super.key, this.sessionId});
 
@@ -125,6 +133,41 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   TargetRow? _selectedTarget;
   String _targetCategoryFilter = 'all';
   Future<List<TargetRow>>? _targetsFuture;
+
+  // ─────────────────────── Target racks (in-memory only) ───────────────────────
+  //
+  // Picking a rack is mutually-exclusive with picking a single target —
+  // the small "[Single | Rack]" segmented toggle above the picker
+  // selects which kind is being chosen. When a rack is active,
+  // [_selectedTarget] is forced to null and the active geometry comes
+  // from `_selectedRackChildren[_selectedRackChildPosition]` (a
+  // [TargetRackChildRow]). That child's width / height / shape /
+  // colorHex feeds every downstream consumer through the
+  // `_activeTargetWidthIn` / `_activeTargetHeightIn` /
+  // `_activeTargetSpec` helpers below.
+  //
+  // TODO(rack-persistence): the rack choice is intentionally NOT
+  // persisted yet. [RangeDaySessions] only carries `targetId` (a single
+  // target FK), so when a rack is active we write `targetId = null` on
+  // auto-save and the rack selection vanishes when the session is
+  // re-opened. Adding `rackId` + `rackChildPosition` columns to
+  // [RangeDaySessions] is a follow-up task that has to bump
+  // `schemaVersion`, add an `onUpgrade` clause, mirror the columns into
+  // the cloud-sync payload, and seed-roundtrip the picker via
+  // `_hydrateFromSession`.
+  TargetRackRow? _selectedRack;
+  List<TargetRackChildRow> _selectedRackChildren = const [];
+  int _selectedRackChildPosition = 0;
+  Future<List<TargetRackRow>>? _racksFuture;
+  String? _rackChildrenError;
+
+  /// Two-segment toggle picking which kind of target the user is
+  /// configuring. [_TargetPickerMode.single] keeps the existing single-
+  /// target dropdown UX (default). [_TargetPickerMode.rack] swaps in
+  /// the rack dropdown + active-child chips. Mode is in-memory only —
+  /// hydration on a saved session always lands in `single` because the
+  /// schema doesn't carry a rack id yet (see TODO above).
+  _TargetPickerMode _targetPickerMode = _TargetPickerMode.single;
 
   BallisticProfileRow? _selectedProfile;
   Stream<List<BallisticProfileRow>>? _profilesStream;
@@ -336,6 +379,11 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   void initState() {
     super.initState();
     _targetsFuture = context.read<TargetRepository>().allTargets();
+    // Kick off the rack catalog read up-front so the rack tab of the
+    // target picker doesn't show a spinner the first time the user
+    // toggles into it. The picker still surfaces a soft error if the
+    // future rejects — see `_rackTargetPickerBody`.
+    _racksFuture = context.read<TargetRepository>().allRacks();
     _profilesStream = context.read<BallisticProfileRepository>().watchAll();
     _loadsFuture = _loadAllRecipes();
     _firearmsFuture = context.read<FirearmRepository>().allFirearms();
@@ -741,14 +789,18 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   void _computeHitProb() {
     if (!mounted) return;
     final svc = context.read<HitProbabilityService>();
-    final target = _selectedTarget;
-    if (target == null) {
+    // Read geometry through the active-target helpers so a rack-active
+    // selection feeds the rack child's width / height / shape into the
+    // solver instead of (mistakenly) using the rack envelope or
+    // skipping the calc entirely.
+    final widthIn = _activeTargetWidthIn;
+    final heightIn = _activeTargetHeightIn;
+    final shapeStr = _activeTargetShape;
+    if (widthIn == null || heightIn == null || shapeStr == null) {
       setState(() => _hitProb = null);
       return;
     }
-    final widthIn = target.widthIn;
-    final heightIn = target.heightIn;
-    final shape = parseTargetShape(target.shape);
+    final shape = parseTargetShape(shapeStr);
     final dist = double.tryParse(_distanceCtrl.text.trim()) ?? 100;
     // Aim offset converts from normalized [-1, 1] to inches at the
     // target by multiplying by the target half-extent. Treat null aim
@@ -992,9 +1044,14 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   RangeDaySessionsCompanion _buildSessionCompanion() {
     final distance =
         double.tryParse(_distanceCtrl.text.trim()) ?? 100;
-    final defaultName = _selectedTarget == null
+    // Use the active-target display name so the auto-generated session
+    // title reflects either the single target OR the active rack
+    // child. Falls back to the generic "Range day · …" when nothing
+    // is picked yet.
+    final activeName = _activeTargetDisplayName;
+    final defaultName = activeName == null
         ? 'Range day · ${distance.toStringAsFixed(0)} yd'
-        : '${_selectedTarget!.name} · ${distance.toStringAsFixed(0)} yd';
+        : '$activeName · ${distance.toStringAsFixed(0)} yd';
     return RangeDaySessionsCompanion(
       name: drift.Value(_session?.name ?? defaultName),
       date: drift.Value(_session?.date ?? DateTime.now()),
@@ -1004,6 +1061,12 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       ballisticProfileId: drift.Value(_selectedProfile?.id),
       recipeId: drift.Value(_selectedLoad?.id),
       firearmId: drift.Value(_selectedFirearm?.id),
+      // TODO(rack-persistence): when a rack is active we write
+      // `targetId = null` because [RangeDaySessions] has no `rackId`
+      // column yet. The rack pick survives only for the lifetime of
+      // the screen; reopening the saved session restores nothing
+      // rack-related. See the state-fields TODO above for the schema
+      // changes this needs.
       targetId: drift.Value(_selectedTarget?.id),
       distanceYd: drift.Value(distance),
       temperatureF: drift.Value(double.tryParse(_tempCtrl.text)),
@@ -1651,7 +1714,8 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
 
   String _setupSummary() {
     final parts = <String>[];
-    if (_selectedTarget != null) parts.add(_selectedTarget!.name);
+    final targetName = _activeTargetDisplayName;
+    if (targetName != null) parts.add(targetName);
     final dist = double.tryParse(_distanceCtrl.text.trim());
     if (dist != null) parts.add('${dist.toStringAsFixed(0)} yd');
     if (_selectedProfile != null) parts.add(_selectedProfile!.name);
@@ -2734,12 +2798,77 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   }
 
   Widget _targetPicker() {
-    final categories = ['all', 'paper', 'steel', 'reactive', 'game-silhouette'];
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Target', style: Theme.of(context).textTheme.labelLarge),
+        Text('Target', style: theme.textTheme.labelLarge),
         const SizedBox(height: 6),
+        // Single vs Rack mode toggle. Default Single (no behavior
+        // change for existing users). Wrapped in Align(centerLeft) so
+        // the parent `Column(crossAxisAlignment: stretch)` doesn't
+        // force the SegmentedButton to fill the full row — same
+        // infinite-width avoidance pattern as the chip Wrap below.
+        Align(
+          alignment: Alignment.centerLeft,
+          child: SegmentedButton<_TargetPickerMode>(
+            segments: const [
+              ButtonSegment<_TargetPickerMode>(
+                value: _TargetPickerMode.single,
+                label: Text('Single'),
+                icon: Icon(Icons.crop_square, size: 16),
+              ),
+              ButtonSegment<_TargetPickerMode>(
+                value: _TargetPickerMode.rack,
+                label: Text('Rack'),
+                icon: Icon(Icons.view_column, size: 16),
+              ),
+            ],
+            selected: {_targetPickerMode},
+            showSelectedIcon: false,
+            onSelectionChanged: (sel) {
+              final mode = sel.first;
+              if (mode == _targetPickerMode) return;
+              setState(() {
+                _targetPickerMode = mode;
+                // Switching away from rack mode releases the rack
+                // selection so downstream geometry consumers fall
+                // back to `_selectedTarget`. Switching INTO rack mode
+                // releases the single-target selection so the two
+                // are mutually exclusive at all times.
+                if (mode == _TargetPickerMode.single) {
+                  _selectedRack = null;
+                  _selectedRackChildren = const [];
+                  _selectedRackChildPosition = 0;
+                  _rackChildrenError = null;
+                } else {
+                  _selectedTarget = null;
+                }
+              });
+              _scheduleSolve();
+              _scheduleAutoSave();
+            },
+          ),
+        ),
+        const SizedBox(height: 8),
+        if (_targetPickerMode == _TargetPickerMode.single)
+          _singleTargetPickerBody()
+        else
+          _rackTargetPickerBody(),
+      ],
+    );
+  }
+
+  /// Single-target half of the picker — preserves the existing
+  /// category-chip-filtered dropdown UX. Extracted from `_targetPicker`
+  /// so the Single/Rack toggle can swap between the two bodies without
+  /// duplicating the FutureBuilder + stale-id-guard scaffolding.
+  Widget _singleTargetPickerBody() {
+    final categories = ['all', 'paper', 'steel', 'reactive', 'game-silhouette'];
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
         // Align(centerLeft) to prevent the parent
         // `Column(crossAxisAlignment: stretch)` from forcing infinite
         // width onto the Wrap, which Material chips would propagate to
@@ -2806,8 +2935,17 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
             // filter)" suffix when the active filter would otherwise
             // exclude it. The user's selection is preserved across
             // filter taps and they always see what they have chosen.
+            //
+            // The same Stale-id guard pattern protects against a
+            // saved-session `_selectedTarget.id` that's no longer in
+            // the catalog after a re-seed: collapse to null so
+            // Flutter's "exactly one item with this value" assertion
+            // is satisfied.
             final selected = _selectedTarget;
+            final stillInCatalog =
+                selected != null && all.any((t) => t.id == selected.id);
             final selectedHiddenByFilter = selected != null &&
+                stillInCatalog &&
                 !filtered.any((t) => t.id == selected.id);
             final items = <DropdownMenuItem<int?>>[
               const DropdownMenuItem<int?>(
@@ -2835,14 +2973,16 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
             if (filtered.isEmpty && !selectedHiddenByFilter) {
               return Text(
                 'No targets in this category yet.',
-                style: Theme.of(context).textTheme.bodySmall,
+                style: theme.textTheme.bodySmall,
               );
             }
+            final dropdownValue =
+                (selected != null && stillInCatalog) ? selected.id : null;
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 DropdownButtonFormField<int?>(
-                  initialValue: selected?.id,
+                  initialValue: dropdownValue,
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
@@ -2873,13 +3013,392 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                 // with the target's shape, name, and dimensions so it's
                 // unambiguous before they scroll down to see the
                 // computed solution.
-                if (selected != null) _selectedTargetPreview(selected),
+                if (selected != null && stillInCatalog)
+                  _selectedTargetPreview(selected),
               ],
             );
           },
         ),
       ],
     );
+  }
+
+  /// Rack half of the picker — a rack dropdown plus a chip row for
+  /// switching the active child within the picked rack. The rack list
+  /// comes from `_racksFuture` (loaded once in `initState`) so a slow
+  /// SQLite read can't block the screen.
+  ///
+  /// On error in the rack dropdown we render a `RangeDayInlineError`
+  /// with retry; on error loading children we show an inline message
+  /// inside the picker card (per the soft-failure contract).
+  Widget _rackTargetPickerBody() {
+    final theme = Theme.of(context);
+    return FutureBuilder<List<TargetRackRow>>(
+      future: _racksFuture,
+      builder: (context, snap) {
+        if (snap.hasError) {
+          return RangeDayInlineError(
+            message: 'Could not load target racks: ${snap.error}',
+            onRetry: () {
+              setState(() {
+                _racksFuture =
+                    context.read<TargetRepository>().allRacks();
+              });
+            },
+          );
+        }
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const LinearProgressIndicator();
+        }
+        final racks = snap.data ?? const <TargetRackRow>[];
+        if (racks.isEmpty) {
+          return Text(
+            'No racks in the catalog yet.',
+            style: theme.textTheme.bodySmall,
+          );
+        }
+        // Stale-id guard — same pattern as the single-target dropdown.
+        // If `_selectedRack`'s id is no longer in the catalog (e.g. a
+        // re-seed dropped it between sessions), present null to the
+        // dropdown so Flutter doesn't assert "exactly one item with
+        // value: <id>". The user can re-pick from the now-fresh list.
+        final selectedRack = _selectedRack;
+        final rackStillInCatalog =
+            selectedRack != null && racks.any((r) => r.id == selectedRack.id);
+        final dropdownValue =
+            (selectedRack != null && rackStillInCatalog) ? selectedRack.id : null;
+        final items = <DropdownMenuItem<int?>>[
+          const DropdownMenuItem<int?>(
+            value: null,
+            child: Text('— None —'),
+          ),
+          ...racks.map((r) => DropdownMenuItem<int?>(
+                value: r.id,
+                child: Text(
+                  '${r.name} · ${_rackKindLabel(r.rackKind)}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              )),
+        ];
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DropdownButtonFormField<int?>(
+              initialValue: dropdownValue,
+              isExpanded: true,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: 'Pick a rack',
+              ),
+              items: items,
+              onChanged: (id) {
+                if (id == null) {
+                  setState(() {
+                    _selectedRack = null;
+                    _selectedRackChildren = const [];
+                    _selectedRackChildPosition = 0;
+                    _rackChildrenError = null;
+                  });
+                  _scheduleSolve();
+                  _scheduleAutoSave();
+                  return;
+                }
+                final picked = racks.firstWhere(
+                  (r) => r.id == id,
+                  orElse: () => selectedRack!,
+                );
+                _onRackSelected(picked);
+              },
+            ),
+            // Active-child chip row. Only renders once a rack is
+            // picked AND its children have been loaded successfully.
+            if (_rackChildrenError != null) ...[
+              const SizedBox(height: 8),
+              RangeDayInlineError(
+                message: _rackChildrenError!,
+                onRetry: selectedRack == null
+                    ? null
+                    : () => _onRackSelected(selectedRack),
+              ),
+            ] else if (selectedRack != null &&
+                rackStillInCatalog &&
+                _selectedRackChildren.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Text(
+                'Active plate',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 4),
+              // Same Align(centerLeft) bulletproofing as the single-
+              // target category chips above — the parent
+              // `Column.stretch` would otherwise force infinite width
+              // onto the Wrap and crash the chip layout.
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    for (var i = 0; i < _selectedRackChildren.length; i++)
+                      ChoiceChip(
+                        label: Text(_rackChildChipLabel(
+                          _selectedRackChildren[i],
+                          i,
+                        )),
+                        selected: _selectedRackChildPosition == i,
+                        onSelected: (v) {
+                          if (!v) return;
+                          setState(() => _selectedRackChildPosition = i);
+                          _scheduleSolve();
+                          _scheduleHitProb();
+                          _scheduleAutoSave();
+                        },
+                      ),
+                  ],
+                ),
+              ),
+              _selectedRackPreview(
+                selectedRack,
+                _selectedRackChildren[_selectedRackChildPosition.clamp(
+                  0,
+                  _selectedRackChildren.length - 1,
+                )],
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  /// Triggered when the user picks a different rack from the rack
+  /// dropdown. Loads the rack's children eagerly so the chip row can
+  /// render immediately. Soft failure: a repository error sets
+  /// `_rackChildrenError` so the picker shows an inline retry instead
+  /// of crashing the whole screen.
+  Future<void> _onRackSelected(TargetRackRow rack) async {
+    // Optimistic state update so the dropdown reflects the new pick
+    // while the children load. Clear the error so a retry-after-error
+    // path doesn't show the previous failure.
+    setState(() {
+      _selectedRack = rack;
+      _selectedTarget = null;
+      _selectedRackChildren = const [];
+      _selectedRackChildPosition = 0;
+      _rackChildrenError = null;
+    });
+    final children = await safeAsync<List<TargetRackChildRow>>(
+      context,
+      mounted: () => mounted,
+      userMessage: 'Could not load rack children.',
+      body: () => context.read<TargetRepository>().childrenOf(rack.id),
+    );
+    if (!mounted) return;
+    if (children == null) {
+      setState(() {
+        _rackChildrenError = 'Could not load rack children.';
+      });
+      return;
+    }
+    setState(() {
+      _selectedRackChildren = children;
+      _selectedRackChildPosition = 0;
+    });
+    _scheduleSolve();
+    _scheduleHitProb();
+    _scheduleAutoSave();
+  }
+
+  /// Display label for a rack-kind enum string. Falls back to the raw
+  /// string for unknown / future kinds so a stale catalog never throws.
+  String _rackKindLabel(String rackKind) {
+    switch (rackKind) {
+      case 'kyl':
+        return 'KYL';
+      case 'pepper-popper':
+        return 'Pepper Popper';
+      case 'plate-rack':
+        return 'Plate Rack';
+      case 'idpa-stage':
+        return 'IDPA Stage';
+      case 'custom':
+        return 'Custom';
+      default:
+        return rackKind;
+    }
+  }
+
+  /// Compact chip label for a rack child — falls back to "Plate N" if
+  /// the child's name is empty. Children are seeded with descriptive
+  /// names like "Plate 1 (5 in)" so the chip already conveys the
+  /// child's size; this helper is just the safety net.
+  String _rackChildChipLabel(TargetRackChildRow c, int index) {
+    final name = c.name.trim();
+    return name.isEmpty ? 'Plate ${index + 1}' : name;
+  }
+
+  /// One-line preview row shown directly under the active-child chip
+  /// row. Mirrors the visual weight of `_selectedTargetPreview` so the
+  /// user gets the same kind of "you picked this" confirmation in
+  /// rack mode that they get in single-target mode. Reads, e.g.,
+  /// "5-Plate KYL · Active: Plate 3 (3 in dia)".
+  Widget _selectedRackPreview(TargetRackRow rack, TargetRackChildRow active) {
+    final theme = Theme.of(context);
+    final dims = _rackChildDimensionLabel(active);
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Container(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest.withValues(
+            alpha: 0.4,
+          ),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+        child: Row(
+          children: [
+            _targetShapeIcon(active.shape, theme),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    rack.name,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Active: ${active.name} ($dims)',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Dimension label for a rack child. Mirrors `_targetDimensionLabel`
+  /// so the rack-active preview reads the same way as the single-
+  /// target preview.
+  String _rackChildDimensionLabel(TargetRackChildRow c) {
+    final w = c.widthIn;
+    final h = c.heightIn;
+    String fmt(double v) =>
+        v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(1);
+    if (c.shape == 'circle') {
+      return '${fmt(w)} in dia';
+    }
+    if (w == h) {
+      return '${fmt(w)} × ${fmt(w)} in';
+    }
+    return '${fmt(w)} × ${fmt(h)} in';
+  }
+
+  // ─────────────────────── Active-target geometry helpers ───────────────────────
+  //
+  // Downstream consumers (the ballistics solver, the hit-probability
+  // service, the Target Plot widget, the group-stats math, the
+  // post-shot correction card, the in-app summary strings) all want
+  // "the geometry of the thing the shooter is actually aiming at."
+  // When a single target is picked, that's `_selectedTarget`. When a
+  // rack is picked, it's the active child of the rack. These helpers
+  // collapse that branching into a single source of truth so callers
+  // don't have to repeat the if/else everywhere.
+
+  /// True iff the user is currently in rack mode AND has picked a rack
+  /// AND its children have loaded. Use this to decide whether to read
+  /// from `_activeRackChild` or fall back to `_selectedTarget`.
+  bool get _hasActiveRack =>
+      _selectedRack != null && _selectedRackChildren.isNotEmpty;
+
+  /// The active rack child, or null if no rack is in play. Always
+  /// guarded by [_hasActiveRack] in callers — accessing this when the
+  /// list is empty would throw.
+  TargetRackChildRow? get _activeRackChild {
+    if (!_hasActiveRack) return null;
+    final i = _selectedRackChildPosition.clamp(
+      0,
+      _selectedRackChildren.length - 1,
+    );
+    return _selectedRackChildren[i];
+  }
+
+  /// Active target width in inches, or null if no target / rack is
+  /// selected. Returns the rack child's width when a rack is active,
+  /// else the single target's width.
+  double? get _activeTargetWidthIn {
+    final child = _activeRackChild;
+    if (child != null) return child.widthIn;
+    return _selectedTarget?.widthIn;
+  }
+
+  /// Active target height in inches, or null if no target / rack is
+  /// selected. Returns the rack child's height when a rack is active,
+  /// else the single target's height.
+  double? get _activeTargetHeightIn {
+    final child = _activeRackChild;
+    if (child != null) return child.heightIn;
+    return _selectedTarget?.heightIn;
+  }
+
+  /// Active target shape string ('circle' | 'square' | 'rectangle' |
+  /// 'silhouette' | 'irregular'), or null if no target / rack is
+  /// selected.
+  String? get _activeTargetShape {
+    final child = _activeRackChild;
+    if (child != null) return child.shape;
+    return _selectedTarget?.shape;
+  }
+
+  /// Display name of the active aim point — the rack name + active-
+  /// child name when a rack is active, else the single target name.
+  /// Used by status strips and summary strings.
+  String? get _activeTargetDisplayName {
+    final child = _activeRackChild;
+    if (child != null) return '${_selectedRack!.name} · ${child.name}';
+    return _selectedTarget?.name;
+  }
+
+  /// True if any kind of target is selected — either a single target
+  /// or a rack with at least one loaded child. Use this anywhere the
+  /// pre-rack code checked `_selectedTarget != null` and would also
+  /// want to accept rack mode.
+  bool get _hasActiveTarget =>
+      _selectedTarget != null || _hasActiveRack;
+
+  /// Build a [TargetSpec] from the current active aim point so the
+  /// [TargetPlot] widget can render whichever geometry is in play
+  /// without rack-aware code. Returns null when nothing is selected.
+  TargetSpec? get _activeTargetSpec {
+    final child = _activeRackChild;
+    if (child != null) {
+      return TargetSpec(
+        shape: child.shape,
+        widthIn: child.widthIn,
+        heightIn: child.heightIn,
+        colorHex: child.colorHex,
+      );
+    }
+    if (_selectedTarget != null) {
+      return TargetSpec.fromRow(_selectedTarget!);
+    }
+    return null;
   }
 
   /// Inline preview row shown directly under the target dropdown.
@@ -4371,9 +4890,10 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       }
     }
     if (!mounted) return;
-    final spec = _selectedTarget == null
-        ? TargetSpec.defaultPaper()
-        : TargetSpec.fromRow(_selectedTarget!);
+    // Use the active-target spec so Scope View shows the rack child's
+    // geometry when a rack is in play, instead of falling through to
+    // the legacy default-paper placeholder.
+    final spec = _activeTargetSpec ?? TargetSpec.defaultPaper();
     await safeAsync<void>(
       context,
       mounted: () => mounted,
@@ -4554,7 +5074,8 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     buf.writeln('Range Day DOPE');
     buf.writeln('--------------');
     if (_session != null) buf.writeln(_session!.name);
-    if (_selectedTarget != null) buf.writeln('Target: ${_selectedTarget!.name}');
+    final dopeTargetName = _activeTargetDisplayName;
+    if (dopeTargetName != null) buf.writeln('Target: $dopeTargetName');
     buf.writeln(
         'MV ${_muzzleVelCtrl.text} fps · BC ${_bcCtrl.text} (${_dragModel.short})');
     buf.writeln(

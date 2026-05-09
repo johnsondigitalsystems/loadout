@@ -1,0 +1,83 @@
+{
+  "racks": [
+    {
+      "name": "5-Plate KYL",
+      "description": "Know-Your-Limits — circles decrease in size from left to right (5 / 4 / 3 / 2 / 1 in). Shooter engages each plate in order; failure to hit any plate ends the run.",
+      "rack_kind": "kyl",
+      "total_width_in": 60,
+      "total_height_in": 5,
+      "children": [
+        { "position": 0, "name": "Plate 1 (5 in)", "shape": "circle", "width_in": 5, "height_in": 5, "offset_x_in": -28, "offset_y_in": 0, "color_hex": "#ffffff" },
+        { "position": 1, "name": "Plate 2 (4 in)", "shape": "circle", "width_in": 4, "height_in": 4, "offset_x_in": -16, "offset_y_in": 0, "color_hex": "#ffffff" },
+        { "position": 2, "name": "Plate 3 (3 in)", "shape": "circle", "width_in": 3, "height_in": 3, "offset_x_in": -4,  "offset_y_in": 0, "color_hex": "#ffffff" },
+        { "position": 3, "name": "Plate 4 (2 in)", "shape": "circle", "width_in": 2, "height_in": 2, "offset_x_in": 8,   "offset_y_in": 0, "color_hex": "#ffffff" },
+        { "position": 4, "name": "Plate 5 (1 in)", "shape": "circle", "width_in": 1, "height_in": 1, "offset_x_in": 20,  "offset_y_in": 0, "color_hex": "#ffffff" }
+      ]
+    },
+    {
+      "name": "5-Plate Equal Rack",
+      "description": "Five identical 4-inch round plates spaced 6 inches apart, center-to-center.",
+      "rack_kind": "plate-rack",
+      "total_width_in": 36,
+      "total_height_in": 4,
+      "children": [
+        { "position": 0, "name": "Plate 1 (4 in)", "shape": "circle", "width_in": 4, "height_in": 4, "offset_x_in": -12, "offset_y_in": 0, "color_hex": "#ffffff" },
+        { "position": 1, "name": "Plate 2 (4 in)", "shape": "circle", "width_in": 4, "height_in": 4, "offset_x_in": -6,  "offset_y_in": 0, "color_hex": "#ffffff" },
+        { "position": 2, "name": "Plate 3 (4 in)", "shape": "circle", "width_in": 4, "height_in": 4, "offset_x_in": 0,   "offset_y_in": 0, "color_hex": "#ffffff" },
+        { "position": 3, "name": "Plate 4 (4 in)", "shape": "circle", "width_in": 4, "height_in": 4, "offset_x_in": 6,   "offset_y_in": 0, "color_hex": "#ffffff" },
+        { "position": 4, "name": "Plate 5 (4 in)", "shape": "circle", "width_in": 4, "height_in": 4, "offset_x_in": 12,  "offset_y_in": 0, "color_hex": "#ffffff" }
+      ]
+    },
+    {
+      "name": "5-Plate Square Rack",
+      "description": "Five 4-inch square steel plates spaced 6 inches apart, center-to-center.",
+      "rack_kind": "plate-rack",
+      "total_width_in": 36,
+      "total_height_in": 4,
+      "children": [
+        { "position": 0, "name": "Plate 1 (4 in sq)", "shape": "square", "width_in": 4, "height_in": 4, "offset_x_in": -12, "offset_y_in": 0, "color_hex": "#ffffff" },
+        { "position": 1, "name": "Plate 2 (4 in sq)", "shape": "square", "width_in": 4, "height_in": 4, "offset_x_in": -6,  "offset_y_in": 0, "color_hex": "#ffffff" },
+        { "position": 2, "name": "Plate 3 (4 in sq)", "shape": "square", "width_in": 4, "height_in": 4, "offset_x_in": 0,   "offset_y_in": 0, "color_hex": "#ffffff" },
+        { "position": 3, "name": "Plate 4 (4 in sq)", "shape": "square", "width_in": 4, "height_in": 4, "offset_x_in": 6,   "offset_y_in": 0, "color_hex": "#ffffff" },
+        { "position": 4, "name": "Plate 5 (4 in sq)", "shape": "square", "width_in": 4, "height_in": 4, "offset_x_in": 12,  "offset_y_in": 0, "color_hex": "#ffffff" }
+      ]
+    },
+    {
+      "name": "5-Pepper Popper Rack",
+      "description": "Five full-size pepper-popper steel silhouettes (8 in wide x 18 in tall), spaced 12 inches apart center-to-center.",
+      "rack_kind": "pepper-popper",
+      "total_width_in": 56,
+      "total_height_in": 18,
+      "children": [
+        { "position": 0, "name": "Popper 1", "shape": "silhouette", "width_in": 8, "height_in": 18, "offset_x_in": -24, "offset_y_in": 0, "color_hex": "#3b3b3b" },
+        { "position": 1, "name": "Popper 2", "shape": "silhouette", "width_in": 8, "height_in": 18, "offset_x_in": -12, "offset_y_in": 0, "color_hex": "#3b3b3b" },
+        { "position": 2, "name": "Popper 3", "shape": "silhouette", "width_in": 8, "height_in": 18, "offset_x_in": 0,   "offset_y_in": 0, "color_hex": "#3b3b3b" },
+        { "position": 3, "name": "Popper 4", "shape": "silhouette", "width_in": 8, "height_in": 18, "offset_x_in": 12,  "offset_y_in": 0, "color_hex": "#3b3b3b" },
+        { "position": 4, "name": "Popper 5", "shape": "silhouette", "width_in": 8, "height_in": 18, "offset_x_in": 24,  "offset_y_in": 0, "color_hex": "#3b3b3b" }
+      ]
+    },
+    {
+      "name": "3-Plate Decreasing",
+      "description": "Three round plates stepping down in size (6 / 4 / 2 in), spaced 10 inches apart, center-to-center.",
+      "rack_kind": "plate-rack",
+      "total_width_in": 26,
+      "total_height_in": 6,
+      "children": [
+        { "position": 0, "name": "Plate 1 (6 in)", "shape": "circle", "width_in": 6, "height_in": 6, "offset_x_in": -10, "offset_y_in": 0, "color_hex": "#ffffff" },
+        { "position": 1, "name": "Plate 2 (4 in)", "shape": "circle", "width_in": 4, "height_in": 4, "offset_x_in": 0,   "offset_y_in": 0, "color_hex": "#ffffff" },
+        { "position": 2, "name": "Plate 3 (2 in)", "shape": "circle", "width_in": 2, "height_in": 2, "offset_x_in": 10,  "offset_y_in": 0, "color_hex": "#ffffff" }
+      ]
+    },
+    {
+      "name": "IDPA Open Stage",
+      "description": "Single IDPA cardboard silhouette (12 x 24) with a 6-inch round 'head' plate stacked above. Body and head are scored as separate hits.",
+      "rack_kind": "idpa-stage",
+      "total_width_in": 12,
+      "total_height_in": 33,
+      "children": [
+        { "position": 0, "name": "Body (IDPA silhouette)", "shape": "silhouette", "width_in": 12, "height_in": 24, "offset_x_in": 0, "offset_y_in": -4.5, "color_hex": "#a08550" },
+        { "position": 1, "name": "Head (6 in plate)",      "shape": "circle",     "width_in": 6,  "height_in": 6,  "offset_x_in": 0, "offset_y_in": 13.5, "color_hex": "#ffffff" }
+      ]
+    }
+  ]
+}

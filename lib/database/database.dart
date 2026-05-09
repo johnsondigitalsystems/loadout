@@ -998,6 +998,80 @@ class Targets extends Table {
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
+/// Reference catalog of "target racks" — parent objects that group an
+/// ordered list of child targets the shooter engages one at a time. A KYL
+/// (Know Your Limits) line of plates, a pepper-popper rack, an IDPA stage
+/// with a head + chest, etc. Seeded from
+/// `assets/seed_data/target_racks.json` on first launch (see
+/// `seed_loader.dart`). Read-only at runtime.
+///
+/// The visual renderer draws the WHOLE rack so the shooter can pick which
+/// child they're shooting; the ballistics solver only consumes whichever
+/// child is "active". `totalWidthIn` / `totalHeightIn` describe the visual
+/// envelope at the user's distance — used by the on-screen renderer to
+/// scale the rack against the field-of-view, not by the solver.
+@DataClassName('TargetRackRow')
+class TargetRacks extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  /// Display name shown in the rack picker ("5-Plate KYL", "Pepper
+  /// Popper Rack").
+  TextColumn get name => text()();
+  /// Free-form description of how the rack is intended to be engaged.
+  TextColumn get description => text().nullable()();
+  /// 'kyl' | 'pepper-popper' | 'plate-rack' | 'idpa-stage' | 'custom'.
+  /// Used for grouping in pickers and selecting an icon. Free-form text
+  /// rather than an enum so future rack categories don't require a
+  /// schema migration.
+  TextColumn get rackKind => text()();
+  /// Visual envelope width in inches. Drives renderer scaling against
+  /// the FOV — NOT a ballistics input. The solver uses each child's
+  /// dimensions instead.
+  RealColumn get totalWidthIn => real()();
+  /// Visual envelope height in inches. See `totalWidthIn`.
+  RealColumn get totalHeightIn => real()();
+  TextColumn get notes => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// One row per child plate / popper / silhouette inside a parent
+/// [TargetRacks] entry. Children are shot one at a time; the ballistics
+/// solver consumes the active child's `widthIn` / `heightIn` /
+/// `shape` for hit-probability math.
+///
+/// `position` is a 0-indexed sort key (left-to-right or near-to-far
+/// depending on the rack). `offsetXIn` / `offsetYIn` locate the child
+/// relative to the rack's center in inches at the rack's natural scale
+/// (positive X = right, positive Y = up).
+@DataClassName('TargetRackChildRow')
+class TargetRackChildren extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  /// FK to the parent [TargetRacks] row.
+  IntColumn get rackId => integer().references(TargetRacks, #id)();
+  /// 0-indexed position within the rack. The repository's `childrenOf`
+  /// query orders by this column, so the renderer / picker get a stable
+  /// order matching the rack's intended engagement sequence.
+  IntColumn get position => integer()();
+  /// Per-child label ("Plate 1 (5 in)", "Popper #3"). Shown in the
+  /// child-picker menu.
+  TextColumn get name => text()();
+  /// 'circle' | 'square' | 'rectangle' | 'silhouette' | 'irregular' —
+  /// matches the enum used by [Targets.shape] so the same renderer
+  /// helpers handle both single targets and rack children.
+  TextColumn get shape => text()();
+  RealColumn get widthIn => real()();
+  RealColumn get heightIn => real()();
+  /// X offset from the rack's geometric center, in inches. Positive =
+  /// right.
+  RealColumn get offsetXIn => real()();
+  /// Y offset from the rack's geometric center, in inches. Positive =
+  /// up.
+  RealColumn get offsetYIn => real()();
+  /// CSS-style hex color (e.g. "#ffffff"). Matches the convention used
+  /// by [Targets.colorHex] so the renderer can paint rack children with
+  /// the same code path as standalone targets.
+  TextColumn get colorHex => text()();
+}
+
 /// One row per range-day workspace the user opened. The session is a
 /// container for the setup (target / distance / profile / load / firearm
 /// / environment) plus the shot-impact rows that hang off it.
@@ -1384,6 +1458,9 @@ class UserCustomFieldValues extends Table {
     SightCalibrations,
     // Schema v17 additions (user-saved atmospheric profiles).
     AtmospherePresets,
+    // Schema v19 additions (target racks reference catalog).
+    TargetRacks,
+    TargetRackChildren,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -1392,7 +1469,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 18;
+  int get schemaVersion => 19;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1721,6 +1798,15 @@ class AppDatabase extends _$AppDatabase {
             // — only the reference catalog rotates.
             await delete(targets).go();
           }
+          if (from < 19) {
+            // v19 — Target Racks reference catalog. Seeded from
+            // `assets/seed_data/target_racks.json` via the seed
+            // loader on next launch; tables are created additively
+            // here so existing user data (RangeDaySessions,
+            // ShotImpacts, etc.) is preserved.
+            await m.createTable(targetRacks);
+            await m.createTable(targetRackChildren);
+          }
         },
       );
 
@@ -2005,6 +2091,17 @@ class AppDatabase extends _$AppDatabase {
     final count = await (selectOnly(factoryLoads)
           ..addColumns([factoryLoads.id.count()]))
         .map((row) => row.read(factoryLoads.id.count()) ?? 0)
+        .getSingle();
+    return count == 0;
+  }
+
+  /// True when the target-racks catalog is empty. Used by the seed
+  /// loader to decide whether to insert the bundled target-racks
+  /// library on first launch (or after the v19 migration).
+  Future<bool> get targetRacksAreEmpty async {
+    final count = await (selectOnly(targetRacks)
+          ..addColumns([targetRacks.id.count()]))
+        .map((row) => row.read(targetRacks.id.count()) ?? 0)
         .getSingle();
     return count == 0;
   }
