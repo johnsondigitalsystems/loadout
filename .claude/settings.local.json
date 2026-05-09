@@ -181,7 +181,13 @@
       "Bash(awk ' *)",
       "Bash(pgrep -fq \"flutter test test/range_day_screen_widget_test\")",
       "Bash(pkill -KILL -f \"flutter test test/range_day\")",
-      "Bash(echo \"exitcode=$?\")"
+      "Bash(echo \"exitcode=$?\")",
+      "Bash(kill 96081)",
+      "Bash(git checkout *)",
+      "Bash(grep -E \"\\\\[E\\\\]$\")",
+      "Bash(kill 8231 8283 2799 2751 2699)",
+      "Bash(awk '{print $2}')",
+      "Bash(xargs kill)"
     ]
   }
 }

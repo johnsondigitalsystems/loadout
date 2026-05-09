@@ -28,18 +28,25 @@
 // `Provider<ReticleRepository>` once at the root (already done in
 // `lib/app.dart`).
 //
-// Layout:
+// Layout of the modal sheet:
 //
-//   ┌────────────────────────────────────────────┐
-//   │ Reticle                                    │  ← label
-//   ├────────────────────────────────────────────┤
-//   │ [█][ Vortex EBR-7C MRAD                    │  ← preview + name
-//   │     [×]  Razor HD Gen II reticles    [v]   │  ← family + chevron
-//   └────────────────────────────────────────────┘
+//   ┌──────────────────────────────────────────────┐
+//   │ Pick a reticle                       [None]  │  ← title + clear
+//   │ [search box]                                 │
+//   │ ── Popular reticles ──                       │
+//   │ [chips: Tremor3 · MIL-Dot · MIL-Hash · …]    │  ← brand-agnostic
+//   │ ── All reticles ──                           │
+//   │ [×] Vortex EBR-7C MRAD       FFP · MIL  ⤢   │  ← row + Preview
+//   │     Razor HD Gen II reticles                 │
+//   └──────────────────────────────────────────────┘
 //
-// Tapping anywhere on the tile opens a modal bottom sheet with a search
-// field and a scrollable list. Each row in the list shows a 64×64
-// preview thumbnail rendered with the same `ReticleRenderer`.
+// The list row's leading is a small generic crosshair glyph
+// ([ReticleThumbnail]), not a per-reticle preview — the prior
+// implementation rendered every row through `ReticleRenderer` at
+// 64 px and produced a smear of hash marks too small to evaluate.
+// Tapping the trailing fullscreen icon opens
+// [showReticleFullScreenPreview] for a high-fidelity render against
+// the procedural daytime backdrop.
 //
 // ============================================================================
 // WHY IT EXISTS
@@ -51,20 +58,52 @@
 // already chosen which optic they're shooting through.
 //
 // ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+//   * Search has to span name + manufacturer + family + derived tags
+//     (so a search for "tremor3" or "horus" returns every Tremor3
+//     reticle from every brand it's licensed for, not just the rows
+//     whose model string contains the literal word). The matching
+//     rule lives in `lib/data/reticle_tags.dart::reticleMatchesQuery`
+//     so it can be unit-tested and so any new screen that wants to
+//     filter the catalog can call the same function.
+//   * The "Popular reticles" chip row at the top duplicates entries
+//     by tag (one chip can match multiple reticles). When the user
+//     taps a chip, the picker filters the list — but it does NOT
+//     replace the search box content, so the user can stack a popular
+//     filter and a freeform search.
+//   * Don't reach back into the parent to render the per-row preview
+//     — every reticle row mounting a full ReticleRenderer at 64×64
+//     was the dropdown's biggest perf hit AND visual-clutter problem.
+//     The generic thumbnail is mounted instead, and any user who wants
+//     to see the actual reticle taps the trailing fullscreen icon.
+//
+// ============================================================================
 // WHO CONSUMES THIS FILE
 // ============================================================================
 // - `lib/screens/firearms/firearm_form_screen.dart` — picker on the
 //   Optics card, beneath the optics dropdown.
 // - `lib/screens/range_day/...` — surfaces by the parallel agent for
 //   their reticle / aim-point UI.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// None directly. Shows a modal bottom sheet and an optional
+// full-screen preview dialog. The persistence of the user's pick is
+// the parent's responsibility (this widget only fires
+// [onChanged]).
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../data/reticle_library.dart';
+import '../data/reticle_tags.dart';
 import '../database/database.dart';
 import '../repositories/reticle_repository.dart';
+import 'reticle_full_screen_view.dart';
 import 'reticle_renderer.dart';
+import 'reticle_thumbnail.dart';
 
 /// Reusable form field that lets the user pick a reticle. Renders a
 /// label, a preview tile with the selected reticle's name and family,
@@ -114,7 +153,12 @@ class ReticlePickerField extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Preview thumbnail (or a placeholder when nothing's picked).
+            // Preview thumbnail (or a placeholder when nothing's
+            // picked). This is the FIELD-level preview (visible while
+            // the picker is closed) — we keep the high-fidelity
+            // ReticleRenderer here because there's only one of these
+            // mounted at a time (vs. the dropdown list, where every
+            // row would mount one).
             SizedBox(
               width: 56,
               height: 56,
@@ -223,6 +267,13 @@ class _ReticlePickerSheet extends StatefulWidget {
 class _ReticlePickerSheetState extends State<_ReticlePickerSheet> {
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
+
+  /// Currently active "popular reticle" tag (from
+  /// [kPopularReticleTags]). Null when no popular chip is engaged. The
+  /// chips and the search box stack — when both are set, the list
+  /// shows reticles that satisfy BOTH constraints.
+  String? _popularTag;
+
   Future<List<ReticleRow>>? _future;
   Future<int?>? _defaultIdFuture;
 
@@ -250,7 +301,7 @@ class _ReticlePickerSheetState extends State<_ReticlePickerSheet> {
       child: Padding(
         padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
         child: SizedBox(
-          height: media.size.height * 0.8,
+          height: media.size.height * 0.85,
           child: Column(
             children: [
               const SizedBox(height: 12),
@@ -285,15 +336,29 @@ class _ReticlePickerSheetState extends State<_ReticlePickerSheet> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: TextField(
                   controller: _searchController,
-                  decoration: const InputDecoration(
-                    hintText: 'Search by manufacturer or model',
-                    prefixIcon: Icon(Icons.search),
+                  decoration: InputDecoration(
+                    hintText: 'Search by name, brand, or tag (e.g. Tremor3)',
+                    prefixIcon: const Icon(Icons.search),
                     isDense: true,
+                    suffixIcon: _query.isEmpty
+                        ? null
+                        : IconButton(
+                            icon: const Icon(Icons.clear),
+                            tooltip: 'Clear search',
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _query = '');
+                            },
+                          ),
                   ),
-                  onChanged: (v) => setState(() => _query = v.trim().toLowerCase()),
+                  onChanged: (v) =>
+                      setState(() => _query = v.trim().toLowerCase()),
                 ),
               ),
               const SizedBox(height: 8),
+              // Popular-reticles chip row: brand-agnostic shortcuts.
+              _popularChipsRow(theme),
+              const Divider(height: 1),
               Expanded(
                 child: FutureBuilder<List<ReticleRow>>(
                   future: _future,
@@ -312,20 +377,17 @@ class _ReticlePickerSheetState extends State<_ReticlePickerSheet> {
                       );
                     }
                     final all = snap.data ?? const <ReticleRow>[];
-                    final filtered = _query.isEmpty
-                        ? all
-                        : all.where((r) {
-                            final hay =
-                                '${r.manufacturerId} ${r.model} ${r.family ?? ''}'
-                                    .toLowerCase();
-                            return hay.contains(_query);
-                          }).toList();
+                    final filtered = _applyFilters(all);
                     if (filtered.isEmpty) {
                       return Center(
-                        child: Text(
-                          'No reticles match "${_searchController.text}"',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(
+                            _emptyMessage(),
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
                           ),
                         ),
                       );
@@ -342,43 +404,12 @@ class _ReticlePickerSheetState extends State<_ReticlePickerSheet> {
                             final row = filtered[i];
                             final selected = row.id == widget.selectedId;
                             final isDefault = defaultId == row.id;
-                            final def = widget.repo.definitionFromRow(row);
-                            return ListTile(
-                              leading: SizedBox(
-                                width: 64,
-                                height: 64,
-                                child: ReticleRenderer(
-                                  reticle: def,
-                                  displayUnit: def.nativeUnit ==
-                                          ReticleNativeUnit.moa
-                                      ? 'moa'
-                                      : 'mil',
-                                  size: const Size(64, 64),
-                                  showUnitOverlay: false,
-                                  color: theme.colorScheme.primary,
-                                ),
-                              ),
-                              title: Text(
-                                '${row.manufacturerId} ${row.model}',
-                                style: theme.textTheme.bodyLarge,
-                              ),
-                              subtitle: Text(
-                                [
-                                  if (row.family != null) row.family!,
-                                  '${row.nativeUnit.toUpperCase()} • ${_typeLabel(row.type)}',
-                                  if (isDefault) 'default for selected optic',
-                                ].join(' • '),
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                              trailing: selected
-                                  ? Icon(
-                                      Icons.check,
-                                      color: theme.colorScheme.primary,
-                                    )
-                                  : null,
-                              onTap: () => Navigator.of(context)
+                            return _ReticleListRow(
+                              row: row,
+                              repo: widget.repo,
+                              selected: selected,
+                              isDefault: isDefault,
+                              onPick: () => Navigator.of(context)
                                   .pop(_ReticleSelection(row: row)),
                             );
                           },
@@ -392,6 +423,197 @@ class _ReticlePickerSheetState extends State<_ReticlePickerSheet> {
           ),
         ),
       ),
+    );
+  }
+
+  /// Brand-agnostic "Popular reticles" chip row. Each chip filters the
+  /// list to reticles whose tag set contains the chip's tag. Tap an
+  /// active chip again to clear it.
+  Widget _popularChipsRow(ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 0, 4, 4),
+            child: Text(
+              'Popular reticles',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          // Use Wrap so chips re-flow on narrow widths instead of
+          // overflowing the row (and so we never trigger an
+          // infinite-width Row+Expanded layout bug).
+          Wrap(
+            spacing: 6,
+            runSpacing: 4,
+            children: [
+              for (final entry in kPopularReticleTags)
+                _popularChip(theme, entry),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _popularChip(ThemeData theme, PopularReticleEntry entry) {
+    final active = _popularTag == entry.tag;
+    return Tooltip(
+      message: entry.description,
+      child: FilterChip(
+        label: Text(entry.label),
+        selected: active,
+        onSelected: (on) =>
+            setState(() => _popularTag = on ? entry.tag : null),
+        showCheckmark: false,
+        // Use the theme's onSecondary on selected so the brand-tinted
+        // chip remains readable in both light and dark themes.
+        selectedColor: theme.colorScheme.primaryContainer,
+        labelStyle: TextStyle(
+          color: active
+              ? theme.colorScheme.onPrimaryContainer
+              : theme.colorScheme.onSurfaceVariant,
+          fontSize: 12,
+        ),
+        side: active
+            ? BorderSide(color: theme.colorScheme.primary, width: 1.2)
+            : BorderSide(color: theme.colorScheme.outlineVariant),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        visualDensity: VisualDensity.compact,
+      ),
+    );
+  }
+
+  /// Apply the search query and active popular-tag filter (if any) to
+  /// the full reticle list. The result is the rows that should appear
+  /// in the dropdown.
+  List<ReticleRow> _applyFilters(List<ReticleRow> all) {
+    return all.where((r) {
+      // Popular tag filter.
+      if (_popularTag != null) {
+        final matchPopular = reticleHasPopularTag(
+          popularTag: _popularTag!,
+          manufacturer: r.manufacturerId,
+          model: r.model,
+          family: r.family,
+        );
+        if (!matchPopular) return false;
+      }
+      // Search filter.
+      if (_query.isNotEmpty) {
+        final matchSearch = reticleMatchesQuery(
+          query: _query,
+          manufacturer: r.manufacturerId,
+          model: r.model,
+          family: r.family,
+        );
+        if (!matchSearch) return false;
+      }
+      return true;
+    }).toList();
+  }
+
+  String _emptyMessage() {
+    if (_popularTag != null && _query.isNotEmpty) {
+      return 'No reticles match "${_searchController.text}" '
+          'in the "$_popularTag" family.';
+    }
+    if (_popularTag != null) {
+      return 'No reticles tagged "$_popularTag".';
+    }
+    return 'No reticles match "${_searchController.text}".';
+  }
+}
+
+/// Row in the dropdown list. Pulled into its own widget so the
+/// list-row build is self-contained (it owns the trailing "Preview"
+/// icon's tap handler and the type-label helper).
+class _ReticleListRow extends StatelessWidget {
+  const _ReticleListRow({
+    required this.row,
+    required this.repo,
+    required this.selected,
+    required this.isDefault,
+    required this.onPick,
+  });
+
+  final ReticleRow row;
+  final ReticleRepository repo;
+  final bool selected;
+  final bool isDefault;
+  final VoidCallback onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ListTile(
+      leading: SizedBox(
+        width: 36,
+        height: 36,
+        child: Center(
+          child: ReticleThumbnail(
+            size: 28,
+            color: selected
+                ? theme.colorScheme.primary
+                : theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ),
+      title: Text(
+        '${row.manufacturerId} ${row.model}',
+        style: theme.textTheme.bodyLarge,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      subtitle: Text(
+        [
+          if (row.family != null) row.family!,
+          '${row.nativeUnit.toUpperCase()} • ${_typeLabel(row.type)}',
+          if (isDefault) 'default for selected optic',
+        ].join(' • '),
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      // Trailing: a "Preview" icon that opens the full-screen preview.
+      // The tap target on the icon is independent of the row tap, so a
+      // user who clicks the row picks the reticle, but a user who taps
+      // the magnifier icon just gets a preview.
+      trailing: Wrap(
+        spacing: 0,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          if (selected)
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: Icon(
+                Icons.check,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          IconButton(
+            icon: const Icon(Icons.fullscreen),
+            tooltip: 'Preview at full size',
+            onPressed: () {
+              showReticleFullScreenPreview(
+                context,
+                reticle: repo.definitionFromRow(row),
+                reticleLabel: '${row.manufacturerId} ${row.model}',
+              );
+            },
+          ),
+        ],
+      ),
+      onTap: onPick,
     );
   }
 

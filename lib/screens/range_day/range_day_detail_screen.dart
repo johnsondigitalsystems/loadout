@@ -4,21 +4,36 @@
 // WHAT THIS FILE DOES
 // ============================================================================
 // The Range Day workspace itself — the screen the user lives in WHILE at the
-// range. Renders five collapsible sections in a single scrollable column on
-// phones, and a two-column layout on tablets / desktops:
+// range. A persistent slim "solution strip" at the very top renders the
+// active load + distance + target + wind + drop + windage and stays put no
+// matter how far the user scrolls (the goal is "glance → fire → glance"
+// without scrubbing). Below it, a single scrollable column on phones / two
+// columns on tablets carries these collapsible sections:
 //
-//   1. Setup        — target / distance / profile / load / firearm pickers.
-//                     Collapses to a one-line summary after first save so
-//                     the user isn't staring at five dropdowns mid-session.
+//   1. Setup        — target / distance / profile / load / firearm pickers,
+//                     plus inline pickers for reticle, shot azimuth, incline,
+//                     sensor capture, shooter capability, and the Litz
+//                     analysis entrypoints. Collapses to a one-line summary
+//                     so the user isn't staring at five dropdowns mid-session.
 //   2. Environment  — temp, pressure, humidity, elevation, wind. Pull-from-
-//                     weather button (Pro). Collapses similarly.
+//                     weather button (Pro). Atmosphere preset picker. Live
+//                     Kestrel toggle when one is paired. Collapses similarly.
 //   3. Solution     — firing solution computed from the active inputs.
 //                     Drop, wind, time of flight, velocity, energy. The
 //                     biggest text on the screen — readable at arm's length.
-//   4. Target plot  — visual target with tap-to-record shots. Group stats
-//                     under the plot.
-//   5. Moving target (Pro) — speed + direction inputs that compute lead
+//                     Plus optional Wind Bracket (Litz +/- envelope), Hit
+//                     Probability gauge, and the Target Plot for tap-to-
+//                     record-shot interaction.
+//   4. Group stats  — extreme spread, mean radius, group MOA, σh / σv, plus
+//                     a 90% CI band once N>=3, and the centroid + zero-
+//                     adjust block.
+//   5. Last shot correction (only when shots > 0) — "hold up X mil, right Y"
+//                     to bring the next shot back to the aim point.
+//   6. DOPE card    — 100yd-step trajectory ladder. Hidden until the solver
+//                     produces a result.
+//   7. Moving target (Pro) — speed + direction inputs that compute lead
 //                            in mil / MOA / inches.
+//   8. Notes        — freeform session notes.
 //
 // Recompute is debounced (500ms) so changing wind doesn't fire the solver
 // on every keystroke. Sessions auto-save once they've been saved at least
@@ -63,15 +78,18 @@ import '../../services/entitlement_notifier.dart';
 import '../../services/hit_probability_service.dart';
 import '../../screens/atmosphere/atmosphere_presets_screen.dart';
 import '../../services/sensors/cant_service.dart';
+import '../../services/common_loads_catalog.dart';
 import '../../services/sensors/inclinometer_service.dart';
 import '../../services/sensors/magnetometer_service.dart';
 import '../../services/unit_service.dart';
+import '../../widgets/empty_state_card.dart';
 import '../../widgets/range_day_safety.dart';
 import '../../services/weather_service.dart';
 import '../../utils/responsive.dart';
 import '../../widgets/atmosphere_preset_picker.dart';
 import '../../widgets/pro_gate.dart';
 import '../../widgets/reticle_picker.dart';
+import '../ballistics/ballistics_screen.dart';
 import 'bc_truing_screen.dart';
 import 'scope_view_screen.dart';
 import 'sight_calibration_screen.dart';
@@ -113,6 +131,15 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
 
   UserLoadRow? _selectedLoad;
   Future<List<UserLoadRow>>? _loadsFuture;
+
+  /// Non-persistent label for a [CommonLoad] the user picked from the
+  /// empty-state catalog. Mirrored into the load picker as a "Using
+  /// `<name>` defaults" banner so the user knows the BC / MV came from a
+  /// canned factory-load row rather than a saved recipe of their own.
+  /// Cleared whenever they pick a real recipe or tap "Clear defaults".
+  /// Lives in memory only — no DB column, since selecting a common
+  /// load deliberately doesn't create a recipe row.
+  String? _appliedCommonLoadName;
 
   UserFirearmRow? _selectedFirearm;
   Future<List<UserFirearmRow>>? _firearmsFuture;
@@ -187,8 +214,19 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   String _moverDirection = 'rtl';
 
   // ─────────────────────── Section collapse ───────────────────────
-  bool _setupExpanded = true;
-  bool _environmentExpanded = true;
+  //
+  // All collapsible sections start COLLAPSED. The screen has a lot of
+  // surface area (target, distance, profile, load, firearm, reticle,
+  // shot azimuth, incline, sensors, environment, capability expander,
+  // Litz analysis, moving target, save) and auto-expanding two cards
+  // on every entry pushed the actual results (DOPE, target plot, hit
+  // probability) below the fold. The user explicitly asked for
+  // collapsed-by-default behavior — they'll tap a section header
+  // when they need it, and `_hydrateFromSession` keeps the post-pick
+  // collapse-everything behavior so existing sessions still open
+  // straight to the solution view.
+  bool _setupExpanded = false;
+  bool _environmentExpanded = false;
   bool _movingTargetExpanded = false;
 
   /// "Sensors" panel inside the Setup card. Collapsed by default so
@@ -258,27 +296,41 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   bool _capabilityExpanded = false;
 
   // ─────────────────────── Captured sensor readings (v13) ───────────────────────
-  /// Captured cant (rifle level) at the time the user tapped "Capture
-  /// current readings". Null means no capture has been performed for
-  /// this session yet. Persists to `RangeDaySessions.cantDegrees` so
-  /// reopening the session shows the value that was active at the
-  /// time of capture, even if the device has since moved.
-  // ignore: unused_field
-  double? _capturedCantDeg;
-  /// Captured shot azimuth (compass heading) at the time of capture.
-  /// Mirrored into the `_shotAzimuthCtrl` field at capture time and
-  /// persisted to `RangeDaySessions.shotAzimuthDegrees`.
-  // ignore: unused_field
-  double? _capturedAzimuthDeg;
-  /// Wall-clock when the user last tapped "Capture current readings".
-  /// Drives the "Captured 12s ago" caption in the Sensors panel. Not
-  /// persisted — purely a UI nicety for the active session.
-  // ignore: unused_field
-  DateTime? _capturedAt;
+  //
+  // The "Capture environment from sensors" button mirrors live cant /
+  // azimuth / incline values directly into the corresponding text
+  // controllers (`_shotAzimuthCtrl`, `_inclineAngleCtrl`) at capture
+  // time. Earlier revisions also held them in dedicated `_captured*`
+  // fields for a planned "Captured 12s ago" caption that never shipped.
+  // Those fields were write-only — every read site relied on the live
+  // controller text instead — so they were removed to keep state
+  // honest. The persisted columns `RangeDaySessions.cantDegrees` /
+  // `shotAzimuthDegrees` are written from the live controller value at
+  // save time (see `_buildSessionCompanion`), not from a separate
+  // capture snapshot. If a future revision wants the "captured Ns ago"
+  // badge, reintroduce a timestamp alongside the actual read site.
 
   /// Latest hit-probability result. Recomputed lazily (300ms debounce).
   HitProbabilityResult? _hitProb;
   Timer? _hitProbDebounce;
+
+  /// Scroll controllers for the phone + wide layouts.
+  ///
+  /// Reason for keeping these as state instead of letting Flutter
+  /// allocate ephemeral controllers: when the user types into a
+  /// TextField, the keyboard appears, iOS asks Flutter to scroll the
+  /// focused field into view, and the scroll position changes. A
+  /// transient controller can lose state across `setState` rebuilds
+  /// that follow `_scheduleSolve()` / `_scheduleAutoSave()` — the
+  /// observed symptom was the page snapping to the very bottom when
+  /// the user scrolled past the ballistic-profile section. Pinning a
+  /// controller per layout (and disposing in [dispose]) gives a
+  /// stable scroll-extent computation, plus we explicitly set
+  /// `keyboardDismissBehavior: onDrag` so the keyboard doesn't
+  /// fight the flick.
+  final ScrollController _phoneScrollCtrl = ScrollController();
+  final ScrollController _wideLeftScrollCtrl = ScrollController();
+  final ScrollController _wideRightScrollCtrl = ScrollController();
 
   @override
   void initState() {
@@ -325,13 +377,27 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   Future<void> _hydrateFromSession(int id) async {
     // Capture every repository up front so we don't reach into the
     // BuildContext after an `await`.
+    //
+    // We deliberately do NOT capture `ScaffoldMessenger.of(context)`
+    // here. This method is called from `initState` (synchronously);
+    // the inherited-widget lookup that ScaffoldMessenger.of performs
+    // walks up the element tree, which trips an `assert` in debug
+    // mode if the screen's build hasn't completed. The assertion
+    // doesn't fire in release (assert is no-op there), but it dirties
+    // every widget test by raising an uncaught zone error and forcing
+    // `RangeDayErrorBoundary` to swap in the friendly fallback —
+    // turning every Range Day Detail widget test into a workaround
+    // for a debug-only diagnostic.
+    //
+    // Defer the messenger lookup to inside the catch block, after the
+    // `mounted` check. By then the screen has rendered at least one
+    // frame and ScaffoldMessenger.of is safe.
     final rangeDayRepo = context.read<RangeDayRepository>();
     final targetRepo = context.read<TargetRepository>();
     final profileRepo = context.read<BallisticProfileRepository>();
     final firearmRepo = context.read<FirearmRepository>();
     final recipeRepo = context.read<RecipeRepository>();
     final reticleRepo = context.read<ReticleRepository>();
-    final messenger = ScaffoldMessenger.of(context);
 
     // Wrap the entire hydration in try/catch — a missing target/load/
     // profile row (e.g. user deleted it between sessions) or a closed
@@ -351,7 +417,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       debugPrint('[range_day] _hydrateFromSession failed: $e');
       debugPrintStack(stackTrace: stack, label: '_hydrateFromSession');
       if (!mounted) return;
-      messenger.showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
             'Could not fully load this session. Some fields may be empty.',
@@ -403,14 +469,12 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       _rangeUncertaintyYd = s.rangeUncertaintyYd ?? 5.0;
       _correctionUnit =
           (s.correctionUnit.isEmpty ? 'mil' : s.correctionUnit);
-      // v13 — captured cant + azimuth. If the previous save included a
+      // v13 — captured shot azimuth. If the previous save included a
       // captured shot azimuth, mirror it into the editable text field
       // so the field reflects the persisted value when the session is
-      // re-opened. Cant is *display-only* in the captured row; the
-      // solver always uses the live CantService value if cant
-      // correction is enabled.
-      _capturedCantDeg = s.cantDegrees;
-      _capturedAzimuthDeg = s.shotAzimuthDegrees;
+      // re-opened. (Cant is read live from CantService when the cant-
+      // correction toggle is on; the persisted column is informational
+      // only — see the comment block above the captured-sensor section.)
       if (s.shotAzimuthDegrees != null) {
         _shotAzimuthCtrl.text =
             s.shotAzimuthDegrees!.toStringAsFixed(0);
@@ -489,6 +553,9 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     _solveDebounce?.cancel();
     _hitProbDebounce?.cancel();
     _sensorsPulse?.cancel();
+    _phoneScrollCtrl.dispose();
+    _wideLeftScrollCtrl.dispose();
+    _wideRightScrollCtrl.dispose();
     // ignore: discarded_futures
     _kestrelSub?.cancel();
     // Stop the device sensors when leaving the screen so the OS can
@@ -1425,6 +1492,13 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         _solutionStrip(),
         Expanded(
           child: SingleChildScrollView(
+            controller: _phoneScrollCtrl,
+            // Dismiss the keyboard as soon as the user starts a drag.
+            // Prevents the keyboard's "scroll-focused-field-into-view"
+            // helper from racing the user's scroll gesture (the
+            // observed cause of the "page jumps to bottom" bug when
+            // the distance TextField had focus).
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1473,6 +1547,9 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
               Expanded(
                 flex: 5,
                 child: SingleChildScrollView(
+                  controller: _wideLeftScrollCtrl,
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
                   padding: const EdgeInsets.fromLTRB(16, 12, 8, 32),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1496,6 +1573,9 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
               Expanded(
                 flex: 6,
                 child: SingleChildScrollView(
+                  controller: _wideRightScrollCtrl,
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
                   padding: const EdgeInsets.fromLTRB(8, 12, 16, 32),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2028,9 +2108,6 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     }
     if (!mounted) return;
     setState(() {
-      _capturedCantDeg = cant;
-      _capturedAzimuthDeg = heading;
-      _capturedAt = DateTime.now();
       if (heading != null) {
         _shotAzimuthCtrl.text = heading.toStringAsFixed(0);
       }
@@ -2711,45 +2788,209 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
             final filtered = _targetCategoryFilter == 'all'
                 ? all
                 : all.where((t) => t.category == _targetCategoryFilter).toList();
-            if (filtered.isEmpty) {
+            // Build the dropdown items, always including the currently-
+            // selected target even when the category filter would hide
+            // it.
+            //
+            // Without this guard, the dropdown crashes the screen when
+            // the user picks a target in one category, then switches
+            // the category-filter chips: `initialValue` becomes a
+            // stale id not present in `items`, and Flutter's
+            // `DropdownButtonFormField` asserts "There should be
+            // exactly one item with [DropdownButton]'s value: <id>"
+            // (Either zero or 2 or more) at layout time.
+            //
+            // The fix: keep `_selectedTarget` as a stable piece of
+            // state regardless of the filter, and inject it into the
+            // items list with a clarifying "(picked — hidden by
+            // filter)" suffix when the active filter would otherwise
+            // exclude it. The user's selection is preserved across
+            // filter taps and they always see what they have chosen.
+            final selected = _selectedTarget;
+            final selectedHiddenByFilter = selected != null &&
+                !filtered.any((t) => t.id == selected.id);
+            final items = <DropdownMenuItem<int?>>[
+              const DropdownMenuItem<int?>(
+                value: null,
+                child: Text('— None —'),
+              ),
+              if (selectedHiddenByFilter)
+                DropdownMenuItem<int?>(
+                  value: selected.id,
+                  child: Text(
+                    '${selected.name} (picked — hidden by filter)',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ...filtered.map((t) => DropdownMenuItem<int?>(
+                    value: t.id,
+                    child: Text(
+                      t.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  )),
+            ];
+            if (filtered.isEmpty && !selectedHiddenByFilter) {
               return Text(
                 'No targets in this category yet.',
                 style: Theme.of(context).textTheme.bodySmall,
               );
             }
-            return DropdownButtonFormField<int?>(
-              initialValue: _selectedTarget?.id,
-              isExpanded: true,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'Pick a target',
-              ),
-              items: [
-                const DropdownMenuItem<int?>(
-                  value: null,
-                  child: Text('— None —'),
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                DropdownButtonFormField<int?>(
+                  initialValue: selected?.id,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Pick a target',
+                  ),
+                  items: items,
+                  onChanged: (id) {
+                    if (id == null) {
+                      setState(() => _selectedTarget = null);
+                      _scheduleAutoSave();
+                      return;
+                    }
+                    // Look up against the union of (filtered + currently
+                    // selected) so picking the "(picked — hidden by
+                    // filter)" pseudo-item is a no-op rather than a
+                    // `StateError` from `firstWhere`.
+                    final picked = filtered.firstWhere(
+                      (t) => t.id == id,
+                      orElse: () => selected!,
+                    );
+                    setState(() => _selectedTarget = picked);
+                    _scheduleAutoSave();
+                  },
                 ),
-                ...filtered.map((t) => DropdownMenuItem<int?>(
-                      value: t.id,
-                      child: Text(
-                        t.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    )),
+                // Preview tile — the user reported they couldn't tell
+                // what target they had selected after picking from the
+                // dropdown. This row mirrors the selection back to them
+                // with the target's shape, name, and dimensions so it's
+                // unambiguous before they scroll down to see the
+                // computed solution.
+                if (selected != null) _selectedTargetPreview(selected),
               ],
-              onChanged: (id) {
-                final picked = id == null
-                    ? null
-                    : filtered.firstWhere((t) => t.id == id);
-                setState(() => _selectedTarget = picked);
-                _scheduleAutoSave();
-              },
             );
           },
         ),
       ],
     );
+  }
+
+  /// Inline preview row shown directly under the target dropdown.
+  ///
+  /// Shows shape icon + name + dimensions + category. The whole row
+  /// stays within the Setup card — it's intentionally compact (no
+  /// elevation, no card chrome) so it reads as a confirmation of the
+  /// dropdown selection rather than a distinct widget.
+  Widget _selectedTargetPreview(TargetRow t) {
+    final theme = Theme.of(context);
+    final dims = _targetDimensionLabel(t);
+    final categoryLabel = t.category == 'game-silhouette'
+        ? 'Game'
+        : (t.category[0].toUpperCase() + t.category.substring(1));
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Container(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest.withValues(
+            alpha: 0.4,
+          ),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+        child: Row(
+          children: [
+            _targetShapeIcon(t.shape, theme),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    t.name,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '$dims · $categoryLabel',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Dimension label for the preview row.
+  ///
+  /// Circles read "10 in dia" (single dimension is enough); rectangles
+  /// and squares read "W × H in"; silhouettes use "W × H in"; if the
+  /// target shape is unknown, we fall back to the raw width × height.
+  String _targetDimensionLabel(TargetRow t) {
+    final w = t.widthIn;
+    final h = t.heightIn;
+    String fmt(double v) =>
+        v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(1);
+    if (t.shape == 'circle') {
+      return '${fmt(w)} in dia';
+    }
+    if (w == h) {
+      return '${fmt(w)} × ${fmt(w)} in';
+    }
+    return '${fmt(w)} × ${fmt(h)} in';
+  }
+
+  /// Small inline shape glyph for the preview row.
+  ///
+  /// We don't try to render a fancy thumbnail here — the Range Day
+  /// target plot already shows the actual target geometry once the
+  /// user has set distance + scale. This is just a visual anchor
+  /// (circle / square / rectangle / silhouette) so the user knows at
+  /// a glance the shape they picked.
+  Widget _targetShapeIcon(String shape, ThemeData theme) {
+    final color = theme.colorScheme.primary;
+    switch (shape) {
+      case 'circle':
+        return Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            border: Border.all(color: color, width: 2),
+            shape: BoxShape.circle,
+          ),
+        );
+      case 'square':
+      case 'rectangle':
+        return Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            border: Border.all(color: color, width: 2),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        );
+      case 'silhouette':
+      case 'irregular':
+        return Icon(Icons.person_outline, size: 28, color: color);
+      default:
+        return Icon(Icons.crop_square, size: 28, color: color);
+    }
   }
 
   Widget _distancePicker() {
@@ -2927,9 +3168,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                   // distance. Mirror it into the shot azimuth field so
                   // the Coriolis / wind-bearing math has the right
                   // input without a second sensor capture.
-                  final az = r.azimuthDeg!;
-                  _shotAzimuthCtrl.text = az.toStringAsFixed(0);
-                  _capturedAzimuthDeg = az;
+                  _shotAzimuthCtrl.text = r.azimuthDeg!.toStringAsFixed(0);
                 }
               });
               _scheduleSolve();
@@ -2976,8 +3215,19 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
               );
             }
             final profiles = snap.data ?? const <BallisticProfileRow>[];
+            // Stale-id guard: if the previously-selected profile has
+            // been deleted (or the stream is mid-refresh), pinning
+            // `initialValue` to its id would crash the dropdown with
+            // "There should be exactly one item with [DropdownButton]'s
+            // value: <id>". Fall back to null while keeping
+            // `_selectedProfile` as state — the rest of the screen
+            // continues to use the cached values until the user picks
+            // again or the deleted-row state resolves itself.
+            final selectedProfileExists = _selectedProfile != null &&
+                profiles.any((p) => p.id == _selectedProfile!.id);
             return DropdownButtonFormField<int?>(
-              initialValue: _selectedProfile?.id,
+              initialValue:
+                  selectedProfileExists ? _selectedProfile!.id : null,
               isExpanded: true,
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
@@ -3031,40 +3281,218 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
               );
             }
             final loads = snap.data ?? const <UserLoadRow>[];
-            return DropdownButtonFormField<int?>(
-              initialValue: _selectedLoad?.id,
-              isExpanded: true,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'Optional — link a recipe',
-              ),
-              items: [
-                const DropdownMenuItem<int?>(
-                  value: null,
-                  child: Text('— None —'),
+            // Brand-new user with zero saved recipes: instead of a
+            // dropdown that just says "— None —" (and offers no path
+            // forward), surface a real empty-state card with two
+            // actions — pick a common factory load to seed defaults,
+            // or jump to the full ballistics workflow to build a
+            // proper saved profile. See `_applyCommonLoad`,
+            // `_pickCommonLoad`, and `_openBallisticsScreen` below
+            // for the action handlers.
+            if (loads.isEmpty) {
+              return _loadPickerEmptyState();
+            }
+            // Stale-id guard — see `_profilePicker` for the rationale.
+            // Protects against the user deleting a recipe while a Range
+            // Day session still references it (or the recipe stream
+            // re-firing with a smaller list mid-render).
+            final selectedLoadExists = _selectedLoad != null &&
+                loads.any((l) => l.id == _selectedLoad!.id);
+            // Pick the picker's hint copy: when the user previously
+            // applied a common-load default the dropdown is still
+            // empty (no DB row), but we want to surface that the
+            // current ballistics inputs came from a canned load.
+            final hintText = _appliedCommonLoadName != null
+                ? 'Using $_appliedCommonLoadName defaults'
+                : 'Optional — link a recipe';
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (_appliedCommonLoadName != null) ...[
+                  _commonLoadDefaultsBanner(),
+                  const SizedBox(height: 8),
+                ],
+                DropdownButtonFormField<int?>(
+                  initialValue:
+                      selectedLoadExists ? _selectedLoad!.id : null,
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    hintText: hintText,
+                  ),
+                  items: [
+                    const DropdownMenuItem<int?>(
+                      value: null,
+                      child: Text('— None —'),
+                    ),
+                    ...loads.map((l) => DropdownMenuItem<int?>(
+                          value: l.id,
+                          child: Text(l.name,
+                              maxLines: 1, overflow: TextOverflow.ellipsis),
+                        )),
+                  ],
+                  onChanged: (id) {
+                    if (id == null) {
+                      setState(() => _selectedLoad = null);
+                      _scheduleAutoSave();
+                      return;
+                    }
+                    final l = loads.firstWhere((l) => l.id == id);
+                    // Picking a real recipe overrides any previously
+                    // applied common-load defaults; the recipe is the
+                    // user's canonical choice now.
+                    setState(() {
+                      _selectedLoad = l;
+                      _appliedCommonLoadName = null;
+                    });
+                    _applyLoadDefaults(l);
+                    _scheduleAutoSave();
+                  },
                 ),
-                ...loads.map((l) => DropdownMenuItem<int?>(
-                      value: l.id,
-                      child: Text(l.name,
-                          maxLines: 1, overflow: TextOverflow.ellipsis),
-                    )),
               ],
-              onChanged: (id) {
-                if (id == null) {
-                  setState(() => _selectedLoad = null);
-                  _scheduleAutoSave();
-                  return;
-                }
-                final l = loads.firstWhere((l) => l.id == id);
-                setState(() => _selectedLoad = l);
-                _applyLoadDefaults(l);
-                _scheduleAutoSave();
-              },
             );
           },
         ),
       ],
     );
+  }
+
+  /// Empty-state body for the load picker when the user has no saved
+  /// recipes. Exposes two actions: pick a common factory load (opens
+  /// `_pickCommonLoad`'s bottom sheet) or jump to BallisticsScreen so
+  /// the user can build a saved profile end-to-end.
+  Widget _loadPickerEmptyState() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (_appliedCommonLoadName != null) ...[
+          _commonLoadDefaultsBanner(),
+          const SizedBox(height: 8),
+        ],
+        EmptyStateCard(
+          heading: 'No saved loads yet',
+          body:
+              'Pick a common factory load to use defaults, or build your '
+              'own ballistic profile.',
+          actions: [
+            FilledButton.icon(
+              onPressed: _pickCommonLoad,
+              icon: const Icon(Icons.flash_on_outlined),
+              label: const Text('Pick a common load'),
+            ),
+            OutlinedButton.icon(
+              onPressed: _openBallisticsScreen,
+              icon: const Icon(Icons.tune),
+              label: const Text('Create a ballistic profile'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// Tiny info banner shown above / instead of the load dropdown when
+  /// the user has applied a `CommonLoad` from the catalog. The banner
+  /// is tappable on its trailing "Clear" button which restores the
+  /// original "— None —" state without deleting any user typing —
+  /// the controllers keep whatever values are in them.
+  Widget _commonLoadDefaultsBanner() {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primaryContainer,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.info_outline,
+            size: 18,
+            color: theme.colorScheme.onPrimaryContainer,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Using $_appliedCommonLoadName defaults — your inputs override',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onPrimaryContainer,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() => _appliedCommonLoadName = null);
+            },
+            child: const Text('Clear'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Open a modal bottom sheet listing every entry in
+  /// [CommonLoadsCatalog] grouped by cartridge, with a search box at
+  /// the top. When the user picks one, [_applyCommonLoad] is called
+  /// and the sheet dismisses.
+  Future<void> _pickCommonLoad() async {
+    final picked = await showModalBottomSheet<CommonLoad>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => const _CommonLoadPickerSheet(),
+    );
+    if (picked != null && mounted) {
+      _applyCommonLoad(picked);
+    }
+  }
+
+  /// Mirror the BC / MV / weight / diameter / drag-model fields from a
+  /// [CommonLoad] into the live controllers and surface the defaults
+  /// banner. We deliberately don't create any DB row — selecting a
+  /// common load is just a starting-defaults convenience. The user is
+  /// free to edit any of the controllers afterward.
+  void _applyCommonLoad(CommonLoad load) {
+    setState(() {
+      _appliedCommonLoadName = load.name;
+      _bcCtrl.text = load.bc.toStringAsFixed(3);
+      _muzzleVelCtrl.text = load.muzzleVelocityFps.toStringAsFixed(0);
+      _bulletWeightCtrl.text = _trimZeros(load.bulletWeightGr);
+      _bulletDiameterCtrl.text = load.bulletDiameterIn.toStringAsFixed(3);
+      _dragModel = load.dragModel;
+      // Picking a common load nullifies any previous recipe selection
+      // because the controllers no longer reflect that recipe's
+      // values. The dropdown's "stale-id guard" handles the visual.
+      _selectedLoad = null;
+    });
+    _scheduleSolve();
+    _scheduleAutoSave();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Using ${load.name} defaults'),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  /// Push BallisticsScreen so the user can build a saved ballistic
+  /// profile end-to-end. We push directly via MaterialPageRoute (no
+  /// named-route lookup) because `lib/app.dart` doesn't define a
+  /// routes table — every screen-to-screen jump in the app is an
+  /// explicit `MaterialPageRoute`. After the user pops back, refresh
+  /// the loads future so any newly-saved recipe shows up in the
+  /// dropdown.
+  Future<void> _openBallisticsScreen() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const BallisticsScreen(),
+      ),
+    );
+    if (!mounted) return;
+    setState(() {
+      _loadsFuture = _loadAllRecipes();
+    });
   }
 
   Widget _firearmPicker() {
@@ -3088,8 +3516,12 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
               );
             }
             final firearms = snap.data ?? const <UserFirearmRow>[];
+            // Stale-id guard — see `_profilePicker` for the rationale.
+            final selectedFirearmExists = _selectedFirearm != null &&
+                firearms.any((f) => f.id == _selectedFirearm!.id);
             return DropdownButtonFormField<int?>(
-              initialValue: _selectedFirearm?.id,
+              initialValue:
+                  selectedFirearmExists ? _selectedFirearm!.id : null,
               isExpanded: true,
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
@@ -4040,14 +4472,15 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
 
   Widget _dopeCard() {
     final theme = Theme.of(context);
+    // Hide the card entirely when there's no DOPE to render. The
+    // Solution card directly above already shows "Solving…" or the
+    // solver error in this state, so a placeholder DOPE card was just
+    // duplicating the same "no result yet" message in a second card.
+    // SizedBox.shrink() collapses the slot so the surrounding spacing
+    // strip (`SizedBox(height: 12)`) doesn't leave a phantom gap when
+    // the card is missing.
     if (_dopeRows.isEmpty) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Text('DOPE table will appear once a solution computes.',
-              style: theme.textTheme.bodyMedium),
-        ),
-      );
+      return const SizedBox.shrink();
     }
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -5538,5 +5971,228 @@ class _BubbleLevelPainter extends CustomPainter {
     return old.cantDeg != cantDeg ||
         old.color != color ||
         old.track != track;
+  }
+}
+
+/// Modal bottom sheet that renders [CommonLoadsCatalog] grouped by
+/// cartridge with a search box at the top. Tapping any row pops the
+/// sheet with the chosen [CommonLoad] so the caller can apply it to
+/// the screen's controllers.
+///
+/// Stateful because the search field is interactive — every keystroke
+/// re-runs `CommonLoadsCatalog.search` and rebuilds the list. The
+/// catalog is a compile-time constant, so the search is O(n) over a
+/// list of ~20 entries, which is essentially free.
+class _CommonLoadPickerSheet extends StatefulWidget {
+  const _CommonLoadPickerSheet();
+
+  @override
+  State<_CommonLoadPickerSheet> createState() =>
+      _CommonLoadPickerSheetState();
+}
+
+class _CommonLoadPickerSheetState extends State<_CommonLoadPickerSheet> {
+  final _searchCtrl = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  /// Group whatever loads the active query selects, preserving the
+  /// catalog's natural cartridge ordering. We don't use
+  /// `CommonLoadsCatalog.byCartridge()` directly because it doesn't
+  /// know about the search filter.
+  Map<String, List<CommonLoad>> _filteredGrouped() {
+    final filtered = CommonLoadsCatalog.search(_query);
+    final grouped = <String, List<CommonLoad>>{};
+    for (final l in filtered) {
+      grouped.putIfAbsent(l.cartridge, () => <CommonLoad>[]).add(l);
+    }
+    return grouped;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final grouped = _filteredGrouped();
+    // Don't assert the list is non-empty — empty result for a typo
+    // search query is a valid state. Render an inline empty hint
+    // instead so the user can adjust the query.
+    final mediaQuery = MediaQuery.of(context);
+    return Padding(
+      // Keyboard-safe — the sheet's content must avoid the IME
+      // overlay so the search field stays visible while typing.
+      padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: mediaQuery.size.height * 0.8,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Pick a common factory load',
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Sets BC, muzzle velocity, weight, and diameter. '
+                    'Edit anything afterward.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _searchCtrl,
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.search),
+                      hintText: 'Search by cartridge or bullet',
+                      isDense: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      suffixIcon: _query.isEmpty
+                          ? null
+                          : IconButton(
+                              icon: const Icon(Icons.close),
+                              onPressed: () {
+                                _searchCtrl.clear();
+                                setState(() => _query = '');
+                              },
+                            ),
+                    ),
+                    onChanged: (v) => setState(() => _query = v),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Flexible(
+              child: grouped.isEmpty
+                  ? _emptySearchHint(theme)
+                  : ListView(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      children: [
+                        for (final cartridge in grouped.keys) ...[
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(
+                                16, 12, 16, 4),
+                            child: Text(
+                              cartridge,
+                              style:
+                                  theme.textTheme.labelLarge?.copyWith(
+                                color: theme.colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          for (final load in grouped[cartridge]!)
+                            _LoadRow(
+                              load: load,
+                              onTap: () =>
+                                  Navigator.of(context).pop(load),
+                            ),
+                        ],
+                        const SizedBox(height: 8),
+                      ],
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _emptySearchHint(ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.search_off,
+              size: 32,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'No matches for "$_query"',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Single tappable row representing one [CommonLoad] in the picker
+/// sheet. Shows the bullet name, a one-line "BC · MV · weight"
+/// readout, and (when present) the load's notes.
+class _LoadRow extends StatelessWidget {
+  const _LoadRow({required this.load, required this.onTap});
+
+  final CommonLoad load;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final summary =
+        'BC ${load.bc.toStringAsFixed(3)} ${load.dragModel.short} · '
+        'MV ${load.muzzleVelocityFps.toStringAsFixed(0)} fps · '
+        '${_trimLoadWeight(load.bulletWeightGr)} gr';
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              load.name,
+              style: theme.textTheme.bodyLarge,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              summary,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            if (load.notes != null) ...[
+              const SizedBox(height: 2),
+              Text(
+                load.notes!,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Drop trailing zeros from a bullet weight so "140.0" renders as
+  /// "140". Mirrors the same approach the rest of the screen uses for
+  /// numeric controllers.
+  static String _trimLoadWeight(double v) {
+    final s = v.toStringAsFixed(1);
+    return s.endsWith('.0') ? s.substring(0, s.length - 2) : s;
   }
 }

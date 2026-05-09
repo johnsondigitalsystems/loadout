@@ -91,6 +91,7 @@ import '../../database/database.dart';
 import '../../services/ballistics/units.dart' as bu;
 import '../../services/hit_probability_service.dart';
 import '../../widgets/range_day_safety.dart';
+import '../../widgets/scope_daytime_backdrop.dart';
 import 'widgets/target_plot.dart';
 
 /// Subtension display unit for the scope view's tap-to-switch
@@ -438,39 +439,52 @@ class _ScopeViewScreenState extends State<ScopeViewScreen>
               width: fovSide,
               height: fovSide,
               child: ClipOval(
-                child: Container(
-                  color: Colors.black,
-                  child: AnimatedBuilder(
-                    animation: _moverController,
-                    builder: (context, _) {
-                      // Map controller [0..1] to a sweep [-1..+1] so the
-                      // target travels left-to-right across the FOV
-                      // (`reverse: true` gives us right-to-left on the
-                      // return trip without extra math).
-                      final phase = _animateMover
-                          ? (_moverController.value * 2.0 - 1.0)
-                          : 0.0;
-                      return CustomPaint(
-                        painter: _ScopeFovPainter(
-                          reticle: widget.inputs.reticle,
-                          reticleRenderScale: _reticleRenderScale(),
-                          reticleColor: Colors.greenAccent,
-                          targetSpec: widget.inputs.targetSpec,
-                          rangeYards: _rangeYards,
-                          magnification: _magnification,
-                          fovHalfMil: _fovHalfMil(),
-                          dropMil: _dropMil(),
-                          windMil: _windMil(),
-                          aimPointNormX: widget.inputs.aimPointX,
-                          aimPointNormY: widget.inputs.aimPointY,
-                          latestHitNormX: widget.inputs.latestImpactX,
-                          latestHitNormY: widget.inputs.latestImpactY,
-                          displayUnit: _displayUnit,
-                          targetSweepPhase: phase,
-                        ),
-                      );
-                    },
-                  ),
+                // Layered eyepiece: daytime range backdrop at the bottom
+                // (sky / horizon / grass / mound) so the reticle reads
+                // against a representative downrange scene, the existing
+                // FOV painter stacked on top (target + markers + reticle
+                // + rim labels). The backdrop's own target is set to
+                // `none` here because the FOV painter already draws the
+                // user's chosen target spec — we only want the scenery
+                // from the backdrop layer.
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    const ScopeDaytimeBackdrop(
+                      target: BackdropTargetSilhouette.none,
+                    ),
+                    AnimatedBuilder(
+                      animation: _moverController,
+                      builder: (context, _) {
+                        // Map controller [0..1] to a sweep [-1..+1] so the
+                        // target travels left-to-right across the FOV
+                        // (`reverse: true` gives us right-to-left on the
+                        // return trip without extra math).
+                        final phase = _animateMover
+                            ? (_moverController.value * 2.0 - 1.0)
+                            : 0.0;
+                        return CustomPaint(
+                          painter: _ScopeFovPainter(
+                            reticle: widget.inputs.reticle,
+                            reticleRenderScale: _reticleRenderScale(),
+                            reticleColor: Colors.greenAccent,
+                            targetSpec: widget.inputs.targetSpec,
+                            rangeYards: _rangeYards,
+                            magnification: _magnification,
+                            fovHalfMil: _fovHalfMil(),
+                            dropMil: _dropMil(),
+                            windMil: _windMil(),
+                            aimPointNormX: widget.inputs.aimPointX,
+                            aimPointNormY: widget.inputs.aimPointY,
+                            latestHitNormX: widget.inputs.latestImpactX,
+                            latestHitNormY: widget.inputs.latestImpactY,
+                            displayUnit: _displayUnit,
+                            targetSweepPhase: phase,
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -1045,11 +1059,29 @@ class _ScopeFovPainter extends CustomPainter {
     final pxPerNativeUnit = pxPerMil * nativeUnitToMil * reticleRenderScale;
 
     // ── 1. Atmospheric / dim-glass backdrop. ────────────────────────────
-    canvas.drawCircle(
-      centerPx,
-      fovRadiusPx,
-      Paint()..color = const Color(0xFF050a05),
-    );
+    //
+    // Used to be a flat dark fill (`0xFF050a05`). The parent now layers
+    // a procedural daytime range scene (`ScopeDaytimeBackdrop`) BEHIND
+    // this painter, so we don't draw a fill here anymore — that would
+    // hide the sky / grass / mound / horizon. We do still apply a very
+    // subtle vignette inside the FOV ring to suggest scope-glass
+    // contrast and stop the reticle from getting lost on the brightest
+    // sky pixels.
+    final vignette = Paint()
+      ..shader = RadialGradient(
+        center: Alignment.center,
+        radius: 1.05,
+        colors: [
+          Colors.transparent,
+          Colors.black.withValues(alpha: 0.10),
+          Colors.black.withValues(alpha: 0.22),
+        ],
+        stops: const [0.0, 0.85, 1.0],
+      ).createShader(Rect.fromCircle(
+        center: centerPx,
+        radius: fovRadiusPx,
+      ));
+    canvas.drawCircle(centerPx, fovRadiusPx, vignette);
 
     // ── 2. Target. Centered at FOV center; the reticle is what moves. ──
     _paintTarget(canvas, centerPx, pxPerMil);

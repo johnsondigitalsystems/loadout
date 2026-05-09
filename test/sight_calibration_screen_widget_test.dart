@@ -33,12 +33,14 @@
 // WHY THIS IS HARDER THAN IT LOOKS
 // ============================================================================
 //   * The "Apply and save" button is disabled until BOTH `_result !=
-//     null` AND `_selectedFirearm != null`. The test below asserts that
-//     two impacts alone don't enable the button (no firearm selected),
-//     which matches the production gate.
+//     null` AND `_selectedFirearm != null`. The test below asserts
+//     that two impacts alone don't enable the button (no firearm
+//     selected), which matches the production gate.
 //   * Each impact row contains "X (-1..1)" and "Y (-1..1)" labels.
 //     Counting impact rows by `find.text('X (-1..1)')` is unique
 //     because no other field uses that label.
+//   * Every test ends with `tearDownRangeDayWidgetTree` so drift's
+//     stream-cancel timer fires inside the test body window.
 //
 // ============================================================================
 // WHO CONSUMES THIS FILE
@@ -70,6 +72,7 @@ void main() {
 
     expect(find.text('Sight Calibration'), findsOneWidget);
     expect(tester.takeException(), isNull);
+    await tearDownRangeDayWidgetTree(tester);
   });
 
   testWidgets('renders without crashing for an anonymous user',
@@ -82,6 +85,7 @@ void main() {
 
     expect(find.text('Sight Calibration'), findsOneWidget);
     expect(tester.takeException(), isNull);
+    await tearDownRangeDayWidgetTree(tester);
   });
 
   testWidgets('renders without crashing for a free (non-Pro) user',
@@ -95,6 +99,7 @@ void main() {
 
     expect(find.text('Sight Calibration'), findsOneWidget);
     expect(tester.takeException(), isNull);
+    await tearDownRangeDayWidgetTree(tester);
   });
 
   testWidgets('renders without crashing for a Pro user', (tester) async {
@@ -107,6 +112,7 @@ void main() {
 
     expect(find.text('Sight Calibration'), findsOneWidget);
     expect(tester.takeException(), isNull);
+    await tearDownRangeDayWidgetTree(tester);
   });
 
   testWidgets('renders without crashing on platforms with no sensors',
@@ -119,6 +125,7 @@ void main() {
 
     expect(find.text('Sight Calibration'), findsOneWidget);
     expect(tester.takeException(), isNull);
+    await tearDownRangeDayWidgetTree(tester);
   });
 
   testWidgets('wizard step indicator (instructions card) is visible',
@@ -141,6 +148,7 @@ void main() {
     // Save section is at the bottom.
     expect(find.text('Apply scale'), findsOneWidget);
     expect(tester.takeException(), isNull);
+    await tearDownRangeDayWidgetTree(tester);
   });
 
   testWidgets('starts with zero impact rows in the Impacts table',
@@ -154,6 +162,7 @@ void main() {
     // No impacts yet — the X (-1..1) label appears 0 times.
     expect(find.text('X (-1..1)'), findsNothing);
     expect(tester.takeException(), isNull);
+    await tearDownRangeDayWidgetTree(tester);
   });
 
   testWidgets('tapping "Add impact" twice grows the table to two rows',
@@ -174,6 +183,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('X (-1..1)'), findsNWidgets(2));
     expect(tester.takeException(), isNull);
+    await tearDownRangeDayWidgetTree(tester);
   });
 
   testWidgets(
@@ -199,6 +209,7 @@ void main() {
     // onPressed null => disabled.
     expect(widget.onPressed, isNull);
     expect(tester.takeException(), isNull);
+    await tearDownRangeDayWidgetTree(tester);
   });
 
   testWidgets('removing an impact row decrements the visible count',
@@ -223,5 +234,6 @@ void main() {
 
     expect(find.text('X (-1..1)'), findsNWidgets(1));
     expect(tester.takeException(), isNull);
+    await tearDownRangeDayWidgetTree(tester);
   });
 }

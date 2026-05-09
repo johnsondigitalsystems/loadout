@@ -656,6 +656,18 @@ class SeedLoader {
   /// "manufacturers" are free-form labels — multiple unrelated companies
   /// make the same shape of target, and many targets are generic with no
   /// real maker.
+  ///
+  /// Migration note (v18 → material-agnostic dedup): the catalog used
+  /// to ship "AR500 Plate N in" / "AR550 Plate N in" pairs that
+  /// differed only by the `materialKind` discriminator. Hit probability
+  /// only depends on size and shape, so the steel grades were collapsed
+  /// to a single `'steel'` material with one "Steel Plate N in" per
+  /// size. We chose option (a) from the design notes — a one-shot
+  /// re-seed via the v18 `onUpgrade` clause that wipes the [Targets]
+  /// table — because targets is a pure reference table (users cannot
+  /// add custom targets via the UI today), so deleting and re-inserting
+  /// is the simplest path. The picker's stale-id guard handles any
+  /// `RangeDaySessions.targetId` that pointed at an AR500/AR550 row.
   Future<void> _seedTargets() async {
     final data = await _readJsonList('targets.json');
     final batch = <TargetsCompanion>[];

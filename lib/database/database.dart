@@ -36,7 +36,7 @@
 // methods plus generated companions like `UserLoadsCompanion` for
 // constructing rows.
 //
-// `schemaVersion` is currently 16. The `MigrationStrategy` defines two
+// `schemaVersion` is currently 18. The `MigrationStrategy` defines two
 // callbacks: `onCreate` runs on a fresh install (creates every table, then
 // seeds the 8 standard reloading process steps), and `onUpgrade` runs
 // when an installed user opens a build with a newer `schemaVersion`. The
@@ -980,8 +980,16 @@ class Targets extends Table {
   RealColumn get widthIn => real()();
   /// Outer-bound height of the target in inches.
   RealColumn get heightIn => real()();
-  /// 'paper' | 'cardboard' | 'steel-ar500' | 'steel-ar550' | 'polymer' |
-  /// 'game-3d'.
+  /// 'paper' | 'cardboard' | 'steel' | 'polymer' | 'game-3d'.
+  ///
+  /// Note: pre-v18 installs used `'steel-ar500'` / `'steel-ar550'` to
+  /// distinguish AR-grade hardness, but only size and shape affect the
+  /// hit-probability solver — material grade affects target durability,
+  /// not where bullets go. The v18 migration wipes the [Targets] table
+  /// so the seed loader re-inserts the deduped catalog (one "Steel
+  /// Plate N in" per size, no per-grade duplicates). Existing
+  /// `RangeDaySessions.targetId` rows pointing at the old IDs are
+  /// caught by the picker's stale-id guard.
   TextColumn get materialKind => text()();
   /// CSS-style hex color (e.g. "#fff8c4"). Used by the visual target
   /// renderer so the on-screen plot resembles the real target.
@@ -1384,7 +1392,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 17;
+  int get schemaVersion => 18;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1691,6 +1699,27 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(atmospherePresets);
             await m.addColumn(
                 rangeDaySessions, rangeDaySessions.atmospherePresetId);
+          }
+          if (from < 18) {
+            // v18 — Material-agnostic Targets catalog. The
+            // `targets.json` seed dataset previously shipped near-
+            // duplicate "AR500 Plate N in" / "AR550 Plate N in" pairs
+            // distinguished only by `materialKind`. Steel grade affects
+            // target durability, not where bullets go, so the catalog
+            // was deduped to one "Steel Plate N in" per size and the
+            // `materialKind` enum collapsed (`'steel-ar500'` /
+            // `'steel-ar550'` → `'steel'`).
+            //
+            // Wipe the [Targets] table so next launch's
+            // `seedIfNeeded` re-inserts the deduped catalog from JSON.
+            // Existing `RangeDaySessions.targetId` rows that referenced
+            // an AR500/AR550 row will end up pointing at a now-absent
+            // id; the target picker's stale-id guard
+            // (range_day_detail_screen.dart `_targetPicker`) shows
+            // "(picked — hidden by filter)" rather than crashing.
+            // User data (RangeDaySessions, ShotImpacts) is preserved
+            // — only the reference catalog rotates.
+            await delete(targets).go();
           }
         },
       );

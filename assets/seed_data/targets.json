@@ -127,163 +127,141 @@
     "shape": "silhouette",
     "widthIn": 12.0,
     "heightIn": 24.0,
-    "materialKind": "steel-ar500",
+    "materialKind": "steel",
     "colorHex": "#3b3b3b",
     "notes": "ICORE pepper-popper steel silhouette."
   },
   {
-    "name": "Steel Challenge Plate (10 in)",
+    "name": "Steel Challenge Plate 10 in",
     "manufacturer": "Steel Challenge",
     "category": "steel",
     "shape": "circle",
     "widthIn": 10.0,
     "heightIn": 10.0,
-    "materialKind": "steel-ar500",
+    "materialKind": "steel",
     "colorHex": "#fff5cf",
     "notes": "10-inch white-painted Steel Challenge round plate."
   },
   {
-    "name": "Steel Challenge Stop Plate (12 in)",
+    "name": "Steel Challenge Stop Plate 12 in",
     "manufacturer": "Steel Challenge",
     "category": "steel",
     "shape": "circle",
     "widthIn": 12.0,
     "heightIn": 12.0,
-    "materialKind": "steel-ar500",
+    "materialKind": "steel",
     "colorHex": "#ffd966",
     "notes": "12-inch yellow-painted Steel Challenge stop plate."
   },
   {
-    "name": "PRS Practical 24x30 Steel",
+    "name": "PRS Practical 24x30",
     "manufacturer": "Action Target",
     "category": "steel",
     "shape": "rectangle",
     "widthIn": 24.0,
     "heightIn": 30.0,
-    "materialKind": "steel-ar500",
+    "materialKind": "steel",
     "colorHex": "#3b3b3b",
-    "notes": "PRS-style 24x30 IPSC-shape rifle target. 3/8-inch AR500."
+    "notes": "PRS-style 24x30 IPSC-shape rifle target."
   },
   {
-    "name": "PRS Practical 18x24 Steel",
+    "name": "PRS Practical 18x24",
     "manufacturer": "Action Target",
     "category": "steel",
     "shape": "rectangle",
     "widthIn": 18.0,
     "heightIn": 24.0,
-    "materialKind": "steel-ar500",
+    "materialKind": "steel",
     "colorHex": "#3b3b3b",
     "notes": "PRS practice silhouette, half-sized."
   },
   {
-    "name": "AR500 Plate 6 in",
-    "manufacturer": "AR500 Targets",
+    "name": "Steel Plate 6 in",
+    "manufacturer": null,
     "category": "steel",
     "shape": "circle",
     "widthIn": 6.0,
     "heightIn": 6.0,
-    "materialKind": "steel-ar500",
+    "materialKind": "steel",
     "colorHex": "#3b3b3b",
-    "notes": "Round 6-inch AR500 plate. Common 100-300 yard rifle gong."
+    "notes": "Round 6-inch steel plate. Common 100-300 yard rifle gong."
   },
   {
-    "name": "AR500 Plate 8 in",
-    "manufacturer": "AR500 Targets",
+    "name": "Steel Plate 8 in",
+    "manufacturer": null,
     "category": "steel",
     "shape": "circle",
     "widthIn": 8.0,
     "heightIn": 8.0,
-    "materialKind": "steel-ar500",
+    "materialKind": "steel",
     "colorHex": "#3b3b3b",
-    "notes": "Round 8-inch AR500 plate. Standard mid-range gong."
+    "notes": "Round 8-inch steel plate. Standard mid-range gong."
   },
   {
-    "name": "AR500 Plate 10 in",
-    "manufacturer": "AR500 Targets",
+    "name": "Steel Plate 10 in",
+    "manufacturer": null,
     "category": "steel",
     "shape": "circle",
     "widthIn": 10.0,
     "heightIn": 10.0,
-    "materialKind": "steel-ar500",
+    "materialKind": "steel",
     "colorHex": "#3b3b3b",
-    "notes": "Round 10-inch AR500 plate."
+    "notes": "Round 10-inch steel plate."
   },
   {
-    "name": "AR500 Plate 12 in",
-    "manufacturer": "AR500 Targets",
+    "name": "Steel Plate 12 in",
+    "manufacturer": null,
     "category": "steel",
     "shape": "circle",
     "widthIn": 12.0,
     "heightIn": 12.0,
-    "materialKind": "steel-ar500",
+    "materialKind": "steel",
     "colorHex": "#3b3b3b",
-    "notes": "Round 12-inch AR500 plate. Common 500-yard rifle gong."
+    "notes": "Round 12-inch steel plate. Common 500-yard rifle gong."
   },
   {
-    "name": "AR500 Plate 18 in",
-    "manufacturer": "AR500 Targets",
+    "name": "Steel Plate 18 in",
+    "manufacturer": null,
     "category": "steel",
     "shape": "circle",
     "widthIn": 18.0,
     "heightIn": 18.0,
-    "materialKind": "steel-ar500",
+    "materialKind": "steel",
     "colorHex": "#3b3b3b",
-    "notes": "Round 18-inch AR500 plate. Long-range gong (1000-yard typical)."
+    "notes": "Round 18-inch steel plate. Long-range gong (1000-yard typical)."
   },
   {
-    "name": "AR500 Plate 24 in",
-    "manufacturer": "AR500 Targets",
+    "name": "Steel Plate 24 in",
+    "manufacturer": null,
     "category": "steel",
     "shape": "circle",
     "widthIn": 24.0,
     "heightIn": 24.0,
-    "materialKind": "steel-ar500",
+    "materialKind": "steel",
     "colorHex": "#3b3b3b",
-    "notes": "Round 24-inch AR500 plate. ELR / 1500+ yard gong."
+    "notes": "Round 24-inch steel plate. ELR / 1500+ yard gong."
   },
   {
-    "name": "AR500 Square 6 in",
-    "manufacturer": "AR500 Targets",
+    "name": "Steel Square 6 in",
+    "manufacturer": null,
     "category": "steel",
     "shape": "square",
     "widthIn": 6.0,
     "heightIn": 6.0,
-    "materialKind": "steel-ar500",
+    "materialKind": "steel",
     "colorHex": "#3b3b3b",
-    "notes": "6-inch square AR500 plate."
+    "notes": "6-inch square steel plate."
   },
   {
-    "name": "AR500 Square 8 in",
-    "manufacturer": "AR500 Targets",
+    "name": "Steel Square 8 in",
+    "manufacturer": null,
     "category": "steel",
     "shape": "square",
     "widthIn": 8.0,
     "heightIn": 8.0,
-    "materialKind": "steel-ar500",
+    "materialKind": "steel",
     "colorHex": "#3b3b3b",
-    "notes": "8-inch square AR500 plate."
-  },
-  {
-    "name": "AR550 Plate 10 in",
-    "manufacturer": "AR500 Targets",
-    "category": "steel",
-    "shape": "circle",
-    "widthIn": 10.0,
-    "heightIn": 10.0,
-    "materialKind": "steel-ar550",
-    "colorHex": "#404040",
-    "notes": "Round 10-inch AR550 hardened plate. Rated for magnum rifle calibers."
-  },
-  {
-    "name": "AR550 Plate 12 in",
-    "manufacturer": "AR500 Targets",
-    "category": "steel",
-    "shape": "circle",
-    "widthIn": 12.0,
-    "heightIn": 12.0,
-    "materialKind": "steel-ar550",
-    "colorHex": "#404040",
-    "notes": "Round 12-inch AR550 hardened plate."
+    "notes": "8-inch square steel plate."
   },
   {
     "name": "50 BMG ARC Plate",
@@ -292,7 +270,7 @@
     "shape": "rectangle",
     "widthIn": 24.0,
     "heightIn": 36.0,
-    "materialKind": "steel-ar550",
+    "materialKind": "steel",
     "colorHex": "#404040",
     "notes": "Heavy ARC plate rated for .50 BMG and other ELR magnum calibers."
   },
@@ -402,7 +380,7 @@
     "shape": "circle",
     "widthIn": 36.0,
     "heightIn": 36.0,
-    "materialKind": "steel-ar500",
+    "materialKind": "steel",
     "colorHex": "#3b3b3b",
     "notes": "Spinning star with five 8-inch plates that fall and shift the balance."
   },
@@ -413,7 +391,7 @@
     "shape": "rectangle",
     "widthIn": 36.0,
     "heightIn": 60.0,
-    "materialKind": "steel-ar500",
+    "materialKind": "steel",
     "colorHex": "#3b3b3b",
     "notes": "Pivoting plate rack — six 6-inch round plates."
   },
@@ -424,7 +402,7 @@
     "shape": "silhouette",
     "widthIn": 16.0,
     "heightIn": 30.0,
-    "materialKind": "steel-ar500",
+    "materialKind": "steel",
     "colorHex": "#3b3b3b",
     "notes": "Full-sized USPSA-spec pepper popper steel target."
   },
@@ -435,7 +413,7 @@
     "shape": "silhouette",
     "widthIn": 12.0,
     "heightIn": 22.0,
-    "materialKind": "steel-ar500",
+    "materialKind": "steel",
     "colorHex": "#3b3b3b",
     "notes": "Compact pepper popper steel target."
   },
@@ -592,16 +570,5 @@
     "materialKind": "cardboard",
     "colorHex": "#a08550",
     "notes": "Improvised cardboard target — handy 12-inch square reference."
-  },
-  {
-    "name": "Generic Steel Gong 6 in",
-    "manufacturer": null,
-    "category": "steel",
-    "shape": "circle",
-    "widthIn": 6.0,
-    "heightIn": 6.0,
-    "materialKind": "steel-ar500",
-    "colorHex": "#3b3b3b",
-    "notes": "Generic 6-inch round steel rifle gong."
   }
 ]

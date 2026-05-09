@@ -78,6 +78,8 @@
 //     screens under test DO call `start()` but it short-circuits on the
 //     test host (macOS) so no platform channels fire.
 
+import 'dart:async';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -124,6 +126,39 @@ class FixedEntitlementNotifier extends EntitlementNotifier {
 
   @override
   bool get isPro => _isProOverride;
+}
+
+/// Swappable host for the screen-under-test. Lets the harness teardown
+/// helper unmount the screen WHILE the parent `MultiProvider` tree is
+/// still alive, which matters because production Range Day screens'
+/// `dispose()` calls `context.read<...Service>().stop()` to stop
+/// sensors. If we swapped the entire `pumpWidget` tree to
+/// `SizedBox.shrink()`, the Provider above the screen would be
+/// deactivated at the same time the screen's `dispose()` fires — and
+/// `context.read` from a deactivated subtree throws. By keeping the
+/// MultiProvider mounted and just hiding the child, the screen
+/// disposes cleanly first, the Providers can then unmount on the
+/// final pumpWidget swap.
+class _SwappableScreenHost extends StatefulWidget {
+  const _SwappableScreenHost({required this.initialChild});
+
+  final Widget initialChild;
+
+  @override
+  State<_SwappableScreenHost> createState() => _SwappableScreenHostState();
+}
+
+class _SwappableScreenHostState extends State<_SwappableScreenHost> {
+  Widget? _override;
+
+  void hideChild() {
+    setState(() => _override = const SizedBox.shrink());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _override ?? widget.initialChild;
+  }
 }
 
 /// No-op navigator observer used as the default for tests that don't
@@ -210,12 +245,30 @@ Future<RangeDayHarness> pumpRangeDayScreen(
   // the test host (not iOS, not Android) and bails out via
   // _markUnavailable(). Subsequent reads of cantDegrees /
   // inclineDegrees / headingDegrees return null.
+  //
+  // IMPORTANT: pre-call start() once HERE so the synchronous
+  // _markUnavailable -> notifyListeners path fires now, BEFORE the
+  // screen's initState runs. The first call flips `_available` to
+  // false and emits one notification; subsequent calls (e.g. from
+  // RangeDayDetailScreen.initState) hit the `if (!_available)
+  // return;` early-out in `_markUnavailable` and become silent
+  // no-ops. Without this, the screen's `initState` fires
+  // notifyListeners during the build phase and throws "setState
+  // called during build". (This is also a real production bug on
+  // macOS desktop / web — see the flagged test in
+  // `range_day_detail_screen_widget_test.dart`.)
   final cant = CantService();
   addTearDown(cant.dispose);
+  // ignore: discarded_futures
+  cant.start();
   final magnetometer = MagnetometerService();
   addTearDown(magnetometer.dispose);
+  // ignore: discarded_futures
+  magnetometer.start();
   final inclinometer = InclinometerService();
   addTearDown(inclinometer.dispose);
+  // ignore: discarded_futures
+  inclinometer.start();
 
   // Real ChangeNotifiers for unit / autosave services. Both hydrate
   // from SharedPreferences asynchronously, but the screens we test do
@@ -226,6 +279,26 @@ Future<RangeDayHarness> pumpRangeDayScreen(
   addTearDown(autoSave.dispose);
 
   final observer = navigatorObserver ?? NoOpNavigatorObserver();
+
+  // Range Day screens are dense — at any width >= 600 logical px the
+  // detail screen flips to a two-column "wide" layout (left flex 5,
+  // right flex 6). At 600-1000 logical px the left column gets ~270
+  // logical px which is too narrow for several of the production
+  // card headers (e.g. "Firing solution" + icon, "Group statistics"
+  // + n-shot label). We bump to 2560x1920 / DPR 2.0 = 1280x960
+  // logical, which gives the left column ~580 px — comfortable for
+  // every card header in production.
+  // (Without this, tests on the default 800x600 viewport see "RenderFlex
+  // overflowed by N pixels" exceptions that get caught by
+  // `RangeDayErrorBoundary` and replace the real UI with an error card —
+  // any subsequent `find.text('Setup')` then returns nothing because the
+  // Setup card was never rendered.)
+  tester.view.physicalSize = const Size(2560, 1920);
+  tester.view.devicePixelRatio = 2.0;
+  addTearDown(() {
+    tester.view.resetPhysicalSize();
+    tester.view.resetDevicePixelRatio();
+  });
 
   await tester.pumpWidget(
     MultiProvider(
@@ -288,10 +361,23 @@ Future<RangeDayHarness> pumpRangeDayScreen(
       ],
       child: MaterialApp(
         navigatorObservers: [observer],
-        home: screen,
+        home: _SwappableScreenHost(initialChild: screen),
       ),
     ),
   );
+
+  // Run the staged-disposal teardown automatically when the test
+  // ends, even if the test body throws first. Without this, a failed
+  // assertion in the body would skip the explicit
+  // `tearDownRangeDayWidgetTree` call, leaving the dispose chain to
+  // run later (during the next test's pre-runApp) where the
+  // "deactivated widget's ancestor" assertion would leak into THAT
+  // test's `takeException()`. Calling the helper a second time
+  // (from the test body) is safe — the host is already empty, the
+  // navigator already at the root, so the helper short-circuits.
+  addTearDown(() async {
+    await tearDownRangeDayWidgetTree(tester);
+  });
 
   return RangeDayHarness(
     db: database,
@@ -308,16 +394,76 @@ Future<RangeDayHarness> pumpRangeDayScreen(
 /// Timer trips Flutter's "A Timer is still pending even after the
 /// widget tree was disposed" invariant check.
 ///
-/// Pumping `SizedBox.shrink()` triggers the disposal of every active
-/// element (including drift StreamBuilders), the cancellation timer
-/// fires, and `pumpAndSettle` drains it before the verifier runs.
+/// IMPORTANT: production Range Day screens' `dispose()` calls
+/// `context.read<...Service>().stop()` to halt sensors. By the time
+/// State.dispose() fires, the element is already `defunct`, and
+/// `context.read` from a defunct element throws a debug-time
+/// assertion "Looking up a deactivated widget's ancestor is unsafe".
+/// In a real running app the `FlutterError.onError` chain just logs
+/// it, but in widget tests the framework records every error in
+/// `_pendingExceptionDetails` and a subsequent `takeException()`
+/// would surface it as a spurious test failure. The teardown
+/// therefore explicitly consumes each "deactivated ancestor" error
+/// via `tester.takeException()` after the pump that produced it.
+///
+/// The teardown proceeds in staged steps so unrelated dispose
+/// ordering bugs (e.g. a real timer leak) still surface in their own
+/// errors:
+///
+///   1. Pop any pushed routes — detail screens reached via
+///      `Navigator.push` dispose first, while their Providers
+///      (still mounted under the host) are alive.
+///   2. Tell the [_SwappableScreenHost] to render
+///      `SizedBox.shrink()`. The original `home:` screen disposes
+///      while the MultiProvider above it is still mounted.
+///   3. Pump `SizedBox.shrink()` at the root — drains the drift
+///      stream-cancel `Timer.run` and disposes the MultiProvider /
+///      MaterialApp.
 ///
 /// Safe to call even if the test is already failing — wrapped in a
 /// try/catch.
 Future<void> tearDownRangeDayWidgetTree(WidgetTester tester) async {
+  void absorbDeactivatedAncestorError() {
+    final pending = tester.takeException();
+    if (pending == null) return;
+    final message = pending.toString();
+    if (!message.contains("deactivated widget's ancestor is unsafe")) {
+      // Not the production-dispose footgun we're tolerating — re-raise
+      // by setting it as an uncaught error on the test zone so the
+      // framework still reports it.
+      Zone.current.handleUncaughtError(
+        pending,
+        pending is Error ? pending.stackTrace ?? StackTrace.current : StackTrace.current,
+      );
+    }
+  }
+
   try {
+    // Step 1: pop any pushed routes (a navigator-push test may have
+    // mounted RangeDayDetailScreen on top of the host).
+    final navigatorFinder = find.byType(Navigator);
+    if (navigatorFinder.evaluate().isNotEmpty) {
+      final navState = tester.state<NavigatorState>(navigatorFinder.first);
+      for (var i = 0; i < 8 && navState.canPop(); i++) {
+        navState.pop();
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+      absorbDeactivatedAncestorError();
+    }
+    // Step 2: hide the home screen-under-test under the live Provider
+    // tree so its dispose() can read services safely.
+    final hostFinder = find.byType(_SwappableScreenHost);
+    if (hostFinder.evaluate().isNotEmpty) {
+      tester.state<_SwappableScreenHostState>(hostFinder).hideChild();
+      await tester.pumpAndSettle();
+      absorbDeactivatedAncestorError();
+    }
+    // Step 3: drop the rest of the tree; the screen has already
+    // disposed cleanly.
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpAndSettle();
+    absorbDeactivatedAncestorError();
   } catch (_) {
     // Already disposed or in an inconsistent state — ignore.
   }

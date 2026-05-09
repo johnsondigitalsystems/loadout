@@ -36,6 +36,8 @@
 //   * The "+" add-row button is inside the Observations card with the
 //     "Add row" tooltip. We tap by tooltip to disambiguate from the
 //     atmosphere / BC fields.
+//   * Every test ends with `tearDownRangeDayWidgetTree` so drift's
+//     stream-cancel timer fires inside the test body window.
 //
 // ============================================================================
 // WHO CONSUMES THIS FILE
@@ -47,7 +49,6 @@
 // ============================================================================
 // In-memory drift DB per test. Closed by the harness via `addTearDown`.
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:loadout/screens/range_day/bc_truing_screen.dart';
@@ -64,6 +65,7 @@ void main() {
 
     expect(find.text('BC Truing'), findsOneWidget);
     expect(tester.takeException(), isNull);
+    await tearDownRangeDayWidgetTree(tester);
   });
 
   testWidgets('renders without crashing for an anonymous user',
@@ -73,6 +75,7 @@ void main() {
 
     expect(find.text('BC Truing'), findsOneWidget);
     expect(tester.takeException(), isNull);
+    await tearDownRangeDayWidgetTree(tester);
   });
 
   testWidgets('renders without crashing for a free (non-Pro) user',
@@ -89,6 +92,7 @@ void main() {
     // renders.
     expect(find.text('Observations'), findsOneWidget);
     expect(tester.takeException(), isNull);
+    await tearDownRangeDayWidgetTree(tester);
   });
 
   testWidgets('renders without crashing for a Pro user', (tester) async {
@@ -102,6 +106,7 @@ void main() {
     expect(find.text('BC Truing'), findsOneWidget);
     expect(find.text('Observations'), findsOneWidget);
     expect(tester.takeException(), isNull);
+    await tearDownRangeDayWidgetTree(tester);
   });
 
   testWidgets('renders without crashing on platforms with no sensors',
@@ -111,6 +116,7 @@ void main() {
 
     expect(find.text('BC Truing'), findsOneWidget);
     expect(tester.takeException(), isNull);
+    await tearDownRangeDayWidgetTree(tester);
   });
 
   testWidgets('default observation-row count is 3 (rangeYd 600 / 800 / 1000)',
@@ -123,6 +129,7 @@ void main() {
     final dropFields = find.text('Observed drop (mil)');
     expect(dropFields, findsNWidgets(3));
     expect(tester.takeException(), isNull);
+    await tearDownRangeDayWidgetTree(tester);
   });
 
   testWidgets('tapping "Add row" appends a fourth observation row',
@@ -137,6 +144,7 @@ void main() {
 
     expect(find.text('Observed drop (mil)'), findsNWidgets(4));
     expect(tester.takeException(), isNull);
+    await tearDownRangeDayWidgetTree(tester);
   });
 
   testWidgets('tapping a row\'s trash icon removes that observation',
@@ -154,6 +162,7 @@ void main() {
 
     expect(find.text('Observed drop (mil)'), findsNWidgets(2));
     expect(tester.takeException(), isNull);
+    await tearDownRangeDayWidgetTree(tester);
   });
 
   testWidgets('result card surfaces empty-state copy with no observations',
@@ -179,5 +188,6 @@ void main() {
       findsOneWidget,
     );
     expect(tester.takeException(), isNull);
+    await tearDownRangeDayWidgetTree(tester);
   });
 }
