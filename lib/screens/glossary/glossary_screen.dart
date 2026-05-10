@@ -881,7 +881,7 @@ const List<GlossaryTerm> kGlossaryTerms = [
     term: 'Aerodynamic jump',
     category: _catRangeDay,
     definition:
-        'A small VERTICAL component of wind drift caused by the bullet briefly tipping into the wind as it leaves the muzzle. Usually a few tenths of a mil at long range — small but real. Bryan Litz quantified the formula for production bullets.',
+        'A small VERTICAL component of wind drift caused by the bullet briefly tipping into the wind as it leaves the muzzle. Usually a few tenths of a mil at long range — small but real. The Applied Ballistics literature publishes the simplified per-range formula used here.',
     example:
         '10 mph crosswind from your right + Sg = 1.7 (a typical 6.5 Creedmoor 140 ELD-M): aero jump adds about 0.1 mil DOWNWARD displacement at 1000 yd. Small but real — visible at extreme range.',
     exampleNumbers: '10 mph crosswind, Sg 1.7, 1000 yd → ~0.1 mil down',
@@ -949,7 +949,7 @@ const List<GlossaryTerm> kGlossaryTerms = [
     acronym: 'MR',
     category: _catRangeDay,
     definition:
-        'The average distance from each shot to the group\'s center (centroid). More statistically meaningful than extreme spread because it uses every shot, not just the two outliers. Bryan Litz prefers MR for benchmarking precision.',
+        'The average distance from each shot to the group\'s center (centroid). More statistically meaningful than extreme spread because it uses every shot, not just the two outliers. The published Applied Ballistics methodology recommends MR over ES for benchmarking precision.',
     example:
         '5 shots at 100 yd, distances from group centroid: 0.4, 0.5, 0.5, 0.6, 0.7 inches. Mean radius = (0.4 + 0.5 + 0.5 + 0.6 + 0.7) / 5 = 0.54 inches. Smaller MR = tighter group; less sensitive to one outlier than ES.',
     exampleNumbers: '0.4, 0.5, 0.5, 0.6, 0.7 in → MR 0.54 in',
@@ -965,7 +965,7 @@ const List<GlossaryTerm> kGlossaryTerms = [
     acronym: 'CI',
     category: _catRangeDay,
     definition:
-        'A statistical range you\'re 90% sure contains the rifle\'s "true" precision. Three-shot groups have wide CI bands (a 0.5 MOA group could be a 0.2 or 1.5 MOA rifle); 10-shot groups tighten the CI dramatically. Litz publishes CI tables so you can interpret a group size honestly.',
+        'A statistical range you\'re 90% sure contains the rifle\'s "true" precision. Three-shot groups have wide CI bands (a 0.5 MOA group could be a 0.2 or 1.5 MOA rifle); 10-shot groups tighten the CI dramatically. The published Applied Ballistics methodology supplies CI tables so you can interpret a group size honestly.',
     example:
         '3-shot group of 0.5 MOA → 90% CI is roughly 0.2 to 1.5 MOA (a 0.5 MOA group could be a 0.2 OR a 1.5 MOA rifle, with 3 shots you can\'t tell). 10-shot group of 0.5 MOA → 90% CI is roughly 0.4 to 0.7 MOA.',
     exampleNumbers: '3 shots: 0.2–1.5 MOA. 10 shots: 0.4–0.7 MOA.',
@@ -999,10 +999,10 @@ const List<GlossaryTerm> kGlossaryTerms = [
     exampleNumbers: 'Catalog 0.298 → trued 0.281 (1000 yd, 9.0 mil)',
   ),
   GlossaryTerm(
-    term: 'Sight calibration',
+    term: 'Scope Tracking Test',
     category: _catRangeDay,
     definition:
-        'A "tall target test" that verifies your scope\'s clicks match the labeled value. Dial a known amount (say 10 mil), fire at a measured tall target, and check whether the impact moved exactly that amount. Many scopes track 1–3% off advertised; a derived scale factor goes into the solver.',
+        'A "tall target test" that verifies your scope\'s clicks match the labeled value. Dial a known amount (say 10 mil), fire at a measured tall target, and check whether the impact moved exactly that amount. Many scopes track 1–3% off advertised; a derived scale factor goes into the solver. Also called sight calibration / DPC (drop-per-click) calibration.',
     example:
         'Dial 10 mil up at a tall target 100 yd away. Measure the impact: it moved 365 inches up. 10 mil at 100 yd should be 360 inches — your scope tracks at 365/360 = 1.014 (1.4% over). Save that scale; the solver scales every dial command.',
     exampleNumbers: '10 mil dialed, 365 in measured → 1.014× scale',

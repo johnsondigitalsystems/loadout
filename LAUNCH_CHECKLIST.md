@@ -374,13 +374,13 @@ manuals, dealer relationships) which I can't do programmatically.
   rewrites are noted in the test files' header comments. Confirm
   during the next QA pass that the tests still verify what they
   intend to verify, not just that the screen mounts without throwing.
-- [ ] **Codify the published-Litz / JBM regression suite** — the
-  external-validation answer (see CLAUDE.md §20 + `litz_regression_test.dart`).
+- [ ] **Codify the published Applied-Ballistics / JBM regression suite** — the
+  external-validation answer (see CLAUDE.md §20 + `precision_regression_test.dart`).
   ~5–10 reference projectiles × 2 atmospheres × 5–6 ranges, asserting
-  each row matches the published Litz / JBM tables within ±0.1 mil at
-  ≤ 1000 yd. The suite is in place; per-row Litz citations need to be
-  filled in by reading from a printed copy of *Applied Ballistics for
-  Long-Range Shooting* 2nd ed.
+  each row matches the published *Applied Ballistics* / JBM tables
+  within ±0.1 mil at ≤ 1000 yd. The suite is in place; per-row
+  citations still need to be filled in by reading from a printed copy
+  of *Applied Ballistics for Long-Range Shooting* 2nd ed.
 
 ## Hardware / device QA
 

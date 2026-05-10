@@ -3,7 +3,7 @@
 // ============================================================================
 // WHAT THIS FILE DOES
 // ============================================================================
-// User-facing UI for Bryan Litz's BC truing methodology. Pro-gated.
+// User-facing UI for the published BC truing methodology. Pro-gated.
 //
 // The user picks a load + firearm + a list of (range, observed-drop)
 // pairs. The screen runs `BcTruingService.trueBcFromObservations(...)`

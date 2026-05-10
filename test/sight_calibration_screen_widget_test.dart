@@ -70,7 +70,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Sight Calibration'), findsOneWidget);
+    expect(find.text('Scope Tracking Test'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tearDownRangeDayWidgetTree(tester);
   });
@@ -83,7 +83,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Sight Calibration'), findsOneWidget);
+    expect(find.text('Scope Tracking Test'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tearDownRangeDayWidgetTree(tester);
   });
@@ -97,7 +97,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Sight Calibration'), findsOneWidget);
+    expect(find.text('Scope Tracking Test'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tearDownRangeDayWidgetTree(tester);
   });
@@ -110,7 +110,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Sight Calibration'), findsOneWidget);
+    expect(find.text('Scope Tracking Test'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tearDownRangeDayWidgetTree(tester);
   });
@@ -123,7 +123,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Sight Calibration'), findsOneWidget);
+    expect(find.text('Scope Tracking Test'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tearDownRangeDayWidgetTree(tester);
   });

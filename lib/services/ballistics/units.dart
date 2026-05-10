@@ -89,7 +89,7 @@
 // describe the SAME bullet. The ratio between them depends on bullet shape
 // and varies with velocity.
 //
-// Bryan Litz's published rule of thumb (Applied Ballistics for Long-Range
+// The published rule of thumb (Applied Ballistics for Long-Range
 // Shooting, 2nd ed.) is roughly BC_G7 ≈ BC_G1 × 0.512, valid for typical
 // long-range boat-tail VLDs at supersonic velocities. We use this constant
 // only as a fallback when the user supplied one BC family but the solver
@@ -256,7 +256,7 @@ double inchesToMilAtYards(double inches, double yards) {
 
 /// Approximate G1 ↔ G7 conversion. There is **no exact algebraic
 /// relationship** between BCs in different drag families because the drag
-/// curves have different shapes. The rule of thumb published by Bryan Litz
+/// curves have different shapes. The rule of thumb published by industry-standard
 /// ("Applied Ballistics for Long-Range Shooting") is roughly
 /// `BC_G7 ≈ BC_G1 × 0.512` for typical long-range bullets at supersonic
 /// velocities. Useful only as a fallback when the user supplies one but

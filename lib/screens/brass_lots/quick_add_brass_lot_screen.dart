@@ -74,6 +74,9 @@ class _QuickAddBrassLotScreenState extends State<QuickAddBrassLotScreen> {
 
   final _name = TextEditingController();
   final _caliber = TextEditingController();
+  // Inventory counter, not ballistics-affecting (CLAUDE.md § 0
+  // scope). Pre-fill with 0 so the user can increment by typing
+  // rather than starting from blank.
   final _count = TextEditingController(text: '0');
 
   bool _busy = false;

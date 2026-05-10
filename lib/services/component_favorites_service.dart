@@ -186,11 +186,13 @@ class ComponentFavoritesService extends ChangeNotifier {
   }
 
   /// True when `name` is currently favorited under `kind`. Returns
-  /// false for unknown kinds.
+  /// false for unknown kinds. Trims the lookup `name` so callers
+  /// don't have to remember whether the cache stores the trimmed
+  /// canonical form (it does — see [toggleFavorite]).
   bool isFavorite(String kind, String name) {
     final set = _byKind[kind];
     if (set == null) return false;
-    return set.contains(name);
+    return set.contains(name.trim());
   }
 
   /// Read-only snapshot of the favorited names for `kind`. Returns

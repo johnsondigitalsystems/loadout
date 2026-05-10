@@ -22,7 +22,7 @@
 //      produces detectably different 1000-yd drop because the bullet
 //      flies through different air density on the way to zero.
 //   5. Aerodynamic jump — 10 mph crosswind contributes ~0.05–0.1 mil of
-//      vertical drop at 1000 yd via the Litz simplified formula.
+//      vertical drop at 1000 yd via the industry standard simplified formula.
 //   6. Incline angle — 30° downhill shot reduces effective drop by
 //      ~13% (matching the cos(angle)^1.5 model).
 //   7. Backwards-compat sanity check — the unmodified default-input
@@ -152,7 +152,7 @@ void main() {
       ).single;
 
       // The +5.76 fps lift should reduce drop at 1000 yd by a small but
-      // detectable amount. Litz's rule of thumb says ~2–3 fps drift per
+      // detectable amount. the rule of thumb says ~2–3 fps drift per
       // 0.01 mil at long range, so ~0.02–0.05 mil here. Convert to in:
       // 1 mil at 1000 yd = 36 in, so 0.02 mil ≈ 0.7 in, 0.05 mil ≈ 1.8 in.
       final deltaIn = cold.dropInches - warm.dropInches;
@@ -396,7 +396,7 @@ void main() {
         sampleRangesYards: const [1000],
       ).single;
 
-      // Aero-jump magnitude check: the simplified Litz formula
+      // Aero-jump magnitude check: the simplified industry standard formula
       // 0.087 * crossWindMph * tof * vel / 1000 with 10 mph crosswind,
       // tof ~1.5 s, vel ~1300 fps gives ~1.7 in. Convert to mil at 1000
       // yd: 1.7 / 36 = ~0.05 mil. Expect within a wide bracket because

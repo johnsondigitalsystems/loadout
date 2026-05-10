@@ -31,6 +31,23 @@
 // `context.read<BallisticProfileRepository>()`.
 //
 // ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+//   * **`isFavorite` lives ON the row** (added schema v24), so the
+//     watch / sort logic must respect it. The picker UI bubbles
+//     favorited profiles to the top; if the repository ever stops
+//     returning the column or starts excluding it, the picker
+//     silently loses the sort.
+//   * **`updatedAt` is bumped automatically on every `update`.**
+//     Cloud Sync's last-writer-wins reconciler reads this column;
+//     a future "silent" update path that bypasses the bump would
+//     cause sync to keep an older remote copy.
+//   * **Natural-sort matters.** Profile names like "Profile 1" /
+//     "Profile 10" / "Profile 2" — lexicographic order would put
+//     10 before 2. We use [naturalCompare] from utils so the
+//     dropdown reads sensibly.
+//
+// ============================================================================
 // WHO CONSUMES THIS FILE
 // ============================================================================
 // - lib/screens/ballistics/ballistics_screen.dart — the profile picker

@@ -150,7 +150,7 @@
 //
 // Accuracy delta — typical 6.5 Creedmoor 140gr ELD-M in ICAO standard
 // atmosphere, 100 yd zero, 1500 yd target with the G7 BC fit. Compared
-// to a published Bryan Litz / Hornady 4DOF reference trajectory,
+// to a published industry-standard / Hornady 4DOF reference trajectory,
 // linear interpolation produces ~0.7 MOA additional vertical-drop
 // error at 1500 yd (the bullet has spent enough time in the transonic
 // band for the bias to accumulate). PCHIP cuts this to ~0.3 MOA. At
@@ -173,9 +173,9 @@
 // REFERENCES
 // ----------------------------------------------------------------------------
 // McCoy, R.L., "Modern Exterior Ballistics", 2nd ed., Schiffer
-// Publishing — Tables 8.1 (G1) through 8.8 (G8). Bryan Litz's "Applied
-// Ballistics for Long-Range Shooting" reproduces the McCoy G7 table and
-// is the modern bible on G7 BCs.
+// Publishing — Tables 8.1 (G1) through 8.8 (G8). "Applied Ballistics
+// for Long-Range Shooting" (Applied Ballistics LLC) reproduces the
+// McCoy G7 table and is the modern reference on G7 BCs.
 //
 // ============================================================================
 // WHY IT EXISTS IN THE ARCHITECTURE
@@ -268,7 +268,7 @@
 /// 2nd ed.; the standard G1 table is widely published (e.g. Sierra
 /// reloading manual, AccurateShooter.com), and matches the McCoy
 /// reference within rounding. The G7 table is the McCoy values that
-/// Bryan Litz uses in *Applied Ballistics for Long-Range Shooting*.
+/// industry-standard uses in *Applied Ballistics for Long-Range Shooting*.
 library;
 
 import 'dart:math' as math;

@@ -107,7 +107,29 @@
     "heightIn": 30.0,
     "materialKind": "cardboard",
     "colorHex": "#a08550",
-    "notes": "USPSA / IPSC competition cardboard target. 'A-zone' scoring."
+    "notes": "USPSA / IPSC competition cardboard target — full-size 'A-zone' scoring."
+  },
+  {
+    "name": "IPSC Mini (66% Reduced)",
+    "manufacturer": "USPSA",
+    "category": "cardboard",
+    "shape": "silhouette",
+    "widthIn": 11.7,
+    "heightIn": 19.5,
+    "materialKind": "cardboard",
+    "colorHex": "#a08550",
+    "notes": "IPSC Mini target — 66% scaled USPSA Classic for distance training and indoor ranges. ~12 x 20 inches."
+  },
+  {
+    "name": "IPSC A4 (75% Reduced)",
+    "manufacturer": "USPSA",
+    "category": "cardboard",
+    "shape": "silhouette",
+    "widthIn": 13.5,
+    "heightIn": 22.5,
+    "materialKind": "cardboard",
+    "colorHex": "#a08550",
+    "notes": "IPSC 75%-scale target sized for A4 / Letter paper printing — ~13.5 x 22.5 inches."
   },
   {
     "name": "IDPA Cardboard Target",
@@ -118,7 +140,18 @@
     "heightIn": 30.0,
     "materialKind": "cardboard",
     "colorHex": "#a08550",
-    "notes": "IDPA standard cardboard target with 8-inch -0 scoring zone."
+    "notes": "IDPA standard cardboard target with 8-inch -0 scoring zone — full size."
+  },
+  {
+    "name": "IDPA Reduced (75%)",
+    "manufacturer": "IDPA",
+    "category": "cardboard",
+    "shape": "silhouette",
+    "widthIn": 13.5,
+    "heightIn": 22.5,
+    "materialKind": "cardboard",
+    "colorHex": "#a08550",
+    "notes": "75%-scale IDPA cardboard target — used for indoor ranges and skill drills at reduced distance."
   },
   {
     "name": "ICORE Pepper Popper",
@@ -377,12 +410,12 @@
     "name": "Texas Star (Steel)",
     "manufacturer": "Action Target",
     "category": "reactive",
-    "shape": "circle",
+    "shape": "star",
     "widthIn": 36.0,
     "heightIn": 36.0,
     "materialKind": "steel",
-    "colorHex": "#3b3b3b",
-    "notes": "Spinning star with five 8-inch plates that fall and shift the balance."
+    "colorHex": "#ff7700",
+    "notes": "Spinning reactive star — central hub with five 8-inch satellite plates on radial arms. When a plate is hit it falls, shifting the balance and rotating the rig so the next plate accelerates into the user's sight picture."
   },
   {
     "name": "Dueling Tree (Steel)",

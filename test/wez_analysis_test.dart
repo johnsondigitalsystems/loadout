@@ -16,7 +16,7 @@
 //      the hit probability is in the realistic mid-range band (50–80%).
 //   4. The variance breakdown at the chosen reference range sums to 1.0
 //      (every contributor accounted for) and at long range the wind term
-//      dominates the group term — Litz's coaching observation.
+//      dominates the group term — the coaching observation.
 //   5. Edge case: zero wind / zero ranging / zero MV-SD uncertainty and
 //      a tight group → curve stays ≥ 90% out to long range (only the
 //      group term contributes dispersion).
@@ -168,7 +168,7 @@ void main() {
       expect(total, closeTo(1.0, 1e-6));
     });
 
-    test('at 1000 yd wind dominates group (Litz coaching observation)', () {
+    test('at 1000 yd wind dominates group (industry standard coaching observation)', () {
       // Modest 0.5 MOA shooter + a windy day. Group's contribution to
       // total variance should be smaller than wind's at long range.
       final result = _service.compute(

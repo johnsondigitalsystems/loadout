@@ -28,10 +28,25 @@
 // preferences (account, app prefs, privacy, sync).
 //
 // ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// Trivial today (one tile). The discipline is keeping it that way:
+// every new resource gets its own `_ResourceTile` row, with the
+// same shape as Settings tiles. Resist any temptation to add
+// *behaviour* to this screen — search, filtering, etc. — until at
+// least four resources live here. With one tile, anything beyond a
+// directory list is over-engineered. The point is that users find
+// SAAMI Specs in a sane place, not that they discover it through a
+// rich UI.
+//
+// ============================================================================
 // WHO CONSUMES THIS FILE
 // ============================================================================
 // - lib/screens/home/home_screen.dart — `_MainDrawer` pushes
 //   `ResourcesScreen()` from the new "Resources" tile.
+// - lib/screens/how_it_works/how_it_works_screen.dart — the SAAMI
+//   topic CTA pushes here so the user lands on the same screen the
+//   drawer surface points to.
 //
 // ============================================================================
 // SIDE EFFECTS

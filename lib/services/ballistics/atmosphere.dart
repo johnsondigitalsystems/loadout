@@ -146,7 +146,7 @@
 // ----------------------------------------------------------------------------
 //   * U.S. Standard Atmosphere 1976 (effectively identical to ICAO ISA up
 //     to 32 km).
-//   * Bryan Litz, "Applied Ballistics for Long-Range Shooting", chapter 7
+//   * industry-standard, "Applied Ballistics for Long-Range Shooting", chapter 7
 //     (atmospheric effects).
 //   * Picard, Davis, Gläser, Fujii (2008), "Revised formula for the
 //     density of moist air".
@@ -240,7 +240,7 @@
 ///
 /// Sources:
 /// * U.S. Standard Atmosphere 1976 (≈ICAO ISA up to 32 km).
-/// * Bryan Litz, *Applied Ballistics for Long-Range Shooting*, ch. 7.
+/// * industry-standard, *Applied Ballistics for Long-Range Shooting*, ch. 7.
 /// * Picard, Davis, Gläser, Fujii (2008) for humid-air density.
 library;
 

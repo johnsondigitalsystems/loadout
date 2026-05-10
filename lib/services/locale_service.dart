@@ -28,6 +28,24 @@
 // every preference toggle in the app uses the same pattern.
 //
 // ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+//   * **`null` is a load-bearing value.** It means "follow the
+//     device locale," NOT "no preference set yet." Both states map
+//     to null. Don't add an enum or a sentinel to disambiguate —
+//     callers don't care, and Flutter's `MaterialApp.locale: null`
+//     is the canonical "use system" signal.
+//   * **The stored prefs value is the language TAG, not a Locale.**
+//     SharedPreferences is string-based; we serialize as a tag
+//     (`'de'`, `'es'`, etc.) and parse back on load. If we ever add
+//     country-variant locales (`de_AT`, `es_MX`), the parse path
+//     needs to handle the underscore form.
+//   * **MaterialApp must subscribe via `context.watch`**, not a
+//     one-shot `context.read`. Without watching, switching language
+//     in Settings won't re-resolve the localizations until the user
+//     restarts. The provider is set up to notify on every setLocale.
+//
+// ============================================================================
 // WHO CONSUMES THIS FILE
 // ============================================================================
 // - lib/app.dart — provided once at the root; `LoadOutApp.build`

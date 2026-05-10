@@ -32,6 +32,24 @@
 // wording).
 //
 // ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+//   * **Auto-prompt on mount, not on rebuild.** The post-frame
+//     callback fires the platform biometric sheet exactly once when
+//     the screen first mounts. A naive "fire on every rebuild" would
+//     re-trigger the sheet whenever the parent rebuilds (e.g. on a
+//     theme change), which on iOS prompts the user multiple times.
+//   * **Don't auto-retry on failure.** A failed / cancelled prompt
+//     leaves `_failed = true` and the user sees the retry button.
+//     Auto-retrying would feel hostile if the user explicitly
+//     cancelled.
+//   * **`signOut()` is the only "back button."** There's no way to
+//     skip biometric without signing out — the gate is the gate. A
+//     "Cancel and stay locked" option would be confusing because the
+//     user would have nowhere to go (HomeScreen is on the other
+//     side of the gate).
+//
+// ============================================================================
 // WHO CONSUMES THIS FILE
 // ============================================================================
 // - lib/app.dart (`_AuthGate.build`) — renders this screen when the

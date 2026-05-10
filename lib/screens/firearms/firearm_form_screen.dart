@@ -222,15 +222,20 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
     _barrelLength =
         TextEditingController(text: e?.barrelLengthIn?.toString() ?? '');
     _twistRate = TextEditingController(text: e?.twistRate ?? '');
+    // Shots-fired counter; not ballistics-affecting. Pre-fill with
+    // 0 for new firearms; saved value on edit. Most users start a
+    // new firearm at 0 rounds anyway and increment as they shoot.
     _shotsFired = TextEditingController(text: (e?.shotsFired ?? 0).toString());
     _notes = TextEditingController(text: e?.notes ?? '');
     _defaultMuzzleVelocityFps = TextEditingController(
       text: e?.defaultMuzzleVelocityFps?.toString() ?? '',
     );
     _defaultZeroRangeYd = TextEditingController(
-      // 100 yd is the de-facto reloader default zero range. Pre-fill
-      // it so users don't have to think about it; they can still
-      // change it (200 / 25 / etc.) before saving.
+      // Yardage is the explicit exception in CLAUDE.md § 0 — pre-
+      // fill with the de-facto reloader default (100 yd zero) so
+      // users don't have to think about it; they can change it
+      // (200 / 25 / etc.) before saving. On edit, shows the
+      // saved value.
       text: (e?.defaultZeroRangeYd ?? 100).toString(),
     );
     _sightHeightIn = TextEditingController(

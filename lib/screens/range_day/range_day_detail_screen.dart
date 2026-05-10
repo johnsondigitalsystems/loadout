@@ -8,32 +8,37 @@
 // active load + distance + target + wind + drop + windage and stays put no
 // matter how far the user scrolls (the goal is "glance → fire → glance"
 // without scrubbing). Below it, a single scrollable column on phones / two
-// columns on tablets carries these collapsible sections:
+// columns on tablets carries these collapsible sections.
 //
-//   1. Setup        — target / distance / profile / load / firearm pickers,
-//                     plus inline pickers for reticle, shot azimuth, incline,
-//                     sensor capture, shooter capability, and the Litz
-//                     analysis entrypoints. Collapses to a one-line summary
-//                     so the user isn't staring at five dropdowns mid-session.
-//   2. Environment  — temp, pressure, humidity, elevation, wind. Pull-from-
-//                     weather button (Pro). Atmosphere preset picker. Live
-//                     Kestrel toggle when one is paired. Collapses similarly.
-//   3. Solution     — firing solution computed from the active inputs.
-//                     Drop, wind, time of flight, velocity, energy. The
-//                     biggest text on the screen — readable at arm's length.
-//                     Plus optional Wind Bracket (Litz +/- envelope), Hit
-//                     Probability gauge, and the Target Plot for tap-to-
-//                     record-shot interaction.
-//   4. Group stats  — extreme spread, mean radius, group MOA, σh / σv, plus
-//                     a 90% CI band once N>=3, and the centroid + zero-
-//                     adjust block.
-//   5. Last shot correction (only when shots > 0) — "hold up X mil, right Y"
-//                     to bring the next shot back to the aim point.
-//   6. DOPE card    — 100yd-step trajectory ladder. Hidden until the solver
-//                     produces a result.
-//   7. Moving target (Pro) — speed + direction inputs that compute lead
-//                            in mil / MOA / inches.
-//   8. Notes        — freeform session notes.
+// QUICK MODE (default; AppBar toggle persists per user) renders only the
+// at-the-line essentials:
+//
+//   1. Setup        — target / distance / profile / load / firearm /
+//                     reticle pickers, environment, and the inline reticle
+//                     + target preview. Collapses to a one-line summary.
+//   2. Solution     — firing solution. Drop, wind, time of flight,
+//                     velocity, energy. Largest text on the screen.
+//   3. Scope view   — compact reticle-over-target preview. Same data
+//                     as Setup → Group 2 surfaced again here so the
+//                     user doesn't have to scroll back up.
+//   4. DOPE card    — 100 yd-step trajectory ladder. Hidden until the
+//                     solver produces a result.
+//   5. Save Session — footer button at the very bottom of the page.
+//
+// FULL MODE adds the analytical surfaces below the Solution:
+//
+//   - Wind Bracket (low / mid / high holds), Hit Probability gauge.
+//   - Target Plot (tap-to-record-shot, full interactive view).
+//   - Group stats — extreme spread, mean radius, group MOA, σh / σv,
+//     90% CI band when N>=3, centroid + zero-adjust block.
+//   - Last shot correction (only when shots > 0).
+//   - Moving Target (Pro) — speed + direction → lead in mil / MOA / in.
+//   - DOPE card — full ladder.
+//   - Notes — freeform session notes.
+//   - Advanced Analysis (Pro) — entrypoints to Hit Probability Map,
+//     BC Truing, and Scope Tracking Test screens. Hidden in Quick
+//     mode.
+//   - Save Session — footer button at the very bottom of the page.
 //
 // Recompute is debounced (500ms) so changing wind doesn't fire the solver
 // on every keystroke. Sessions auto-save once they've been saved at least
@@ -94,6 +99,8 @@ import '../../widgets/atmosphere_preset_picker.dart';
 import '../../widgets/glossary_label.dart';
 import '../../widgets/pro_gate.dart';
 import '../../widgets/reticle_picker.dart';
+import '../../widgets/reticle_renderer.dart';
+import '../../widgets/scope_daytime_backdrop.dart';
 import '../ballistics/ballistics_screen.dart';
 import 'bc_truing_screen.dart';
 import 'range_day_mode.dart';
@@ -158,7 +165,19 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
 
   // ─────────────────────── Setup state ───────────────────────
   TargetRow? _selectedTarget;
-  String _targetCategoryFilter = 'all';
+  /// Target picker filter — by SHAPE, not material. Reloaders pick
+  /// by what they're shooting (circle, rectangle, IPSC silhouette)
+  /// not by what it's made of (paper / steel / reactive). Valid
+  /// values: 'all', 'square', 'rectangle', 'circle', 'silhouette',
+  /// 'star'. The seed catalog's `shape` column is the source of
+  /// truth; the (legacy) `category` column is no longer surfaced as
+  /// a chip.
+  String _targetShapeFilter = 'all';
+  /// Free-form search query for the target picker. Filters the
+  /// visible options to those whose generated label OR underlying
+  /// catalog name contains every typed token. Cleared via the
+  /// trailing × button on the search field.
+  String _targetSearchQuery = '';
   Future<List<TargetRow>>? _targetsFuture;
 
   /// Live set of favorited target ids. Drives the favorite-first sort
@@ -243,23 +262,29 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   Stream<List<UserFirearmRow>>? _firearmsStream;
 
   // ─────────────────────── Distance / range ───────────────────────
+  // Distance is the explicit yardage exception in CLAUDE.md § 0:
+  // pre-fill with a sensible mid-PRS default (500 yd) the user reads
+  // as "starting point, change me" rather than as their own input.
+  // Ballistics-affecting fields (bullet, rifle, environment) do
+  // start empty — see those controllers below.
   final _distanceCtrl = TextEditingController(text: '500');
 
   // ─────────────────────── Shot azimuth ───────────────────────
   /// Compass direction the rifle is pointing in degrees. 0 = N, 90 = E,
   /// 180 = S, 270 = W. Fed to the ballistics solver as the
   /// [Environment.shotAzimuthDegrees] for the Coriolis correction at
-  /// long range. Defaults to 0; users can either type a value or tap
-  /// "Use as shot azimuth" on the live magnetometer readout to copy
-  /// the current heading in.
-  final _shotAzimuthCtrl = TextEditingController(text: '0');
+  /// long range. Empty by default (CLAUDE.md § 0); the solver reads
+  /// 0 (no Coriolis bias) when empty. Users either type the heading
+  /// or tap "Use as shot azimuth" on the live magnetometer readout.
+  final _shotAzimuthCtrl = TextEditingController();
 
   // ─────────────────────── Incline / decline (v16) ───────────────────────
   /// Slope of fire in degrees. Positive = uphill, negative = downhill.
-  /// Fed to the ballistics solver via the improved rifleman's rule. The
-  /// "Capture from sensor" button reads the InclinometerService's
-  /// current pitch and pushes it here.
-  final _inclineAngleCtrl = TextEditingController(text: '0');
+  /// Fed to the ballistics solver via the improved rifleman's rule.
+  /// Empty by default (CLAUDE.md § 0); the solver reads 0 (level shot)
+  /// when empty. The "Capture from sensor" button reads the
+  /// InclinometerService's current pitch and pushes it here.
+  final _inclineAngleCtrl = TextEditingController();
 
   /// Whether to apply the live cant-correction term to the displayed
   /// firing solution. Pro-gated. When true and the [CantService]
@@ -269,26 +294,42 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   bool _applyCantCorrection = false;
 
   // ─────────────────────── Projectile / shot inputs ───────────────────────
-  /// All of these are seeded by the active profile / load and can be
-  /// edited inline. Stored as the canonical numeric values; the form
-  /// renders them via formatted text controllers.
-  final _bulletDiameterCtrl = TextEditingController(text: '0.264');
-  final _bulletWeightCtrl = TextEditingController(text: '140');
-  final _bulletLengthCtrl = TextEditingController(text: '1.355');
-  final _bcCtrl = TextEditingController(text: '0.298');
+  /// All of these are seeded by the active profile / load. Default to
+  /// EMPTY (CLAUDE.md § 0 anti-fake-data rule) — they only get values
+  /// when the user picks a load, profile, or common factory load.
+  /// `_hasRealLoadData()` gates the Solution card / strip / DOPE so
+  /// nothing computed renders from empty placeholders.
+  final _bulletDiameterCtrl = TextEditingController();
+  final _bulletWeightCtrl = TextEditingController();
+  final _bulletLengthCtrl = TextEditingController();
+  final _bcCtrl = TextEditingController();
   DragModel _dragModel = DragModel.g7;
-  final _muzzleVelCtrl = TextEditingController(text: '2750');
-  final _zeroRangeCtrl = TextEditingController(text: '100');
-  final _sightHeightCtrl = TextEditingController(text: '1.5');
-  final _twistCtrl = TextEditingController(text: '8');
+  final _muzzleVelCtrl = TextEditingController();
+  final _zeroRangeCtrl = TextEditingController();
+  final _sightHeightCtrl = TextEditingController();
+  final _twistCtrl = TextEditingController();
 
   // ─────────────────────── Environment ───────────────────────
-  final _tempCtrl = TextEditingController(text: '59');
-  final _pressureCtrl = TextEditingController(text: '29.92');
-  final _humidityCtrl = TextEditingController(text: '50');
-  final _elevationCtrl = TextEditingController(text: '0');
-  final _windSpeedCtrl = TextEditingController(text: '8');
-  final _windDirCtrl = TextEditingController(text: '270');
+  // All env fields default to EMPTY (CLAUDE.md § 0). The solver
+  // falls back to ICAO standard internally when inputs are empty,
+  // and `_environmentSubsection` shows an "Atmosphere not set —
+  // using ICAO standard" indicator so the user knows the source.
+  // Atmosphere presets (incl. user-saved ones) and the Pro
+  // weather-pull button populate these without surprising the user.
+  final _tempCtrl = TextEditingController();
+  final _pressureCtrl = TextEditingController();
+  final _humidityCtrl = TextEditingController();
+  final _elevationCtrl = TextEditingController();
+  // Wind defaults to empty so the firing-solution strip doesn't show
+  // a fake "Wind 8 mph @ 9 o'clock" line on a fresh session — same
+  // anti-fake-data principle as the load / target / stats surfaces.
+  // If empty, the solver reads 0 mph (no horizontal drift) via the
+  // `?? 0` fallback at every callsite, and the strip hides the wind
+  // chip entirely (see `_solutionStrip`). When the user does enter
+  // a speed without picking a direction, the direction defaults to
+  // 12 o'clock (no-effect) rather than a guessed 9 o'clock.
+  final _windSpeedCtrl = TextEditingController();
+  final _windDirCtrl = TextEditingController();
   bool _weatherFetching = false;
   DateTime? _weatherFetchedAt;
 
@@ -307,7 +348,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   int? _atmospherePresetId;
 
   // ─────────────────────── Moving target (Pro) ───────────────────────
-  final _moverSpeedCtrl = TextEditingController(text: '3');
+  final _moverSpeedCtrl = TextEditingController();
   /// 'rtl' (right-to-left), 'ltr' (left-to-right). Used to flip lead sign.
   String _moverDirection = 'rtl';
 
@@ -316,14 +357,21 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   // All collapsible sections start COLLAPSED. The screen has a lot of
   // surface area (target, distance, profile, load, firearm, reticle,
   // shot azimuth, incline, sensors, environment, capability expander,
-  // Litz analysis, moving target, save) and auto-expanding two cards
+  // Advanced analysis, moving target, save) and auto-expanding two cards
   // on every entry pushed the actual results (DOPE, target plot, hit
   // probability) below the fold. The user explicitly asked for
   // collapsed-by-default behavior — they'll tap a section header
   // when they need it, and `_hydrateFromSession` keeps the post-pick
   // collapse-everything behavior so existing sessions still open
   // straight to the solution view.
-  bool _setupExpanded = false;
+  // Setup starts EXPANDED on a fresh Range Day open so the user
+  // sees the inputs first — pick a load, distance, target, firearm
+  // before anything else. Two explicit-collapse paths flip it to
+  // false later: hydrating an existing saved session (the user has
+  // already filled Setup, take them straight to the solution) and
+  // saving a new session (collapses Setup so the freshly-saved
+  // solution becomes the focus).
+  bool _setupExpanded = true;
   bool _environmentExpanded = false;
   bool _movingTargetExpanded = false;
 
@@ -546,6 +594,8 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       _seedDefaultsFromFavoritesIfPresent();
       // ignore: discarded_futures
       _seedDefaultReticleIfMissing();
+      // ignore: discarded_futures
+      _seedDefaultTargetIfMissing();
     }
     // Pull the persisted Target Plot view mode (Realistic vs
     // Target-Focused). Default is `targetFocused`; the read swaps in
@@ -570,8 +620,9 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   /// is mid-Cloud-Sync transaction) leaves the screen in its existing
   /// LoadOut Default state — the next call to
   /// [_seedDefaultReticleIfMissing] still runs and falls through to the
-  /// `loadout_default_mil_tree` archetype, and the target slot stays
-  /// at `null` (the empty-state path uses `TargetSpec.defaultPaper`).
+  /// `pd_mil_hash_generic` archetype (the Classic Mil Hash default —
+  /// see that method's docstring), and the target slot stays at
+  /// `null` (the empty-state path uses `TargetSpec.defaultPaper`).
   ///
   /// Both lookups are guarded against the user picking something
   /// before this future settles — the assignment is skipped if the
@@ -622,19 +673,22 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     }
   }
 
-  /// Look up the canonical LoadOut Default Mil Tree archetype and
-  /// stash it as `_selectedReticle`. Called from `initState` for
-  /// fresh sessions and from `_hydrateFromSessionInner` when a saved
+  /// Look up the canonical default reticle archetype (Classic Mil
+  /// Hash — the public-domain "Mil Hash (Generic)" entry) and stash
+  /// it as `_selectedReticle`. Called from `initState` for fresh
+  /// sessions and from `_hydrateFromSessionInner` when a saved
   /// session has no reticle id.
   ///
-  /// TODO(loadout-default): catalog must include
-  /// `loadout_default_mil_tree`. Until the parallel catalog overhaul
-  /// publishes the archetype, this method silently no-ops and the
-  /// picker stays unset — the rest of the screen is fully usable.
+  /// User preference (per project owner): the default should be the
+  /// Classic Mil Hash, not the Mil Tree. Mil hash is the most
+  /// universal layout and reads cleanly on any target backdrop;
+  /// the tree variants are denser and look busy as a default. If
+  /// the user has favorited a different reticle,
+  /// `_seedDefaultsFromFavoritesIfPresent` runs first and wins.
   Future<void> _seedDefaultReticleIfMissing() async {
     try {
       final repo = context.read<ReticleRepository>();
-      final row = await repo.byNaturalKey('loadout_default_mil_tree');
+      final row = await repo.byNaturalKey('pd_mil_hash_generic');
       if (!mounted || row == null) return;
       // Only populate if the user hasn't already picked one between
       // initState firing and this future settling.
@@ -646,6 +700,40 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     } catch (e) {
       debugPrint(
           '[range_day] _seedDefaultReticleIfMissing failed: $e');
+    }
+  }
+
+  /// Look up the canonical default target — the 18×30 IPSC USPSA
+  /// silhouette — and stash it as `_selectedTarget`. Called from
+  /// `initState` for fresh sessions only. Skipped silently when the
+  /// user has already favorited a different target (the favorites
+  /// path runs first and wins).
+  ///
+  /// Looked up by name rather than a stable id; the `targets.json`
+  /// seed catalog doesn't carry a natural-key column today. If the
+  /// IPSC entry has been renamed in the catalog, this method soft-
+  /// fails and leaves the picker at "— None —".
+  Future<void> _seedDefaultTargetIfMissing() async {
+    try {
+      final repo = context.read<TargetRepository>();
+      final all = await repo.allTargets();
+      if (!mounted) return;
+      // Skip if the user has already picked something between
+      // initState and this future settling.
+      if (_selectedTarget != null) return;
+      TargetRow? ipsc;
+      for (final t in all) {
+        if (t.name == 'IPSC USPSA Classic Target') {
+          ipsc = t;
+          break;
+        }
+      }
+      if (ipsc == null) return;
+      setState(() => _selectedTarget = ipsc);
+      _scheduleSolve();
+    } catch (e) {
+      debugPrint(
+          '[range_day] _seedDefaultTargetIfMissing failed: $e');
     }
   }
 
@@ -902,10 +990,10 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       }
     }
     // v11 — hydrate reticle (if any). When the saved session has no
-    // reticle picked, fall back to the LoadOut Default Mil Tree
-    // archetype so the target plot still renders something useful
-    // out of the box. Fire-and-forget; the helper soft-fails when
-    // the catalog hasn't seeded the archetype yet.
+    // reticle picked, fall back to the Classic Mil Hash default
+    // (`pd_mil_hash_generic`) so the target plot still renders
+    // something useful out of the box. Fire-and-forget; the helper
+    // soft-fails when the catalog hasn't seeded the archetype yet.
     if (s.reticleId != null) {
       final reticleRow = await reticleRepo.byId(s.reticleId!);
       if (mounted && reticleRow != null) {
@@ -1144,6 +1232,26 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
 
   void _computeHitProb() {
     if (!mounted) return;
+    // Anti-fake-data gate (CLAUDE.md § 0): when the user hasn't
+    // picked a load, projectile / zero / MV controllers are all
+    // empty and falling back to placeholder defaults (140 gr,
+    // 0.298 BC, 2750 fps, 100 yd zero) would render a hit
+    // probability percentage that doesn't correspond to anything
+    // the user owns. The card's empty state already handles a
+    // null `_hitProb` by showing a "pick a target" / similar
+    // message — extend that to "pick a load."
+    if (!_hasRealLoadData()) {
+      setState(() => _hitProb = null);
+      return;
+    }
+    // Distance is also user input; without it, the hit-prob math
+    // is meaningless. Bail with a null result so the empty state
+    // surfaces.
+    final dist = double.tryParse(_distanceCtrl.text.trim());
+    if (dist == null || dist <= 0) {
+      setState(() => _hitProb = null);
+      return;
+    }
     final svc = context.read<HitProbabilityService>();
     // Read geometry through the active-target helpers so a rack-active
     // selection feeds the rack child's width / height / shape into the
@@ -1157,28 +1265,44 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       return;
     }
     final shape = parseTargetShape(shapeStr);
-    final dist = double.tryParse(_distanceCtrl.text.trim()) ?? 100;
     // Aim offset converts from normalized [-1, 1] to inches at the
     // target by multiplying by the target half-extent. Treat null aim
     // as dead center.
     final aimX = (_aimPointX ?? 0) * widthIn / 2;
     final aimY = (_aimPointY ?? 0) * heightIn / 2;
     final mvSd = _resolveMvSd();
-    final mv = double.tryParse(_muzzleVelCtrl.text.trim()) ?? 2750;
-    final bc = double.tryParse(_bcCtrl.text.trim()) ?? 0.298;
+    // Projectile / zero / sight values come from the picked load via
+    // `_seedFromLoad`/`_seedFromProfile` (the `_hasRealLoadData()`
+    // gate above guarantees one of those fired). Atmosphere falls
+    // back to ICAO standard when the user hasn't entered actual
+    // conditions — same fallback the firing-solution path uses.
+    final mv = double.tryParse(_muzzleVelCtrl.text.trim()) ?? 0;
+    final bc = double.tryParse(_bcCtrl.text.trim()) ?? 0;
     final bulletWeight =
-        double.tryParse(_bulletWeightCtrl.text.trim()) ?? 140;
+        double.tryParse(_bulletWeightCtrl.text.trim()) ?? 0;
     final bulletDiameter =
-        double.tryParse(_bulletDiameterCtrl.text.trim()) ?? 0.264;
+        double.tryParse(_bulletDiameterCtrl.text.trim()) ?? 0;
     final temp = double.tryParse(_tempCtrl.text.trim()) ?? 59;
     final pressure = double.tryParse(_pressureCtrl.text.trim()) ?? 29.92;
     final humidity = double.tryParse(_humidityCtrl.text.trim()) ?? 50;
     final elevation = double.tryParse(_elevationCtrl.text.trim()) ?? 0;
     final windSpeed = double.tryParse(_windSpeedCtrl.text.trim()) ?? 0;
-    final windDir = double.tryParse(_windDirCtrl.text.trim()) ?? 270;
+    final windDir = double.tryParse(_windDirCtrl.text.trim()) ?? 0;
     final sightHeight =
-        double.tryParse(_sightHeightCtrl.text.trim()) ?? 1.5;
-    final zeroRange = double.tryParse(_zeroRangeCtrl.text.trim()) ?? 100;
+        double.tryParse(_sightHeightCtrl.text.trim()) ?? 0;
+    final zeroRange = double.tryParse(_zeroRangeCtrl.text.trim()) ?? 0;
+    // Bail if any required projectile field is still zero — the
+    // load picker should have populated them, but a malformed seed
+    // shouldn't drive a fake hit probability.
+    if (mv <= 0 ||
+        bc <= 0 ||
+        bulletWeight <= 0 ||
+        bulletDiameter <= 0 ||
+        sightHeight <= 0 ||
+        zeroRange <= 0) {
+      setState(() => _hitProb = null);
+      return;
+    }
 
     try {
       final result = svc.compute(
@@ -1228,21 +1352,57 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     if (!mounted) return;
     setState(() => _solveError = null);
     try {
-      final bulletDiameter =
-          _parsePos(_bulletDiameterCtrl.text, 'Bullet diameter');
-      final bulletWeight = _parsePos(_bulletWeightCtrl.text, 'Bullet weight');
-      final bc = _parsePos(_bcCtrl.text, 'BC');
+      // Required-field probe: the solver needs positive values for
+      // diameter / weight / BC / MV / sight height / zero range /
+      // distance. When the user hasn't picked a load yet (or picked
+      // a load missing any of these fields), bail SILENTLY — clearing
+      // the prior solution so stale numbers don't linger, but never
+      // surfacing a red error banner. Missing inputs aren't a user
+      // mistake; they're the empty-state path.
+      final bulletDiameter = _parseOpt(_bulletDiameterCtrl.text);
+      final bulletWeight = _parseOpt(_bulletWeightCtrl.text);
+      final bc = _parseOpt(_bcCtrl.text);
       final length = _parseOpt(_bulletLengthCtrl.text);
       final twist = _parseOpt(_twistCtrl.text);
-      final muzzleVel = _parsePos(_muzzleVelCtrl.text, 'Muzzle velocity');
-      final sightHeight = _parsePos(_sightHeightCtrl.text, 'Sight height');
-      final zeroRange = _parsePos(_zeroRangeCtrl.text, 'Zero range');
-      final distance = _parsePos(_distanceCtrl.text, 'Distance');
+      final muzzleVel = _parseOpt(_muzzleVelCtrl.text);
+      final sightHeight = _parseOpt(_sightHeightCtrl.text);
+      final zeroRange = _parseOpt(_zeroRangeCtrl.text);
+      final distance = _parseOpt(_distanceCtrl.text);
+      if (bulletDiameter == null ||
+          bulletDiameter <= 0 ||
+          bulletWeight == null ||
+          bulletWeight <= 0 ||
+          bc == null ||
+          bc <= 0 ||
+          muzzleVel == null ||
+          muzzleVel <= 0 ||
+          sightHeight == null ||
+          sightHeight <= 0 ||
+          zeroRange == null ||
+          zeroRange <= 0 ||
+          distance == null ||
+          distance <= 0) {
+        setState(() {
+          _solution = null;
+          _dopeRows = const [];
+          _lastSolvedProjectile = null;
+          _lastSolvedEnvironment = null;
+          _lastSolvedShot = null;
+          _lastSolvedDistanceYd = null;
+          _lastSolvedWindMph = null;
+        });
+        return;
+      }
 
-      final temp = _parseAny(_tempCtrl.text, 'Temperature');
-      final pressure = _parsePos(_pressureCtrl.text, 'Pressure');
-      final humidity = _parseAny(_humidityCtrl.text, 'Humidity');
-      final elevation = _parseAny(_elevationCtrl.text, 'Elevation');
+      // Atmosphere fields default to EMPTY (CLAUDE.md § 0). When
+      // empty, the solver uses ICAO standard atmosphere internally
+      // — the Environment subsection shows a visible "Using
+      // standard atmosphere" indicator so the user knows the
+      // source of the values driving the solution.
+      final temp = _parseOpt(_tempCtrl.text) ?? 59.0; // ICAO 15°C
+      final pressure = _parseOpt(_pressureCtrl.text) ?? 29.92; // ICAO sea-level
+      final humidity = _parseOpt(_humidityCtrl.text) ?? 50.0; // mid-latitude std
+      final elevation = _parseOpt(_elevationCtrl.text) ?? 0.0; // sea level
       final windSpeed = double.tryParse(_windSpeedCtrl.text.trim()) ?? 0;
       final windDir = double.tryParse(_windDirCtrl.text.trim()) ?? 0;
       final shotAzimuth =
@@ -1373,21 +1533,13 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     }
   }
 
-  double _parsePos(String s, String label) {
-    final v = double.tryParse(s.trim());
-    if (v == null || v <= 0) {
-      throw FormatException('$label must be a positive number.');
-    }
-    return v;
-  }
-
-  double _parseAny(String s, String label) {
-    final v = double.tryParse(s.trim());
-    if (v == null) {
-      throw FormatException('$label is invalid.');
-    }
-    return v;
-  }
+  // _parsePos was used to throw FormatException for missing
+  // required-positive fields. Removed when `_solve` switched to a
+  // silent bail (no red error banner) on missing inputs — the
+  // empty-state path is no longer an error condition.
+  // _parseAny was used for atmosphere fields before they switched to
+  // empty-with-ICAO-fallback semantics. Removed in the same sweep;
+  // `_parseOpt(...) ?? <ICAO default>` is the current pattern.
 
   double? _parseOpt(String s) {
     final t = s.trim();
@@ -1760,6 +1912,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       final kestrel = context.read<KestrelService>();
       if (kestrel.device == null) return;
       await _kestrelSub?.cancel();
+      if (!mounted) return;
       _kestrelSub = kestrel.readings.listen(_applyKestrelReading);
       setState(() => _useKestrel = true);
       final last = kestrel.lastReading;
@@ -1983,18 +2136,32 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _setupCard(),
-                // Everything below Setup except the Solution card is
-                // gated to Full mode. Quick mode keeps the surface
-                // calm — Setup + Solution only — for the at-the-line
-                // user. The session still solves in Quick mode (the
-                // solver reads its inputs from the persisted state,
-                // not from card visibility).
-                if (_mode == RangeDayMode.full) ...[
-                  const SizedBox(height: 12),
-                  _environmentCard(),
-                ],
+                // Quick mode keeps the surface calm — Setup, the
+                // Solution card, a glanceable Scope-view card, and
+                // the DOPE table for at-the-line use. Full mode
+                // adds every advanced card (target plot, group
+                // stats, wind bracket, hit prob, moving target,
+                // notes) plus the Pro analysis links. The session
+                // still solves in Quick mode — the solver reads its
+                // inputs from the persisted state, not from card
+                // visibility. Environment moved into Setup → Group
+                // 1 (see [_environmentSubsection]); a standalone
+                // _environmentCard() here would duplicate the
+                // fields.
                 const SizedBox(height: 12),
                 _solutionCard(),
+                if (_mode == RangeDayMode.quick) ...[
+                  // Quick mode: directly under the Firing Solution,
+                  // show what the scope looks like (reticle over
+                  // target backdrop) and the DOPE table. These two
+                  // cards are the most-glanced surfaces at the
+                  // line; surfacing them here saves a scroll back
+                  // to Setup → Group 2.
+                  const SizedBox(height: 12),
+                  _scopeViewQuickCard(),
+                  const SizedBox(height: 12),
+                  _dopeCard(),
+                ],
                 if (_mode == RangeDayMode.full) ...[
                   const SizedBox(height: 12),
                   ..._windBracketSection(),
@@ -2013,7 +2180,11 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                   _dopeCard(),
                   const SizedBox(height: 12),
                   _notesCard(),
+                  const SizedBox(height: 12),
+                  _advancedAnalysisButtons(),
                 ],
+                const SizedBox(height: 16),
+                _saveSessionFooter(),
               ],
             ),
           ),
@@ -2051,6 +2222,15 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                       _setupCard(),
                       const SizedBox(height: 12),
                       _solutionCard(),
+                      // Mirror the phone-Quick layout: Scope view +
+                      // DOPE card directly under Firing Solution so
+                      // they're glanceable at the line.
+                      const SizedBox(height: 12),
+                      _scopeViewQuickCard(),
+                      const SizedBox(height: 12),
+                      _dopeCard(),
+                      const SizedBox(height: 16),
+                      _saveSessionFooter(),
                     ],
                   ),
                 ),
@@ -2082,8 +2262,12 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       _setupCard(),
-                      const SizedBox(height: 12),
-                      _environmentCard(),
+                      // Environment moved into Setup → Group 1 —
+                      // see [_environmentSubsection]. The wide
+                      // layout used to render Environment as a
+                      // separate card right under Setup, which is
+                      // visually redundant with the inline
+                      // subsection.
                       const SizedBox(height: 12),
                       _solutionCard(),
                       const SizedBox(height: 12),
@@ -2097,6 +2281,16 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                       _groupStatsCard(),
                       const SizedBox(height: 12),
                       _notesCard(),
+                      // Advanced Analysis (Pro) + Save Session footer
+                      // anchor the bottom of the left column in
+                      // wide-Full layout. Right column ends with the
+                      // DOPE / Moving Target cards; Save Session stays
+                      // on the left so the user finds it next to the
+                      // primary inputs.
+                      const SizedBox(height: 12),
+                      _advancedAnalysisButtons(),
+                      const SizedBox(height: 16),
+                      _saveSessionFooter(),
                     ],
                   ),
                 ),
@@ -2198,10 +2392,22 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _targetPicker(),
-          const SizedBox(height: 12),
-          _distancePicker(),
-          const SizedBox(height: 12),
+          // ── Group 1: What you're shooting (load + distance + env) ──
+          //
+          // The user picks WHAT they're shooting first, then WHAT
+          // they're shooting AT. This group covers the load side:
+          // ballistic profile, recipe, firearm, distance, and the
+          // environmental conditions the solver needs. Environment
+          // used to be its own card outside Setup — the user
+          // explicitly asked for it inline here, including in Quick
+          // mode (Quick mode doesn't render the old standalone
+          // environment card any more, so this is now the only
+          // place it lives).
+          _setupGroupHeader(
+            'Load · Distance · Environment',
+            Icons.precision_manufacturing_outlined,
+          ),
+          const SizedBox(height: 8),
           _profilePicker(),
           const SizedBox(height: 12),
           _loadPicker(),
@@ -2214,8 +2420,37 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
           // incomplete, so the surrounding layout stays clean.
           _stabilityAndFormFactor(),
           const SizedBox(height: 12),
+          _distancePicker(),
+          const SizedBox(height: 12),
+          _environmentSubsection(),
+
+          const SizedBox(height: 20),
+
+          // ── Group 2: What you're aiming at (target + reticle) ──
+          //
+          // Visual group. Target dropdown + color swatches + a
+          // visual preview box of the chosen target on the
+          // downrange backdrop, then the reticle dropdown and a
+          // combined "this is what you'll see through the scope"
+          // preview that overlays the picked reticle on the same
+          // backdrop. Both preview boxes use the existing
+          // [ScopeDaytimeBackdrop] painter so the look matches the
+          // full Scope View Pro screen — this section is a
+          // miniature, glanceable version of that screen, not a
+          // separate visual language.
+          _setupGroupHeader('Target & Reticle', Icons.gps_fixed),
+          const SizedBox(height: 8),
+          _targetPicker(),
+          const SizedBox(height: 12),
+          _targetVisualBox(),
+          const SizedBox(height: 16),
           _reticlePicker(),
           const SizedBox(height: 12),
+          _combinedReticleTargetPreview(),
+
+          const SizedBox(height: 20),
+
+          // ── Misc / advanced ──
           _shotAzimuthRow(),
           const SizedBox(height: 12),
           _inclineAngleRow(),
@@ -2225,23 +2460,468 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
           _captureEnvironmentFromSensorsButton(),
           const SizedBox(height: 12),
           _capabilityExpander(),
-          const SizedBox(height: 12),
-          _litzAnalysisButtons(),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: () => _saveSession(collapseSetup: true),
-            icon: const Icon(Icons.save_outlined),
-            label: Text(_session == null ? 'Save Session' : 'Update Session'),
+          // Advanced Analysis (Pro) and the Save Session button used
+          // to live here at the bottom of Setup. They moved to the
+          // very bottom of the page (`_saveSessionFooter` is the last
+          // widget in both layouts; `_advancedAnalysisButtons` renders
+          // only in Full mode, just above the footer). Setup stays
+          // focused on the inputs that drive the firing solution.
+        ],
+      ),
+    );
+  }
+
+  /// Slim header that visually separates the two ordered groups
+  /// inside [_setupBody]. Just an icon + title row with a thin
+  /// underline — light enough not to compete with the surrounding
+  /// pickers, distinct enough that a quick scroll past Setup makes
+  /// the two groups obvious.
+  Widget _setupGroupHeader(String label, IconData icon) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 18, color: theme.colorScheme.primary),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: theme.colorScheme.onSurfaceVariant,
+                  letterSpacing: 0.4,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Divider(
+            height: 1,
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
           ),
         ],
       ),
     );
   }
 
-  /// Three Pro-gated entries to the Bryan Litz / Applied Ballistics
+  /// Inline collapsible Environment subsection. Renders inside the
+  /// Setup body's Group 1, replacing the old standalone
+  /// [_environmentCard]. Keeps the collapsible behaviour the user
+  /// expects (so a shooter happy with default atmospherics doesn't
+  /// have to scroll past a wall of fields), and stays inside Setup
+  /// so it shows in Quick mode as well as Full.
+  Widget _environmentSubsection() {
+    final theme = Theme.of(context);
+    final summary = _envSummary();
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(
+          alpha: 0.35,
+        ),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () => setState(
+                () => _environmentExpanded = !_environmentExpanded),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+              child: Row(
+                children: [
+                  Icon(Icons.cloud_outlined,
+                      size: 18, color: theme.colorScheme.primary),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Environment',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        if (!_environmentExpanded && summary.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Text(
+                              summary,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Icon(_environmentExpanded
+                      ? Icons.expand_less
+                      : Icons.expand_more),
+                ],
+              ),
+            ),
+          ),
+          if (_environmentExpanded) _environmentBody(),
+        ],
+      ),
+    );
+  }
+
+  /// Visual representation of the currently-selected target on the
+  /// downrange backdrop. Used in Group 2 of [_setupBody] so the
+  /// user can see the target they'll be shooting at without
+  /// scrolling all the way down to the Target Plot card. Falls
+  /// through to a placeholder when no target is picked.
+  Widget _targetVisualBox() {
+    final theme = Theme.of(context);
+    final activeTargetSpec = _activeTargetSpec;
+    if (activeTargetSpec == null) {
+      return Container(
+        height: 90,
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest.withValues(
+            alpha: 0.4,
+          ),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: theme.colorScheme.outlineVariant),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          'Pick a target above to preview it.',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      );
+    }
+    // Inline preview is intentionally NOT the full ScopeDaytimeBackdrop
+    // (sky / mound / grass) — that painter sizes the silhouette to
+    // sit above the horizon and clips the top off in any short
+    // canvas. Reloaders care about the TARGET, not the scenery, so
+    // this preview shows the target large + centered on a clean
+    // surface. The full daytime backdrop still renders inside the
+    // tap-to-zoom dialog and inside Scope View Pro where the canvas
+    // has the height to show it correctly.
+    final preview = SizedBox(
+      height: 180,
+      child: _TargetThumbnail(
+        spec: activeTargetSpec,
+        color: _resolveTargetColor(activeTargetSpec),
+      ),
+    );
+    // Tap-to-zoom: opens a full-screen dialog with a larger
+    // version of the same painter, so the user can inspect the
+    // target without squinting at the small inline preview.
+    final displayName = _activeTargetDisplayName ?? 'Target';
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: () =>
+            _showTargetPreviewDialog(activeTargetSpec, displayName),
+        child: preview,
+      ),
+    );
+  }
+
+  /// Full-screen popup that renders the same target painter at a
+  /// larger size so the user can see the silhouette / shape /
+  /// color clearly. Tap anywhere outside the image (or the close
+  /// button) to dismiss.
+  Future<void> _showTargetPreviewDialog(
+      TargetSpec spec, String displayName) async {
+    final mediaQuery = MediaQuery.of(context);
+    final maxW = (mediaQuery.size.width * 0.92).clamp(280.0, 720.0);
+    final imageH = (maxW * 0.78).clamp(240.0, 560.0);
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        return Dialog(
+          insetPadding: const EdgeInsets.all(16),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Use a SizedBox with explicit width AND height so the
+              // CustomPaint inside the thumbnail receives a finite
+              // canvas. ConstrainedBox alone collapsed to 0×0 here
+              // because the painter has no intrinsic size — that's
+              // why the previous dialog showed a blank area above
+              // the metadata footer.
+              SizedBox(
+                width: maxW,
+                height: imageH,
+                child: _TargetThumbnail(
+                  spec: spec,
+                  color: _resolveTargetColor(spec),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(displayName,
+                              style: theme.textTheme.titleSmall,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis),
+                          Text(
+                            '${spec.widthIn.toStringAsFixed(0)} × '
+                            '${spec.heightIn.toStringAsFixed(0)} in · '
+                            '${_shapeDisplayLabel(spec.shape)}',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      child: const Text('Close'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// User-facing label for a [TargetRow] in the picker dropdown.
+  /// Format: "{Shape} {Size}" with the dimensions in inches.
+  ///   * Circle 6 in
+  ///   * Square 8 in
+  ///   * Rectangle 18×24 in
+  ///   * IPSC 18×30 in
+  ///   * Star 36 in (Texas Star)
+  /// Material / brand information is intentionally NOT in the label
+  /// (per user feedback: "stop labeling by material") — reloaders
+  /// pick by geometry. The underlying catalog name still lives on
+  /// the row for search and saved-session metadata.
+  String _targetDropdownLabel(TargetRow t) {
+    final shape = _shapeDisplayLabel(t.shape);
+    final w = t.widthIn;
+    final h = t.heightIn;
+    String dims;
+    if (w == h) {
+      dims = '${_formatDim(w)} in';
+    } else {
+      dims = '${_formatDim(w)}×${_formatDim(h)} in';
+    }
+    // Star is a unique geometry — surface the catalog name in
+    // parens so the user can tell a Texas Star from a Dueling Tree
+    // even though both are "Star 36 in" by geometry.
+    if (t.shape.toLowerCase() == 'star') {
+      return '$shape $dims (${t.name})';
+    }
+    return '$shape $dims';
+  }
+
+  /// Trim a target dimension to a clean integer when it's a whole
+  /// number (e.g. 6.0 → "6"); keep a single decimal otherwise (e.g.
+  /// 11.7 → "11.7").
+  String _formatDim(double v) {
+    if (v == v.truncateToDouble()) return v.toStringAsFixed(0);
+    return v.toStringAsFixed(1);
+  }
+
+  /// Map a catalog `shape` value to a user-facing label. The seed
+  /// catalog uses lowercase machine-readable values ("silhouette",
+  /// "circle"); the dropdown labels surface the friendly versions.
+  String _shapeDisplayLabel(String shape) {
+    switch (shape.toLowerCase()) {
+      case 'silhouette':
+      case 'ipsc':
+      case 'idpa':
+      case 'human':
+        return 'IPSC';
+      case 'circle':
+        return 'Circle';
+      case 'square':
+        return 'Square';
+      case 'rectangle':
+        return 'Rectangle';
+      case 'star':
+        return 'Star';
+      default:
+        return shape[0].toUpperCase() + shape.substring(1);
+    }
+  }
+
+  /// Combined "what the scope would show" preview — the same
+  /// downrange backdrop with the user's currently-picked reticle
+  /// overlaid on top. Group 2's last entry. The Pro Scope View
+  /// screen is the high-fidelity version of this; the inline
+  /// preview is glanceable, not interactive.
+  Widget _combinedReticleTargetPreview() {
+    final theme = Theme.of(context);
+    final activeTargetSpec = _activeTargetSpec;
+    final reticle = _selectedReticle;
+    if (activeTargetSpec == null && reticle == null) {
+      return Container(
+        height: 90,
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest.withValues(
+            alpha: 0.4,
+          ),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: theme.colorScheme.outlineVariant),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          'Pick a target and a reticle to preview the scope view.',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: SizedBox(
+        height: 180,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            ScopeDaytimeBackdrop(
+              target: activeTargetSpec == null
+                  ? BackdropTargetSilhouette.none
+                  : _backdropTargetForShape(activeTargetSpec.shape),
+              targetWidthFraction: 0.22,
+              targetColor: activeTargetSpec == null
+                  ? const Color(0xff5e6552)
+                  : _resolveTargetColor(activeTargetSpec),
+            ),
+            if (reticle != null)
+              Center(
+                child: ReticleRenderer(
+                  reticle: reticle,
+                  displayUnit: reticle.nativeUnit == ReticleNativeUnit.moa
+                      ? 'moa'
+                      : 'mil',
+                  size: const Size(180, 180),
+                  showUnitOverlay: false,
+                  // Reticles default to BLACK across the app — the
+                  // brass-tinted theme primary made the etched
+                  // hash marks blend into the bright daytime
+                  // backdrop. Black reads cleanly against sky,
+                  // grass, and the silhouette body.
+                  color: Colors.black,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Resolve the user-facing color for a target spec — applies the
+  /// per-session swatch override when set, otherwise falls back to
+  /// the target's natural `colorHex` (which is always non-nullable
+  /// on `TargetSpec`; defaults to `'#ffffff'` when the underlying
+  /// row didn't specify).
+  Color _resolveTargetColor(TargetSpec spec) {
+    final hex = _selectedTargetColorHex ?? spec.colorHex;
+    final raw = hex.startsWith('#') ? hex.substring(1) : hex;
+    final v = int.tryParse(raw, radix: 16);
+    if (v == null) return const Color(0xff5e6552);
+    return Color(0xff000000 | v);
+  }
+
+  /// Map the catalog target shape ('circle' / 'square' /
+  /// 'rectangle' / 'silhouette' / etc.) to the
+  /// [BackdropTargetSilhouette] enum the daytime backdrop painter
+  /// understands. Anything we don't recognize falls through to
+  /// rectangle (the safest default — covers the common steel
+  /// plate / paper square cases).
+  BackdropTargetSilhouette _backdropTargetForShape(String shape) {
+    switch (shape.toLowerCase()) {
+      case 'circle':
+        return BackdropTargetSilhouette.circle;
+      case 'silhouette':
+      case 'ipsc':
+      case 'idpa':
+      case 'human':
+        return BackdropTargetSilhouette.ipsc;
+      case 'rectangle':
+      case 'square':
+      default:
+        return BackdropTargetSilhouette.rectangle;
+    }
+  }
+
+  /// Three Pro-gated entries to the Applied Ballistics
   /// parity features (schema v16). Each one routes to its own screen
   /// after `ensurePro` clears.
-  Widget _litzAnalysisButtons() {
+  /// Quick-mode "Scope view" card: a compact card that renders the
+  /// reticle-over-target preview directly under the Firing Solution.
+  /// This way the at-the-line shooter sees what the scope should
+  /// show without scrolling back up to Setup → Group 2. Full mode
+  /// ships the full interactive [_targetPlotCard] further down the
+  /// screen and doesn't need this glance card.
+  Widget _scopeViewQuickCard() {
+    final theme = Theme.of(context);
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.visibility_outlined,
+                    color: theme.colorScheme.primary),
+                const SizedBox(width: 8),
+                Text('Scope view', style: theme.textTheme.titleMedium),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _combinedReticleTargetPreview(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// The Save / Update Session footer button. Lives at the very
+  /// bottom of the scrolling content in both Quick and Full mode so
+  /// it's always the last thing on the page — no hunting through
+  /// Setup to find it.
+  Widget _saveSessionFooter() {
+    return FilledButton.icon(
+      onPressed: () => _saveSession(collapseSetup: true),
+      icon: const Icon(Icons.save_outlined),
+      label: Text(_session == null ? 'Save Session' : 'Update Session'),
+    );
+  }
+
+  Widget _advancedAnalysisButtons() {
     final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
@@ -2257,7 +2937,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                 color: theme.colorScheme.primary, size: 18),
             const SizedBox(width: 6),
             GlossaryLabel(
-              text: 'Litz analysis (Pro)',
+              text: 'Advanced analysis (Pro)',
               glossaryTerm: 'Confidence interval (90%)',
               style: theme.textTheme.titleSmall,
             ),
@@ -2286,17 +2966,17 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
               children: [
                 OutlinedButton.icon(
                   icon: const Icon(Icons.show_chart, size: 18),
-                  label: const Text('WEZ analysis'),
+                  label: const Text('Hit Probability Map'),
                   onPressed: () => _openWezAnalysis(),
                 ),
                 OutlinedButton.icon(
                   icon: const Icon(Icons.assessment_outlined, size: 18),
-                  label: const Text('BC truing'),
+                  label: const Text('BC Truing'),
                   onPressed: () => _openBcTruing(),
                 ),
                 OutlinedButton.icon(
                   icon: const Icon(Icons.straighten, size: 18),
-                  label: const Text('Sight calibration'),
+                  label: const Text('Scope Tracking Test'),
                   onPressed: () => _openSightCalibration(),
                 ),
               ],
@@ -2314,7 +2994,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     await safeAsync<void>(
       context,
       mounted: () => mounted,
-      userMessage: 'Could not open WEZ analysis.',
+      userMessage: 'Could not open Hit Probability Map.',
       body: () async {
         await Navigator.of(context).push(MaterialPageRoute(
           builder: (_) => WezAnalysisScreen(
@@ -2380,7 +3060,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         // intercept taps for the in-form definition modal. Same
         // floating-label treatment Material gives the string variant.
         label: GlossaryLabel(
-          text: 'Shot azimuth (°)',
+          text: 'Shot Azimuth (°)',
           glossaryTerm: 'Azimuth',
         ),
         helperText:
@@ -2455,7 +3135,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                 // received unbounded width and crashed.
                 //
                 // Canonical fix: `Align(centerLeft) + Wrap`. This is
-                // the same pattern `_litzAnalysisButtons` uses (line
+                // the same pattern `_advancedAnalysisButtons` uses (line
                 // ~1546) and the chip Wraps elsewhere in this file.
                 // `Wrap` lays out children at their intrinsic widths
                 // and wraps to a new line if needed, so on a narrow
@@ -2471,7 +3151,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                       OutlinedButton.icon(
                         onPressed: _captureInclineFromSensor,
                         icon: const Icon(Icons.straighten, size: 16),
-                        label: const Text('Capture from sensor'),
+                        label: const Text('Capture from Sensor'),
                       ),
                       Builder(builder: (ctx) {
                         final inc = inclineSvc.inclineDegrees;
@@ -2601,7 +3281,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
           FilledButton.tonalIcon(
             onPressed: _captureEnvironmentFromSensors,
             icon: const Icon(Icons.sensors, size: 18),
-            label: const Text('Capture environment from sensors'),
+            label: const Text('Capture Environment from Sensors'),
           ),
         ],
       ),
@@ -2894,7 +3574,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     return SwitchListTile.adaptive(
       contentPadding: EdgeInsets.zero,
       dense: true,
-      title: const Text('Live updates'),
+      title: const Text('Live Updates'),
       subtitle: const Text(
           '2 Hz refresh of the cant + heading chip — useful for verifying '
           'the sensors are alive without staring at the readout.'),
@@ -2960,7 +3640,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
             if (available) ...[
               const SizedBox(height: 8),
               // `Align(centerLeft) + Wrap` — same pattern as
-              // `_litzAnalysisButtons`. The previous `Row(Expanded(
+              // `_advancedAnalysisButtons`. The previous `Row(Expanded(
               // OutlinedButton) + IconButton)` was vulnerable to the
               // infinite-width crash chain that took down
               // `_inclineAngleRow`: when the Row has two children, the
@@ -2990,7 +3670,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                               );
                             },
                       icon: const Icon(Icons.straighten, size: 18),
-                      label: const Text('Use phone level'),
+                      label: const Text('Use Phone Level'),
                     ),
                     if (cantSvc.calibrationOffsetDeg.abs() > 0.05)
                       IconButton(
@@ -3042,7 +3722,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     return SwitchListTile.adaptive(
       contentPadding: EdgeInsets.zero,
       dense: true,
-      title: const Text('Apply cant correction'),
+      title: const Text('Apply Cant Correction'),
       subtitle: const Text(
           'Rotates drop and wind by the live cant angle so the displayed '
           'correction matches your sight picture.'),
@@ -3119,7 +3799,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                         );
                       },
                 icon: const Icon(Icons.explore_outlined, size: 18),
-                label: const Text('Use as shot azimuth'),
+                label: const Text('Use as Shot Azimuth'),
               ),
               if (!mag.isTrueNorth)
                 Padding(
@@ -3471,7 +4151,18 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   /// so the Single/Rack toggle can swap between the two bodies without
   /// duplicating the FutureBuilder + stale-id-guard scaffolding.
   Widget _singleTargetPickerBody() {
-    final categories = ['all', 'paper', 'steel', 'reactive', 'game-silhouette'];
+    // Filter chips are SHAPE-based, not material-based. Reloaders
+    // think "I'm shooting a 12" circle" or "an IPSC silhouette" —
+    // they don't think "I'm shooting paper today." The chip values
+    // map 1:1 to the catalog's `shape` column.
+    const shapeChips = <(String value, String label)>[
+      ('all', 'All'),
+      ('square', 'Square'),
+      ('rectangle', 'Rectangle'),
+      ('circle', 'Circle'),
+      ('silhouette', 'IPSC'),
+      ('star', 'Star'),
+    ];
     final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -3480,27 +4171,47 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         // `Column(crossAxisAlignment: stretch)` from forcing infinite
         // width onto the Wrap, which Material chips would propagate to
         // their internal `_RenderInputPadding` and assert against. Same
-        // pattern as `_litzAnalysisButtons`.
+        // pattern as `_advancedAnalysisButtons`.
         Align(
           alignment: Alignment.centerLeft,
           child: Wrap(
             spacing: 6,
             children: [
-              for (final cat in categories)
+              for (final chip in shapeChips)
                 ChoiceChip(
-                  label: Text(cat == 'all'
-                      ? 'All'
-                      : cat == 'game-silhouette'
-                          ? 'Game'
-                          : cat[0].toUpperCase() + cat.substring(1)),
-                  selected: _targetCategoryFilter == cat,
+                  label: Text(chip.$2),
+                  selected: _targetShapeFilter == chip.$1,
                   onSelected: (v) {
                     if (!v) return;
-                    setState(() => _targetCategoryFilter = cat);
+                    setState(() => _targetShapeFilter = chip.$1);
                   },
                 ),
             ],
           ),
+        ),
+        const SizedBox(height: 8),
+        // Search field — filters the dropdown options as the user
+        // types. Tokenized match against the generated label
+        // ("Circle 6 in") and the underlying catalog name. Cleared
+        // by the trailing × button. Keyboard does not auto-show on
+        // build (`autofocus: false`) so the picker doesn't shove
+        // the rest of the page off-screen on first tap.
+        TextField(
+          autofocus: false,
+          decoration: InputDecoration(
+            isDense: true,
+            prefixIcon: const Icon(Icons.search, size: 18),
+            hintText: 'Search targets',
+            border: const OutlineInputBorder(),
+            suffixIcon: _targetSearchQuery.isEmpty
+                ? null
+                : IconButton(
+                    icon: const Icon(Icons.close, size: 18),
+                    onPressed: () =>
+                        setState(() => _targetSearchQuery = ''),
+                  ),
+          ),
+          onChanged: (v) => setState(() => _targetSearchQuery = v),
         ),
         const SizedBox(height: 8),
         // Outer StreamBuilder watches the favorited target id set so
@@ -3564,9 +4275,34 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     List<TargetRow> all,
     Set<int> favIds,
   ) {
-    final filtered = _targetCategoryFilter == 'all'
+    // Shape-based filter (CLAUDE.md / user feedback: reloaders pick
+    // by shape, not material). Compare lowercased to be tolerant of
+    // any seed-row capitalisation drift.
+    var filtered = _targetShapeFilter == 'all'
         ? all
-        : all.where((t) => t.category == _targetCategoryFilter).toList();
+        : all
+            .where((t) => t.shape.toLowerCase() == _targetShapeFilter)
+            .toList();
+    // Apply the free-form search query. Tokenize on whitespace and
+    // require every token to appear somewhere in the generated
+    // shape+size label OR the underlying catalog name (so a search
+    // for "ipsc 18" hits the IPSC 18×30 silhouette, and "texas"
+    // still finds the Texas Star even though the dropdown shows
+    // "Star 36 in").
+    final q = _targetSearchQuery.trim().toLowerCase();
+    if (q.isNotEmpty) {
+      final tokens = q
+          .split(RegExp(r'\s+'))
+          .where((t) => t.isNotEmpty)
+          .toList(growable: false);
+      filtered = filtered.where((t) {
+        final hay = '${_targetDropdownLabel(t)} ${t.name}'.toLowerCase();
+        for (final tk in tokens) {
+          if (!hay.contains(tk)) return false;
+        }
+        return true;
+      }).toList();
+    }
     // Favorite-first sort. We deliberately stable-sort: the
     // existing natural-name order from `TargetRepository.allTargets`
     // is preserved within each tier (favorites then non-favorites),
@@ -3616,15 +4352,21 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
           value: selected.id,
           child: Text(
             '${favIds.contains(selected.id) ? '★ ' : ''}'
-            '${selected.name} (picked — hidden by filter)',
+            '${_targetDropdownLabel(selected)} (picked — hidden by filter)',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
         ),
+      // Labels use Shape + Size (per user feedback: reloaders pick
+      // by geometry, not material — "Steel Plate 10 in" became
+      // "Circle 10 in"). The underlying catalog name is preserved
+      // for the saved-session metadata, but the picker surface
+      // shows the geometry-only label.
       ...orderedFiltered.map((t) => DropdownMenuItem<int?>(
             value: t.id,
             child: Text(
-              favIds.contains(t.id) ? '★ ${t.name}' : t.name,
+              '${favIds.contains(t.id) ? '★ ' : ''}'
+              '${_targetDropdownLabel(t)}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -3632,7 +4374,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     ];
     if (filtered.isEmpty && !selectedHiddenByFilter) {
       return Text(
-        'No targets in this category yet.',
+        'No targets in this shape yet.',
         style: theme.textTheme.bodySmall,
       );
     }
@@ -4243,10 +4985,6 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   /// own subscription.
   Widget _selectedTargetPreview(TargetRow t, Set<int> favIds) {
     final theme = Theme.of(context);
-    final dims = _targetDimensionLabel(t);
-    final categoryLabel = t.category == 'game-silhouette'
-        ? 'Game'
-        : (t.category[0].toUpperCase() + t.category.substring(1));
     final isFav = favIds.contains(t.id);
     return Padding(
       padding: const EdgeInsets.only(top: 8),
@@ -4267,20 +5005,18 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Geometry-only label per the user's "stop showing
+                  // material" rule. The catalog `name` (e.g.
+                  // "Steel Plate 10 in") still drives saved-session
+                  // metadata + search, but the user-facing preview
+                  // shows only what they asked for: shape + size.
                   Text(
-                    t.name,
+                    _targetDropdownLabel(t),
                     style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '$dims · $categoryLabel',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
                   ),
                 ],
               ),
@@ -4350,6 +5086,8 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       case 'silhouette':
       case 'irregular':
         return Icon(Icons.person_outline, size: 28, color: color);
+      case 'star':
+        return Icon(Icons.auto_awesome, size: 28, color: color);
       default:
         return Icon(Icons.crop_square, size: 28, color: color);
     }
@@ -4374,6 +5112,11 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
             Expanded(
               flex: 2,
               child: TextField(
+                // Stable test hook so widget tests can locate this
+                // field without relying on a controller default
+                // value — the controller starts EMPTY now
+                // (CLAUDE.md § 0).
+                key: const ValueKey('range_day.distance_field'),
                 controller: _distanceCtrl,
                 keyboardType: const TextInputType.numberWithOptions(),
                 inputFormatters: [
@@ -4413,7 +5156,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         ),
         const SizedBox(height: 4),
         // Same Align(centerLeft) bulletproofing as the ChoiceChip Wrap
-        // above and `_litzAnalysisButtons` — protects against parent
+        // above and `_advancedAnalysisButtons` — protects against parent
         // `Column.stretch` forcing infinite width onto chip children.
         Align(
           alignment: Alignment.centerLeft,
@@ -4560,100 +5303,104 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   }
 
   Widget _profilePicker() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Align(
-          alignment: Alignment.centerLeft,
-          child: GlossaryLabel(
-            text: 'Ballistic profile',
-            glossaryTerm: 'DOPE',
-            style: Theme.of(context).textTheme.labelLarge,
-          ),
-        ),
-        const SizedBox(height: 6),
-        StreamBuilder<List<BallisticProfileRow>>(
-          stream: _profilesStream,
-          builder: (context, snap) {
-            if (snap.hasError) {
-              return RangeDayInlineError(
-                message:
-                    'Could not load ballistic profiles: ${snap.error}',
-                onRetry: () {
-                  setState(() {
-                    _profilesStream =
-                        context.read<BallisticProfileRepository>().watchAll();
-                  });
-                },
-              );
-            }
-            final profiles = snap.data ?? const <BallisticProfileRow>[];
-            // Favorite-first sort. `BallisticProfileRow.isFavorite` is
-            // a per-row boolean (schema v24), so unlike the target
-            // picker we don't need a separate stream — the watch
-            // already re-emits whenever the row's `isFavorite` flag
-            // flips. Stable sort preserves the existing
-            // alphabetical-by-name order within each tier.
-            final ordered = _sortFavoritesFirst<BallisticProfileRow>(
-              profiles,
-              (p) => p.isFavorite,
-            );
-            // Stale-id guard: if the previously-selected profile has
-            // been deleted (or the stream is mid-refresh), pinning
-            // `initialValue` to its id would crash the dropdown with
-            // "There should be exactly one item with [DropdownButton]'s
-            // value: <id>". Fall back to null while keeping
-            // `_selectedProfile` as state — the rest of the screen
-            // continues to use the cached values until the user picks
-            // again or the deleted-row state resolves itself.
-            final selectedProfileExists = _selectedProfile != null &&
-                profiles.any((p) => p.id == _selectedProfile!.id);
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                DropdownButtonFormField<int?>(
-                  initialValue:
-                      selectedProfileExists ? _selectedProfile!.id : null,
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    hintText: 'Pick a saved profile',
-                  ),
-                  items: [
-                    const DropdownMenuItem<int?>(
-                      value: null,
-                      child: Text('— None —'),
-                    ),
-                    ...ordered.map((p) => DropdownMenuItem<int?>(
-                          value: p.id,
-                          child: Text(
-                            p.isFavorite ? '★ ${p.name}' : p.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        )),
-                  ],
-                  onChanged: (id) {
-                    if (id == null) {
-                      setState(() => _selectedProfile = null);
-                      return;
-                    }
-                    final p = profiles.firstWhere((p) => p.id == id);
-                    _applyProfile(p);
-                    _scheduleAutoSave();
-                  },
+    return StreamBuilder<List<BallisticProfileRow>>(
+      stream: _profilesStream,
+      builder: (context, snap) {
+        if (snap.hasError) {
+          return RangeDayInlineError(
+            message: 'Could not load ballistic profiles: ${snap.error}',
+            onRetry: () {
+              setState(() {
+                _profilesStream =
+                    context.read<BallisticProfileRepository>().watchAll();
+              });
+            },
+          );
+        }
+        final profiles = snap.data ?? const <BallisticProfileRow>[];
+        // Hide the entire picker (label + dropdown) when the user has
+        // no saved profiles. A dropdown with only "— None —" is
+        // pointless visual noise; the load picker's empty-state card
+        // (or the recipe-form path) is the right place to start.
+        if (profiles.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        // Favorite-first sort. `BallisticProfileRow.isFavorite` is
+        // a per-row boolean (schema v24), so unlike the target
+        // picker we don't need a separate stream — the watch
+        // already re-emits whenever the row's `isFavorite` flag
+        // flips. Stable sort preserves the existing
+        // alphabetical-by-name order within each tier.
+        final ordered = _sortFavoritesFirst<BallisticProfileRow>(
+          profiles,
+          (p) => p.isFavorite,
+        );
+        // Stale-id guard: if the previously-selected profile has been
+        // deleted (or the stream is mid-refresh), pinning
+        // `initialValue` to its id would crash the dropdown with
+        // "There should be exactly one item with [DropdownButton]'s
+        // value: <id>". Fall back to null while keeping
+        // `_selectedProfile` as state.
+        final selectedProfileExists = _selectedProfile != null &&
+            profiles.any((p) => p.id == _selectedProfile!.id);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: GlossaryLabel(
+                text: 'Ballistic Profile',
+                glossaryTerm: 'DOPE',
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+            ),
+            const SizedBox(height: 6),
+            DropdownButtonFormField<int?>(
+              initialValue:
+                  selectedProfileExists ? _selectedProfile!.id : null,
+              isExpanded: true,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: 'Pick a saved profile',
+              ),
+              items: [
+                const DropdownMenuItem<int?>(
+                  value: null,
+                  child: Text('— None —'),
                 ),
-                // Inline star toggle for the picked profile. The row
-                // already has an `isFavorite` boolean; the live
-                // `_profilesStream` re-emits on every flip so the
-                // visual stays in sync without an extra subscription.
-                if (selectedProfileExists)
-                  _selectedProfileFavoriteRow(_selectedProfile!),
+                ...ordered.map((p) => DropdownMenuItem<int?>(
+                      value: p.id,
+                      child: Text(
+                        p.isFavorite ? '★ ${p.name}' : p.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    )),
               ],
-            );
-          },
-        ),
-      ],
+              onChanged: (id) {
+                if (id == null) {
+                  setState(() => _selectedProfile = null);
+                  return;
+                }
+                // Race-safe lookup — see _loadPicker for the rationale.
+                BallisticProfileRow? picked;
+                for (final p in profiles) {
+                  if (p.id == id) {
+                    picked = p;
+                    break;
+                  }
+                }
+                if (picked == null) return;
+                _applyProfile(picked);
+                _scheduleAutoSave();
+              },
+            ),
+            // Inline star toggle for the picked profile.
+            if (selectedProfileExists)
+              _selectedProfileFavoriteRow(_selectedProfile!),
+          ],
+        );
+      },
     );
   }
 
@@ -4792,7 +5539,16 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                       _scheduleAutoSave();
                       return;
                     }
-                    final l = loads.firstWhere((l) => l.id == id);
+                    // Race-safe lookup — same rationale as the
+                    // ballistic-profile dropdown above.
+                    UserLoadRow? l;
+                    for (final ll in loads) {
+                      if (ll.id == id) {
+                        l = ll;
+                        break;
+                      }
+                    }
+                    if (l == null) return;
                     // Picking a real recipe overrides any previously
                     // applied common-load defaults; the recipe is the
                     // user's canonical choice now.
@@ -4806,11 +5562,57 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                 ),
                 if (liveSelected != null)
                   _selectedLoadFavoriteRow(liveSelected),
+                // Always-visible compact link row that mirrors the
+                // empty-state CTAs ("Pick a Common Load" / "Create a
+                // Ballistic Profile") so the user can switch sources
+                // without first clearing their current pick. Renders
+                // as small text buttons rather than the big primary
+                // CTAs from the empty-state card to stay collapsed
+                // under the active dropdown selection.
+                _loadPickerSecondaryActions(),
               ],
             );
           },
         ),
       ],
+    );
+  }
+
+  /// Compact secondary-action row under the load dropdown. Lets the
+  /// user pick a common factory load OR jump to the ballistics
+  /// screen to create a profile, even when they already have a load
+  /// selected. Wrapped so a narrow phone reflows the two actions
+  /// onto separate lines.
+  Widget _loadPickerSecondaryActions() {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Wrap(
+        spacing: 4,
+        runSpacing: 4,
+        children: [
+          TextButton.icon(
+            onPressed: _pickCommonLoad,
+            icon: const Icon(Icons.flash_on_outlined, size: 16),
+            label: const Text('Pick a Common Load'),
+            style: TextButton.styleFrom(
+              visualDensity: VisualDensity.compact,
+              foregroundColor: theme.colorScheme.primary,
+              textStyle: theme.textTheme.bodySmall,
+            ),
+          ),
+          TextButton.icon(
+            onPressed: _openBallisticsScreen,
+            icon: const Icon(Icons.tune, size: 16),
+            label: const Text('Create a Ballistic Profile'),
+            style: TextButton.styleFrom(
+              visualDensity: VisualDensity.compact,
+              foregroundColor: theme.colorScheme.primary,
+              textStyle: theme.textTheme.bodySmall,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -4852,34 +5654,39 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   }
 
   /// Empty-state body for the load picker when the user has no saved
-  /// recipes. Exposes two actions: pick a common factory load (opens
-  /// `_pickCommonLoad`'s bottom sheet) or jump to BallisticsScreen so
-  /// the user can build a saved profile end-to-end.
+  /// recipes AND no saved ballistic profiles. Exposes two actions:
+  /// pick a common factory load (opens `_pickCommonLoad`'s bottom
+  /// sheet) or jump to BallisticsScreen so the user can build a
+  /// saved profile end-to-end.
+  ///
+  /// When the user HAS already applied a common-load default
+  /// (`_appliedCommonLoadName != null`), the empty-state card
+  /// collapses to just the small "Using `name` defaults" banner —
+  /// keeping the EmptyStateCard with two big call-to-action
+  /// buttons up there would be redundant noise once the user has
+  /// already picked something.
   Widget _loadPickerEmptyState() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (_appliedCommonLoadName != null) ...[
-          _commonLoadDefaultsBanner(),
-          const SizedBox(height: 8),
-        ],
-        EmptyStateCard(
-          heading: 'No saved loads yet',
-          body:
-              'Pick a common factory load to use defaults, or build your '
-              'own ballistic profile.',
-          actions: [
-            FilledButton.icon(
-              onPressed: _pickCommonLoad,
-              icon: const Icon(Icons.flash_on_outlined),
-              label: const Text('Pick a common load'),
-            ),
-            OutlinedButton.icon(
-              onPressed: _openBallisticsScreen,
-              icon: const Icon(Icons.tune),
-              label: const Text('Create a ballistic profile'),
-            ),
-          ],
+    if (_appliedCommonLoadName != null) {
+      // User picked a common load — collapse the empty-state card
+      // to just the banner. The "No saved profiles yet" heading
+      // and the two CTA buttons are no longer relevant once they've
+      // chosen a load.
+      return _commonLoadDefaultsBanner();
+    }
+    return EmptyStateCard(
+      heading: 'No Saved Ballistic Profiles',
+      body: 'Pick a common factory load to use defaults, or build your '
+          'own ballistic profile.',
+      actions: [
+        FilledButton.icon(
+          onPressed: _pickCommonLoad,
+          icon: const Icon(Icons.flash_on_outlined),
+          label: const Text('Pick a Common Load'),
+        ),
+        OutlinedButton.icon(
+          onPressed: _openBallisticsScreen,
+          icon: const Icon(Icons.tune),
+          label: const Text('Create a Ballistic Profile'),
         ),
       ],
     );
@@ -5014,85 +5821,96 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   }
 
   Widget _firearmPicker() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text('Firearm', style: Theme.of(context).textTheme.labelLarge),
-        const SizedBox(height: 6),
-        StreamBuilder<List<UserFirearmRow>>(
-          stream: _firearmsStream,
-          builder: (context, snap) {
-            if (snap.hasError) {
-              return RangeDayInlineError(
-                message: 'Could not load firearms: ${snap.error}',
-                onRetry: () {
-                  setState(() {
-                    _firearmsStream =
-                        context.read<FirearmRepository>().watchAll();
-                  });
-                },
-              );
-            }
-            final firearms = snap.data ?? const <UserFirearmRow>[];
-            // Favorite-first sort. `UserFirearmRow.isFavorite`
-            // (schema v24) is the per-row boolean; the live
-            // stream re-emits whenever it flips.
-            final orderedFirearms = _sortFavoritesFirst<UserFirearmRow>(
-              firearms,
-              (f) => f.isFavorite,
-            );
-            // Stale-id guard — see `_profilePicker` for the rationale.
-            final selectedFirearmExists = _selectedFirearm != null &&
-                firearms.any((f) => f.id == _selectedFirearm!.id);
-            // Re-resolve so the inline favorite-star reflects the
-            // up-to-date `isFavorite` value.
-            final liveSelected = selectedFirearmExists
-                ? firearms.firstWhere((f) => f.id == _selectedFirearm!.id)
-                : null;
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                DropdownButtonFormField<int?>(
-                  initialValue:
-                      selectedFirearmExists ? _selectedFirearm!.id : null,
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    hintText: 'Optional — pick the rifle',
-                  ),
-                  items: [
-                    const DropdownMenuItem<int?>(
-                      value: null,
-                      child: Text('— None —'),
-                    ),
-                    ...orderedFirearms.map((f) => DropdownMenuItem<int?>(
-                          value: f.id,
-                          child: Text(
-                            f.isFavorite ? '★ ${f.name}' : f.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        )),
-                  ],
-                  onChanged: (id) {
-                    if (id == null) {
-                      setState(() => _selectedFirearm = null);
-                      _scheduleAutoSave();
-                      return;
-                    }
-                    final f = firearms.firstWhere((f) => f.id == id);
-                    setState(() => _selectedFirearm = f);
-                    _applyFirearmDefaults(f);
-                    _scheduleAutoSave();
-                  },
+    return StreamBuilder<List<UserFirearmRow>>(
+      stream: _firearmsStream,
+      builder: (context, snap) {
+        if (snap.hasError) {
+          return RangeDayInlineError(
+            message: 'Could not load firearms: ${snap.error}',
+            onRetry: () {
+              setState(() {
+                _firearmsStream =
+                    context.read<FirearmRepository>().watchAll();
+              });
+            },
+          );
+        }
+        final firearms = snap.data ?? const <UserFirearmRow>[];
+        // Hide the entire picker when the user has no saved firearms.
+        // A "— None —" dropdown is pointless visual noise; firearms
+        // get added through the Firearms tab and surface here once
+        // they exist. Same pattern as `_profilePicker`.
+        if (firearms.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        // Favorite-first sort. `UserFirearmRow.isFavorite` (schema v24)
+        // is the per-row boolean; the live stream re-emits whenever
+        // it flips.
+        final orderedFirearms = _sortFavoritesFirst<UserFirearmRow>(
+          firearms,
+          (f) => f.isFavorite,
+        );
+        // Stale-id guard — see `_profilePicker` for the rationale.
+        final selectedFirearmExists = _selectedFirearm != null &&
+            firearms.any((f) => f.id == _selectedFirearm!.id);
+        // Re-resolve so the inline favorite-star reflects the
+        // up-to-date `isFavorite` value.
+        final liveSelected = selectedFirearmExists
+            ? firearms.firstWhere((f) => f.id == _selectedFirearm!.id)
+            : null;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Firearm', style: Theme.of(context).textTheme.labelLarge),
+            const SizedBox(height: 6),
+            DropdownButtonFormField<int?>(
+              initialValue:
+                  selectedFirearmExists ? _selectedFirearm!.id : null,
+              isExpanded: true,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: 'Optional — pick the rifle',
+              ),
+              items: [
+                const DropdownMenuItem<int?>(
+                  value: null,
+                  child: Text('— None —'),
                 ),
-                if (liveSelected != null)
-                  _selectedFirearmFavoriteRow(liveSelected),
+                ...orderedFirearms.map((f) => DropdownMenuItem<int?>(
+                      value: f.id,
+                      child: Text(
+                        f.isFavorite ? '★ ${f.name}' : f.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    )),
               ],
-            );
-          },
-        ),
-      ],
+              onChanged: (id) {
+                if (id == null) {
+                  setState(() => _selectedFirearm = null);
+                  _scheduleAutoSave();
+                  return;
+                }
+                // Race-safe lookup — same rationale as the
+                // ballistic-profile dropdown above.
+                UserFirearmRow? f;
+                for (final ff in firearms) {
+                  if (ff.id == id) {
+                    f = ff;
+                    break;
+                  }
+                }
+                if (f == null) return;
+                setState(() => _selectedFirearm = f);
+                _applyFirearmDefaults(f);
+                _scheduleAutoSave();
+              },
+            ),
+            if (liveSelected != null)
+              _selectedFirearmFavoriteRow(liveSelected),
+          ],
+        );
+      },
     );
   }
 
@@ -5210,65 +6028,39 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     }
   }
 
-  Widget _environmentCard() {
-    final theme = Theme.of(context);
-    final summary = _envSummary();
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          InkWell(
-            onTap: () => setState(
-                () => _environmentExpanded = !_environmentExpanded),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
-              child: Row(
-                children: [
-                  Icon(Icons.cloud_outlined,
-                      color: theme.colorScheme.primary),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Environment',
-                            style: theme.textTheme.titleMedium),
-                        if (!_environmentExpanded && summary.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 2),
-                            child: Text(
-                              summary,
-                              style: theme.textTheme.bodySmall,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  Icon(_environmentExpanded
-                      ? Icons.expand_less
-                      : Icons.expand_more),
-                ],
-              ),
-            ),
-          ),
-          if (_environmentExpanded) _environmentBody(),
-        ],
-      ),
-    );
-  }
+  // Note: the standalone `_environmentCard()` was removed when the
+  // Environment fields moved INTO the Setup card as a collapsible
+  // sub-section ([_environmentSubsection]). The card was rendered
+  // separately under Setup in both `_phoneBody` and `_wideBody`;
+  // the new layout consolidates everything related to the load /
+  // distance / atmosphere into Group 1 of Setup so Quick mode users
+  // also see the environment fields without needing to flip to Full.
+  // The state field `_environmentExpanded`, the `_envSummary`
+  // helper, and the `_environmentBody` content are still used by
+  // the new subsection.
 
   String _envSummary() {
     final temp = _tempCtrl.text.trim();
     final pressure = _pressureCtrl.text.trim();
+    final humidity = _humidityCtrl.text.trim();
+    final elevation = _elevationCtrl.text.trim();
     final wind = _windSpeedCtrl.text.trim();
     final dir = _windDirCtrl.text.trim();
     final parts = <String>[];
     if (temp.isNotEmpty) parts.add('$temp°F');
     if (pressure.isNotEmpty) parts.add('$pressure inHg');
     if (wind.isNotEmpty) parts.add('Wind $wind mph @ $dir°');
+    // Anti-fake-data tell (CLAUDE.md § 0): when the user hasn't
+    // entered any of temp / pressure / humidity / elevation, the
+    // solver falls back to ICAO standard atmosphere internally.
+    // Surface that explicitly so the firing solution doesn't appear
+    // to derive from numbers the user supplied.
+    if (parts.isEmpty &&
+        humidity.isEmpty &&
+        elevation.isEmpty &&
+        wind.isEmpty) {
+      return 'Using ICAO standard atmosphere';
+    }
     return parts.join(' · ');
   }
 
@@ -5350,7 +6142,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                   child: OutlinedButton.icon(
                     onPressed: _onStopUsingKestrel,
                     icon: const Icon(Icons.bluetooth_connected),
-                    label: const Text('Stop using Kestrel'),
+                    label: const Text('Stop Using Kestrel'),
                   ),
                 );
               }
@@ -5359,7 +6151,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                 child: FilledButton.icon(
                   onPressed: _onStartUsingKestrel,
                   icon: const Icon(Icons.bluetooth),
-                  label: const Text('Use Kestrel readings'),
+                  label: const Text('Use Kestrel Readings'),
                 ),
               );
             },
@@ -5378,7 +6170,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.cloud_download_outlined),
-            label: const Text('Pull weather (Pro)'),
+            label: const Text('Pull Weather (Pro)'),
           ),
           const SizedBox(height: 8),
           // Bare button — `_environmentBody`'s Column has
@@ -5457,6 +6249,22 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
 
   // ─────────────────────── Solution card ───────────────────────
 
+  /// True when the screen has a USER-PICKED source of bullet /
+  /// projectile data — a recipe, a ballistic profile, or a "common
+  /// load" the user picked from the bottom-sheet. False when none of
+  /// the three is set (i.e. the projectile fields hold only the
+  /// placeholder defaults from initState). The Solution card and
+  /// Solution strip use this to refuse rendering computed numbers
+  /// that would be derived from those defaults — fake stats erode
+  /// trust with reloaders, who immediately spot a "9.8 MOA at 500
+  /// yd" output that doesn't correspond to any real load they
+  /// picked.
+  bool _hasRealLoadData() {
+    return _selectedLoad != null ||
+        _selectedProfile != null ||
+        _appliedCommonLoadName != null;
+  }
+
   Widget _solutionCard() {
     final theme = Theme.of(context);
     // The solver-error tile that used to live here was removed —
@@ -5467,6 +6275,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     // a recompute is pending; in error states the body simply shows
     // the previous valid solution if there was one (no flicker), or
     // the "Solving…" placeholder.
+    final hasRealData = _hasRealLoadData();
     return Card(
       clipBehavior: Clip.antiAlias,
       child: Padding(
@@ -5486,12 +6295,51 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
               ],
             ),
             const SizedBox(height: 12),
-            if (_solution == null)
+            if (!hasRealData)
+              // Refuse to render computed numbers when we don't have
+              // a user-picked load / profile / common load. The
+              // controllers still hold placeholder defaults (140 gr,
+              // .264, etc.) so the solver WOULD produce a real-
+              // looking number — but those numbers don't correspond
+              // to any actual load the user owns. Show the empty
+              // state instead. See `_hasRealLoadData()` above for
+              // the rationale.
+              _solutionEmptyState(theme)
+            else if (_solution == null)
               Text('Solving…', style: theme.textTheme.bodyMedium)
             else
               _solutionBody(_solution!),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Empty-state body for the Solution card when no real load data
+  /// has been picked yet. Tells the user explicitly what they need
+  /// to do, with no computed numbers that could be misread as a
+  /// real firing solution.
+  Widget _solutionEmptyState(ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Pick a load to compute a firing solution.',
+            style: theme.textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Open Setup → Load to choose a recipe, a ballistic '
+            "profile, or a common factory load. We won't compute "
+            "drop or wind from placeholder values — that's not "
+            'data you can trust.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -5545,13 +6393,13 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         _windUncertaintyMph > 0;
   }
 
-  /// Litz wind-bracket card. Anchored on the user's distance (not the
+  /// wind-bracket card. Anchored on the user's distance (not the
   /// long range of the DOPE table) so the hold envelope is calibrated
   /// to the shot the shooter is actually about to take. Hides cleanly
   /// when [_windUncertaintyMph] is 0, the solution panel is in error,
   /// or the bracket service can't produce a result.
   ///
-  /// Reference: Litz, *Modern Advancements in Long-Range Shooting*
+  /// Reference: industry standard, exterior-ballistics literature
   /// vol. 1 ch. 5 — the bracket method turns wind-call uncertainty
   /// into a +/- hold the shooter can read off the screen instead of
   /// pretending the wind reading is exact.
@@ -6226,9 +7074,20 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     if (dopeTargetName != null) buf.writeln('Target: $dopeTargetName');
     buf.writeln(
         'MV ${_muzzleVelCtrl.text} fps · BC ${_bcCtrl.text} (${_dragModel.short})');
-    buf.writeln(
-        'Wind ${_windSpeedCtrl.text} mph @ ${_windDirCtrl.text}° · '
-        '${_tempCtrl.text}°F · ${_pressureCtrl.text} inHg');
+    final windText = _windSpeedCtrl.text.trim();
+    final tempText = _tempCtrl.text.trim();
+    final pressureText = _pressureCtrl.text.trim();
+    final envParts = <String>[];
+    if (windText.isNotEmpty) {
+      envParts.add('Wind $windText mph @ ${_windDirCtrl.text}°');
+    }
+    if (tempText.isNotEmpty) envParts.add('$tempText°F');
+    if (pressureText.isNotEmpty) envParts.add('$pressureText inHg');
+    if (envParts.isEmpty) {
+      buf.writeln('Atmosphere: ICAO standard');
+    } else {
+      buf.writeln(envParts.join(' · '));
+    }
     buf.writeln('');
     buf.writeln('Range   Drop      Wind      TOF');
     for (final s in _dopeRows) {
@@ -6689,6 +7548,22 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     final theme = Theme.of(context);
     final hp = _hitProb;
     if (hp == null || _selectedTarget == null) {
+      // Empty-state copy is order-of-precedence: the user has to
+      // pick a load AND a target AND a distance before there's
+      // anything meaningful to compute. We don't show a fake
+      // percentage based on placeholder defaults — see CLAUDE.md
+      // § 0 + the `_hasRealLoadData()` / distance gate inside
+      // `_computeHitProb`.
+      String reason;
+      if (!_hasRealLoadData()) {
+        reason = 'Pick a load to see hit probability.';
+      } else if ((double.tryParse(_distanceCtrl.text.trim()) ?? 0) <= 0) {
+        reason = 'Enter a distance to see hit probability.';
+      } else if (_selectedTarget == null) {
+        reason = 'Pick a target to see hit probability.';
+      } else {
+        reason = 'Computing hit probability…';
+      }
       return Card(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
@@ -6697,12 +7572,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
               Icon(Icons.bar_chart, color: theme.colorScheme.primary),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  _selectedTarget == null
-                      ? 'Pick a target to see hit probability.'
-                      : 'Computing hit probability…',
-                  style: theme.textTheme.bodyMedium,
-                ),
+                child: Text(reason, style: theme.textTheme.bodyMedium),
               ),
             ],
           ),
@@ -7167,7 +8037,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       stats.groupSizeCiLow90PctIn != null &&
       stats.groupSizeCiHigh90PctIn != null;
 
-  /// Litz-style 90% confidence-interval block. Shows the user that the
+  /// 90% confidence-interval block. Shows the user that the
   /// observed group size has uncertainty bands that depend on sample
   /// size, and adds a small coaching caption that gets less alarming
   /// as N grows.
@@ -7238,7 +8108,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     }
 
     // Coaching caption tied to sample-size tier. Phrased as
-    // observation rather than nag — Litz's whole point is that the
+    // observation rather than nag — the whole point is that the
     // shooter should care, not that the app should hector.
     String caption;
     if (n == 3) {
@@ -7487,6 +8357,11 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     // here would cause ~50 Hz rebuilds + the `parentDataDirty` storm.
     final cant = context.read<CantService>().cantDegrees;
     if (s == null) return const SizedBox.shrink();
+    // Same fake-stats guard as the Solution card body. The strip is
+    // the most prominent surface on the screen; rendering hold
+    // values from placeholder defaults would be the worst place to
+    // mislead the user. Hide entirely until a real load is picked.
+    if (!_hasRealLoadData()) return const SizedBox.shrink();
     final loadLabel = _selectedLoad?.name ??
         _selectedProfile?.name ??
         (_bulletWeightCtrl.text.isEmpty
@@ -7535,16 +8410,34 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
             const SizedBox(height: 2),
             Row(
               children: [
-                Icon(Icons.air, size: 14, color: theme.colorScheme.primary),
-                const SizedBox(width: 4),
-                Text(
-                  'Wind ${wind.toStringAsFixed(0)} mph @ $clock',
-                  style: theme.textTheme.bodySmall,
+                // Wind chip is conditional: a zero / empty wind value
+                // would render as "Wind 0 mph @ 12 o'clock" which is
+                // visual noise. Hide the entire chip until the user
+                // has actually entered wind. The solver still runs
+                // (it just reads 0 mph drift internally).
+                if (wind > 0) ...[
+                  Icon(Icons.air, size: 14, color: theme.colorScheme.primary),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Wind ${wind.toStringAsFixed(0)} mph @ $clock',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                  const SizedBox(width: 12),
+                ],
+                // Elevation correction is what the user dials on the
+                // turret — call it "Dial", not "Hold". To a precision
+                // shooter "hold" specifically means using a reticle
+                // subtension instead of moving the turret. The arrow
+                // flips on sign so a near-zero-distance shot (bullet
+                // above LoS) shows down-arrow + the magnitude.
+                Icon(
+                  s.dropInches >= 0
+                      ? Icons.arrow_upward
+                      : Icons.arrow_downward,
+                  size: 14,
+                  color: theme.colorScheme.primary,
                 ),
-                const SizedBox(width: 12),
-                Icon(Icons.arrow_upward,
-                    size: 14, color: theme.colorScheme.primary),
-                Text(' Hold $dropStr',
+                Text(' Dial ${dropStr.replaceFirst('-', '')}',
                     style: theme.textTheme.bodySmall?.copyWith(
                       fontFeatures: const [FontFeature.tabularFigures()],
                       fontWeight: FontWeight.w500,
@@ -7662,6 +8555,185 @@ class _DopeBodyCell extends StatelessWidget {
 enum _ShotEditResult { cancel, save, delete }
 
 /// Small bag of "this device gave us this reading" used by the
+/// Inline target thumbnail — renders the target large and centered
+/// on a soft-tinted background. NOT the full daytime backdrop (which
+/// only fits in tall canvases). Used by Range Day Setup → Group 2
+/// and the tap-to-zoom dialog body.
+///
+/// The target paint scales to 70% of the shorter canvas axis so the
+/// shape fills the box without clipping. IPSC silhouettes use the
+/// proper 1.6:1 height-to-width ratio; squares/rectangles honour
+/// their actual `widthIn × heightIn` aspect; circles are 1:1; the
+/// new "star" shape draws a 5-pointed Texas Star with a central hub
+/// and five satellite plates.
+class _TargetThumbnail extends StatelessWidget {
+  const _TargetThumbnail({required this.spec, required this.color});
+  final TargetSpec spec;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+              theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.25),
+            ],
+          ),
+        ),
+        child: CustomPaint(
+          painter: _TargetThumbnailPainter(spec: spec, color: color),
+          child: const SizedBox.expand(),
+        ),
+      ),
+    );
+  }
+}
+
+class _TargetThumbnailPainter extends CustomPainter {
+  _TargetThumbnailPainter({required this.spec, required this.color});
+  final TargetSpec spec;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    if (w <= 0 || h <= 0) return;
+    final fill = Paint()..color = color;
+    final outline = Paint()
+      ..color = const Color(0xff1f1d1a)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = math.max(1.0, math.min(w, h) * 0.006);
+    final centerX = w / 2;
+    final centerY = h / 2;
+    // Limit the target to ~78% of the shorter axis so it has room to
+    // breathe inside the box without touching the border.
+    final maxBox = math.min(w, h) * 0.78;
+    final shape = spec.shape.toLowerCase();
+    switch (shape) {
+      case 'circle':
+        final r = maxBox / 2;
+        canvas.drawCircle(Offset(centerX, centerY), r, fill);
+        canvas.drawCircle(Offset(centerX, centerY), r, outline);
+      case 'star':
+        _paintTexasStar(canvas, centerX, centerY, maxBox / 2, fill, outline);
+      case 'silhouette':
+      case 'ipsc':
+      case 'idpa':
+      case 'human':
+        // Honor the catalog's actual aspect ratio (typically ~18:30
+        // for full-size IPSC). The tallest dimension fills the
+        // shorter axis up to maxBox; width follows the aspect.
+        final aspect = spec.heightIn <= 0
+            ? 1.6
+            : spec.widthIn / spec.heightIn;
+        final heightPx = maxBox;
+        final widthPx = heightPx * aspect;
+        final headW = widthPx * 0.55;
+        final headH = heightPx * 0.32;
+        final bodyW = widthPx;
+        final bodyH = heightPx * 0.70;
+        final headRect = Rect.fromCenter(
+          center: Offset(centerX, centerY - heightPx * 0.40),
+          width: headW,
+          height: headH,
+        );
+        final bodyRect = Rect.fromCenter(
+          center: Offset(centerX, centerY + heightPx * 0.10),
+          width: bodyW,
+          height: bodyH,
+        );
+        final body = RRect.fromRectAndRadius(
+          bodyRect, Radius.circular(widthPx * 0.08));
+        final head = RRect.fromRectAndRadius(
+          headRect, Radius.circular(widthPx * 0.18));
+        canvas.drawRRect(body, fill);
+        canvas.drawRRect(head, fill);
+        canvas.drawRRect(body, outline);
+        canvas.drawRRect(head, outline);
+      case 'rectangle':
+      case 'square':
+      default:
+        // Honor the actual width:height ratio so a 18×24 plate
+        // doesn't draw as a square.
+        final aspect = (spec.heightIn <= 0 || spec.widthIn <= 0)
+            ? 1.0
+            : spec.widthIn / spec.heightIn;
+        double rectW;
+        double rectH;
+        if (aspect >= 1.0) {
+          rectW = maxBox;
+          rectH = maxBox / aspect;
+        } else {
+          rectH = maxBox;
+          rectW = maxBox * aspect;
+        }
+        final rect = Rect.fromCenter(
+          center: Offset(centerX, centerY),
+          width: rectW,
+          height: rectH,
+        );
+        canvas.drawRect(rect, fill);
+        canvas.drawRect(rect, outline);
+    }
+  }
+
+  /// Paints a Texas Star: central hub with five satellite plates
+  /// arranged radially. The actual reactive target has plates that
+  /// rotate around the central hub when hit; for the static preview
+  /// we just render the layout. Black armature lines connect the
+  /// hub to each plate so the shape reads as a star, not a circle.
+  void _paintTexasStar(
+    Canvas canvas,
+    double cx,
+    double cy,
+    double radius,
+    Paint fill,
+    Paint outline,
+  ) {
+    // Plate sizing — central hub is small; satellite plates are
+    // larger and sit at the radius. Five satellites at 72° apart
+    // starting from the top.
+    final hubR = radius * 0.18;
+    final plateR = radius * 0.22;
+    final orbitR = radius * 0.78;
+    final armPaint = Paint()
+      ..color = const Color(0xff1f1d1a)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = math.max(2.0, radius * 0.04);
+    // Arms first so the plates draw on top.
+    for (var i = 0; i < 5; i++) {
+      final angle = -math.pi / 2 + i * (2 * math.pi / 5);
+      final px = cx + orbitR * math.cos(angle);
+      final py = cy + orbitR * math.sin(angle);
+      canvas.drawLine(Offset(cx, cy), Offset(px, py), armPaint);
+    }
+    // Central hub.
+    canvas.drawCircle(Offset(cx, cy), hubR, fill);
+    canvas.drawCircle(Offset(cx, cy), hubR, outline);
+    // Five satellite plates.
+    for (var i = 0; i < 5; i++) {
+      final angle = -math.pi / 2 + i * (2 * math.pi / 5);
+      final px = cx + orbitR * math.cos(angle);
+      final py = cy + orbitR * math.sin(angle);
+      canvas.drawCircle(Offset(px, py), plateR, fill);
+      canvas.drawCircle(Offset(px, py), plateR, outline);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _TargetThumbnailPainter old) {
+    return old.spec != spec || old.color != color;
+  }
+}
+
 /// _rangefinderQuickFill picker to find the freshest reading across
 /// all connected rangefinders. The reading is nullable so we can build
 /// the candidate list without first filtering — a tiny convenience.

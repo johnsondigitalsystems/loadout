@@ -4,7 +4,7 @@
 // WHAT THIS FILE DOES
 // ============================================================================
 // Widget smoke tests for `lib/screens/range_day/bc_truing_screen.dart`
-// — the Bryan Litz BC-truing wizard. Confirms the screen renders across
+// — the industry-standard BC-truing wizard. Confirms the screen renders across
 // the matrix of states the production app surfaces:
 //
 //   * fresh-install user (empty DB),

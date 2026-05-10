@@ -4,8 +4,9 @@
 // WHAT THIS FILE DOES
 // ============================================================================
 // Owns all database operations for [AtmospherePresets], the user-saved
-// atmospheric profile catalog (Bryan Litz's "Applied Ballistics" pattern —
-// "Camp Atterbury summer", "Big Sandy", "Cold dry day"). The underlying
+// atmospheric profile catalog (the "Applied Ballistics" pattern of
+// named environment snapshots — "Camp Atterbury summer", "Big Sandy",
+// "Cold dry day"). The underlying
 // drift table is `AtmospherePresets` (defined in
 // `lib/database/database.dart`); this file is the only Dart code that
 // reads or writes it.
@@ -51,6 +52,42 @@
 // Constructed once in `lib/app.dart` and provided to the widget tree
 // via `Provider<AtmospherePresetRepository>`. Screens read it with
 // `context.read<AtmospherePresetRepository>()`.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+//   * **Natural-sort happens in Dart, not SQL.** Drift's SQL ORDER
+//     BY can't express the natural comparator (which treats embedded
+//     numbers numerically: "Camp #2" sorts after "Camp #1" not
+//     before "Camp #10"). The repository fetches unordered and
+//     sorts in Dart — same pattern as `FirearmRepository.watchAll`.
+//   * **No FK cascade on delete.** Deleting a preset deliberately
+//     does NOT clear `RangeDaySessions.atmospherePresetId` — the
+//     Range Day picker resolves a dangling id to "Custom" and the
+//     session's `updatedAt` doesn't bump for an unrelated change.
+//     Cascading would create cross-table churn that confuses Cloud
+//     Sync's last-writer-wins reconciler.
+//   * **Insert / update bump `updatedAt` automatically.** Cloud
+//     Sync reads this column. A future "silent update" path that
+//     bypasses the bump would stop the row from syncing.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - lib/screens/atmosphere/atmosphere_presets_screen.dart — the
+//   manage-presets list + edit form.
+// - lib/widgets/atmosphere_preset_picker.dart — picker sheet
+//   embedded on Ballistics + Range Day Environment cards.
+// - lib/screens/ballistics/ballistics_screen.dart + Range Day —
+//   subscribe to `watchAll()` for the inline picker dropdown.
+// - lib/app.dart — constructs and provides the singleton.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// Reads / writes against the local SQLite database via drift. No
+// JSON encoding (every column is typed). No network. No shared
+// preferences.
 
 import 'package:drift/drift.dart';
 

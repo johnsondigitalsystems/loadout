@@ -5,8 +5,8 @@
 public distribution as-is.
 **Predecessor:** `marketing/competitive_audit.md` (Strelok-only audit;
 the v2 retains the Strelok column, expands the field to include
-Applied Ballistics Quantum and Ballistic AE, and folds in the Bryan
-Litz research summary).
+Applied Ballistics Quantum and Ballistic AE, and folds in the
+modern long-range exterior-ballistics research summary).
 
 **Sources used (citations linked inline below):**
 
@@ -27,15 +27,15 @@ Litz research summary).
   - [The Science of Accuracy — Device License Levels](https://thescienceofaccuracy.com/understanding-device-license-levels-and-their-benefits-in-ab-quantum/) — Pro vs Elite tier breakdown, hardware unlocks (Kestrel 5700X-WEZ unlocks Pro, Kestrel 5700x Elite unlocks Elite, etc.).
   - [PrecisionRifleBlog AB Quantum announcement](https://precisionrifleblog.com/2024/12/03/new-release-applied-ballistics-quantum-app/) — context for AB Mobile → AB Quantum rebranding.
   - [AB Mobile User Guide v2.2 (2018 PDF)](https://appliedballisticsllc.com/wp-content/uploads/2019/11/ABMobileUserGuide.pdf) — older AB Mobile feature set.
-  - [Bryan Litz, "The Evolution of Ballistic Calibration" (2025 PDF)](https://appliedballisticsllc.com/wp-content/uploads/2025/01/CDF.pdf) — Custom Drag Factor (CDF) methodology paper.
-  - [Bryan Litz, "Shot-to-Shot Variation in MV and BC" (PDF)](https://appliedballisticsllc.com/wp-content/uploads/2020/08/BC_SD_Effects.pdf) — error budget analysis.
+  - [Applied Ballistics LLC, "The Evolution of Ballistic Calibration" (2025 PDF)](https://appliedballisticsllc.com/wp-content/uploads/2025/01/CDF.pdf) — Custom Drag Factor (CDF) methodology paper.
+  - [Applied Ballistics LLC, "Shot-to-Shot Variation in MV and BC" (PDF)](https://appliedballisticsllc.com/wp-content/uploads/2020/08/BC_SD_Effects.pdf) — error budget analysis.
 - Ballistic AE / Ballistic Advanced Edition (Inert Solutions):
   - [Ballistic Advanced Edition on Apple App Store](https://apps.apple.com/us/app/ballistic-advanced-edition/id303254296) — feature list, Kestrel LiNK $9.99 IAP, JBM engine, 5,000 projectile library, Advanced Wind Kit (8 sources), iCloud Sync.
   - [Pew Pew Tactical 8 Best Ballistic Calculator Apps](https://www.pewpewtactical.com/best-ballistic-calculator-apps/) — community reference for app comparisons.
-- Bryan Litz published works:
+- Modern long-range exterior-ballistics literature:
   - ["Applied Ballistics for Long Range Shooting" 4th Edition product page](https://thescienceofaccuracy.com/product/applied-ballistics-for-long-range-shooting-4th-edition/) — chapter list (BC, wind deflection, gyroscopic spin drift, Coriolis, sights, stability, extended range).
   - ["Modern Advancements in Long Range Shooting" Vol. I product page](https://store.accuracy1st.com/products/modern-advances-in-long-range-shooting) — twist-rate effects on BC, chronograph testing, rangefinder / wind-meter chapter.
-  - ["Modern Advancements in Long Range Shooting" Vol. III product page](https://thescienceofaccuracy.com/product/modern-advancements-long-range-shooting-3/) and [Cal Zant's preview](https://precisionrifleblog.com/2022/08/14/sneak-peek-of-bryan-litzs-new-book-volume-iii-of-modern-advancements-in-long-range-shooting/) — TOP Gun precision-class formula, barrel tuner testing, BC variation, ladder testing, powder humidity, barrel break-in, drag-modeling evolution, transonic aero, large-caliber spin, bore-groove diameter, chronograph testing.
+  - ["Modern Advancements in Long Range Shooting" Vol. III product page](https://thescienceofaccuracy.com/product/modern-advancements-long-range-shooting-3/) — TOP Gun precision-class formula, barrel tuner testing, BC variation, ladder testing, powder humidity, barrel break-in, drag-modeling evolution, transonic aero, large-caliber spin, bore-groove diameter, chronograph testing.
   - ["Accuracy and Precision for Long Range Shooting" product page](https://thescienceofaccuracy.com/product/accuracy-and-precision-for-long-range-shooting/) — three-part structure (Precision / Accuracy / WEZ Analysis).
 - Strelok / Ballistic Calculator 2026: see citations carried forward in the v1 audit.
 
@@ -43,11 +43,11 @@ Litz research summary).
 
 ## Executive summary
 
-LoadOut sits **between** three quite different competitors. **Strelok / Ballistic Calculator 2026** is the legacy mass-market calculator with a deep cartridge / reticle catalog and shallow workflow. **Applied Ballistics Quantum** is the chief-ballistician's product — Litz himself co-signs the math, has a Doppler-radar CDM library Berger / AB licenses commercially, integrates with the Kestrel 5700X-WEZ and the Leica Geovid Pro AB+ to unlock Pro tier features, and ships full WEZ analysis. **Ballistic AE** is the Apple-ecosystem premium solver — JBM engine, 5,000 projectile library, iCloud Sync, Kestrel LiNK, $30 one-time + $9.99 IAP for hardware. None of them is a reloading workspace.
+LoadOut sits **between** three quite different competitors. **Strelok / Ballistic Calculator 2026** is the legacy mass-market calculator with a deep cartridge / reticle catalog and shallow workflow. **Applied Ballistics Quantum** is the chief-ballistician's product — its in-house team owns the math, ships a Doppler-radar CDM library Berger / AB licenses commercially, integrates with the Kestrel 5700X-WEZ and the Leica Geovid Pro AB+ to unlock Pro tier features, and ships full WEZ analysis. **Ballistic AE** is the Apple-ecosystem premium solver — JBM engine, 5,000 projectile library, iCloud Sync, Kestrel LiNK, $30 one-time + $9.99 IAP for hardware. None of them is a reloading workspace.
 
 LoadOut leads all three on **the bench layer**: recipes with 60+ optional fields, lot-aware brass lifecycle, batch tracking, photo OCR, end-to-end encrypted Cloud Sync to the user's own cloud. We trail **Applied Ballistics Quantum** on three measurable axes — full WEZ analysis (we ship single-aim-point hit probability, not the surface across the engagement window), the AB-licensed Doppler CDM library, and the chief-ballistician brand. We trail **Ballistic AE** on raw projectile count, JBM-engine pedigree, Apple-ecosystem-only depth, and HUD / night-mode polish. We trail **Strelok** on raw cartridge / reticle count and 19-year brand pedigree.
 
-**v1.0 priority** is to close the WEZ-analysis gap (we have all the inputs already — wind uncertainty, MV SD, group MOA, range estimation error are all live in `HitProbabilityService`; we just don't sweep across the engagement window) and to ship BC truing as a first-class workflow (the only Litz calibration we still don't support). Both are software-only; neither needs a partnership.
+**v1.0 priority** is to close the WEZ-analysis gap (we have all the inputs already — wind uncertainty, MV SD, group MOA, range estimation error are all live in `HitProbabilityService`; we just don't sweep across the engagement window) and to ship BC truing as a first-class workflow (the only published Applied Ballistics calibration we still don't support). Both are software-only; neither needs a partnership.
 
 ---
 
@@ -64,10 +64,10 @@ LoadOut leads all three on **the bench layer**: recipes with 60+ optional fields
 
 ### Applied Ballistics Quantum (formerly AB Mobile)
 
-- **Publisher:** Applied Ballistics LLC (Berger Bullets / Ammo Inc subsidiary; Bryan Litz, Chief Ballistician).
+- **Publisher:** Applied Ballistics LLC (Berger Bullets / Ammo Inc subsidiary).
 - **Pricing:** Ultralite tier free. Elite $2.99/mo or $19.99/yr; Pro $3.99/mo or $29.99/yr ([App Store](https://apps.apple.com/us/app/ab-quantum/id785619104)). Hardware unlocks: Kestrel 5700X-WEZ unlocks Pro features, Kestrel 5700x Elite unlocks Elite features, Leica Geovid Pro AB+ unlocks Pro features ([The Science of Accuracy](https://thescienceofaccuracy.com/understanding-device-license-levels-and-their-benefits-in-ab-quantum/)).
 - **Audience:** Mil/LE, PRS top tier, ELR shooters. The premium tier of the precision-rifle market.
-- **Reputation:** **The reference engine for serious long-range work.** Bryan Litz's published research is the math behind it; the Doppler-radar-derived Custom Drag Models ship with the app. Kestrel and Leica integrate AB Pro / Elite by license. The AB Mobile → AB Quantum rebrand happened December 2024 ([PrecisionRifleBlog](https://precisionrifleblog.com/2024/12/03/new-release-applied-ballistics-quantum-app/)).
+- **Reputation:** **The reference engine for serious long-range work.** Applied Ballistics' published research is the math behind it; the Doppler-radar-derived Custom Drag Models ship with the app. Kestrel and Leica integrate AB Pro / Elite by license. The AB Mobile → AB Quantum rebrand happened December 2024 ([PrecisionRifleBlog](https://precisionrifleblog.com/2024/12/03/new-release-applied-ballistics-quantum-app/)).
 - **Strengths:** Doppler-radar CDM library (thousands of bullets), full WEZ analysis with sensitivity, AB Spotter (AI ballistics expert), AB Learn (educational content), Bluetooth chronograph (Garmin Xero C2, Optex SpeedTracker), 50+ Bluetooth devices, AB Quantum Connect/Sync (encrypted cloud sync of rifle profiles).
 - **Weaknesses:** Subscription-only above the free tier (no lifetime), no reloading workspace at all (zero recipe / brass / batch concepts), Pro features lock most users out (true Pro requires both subscription AND Pro-licensed hardware OR the $29.99/yr subscription override), 308 MB app size, AB Spotter / AB Learn / E-Dope only on Pro subscription.
 
@@ -77,7 +77,7 @@ LoadOut leads all three on **the bench layer**: recipes with 60+ optional fields
 - **Pricing:** ~$29.99 one-time as Ballistic Advanced Edition on the App Store; Kestrel LiNK $9.99 add-on IAP per the [App Store listing](https://apps.apple.com/us/app/ballistic-advanced-edition/id303254296). No subscription.
 - **Audience:** Apple-ecosystem hunters and target shooters. iOS-first (the Mac and Apple Watch versions ship the same Catalyst codebase).
 - **Reputation:** **The premium iOS solver.** Long-running, polished UI, "go-to" for hunters who already live in Apple. Uses the [JBM ballistics engine](https://www.jbmballistics.com/) under the hood — JBM's solver is itself a respected community resource published by James Boatright.
-- **Strengths:** ~5,000 projectile library (largest in the apps surveyed) including Bryan Litz custom G7 BCs, Advanced Wind Kit (up to 8 wind sources), iCloud Sync of favorites/optics/range log, HUD with Mil-Dot rangefinder, 3D trajectory imaging, atmospheric pressure via iPhone barometer.
+- **Strengths:** ~5,000 projectile library (largest in the apps surveyed) including Applied-Ballistics custom G7 BCs, Advanced Wind Kit (up to 8 wind sources), iCloud Sync of favorites/optics/range log, HUD with Mil-Dot rangefinder, 3D trajectory imaging, atmospheric pressure via iPhone barometer.
 - **Weaknesses:** iOS-only (no Android, no Web, native Mac is iPad Catalyst), no full WEZ analysis (single trajectory + Mil-Dot HUD), no reloading workspace, limited custom drag model support (G1/G7 + Stepped BC only — no Hornady 4DOF, no Doppler CDMs), no continuous Cloud Sync — only iCloud "favorites" backup, no native Wear OS.
 
 ### LoadOut (us)
@@ -86,35 +86,38 @@ LoadOut leads all three on **the bench layer**: recipes with 60+ optional fields
 
 ---
 
-## Bryan Litz — research summary and LoadOut implementation status
+## Modern long-range methodology — research summary and LoadOut implementation status
 
-Litz is Chief Ballistician at Berger Bullets / Applied Ballistics LLC. His
-work is the modern reference for long-range shooting math. He earned an
-Aerospace Engineering degree at Penn State (2002) and worked 6 years
-on Air Force air-to-air missile simulation before joining Berger in 2008
-([bio summary](https://thescienceofaccuracy.com/product/applied-ballistics-for-long-range-shooting-4th-edition/)).
+The published Applied Ballistics methodology is the modern reference
+for long-range shooting math. The book series and supporting papers
+cover spin drift, aerodynamic jump, atmosphere, Coriolis, custom
+drag modelling, BC truing, group statistics, and weapon-employment-
+zone analysis.
 
-**Important framing:** LoadOut is **not Litz-affiliated**. We use his
-**published** formulas with attribution. Where Applied Ballistics ships
-licensed material (the Doppler-radar CDM library, AB-Pro-tier hardware
-integrations), we have no equivalent and don't claim parity. Our
-positioning is "Litz-aware ballistics," meaning we honor his published
-methodology, never "Litz-endorsed."
+**Important framing:** LoadOut is **not affiliated with Applied
+Ballistics LLC, Berger Bullets, or any author of the underlying
+literature.** We use the **published** formulas with citation. Where
+Applied Ballistics ships licensed material (the Doppler-radar CDM
+library, AB-Pro-tier hardware integrations), we have no equivalent
+and don't claim parity. Our positioning is "industry-standard
+exterior-ballistics math," meaning we honor the published
+methodology — never "Applied-Ballistics-endorsed."
 
 ### Published works covered
 
 | Book | Edition / year | Source |
 |---|---|---|
 | Applied Ballistics for Long-Range Shooting | 4th edition (3rd ed. 2015 ISBN 9780990920618) | [Science of Accuracy](https://thescienceofaccuracy.com/product/applied-ballistics-for-long-range-shooting-4th-edition/) |
-| Accuracy and Precision for Long-Range Shooting | 1st (2012, ISBN 9780615672557) | [kestrelmeters.com](https://kestrelmeters.com/accuracy-and-precision-for-long-range-shooting-by-bryan-litz) |
-| Modern Advancements in Long-Range Shooting Vol. I | 2014 (ISBN 9780692208434) | [Accuracy 1st](https://store.accuracy1st.com/products/modern-advances-in-long-range-shooting) |
-| Modern Advancements in Long-Range Shooting Vol. II | 2017 | [Berger Bullets](https://bergerbullets.com/bryan-litz-books/) |
-| Modern Advancements in Long-Range Shooting Vol. III | 2022 | [Science of Accuracy](https://thescienceofaccuracy.com/product/modern-advancements-long-range-shooting-3/), [PrecisionRifleBlog preview](https://precisionrifleblog.com/2022/08/14/sneak-peek-of-bryan-litzs-new-book-volume-iii-of-modern-advancements-in-long-range-shooting/) |
+| Accuracy and Precision for Long-Range Shooting | 1st (2012, ISBN 9780615672557) | [Science of Accuracy](https://thescienceofaccuracy.com/product/accuracy-and-precision-for-long-range-shooting/) |
+| Modern Advancements in Long Range Shooting Vol. I | 2014 (ISBN 9780692208434) | [Accuracy 1st](https://store.accuracy1st.com/products/modern-advances-in-long-range-shooting) |
+| Modern Advancements in Long Range Shooting Vol. II | 2017 | [Science of Accuracy](https://thescienceofaccuracy.com/product/modern-advancements-in-long-range-shooting-volume-ii/) |
+| Modern Advancements in Long Range Shooting Vol. III | 2022 | [Science of Accuracy](https://thescienceofaccuracy.com/product/modern-advancements-long-range-shooting-3/) |
 
-Litz also cites Harold Vaughn's 1998 "Rifle Accuracy Facts" (ISBN
-9781571570112) extensively — barrel harmonics, bullet imbalance, etc.
-That work is upstream of Litz; we treat it as foundational rather than
-something to "implement against."
+The literature also cites Harold Vaughn's 1998 "Rifle Accuracy Facts"
+(ISBN 9781571570112) extensively — barrel harmonics, bullet
+imbalance, etc. That work is upstream of the modern long-range
+synthesis; we treat it as foundational rather than something to
+"implement against."
 
 ### Methodology / formula table
 
@@ -124,35 +127,35 @@ something to "implement against."
 | 2 | **Aerodynamic jump from cant × cross-wind** `aero_jump_in ≈ 0.087 × cross_wind_mph × tof × velocity_fps / 1000` | *Modern Advancements* Vol. III; original derivation in *Applied Ballistics* "Wind Deflection" chapter | **Implemented** as per-sample correction in [solver.dart:898–909](../lib/services/ballistics/solver.dart) plus the cant×crosswind angular term from *Modern Advancements* Vol. III | — | — |
 | 3 | **Custom Drag Model (CDM) philosophy** — measure Cd-vs-Mach via Doppler radar, more accurate than BC alone in transonic region | *Modern Advancements* Vol. I (twist effects on BC) and Vol. III chapters 9–10 (Doppler-radar drag-model evolution) | **Partial** — we ship 300 Hornady 4DOF curves with PCHIP interpolation in [`custom_drag.dart`](../lib/services/ballistics/custom_drag.dart) and 6 standard tables in [`drag_functions.dart`](../lib/services/ballistics/drag_functions.dart). We don't ship Berger/AB CDMs (that's licensed material). | We can't ingest the AB Doppler library; we can ingest more public Doppler curves (Hornady) | Small — data work only |
 | 4 | **Weapon Employment Zone (WEZ) analysis** — Monte Carlo across the engagement window with target size + range estimation error + wind uncertainty + MV SD + group MOA, surfaces a hit-probability surface and per-input sensitivity | *Accuracy and Precision for Long-Range Shooting* Part 3 (entire third of the book is WEZ); examples throughout *Applied Ballistics* "Extended Range Shooting" | **Service + screen shipped 2026-05-08.** [`wez_analysis_service.dart`](../lib/services/wez_analysis_service.dart) computes the WEZ curve and per-source variance breakdown; [`wez_analysis_screen.dart`](../lib/screens/range_day/wez_analysis_screen.dart) renders the curve. [`hit_probability_service.dart`](../lib/services/hit_probability_service.dart) covers the single-aim-point case. | Polish + wire the screen into Range Day tabs; add 2D heatmap for v1.2 | **Tiny** — math + UI both done |
-| 5 | **BC truing** — observed-vs-predicted impact at distance back-solves a BC correction (Custom Drag Factor — CDF) | *Applied Ballistics* "Using Ballistics Programs" chapter; full standalone treatment in [Litz's 2025 CDF paper](https://appliedballisticsllc.com/wp-content/uploads/2025/01/CDF.pdf) | **Service shipped, no UI yet.** [`bc_truing_service.dart`](../lib/services/bc_truing_service.dart) (created 2026-05-08) provides `trueBcFromSingleObservation` and `trueBcFromObservations` (bisection + golden-section). **Missing the screen** that lets a user enter observations and apply the trued BC to a load. | Build a BC-truing screen that takes (distance, observed mil hold) and writes the trued BC back to the load | **Small** — math is done; needs only the UI + a schema column to persist |
+| 5 | **BC truing** — observed-vs-predicted impact at distance back-solves a BC correction (Custom Drag Factor — CDF) | *Applied Ballistics* "Using Ballistics Programs" chapter; full standalone treatment in [the 2025 CDF paper](https://appliedballisticsllc.com/wp-content/uploads/2025/01/CDF.pdf) | **Service shipped, no UI yet.** [`bc_truing_service.dart`](../lib/services/bc_truing_service.dart) (created 2026-05-08) provides `trueBcFromSingleObservation` and `trueBcFromObservations` (bisection + golden-section). **Missing the screen** that lets a user enter observations and apply the trued BC to a load. | Build a BC-truing screen that takes (distance, observed mil hold) and writes the trued BC back to the load | **Small** — math is done; needs only the UI + a schema column to persist |
 | 6 | **Drop Per Click (DPC) / sight-scale calibration** — observed dial-vs-impact ratio calibrates sight scale | *Applied Ballistics* "Getting Control of Sights" chapter; tall-target test methodology | **Static field only.** We have `sightScaleVertical` and `sightScaleHorizontal` in [solver.dart:609,613,652,656](../lib/services/ballistics/solver.dart) but no auto-calibration workflow that takes a tall-target measurement and computes the factor. | A wizard: enter dialed mils + measured impact → solve for scale | **Small** — math is `actual_dial / measured_impact`; needs a UI screen |
 | 7 | **Multiple atmosphere profiles** — save zero atmosphere + multiple "shooting atmosphere" presets, switch between them quickly | *Applied Ballistics* "Atmosphere" / "Using Ballistics Programs" chapters; *Accuracy and Precision* Part 2 | **Single profile per ballistic profile.** [`BallisticProfiles`](../lib/database/database.dart) stores ONE atmosphere per row; the calculator screen has one zero-atmosphere field separate from runtime, but no preset library. | Add an `AtmospherePresets` table + picker | **Small** — schema bump + UI |
 | 8 | **Wind bracket method** — bracket the wind call between low/high estimates, compute holds for both | *Applied Ballistics* "Wind Deflection" chapter; *Accuracy and Precision* Part 3 worked example | **Not implemented as a UI surface.** Our hit-probability service already accepts `windUncertaintyMph` and re-solves at base ± U, but we don't surface low/high holds as a separate "wind bracket card." | Add a "wind bracket card" UI on the ballistics + range-day screens that surfaces solver runs at (wind-low, wind-call, wind-high) | **Small** — math already exists, needs UI |
-| 9 | **Group MOA confidence intervals** — group MOA from N shots has a wide CI; Litz publishes the distribution math | *Accuracy and Precision* Part 1 (precision); also *Modern Advancements* Vol. III ch. 3 ("TOP Gun" precision-class formula) | **Group MOA reported, no CI.** [`group_stats.dart`](../lib/services/ballistics/group_stats.dart) computes ES, MR, σ_x, σ_y, group size MOA — none with confidence intervals or sample-size effects. | Add CI based on χ² distribution for σ-based metrics; use simulation for ES (which has no closed form) | **Medium** — math in *Accuracy and Precision*; reasonable test coverage required |
-| 10 | **Twist-rate effects on BC** — same bullet through different twists changes effective BC; Litz quantifies the effect | *Modern Advancements* Vol. I "twist rate effects on muzzle velocity / BC / precision" | **Not modeled.** [`projectile.dart`](../lib/services/ballistics/projectile.dart) computes Miller stability from twist + length + diameter, but doesn't apply Litz's BC-vs-twist-rate correction (i.e. an Sg-low bullet has 3–5% degraded BC). | Apply a BC correction when Sg < 1.5 per Litz Vol. I tables | **Small** — formula is one multiplier |
-| 11 | **Pejsa stability formula** alongside Miller — Litz discusses both | *Applied Ballistics* "Bullet Stability" chapter | **Pejsa is shipped as a spin-drift model** ([solver.dart:527,536](../lib/services/ballistics/solver.dart) `SpinDriftModel.pejsa`). The Pejsa **stability** formula (different from Pejsa spin-drift) is not a separate option; we use Miller for stability and Litz/Pejsa for drift. | Optional — most users prefer Miller. Could add as a stability-check option. | **Small** — but low priority |
-| 12 | **Form factor (i7) vs G7 BC** as user-facing concept — Litz argues form factor + reference curve over BC | *Applied Ballistics* "The Ballistic Coefficient" chapter; *Modern Advancements* Vol. I drag-modeling chapters; "[A Better Ballistic Coefficient](https://bergerbullets.com/a-better-ballistic-coefficient/)" Berger blog post | **Computed internally** ([projectile.dart:283](../lib/services/ballistics/projectile.dart) `formFactor = SD / BC`), **not surfaced.** Users see G1/G7 BC fields, never `i7`. | Surface form factor on the bullet detail screen as an info-only field; let advanced users enter it directly instead of BC | **Small** — UI work only |
-| 13 | **TOP Gun precision-class formula** — estimates rifle precision class from barrel quality, trigger, action | *Modern Advancements* Vol. III ch. 3 (covered explicitly in [Cal Zant's preview](https://precisionrifleblog.com/2022/08/14/sneak-peek-of-bryan-litzs-new-book-volume-iii-of-modern-advancements-in-long-range-shooting/)) | **Not implemented.** | Optional — speculative until Vol. III is fully analyzed | **Medium** — needs the actual coefficients from the book |
+| 9 | **Group MOA confidence intervals** — group MOA from N shots has a wide CI; the literature publishes the distribution math | *Accuracy and Precision* Part 1 (precision); also *Modern Advancements* Vol. III ch. 3 ("TOP Gun" precision-class formula) | **Group MOA reported, no CI.** [`group_stats.dart`](../lib/services/ballistics/group_stats.dart) computes ES, MR, σ_x, σ_y, group size MOA — none with confidence intervals or sample-size effects. | Add CI based on χ² distribution for σ-based metrics; use simulation for ES (which has no closed form) | **Medium** — math in *Accuracy and Precision*; reasonable test coverage required |
+| 10 | **Twist-rate effects on BC** — same bullet through different twists changes effective BC; the literature quantifies the effect | *Modern Advancements* Vol. I "twist rate effects on muzzle velocity / BC / precision" | **Not modeled.** [`projectile.dart`](../lib/services/ballistics/projectile.dart) computes Miller stability from twist + length + diameter, but doesn't apply the BC-vs-twist-rate correction (i.e. an Sg-low bullet has 3–5% degraded BC). | Apply a BC correction when Sg < 1.5 per *Modern Advancements* Vol. I tables | **Small** — formula is one multiplier |
+| 11 | **Pejsa stability formula** alongside Miller — the literature discusses both | *Applied Ballistics* "Bullet Stability" chapter | **Pejsa is shipped as a spin-drift model** ([solver.dart:527,536](../lib/services/ballistics/solver.dart) `SpinDriftModel.pejsa`). The Pejsa **stability** formula (different from Pejsa spin-drift) is not a separate option; we use Miller for stability and the industry-standard / Pejsa formulas for drift. | Optional — most users prefer Miller. Could add as a stability-check option. | **Small** — but low priority |
+| 12 | **Form factor (i7) vs G7 BC** as user-facing concept — the literature argues form factor + reference curve over BC | *Applied Ballistics* "The Ballistic Coefficient" chapter; *Modern Advancements* Vol. I drag-modeling chapters; "[A Better Ballistic Coefficient](https://bergerbullets.com/a-better-ballistic-coefficient/)" Berger blog post | **Computed internally** ([projectile.dart:283](../lib/services/ballistics/projectile.dart) `formFactor = SD / BC`), **not surfaced.** Users see G1/G7 BC fields, never `i7`. | Surface form factor on the bullet detail screen as an info-only field; let advanced users enter it directly instead of BC | **Small** — UI work only |
+| 13 | **TOP Gun precision-class formula** — estimates rifle precision class from barrel quality, trigger, action | *Modern Advancements* Vol. III ch. 3 | **Not implemented.** | Optional — speculative until Vol. III is fully analyzed | **Medium** — needs the actual coefficients from the book |
 | 14 | **Powder humidity sensitivity** — fps shift per % humidity in powder | *Modern Advancements* Vol. III ch. 7 | **Not modeled.** We have `mvTempSensitivityFpsPerC` for powder temperature, no humidity field. | Add `mvHumiditySensitivityFpsPerPctHumid` field on UserLoads | **Small** — schema bump + form field |
 | 15 | **Barrel break-in / MV migration over time** | *Modern Advancements* Vol. III ch. 8 | **Not modeled.** We track `shotsFired` per firearm but don't surface per-load MV migration. | Per-load MV regression vs round count would be a load-development win | **Medium** — needs UI + small stats |
-| 16 | **Ladder testing repeatability** — research showing ladder powder-charge testing is statistically dubious | *Modern Advancements* Vol. III ch. 6 | We **ship** ladder testing in [`/lib/screens/load_development/`](../lib/screens/load_development/). The honest framing is that ladder works for some shooters but Litz argues OCW + group testing is more repeatable. | Add a Litz-style "what does this ladder actually tell you" CI panel | **Small** — disclaimer + CI math |
-| 17 | **Standard atmosphere correction (ICAO/Tetens humid-air density)** — Litz publishes the equations | *Applied Ballistics* "Atmosphere" chapter | **Implemented** in [`atmosphere.dart`](../lib/services/ballistics/atmosphere.dart). Uses ICAO standard atmosphere + Tetens vapor-pressure correction. | — | — |
+| 16 | **Ladder testing repeatability** — research showing ladder powder-charge testing is statistically dubious | *Modern Advancements* Vol. III ch. 6 | We **ship** ladder testing in [`/lib/screens/load_development/`](../lib/screens/load_development/). The honest framing is that ladder works for some shooters but the literature argues OCW + group testing is more repeatable. | Add a "what does this ladder actually tell you" CI panel | **Small** — disclaimer + CI math |
+| 17 | **Standard atmosphere correction (ICAO/Tetens humid-air density)** — the literature publishes the equations | *Applied Ballistics* "Atmosphere" chapter | **Implemented** in [`atmosphere.dart`](../lib/services/ballistics/atmosphere.dart). Uses ICAO standard atmosphere + Tetens vapor-pressure correction. | — | — |
 | 18 | **Coriolis (horizontal + Eötvös vertical)** | *Applied Ballistics* "The Coriolis Effect" chapter | **Implemented** with full 3D `−2 Ω × v` formula ([solver.dart:111–127](../lib/services/ballistics/solver.dart)). | — | — |
 | 19 | **Miller stability factor** | *Applied Ballistics* "Bullet Stability" chapter; original by Don Miller, 2005 *Precision Shooting* | **Implemented** in [projectile.dart:303](../lib/services/ballistics/projectile.dart). Returns a velocity-corrected Sg. | — | — |
-| 20 | **Modified Point-Mass (MPM) solver** with Litz-style add-ons | *Applied Ballistics* "Using Ballistics Programs"; McCoy as the academic reference | **Implemented** as the engine class. Cash-Karp adaptive RK45 default ([solver.dart:471–500](../lib/services/ballistics/solver.dart)) | — | — |
+| 20 | **Modified Point-Mass (MPM) solver** with add-ons | *Applied Ballistics* "Using Ballistics Programs"; McCoy as the academic reference | **Implemented** as the engine class. Cash-Karp adaptive RK45 default ([solver.dart:471–500](../lib/services/ballistics/solver.dart)) | — | — |
 
-**Summary count:** of the 20 Litz methodologies surveyed, LoadOut
-ships **9 fully** (1, 2, 17, 18, 19, 20, plus partial-but-shipped 3,
-6, 11), **7 partially / service-only** (3, 4, 5, 6, 8, 11, 16) where
-items 4 and 5 have shipped services as of 2026-05-08 but no UI yet,
-and **5 not at all** (7, 9, 10, 12, 13, 14, 15).
+**Summary count:** of the 20 published Applied-Ballistics methodologies
+surveyed, LoadOut ships **9 fully** (1, 2, 17, 18, 19, 20, plus
+partial-but-shipped 3, 6, 11), **7 partially / service-only** (3, 4,
+5, 6, 8, 11, 16) where items 4 and 5 have shipped services as of
+2026-05-08 but no UI yet, and **5 not at all** (7, 9, 10, 12, 13, 14, 15).
 
 The audit's recommended **closing priority** for v1.0 is to ship the
 **UI surfaces** for the already-built WEZ analysis service (item 4)
 and BC truing service (item 5), then add DPC wizard (6), atmosphere
 presets (7), wind bracket card (8), and group MOA CI (9). Each has
 effort small or medium, no licensing dependency, and lands real
-Litz-aware features without overclaiming.
+industry-standard exterior-ballistics features without overclaiming.
 
 ---
 
@@ -170,7 +173,7 @@ is the same row groups as the v1 audit so the new columns slot in.
 | Cartridges | 203 (full SAAMI specs) + 4,143 factory loads | ≈4,000 cartridges, mostly user-input ([source](https://strelok-pro-ios.apps112.com/)) | "Thousands of projectile models" Doppler-CDM ([AB Quantum page](https://appliedballisticsllc.com/ab-quantum/)) | 5,000 projectiles + factory loads ([App Store](https://apps.apple.com/us/app/ballistic-advanced-edition/id303254296)) |
 | Cartridge SAAMI specs (case dims, neck angle, shoulder, max pressure) | ✓ all 203 | ✗ | ✗ | ✗ |
 | Bullets | 255 across 10 mfgs | 3,361 bullets ([Strelok Pro](https://www.strelokpro.online/StrelokPro/android/default.asp)) | Doppler CDM library, "thousands" | Listed in "5,000 projectiles + factory loads" |
-| Bullets w/ measured drag (Doppler / 4DOF) | **300 Hornady 4DOF curves** ([curves.json](../assets/seed_data/drag_curves/curves.json)) | ◐ user must enter | **AB Doppler CDM library** (largest) — licensed | Bryan Litz custom G7 BCs (NOT Doppler CDMs) + Variable / Stepped BCs |
+| Bullets w/ measured drag (Doppler / 4DOF) | **300 Hornady 4DOF curves** ([curves.json](../assets/seed_data/drag_curves/curves.json)) | ◐ user must enter | **AB Doppler CDM library** (largest) — licensed | Applied-Ballistics custom G7 BCs (NOT Doppler CDMs) + Variable / Stepped BCs |
 | Reticles | 258 ([reticles.json](../assets/seed_data/reticles.json)) | ≈2,277–3,300 | "Reticle library, online, auto-updating" — count not published, integrated with Kestrel | 175+ per Inert Solutions marketing (LoadOut v1 audit cited; not corroborated in retrieved App Store text) |
 | Reticle hold-over visualization | ✓ + Scope View Pro w/ probability rings | ✓ static reticle | ✓ — uses Kestrel-loaded reticle library | ✓ Mil-Dot HUD |
 | Optics (whole units) | 156 across 21 brands | ✗ | ✗ — reticle-centric | ◐ "optics profiles" stored per profile |
@@ -182,18 +185,18 @@ is the same row groups as the v1 audit so the new columns slot in.
 
 | Feature | LoadOut | Strelok / BC2026 | AB Quantum | Ballistic AE |
 |---|---|---|---|---|
-| Solver framing | Modified Point-Mass (McCoy MPM) + Litz add-ons | "Proprietary algorithm" ([Recoil](https://www.recoilweb.com/ballistics-in-the-palm-of-your-hand-109258.html)) | **AB Point-Mass Solver** (Litz / AB internal) | **JBM ballistics engine** ([App Store](https://apps.apple.com/us/app/ballistic-advanced-edition/id303254296)) |
-| Engine pedigree | New (2026); fully documented internals | 19 years | Litz / Berger / AB; mil/LE field-validated | JBM open math; long-running |
+| Solver framing | Modified Point-Mass (McCoy MPM) + Applied-Ballistics add-ons | "Proprietary algorithm" ([Recoil](https://www.recoilweb.com/ballistics-in-the-palm-of-your-hand-109258.html)) | **AB Point-Mass Solver** (Applied Ballistics internal) | **JBM ballistics engine** ([App Store](https://apps.apple.com/us/app/ballistic-advanced-edition/id303254296)) |
+| Engine pedigree | New (2026); fully documented internals | 19 years | Applied Ballistics / Berger; mil/LE field-validated | JBM open math; long-running |
 | Drag tables (G1, G2, G5, G6, G7, G8) | ✓ all 6 | ✓ G1/G7 confirmed; others "?" | ✓ G1, G7 + Doppler CDM | ✓ G1, G7 + Variable/Stepped BC |
 | Custom Drag Model (CDM / Doppler) | ✓ Hornady 4DOF (300 curves bundled) | ✓ user-entered Lapua DSF | ✓ AB Doppler library (largest) — **licensed material** | ✗ — not documented as a CDM container; only G1/G7 + Stepped BC |
 | Drag-table interpolation | **Fritsch-Carlson PCHIP** ([custom_drag.dart](../lib/services/ballistics/custom_drag.dart)) | Linear (typical, not stated) | Doppler curve native (PCHIP-class smoothing implied) | JBM linear |
-| Atmosphere model | ICAO + Tetens humid-air | Standard atmosphere + humidity | AB Atmosphere model (matches ICAO; Litz "Applied Ballistics" ch.) | Standard + iPhone barometer integration |
+| Atmosphere model | ICAO + Tetens humid-air | Standard atmosphere + humidity | AB Atmosphere model (matches ICAO; *Applied Ballistics* "Atmosphere" ch.) | Standard + iPhone barometer integration |
 | Density-altitude derivation | ✓ | ✓ | ✓ | ✓ |
 | Zero atmosphere (separate from runtime) | ✓ | ✓ | ✓ | ✓ |
 | **Multi-atmosphere preset library** | ✗ — single atmosphere on each profile | ? | ✓ via Range Card environmentals | ✓ — multiple "favorites" with env settings |
 | Coriolis horizontal | ✓ | ✓ | ✓ | ✓ |
 | Coriolis Eötvös vertical | ✓ | ✓ | ✓ | ✓ |
-| Spin drift (Litz) | ✓ default | ✓ | ✓ | ✓ ("gyroscopic spin") |
+| Spin drift  | ✓ default | ✓ | ✓ | ✓ ("gyroscopic spin") |
 | Spin drift (Pejsa) | ✓ alternate model ([solver.dart:527](../lib/services/ballistics/solver.dart)) | ? | ? | ? |
 | Aerodynamic jump from cross-wind | ✓ explicit per-sample correction | ◐ implicit, not user-facing | ✓ | ◐ implicit |
 | Aero jump from cant×cross-wind (Vol. III term) | ✓ ([solver.dart:893](../lib/services/ballistics/solver.dart)) | ✗ | ✓ | ◐ unconfirmed |
@@ -208,7 +211,7 @@ is the same row groups as the v1 audit so the new columns slot in.
 | **MV truing** | ✗ — not currently shipped | ✓ | ✓ — Downrange MV CDF calibration | ✓ "Custom BC via chronograph" |
 | **BC truing (CDF)** | ◐ service shipped ([bc_truing_service.dart](../lib/services/bc_truing_service.dart)), UI pending | ✓ preferred mode | ✓ — Custom Drag Factor (CDF) | ◐ via Custom BC |
 | Live multi-shot field validation | ✓ via group_stats | ◐ single distance | ✓ | ✓ |
-| Integration scheme (disclosed) | **Cash-Karp adaptive RK45** w/ 1e-4 m tolerance ([solver.dart:471–500](../lib/services/ballistics/solver.dart)) | "Proprietary" (closed) | "AB Point-Mass Solver" (closed; Litz publishes the math but the implementation is closed) | JBM (open math; closed app) |
+| Integration scheme (disclosed) | **Cash-Karp adaptive RK45** w/ 1e-4 m tolerance ([solver.dart:471–500](../lib/services/ballistics/solver.dart)) | "Proprietary" (closed) | "AB Point-Mass Solver" (closed; the literature publishes the math but the implementation is closed) | JBM (open math; closed app) |
 | Solver accuracy modes | 3 (`fast`, `precise`, `extreme`) | ✗ | ✓ | ✗ |
 
 ### Hardware integration (BLE)
@@ -324,7 +327,7 @@ is the same row groups as the v1 audit so the new columns slot in.
 | AI ballistics chatbot | ◐ Coming Soon (v1.1) | ✗ | **✓ AB Spotter (Pro tier)** — domain-trained AI ballistics expert | ✗ |
 | AI photo OCR / handwriting reader | ✓ free, on-device + Pro Smart Import (server-assisted, opt-in) | ✗ | ✗ | ✗ |
 | Educational content (videos, podcasts) | ◐ glossary, SAAMI screen | ✗ | **✓ AB Learn (Pro tier)** — integrated podcasts + videos | ✗ |
-| Domain authority of AI chatbot | Anthropic-backed; LoadOut has no in-house ballistician | N/A | **Bryan Litz / AB content** — the chief ballistician's own R&D | N/A |
+| Domain authority of AI chatbot | Anthropic-backed; LoadOut has no in-house ballistician | N/A | **Applied Ballistics content** — the chief ballistician's own R&D | N/A |
 
 ---
 
@@ -351,7 +354,7 @@ is the same row groups as the v1 audit so the new columns slot in.
 4. **Free tier scope.** Our free tier ships ballistics core, Range Day, group stats, hit probability, photo OCR, recipe management, brass / batch / lot tracking, manual encrypted backup, watch / wear, all catalogs. Their Ultralite tier is "basic ballistic solver functionality with limited features" — explicit limitation.
 5. **Multi-platform reach.** They ship iOS / iPadOS / macOS / visionOS — Apple-only stack. We ship those plus Android, Web, Wear OS.
 6. **Local-first / E2EE Cloud Sync.** AB Quantum Sync is described as "encrypted cloud backup of rifle profiles" but the encryption model is not publicly documented; the AB-operated backend is presumed server-decryptable. Our sync is passphrase-only AES-256-GCM, never seen by LoadOut.
-7. **Solver disclosed.** AB's published math is in Litz's books; the solver implementation in the app is closed. Ours is open in [solver.dart](../lib/services/ballistics/solver.dart) with line-level references to McCoy and Litz.
+7. **Solver disclosed.** AB's published math is in the books; the solver implementation in the app is closed. Ours is open in [solver.dart](../lib/services/ballistics/solver.dart) with line-level references to McCoy and the *Applied Ballistics* literature.
 8. **Hornady 4DOF curves.** AB has its own (larger) Doppler library — but it's licensed material accessible only to AB-paying customers. We pre-ship 300 Hornady-published curves free.
 9. **Beginner mode + onboarding.** AB Quantum is built for the AB-tier mil/LE / PRS top-end audience; the onboarding assumes you already understand DOPE, range cards, sectors. We ship Beginner Mode + 7 workflow templates + glossary.
 
@@ -360,7 +363,7 @@ is the same row groups as the v1 audit so the new columns slot in.
 1. **Reloading workspace.** Same lead claim — Ballistic AE is a calculator, not a workbench.
 2. **Cross-platform.** Ballistic AE is iOS-only. We ship Android, Web, Wear OS.
 3. **Photo OCR / CSV import.** None in Ballistic AE.
-4. **Hornady 4DOF Doppler curves.** Ballistic AE ships Stepped BCs and Bryan Litz custom G7 BCs, but no Doppler-radar Cd-vs-Mach curves.
+4. **Hornady 4DOF Doppler curves.** Ballistic AE ships Stepped BCs and Applied-Ballistics custom G7 BCs, but no Doppler-radar Cd-vs-Mach curves.
 5. **End-to-end encrypted Cloud Sync.** Ballistic AE uses iCloud Sync for "favorites, optics profiles & range log" — Apple-managed encryption (Apple holds the key for non-E2EE iCloud data, the user holds the key only with Advanced Data Protection). Our model is passphrase-only AES-256-GCM regardless of cloud.
 6. **Hit probability + Range Day workspace.** Ballistic AE has Range Log + Mil-Dot HUD + group calculator, but no Monte Carlo hit probability with per-source breakdown.
 7. **Glossary, SAAMI catalog, cartridge / chamber drawings.** Ballistic AE has none of these; their reference is the projectile / factory ammo library only.
@@ -389,8 +392,8 @@ is the same row groups as the v1 audit so the new columns slot in.
 2. **Full WEZ analysis UI.** AB ships range-window WEZ at the Pro tier with sensitivity analysis (which input drives misses). The math is shipped on our side ([`wez_analysis_service.dart`](../lib/services/wez_analysis_service.dart) computes the curve + variance breakdown), but the user-facing screen is still pending. Once the UI ships, **this gap closes**.
 3. **Hardware-unlock ecosystem.** AB Quantum's tier-unlock model is unique: a Kestrel 5700X-WEZ purchase ($700+) unlocks Pro features in the app. AB-equipped Geovid Pro AB+ likewise. We have no analogue. The AB ecosystem essentially makes the app subsidized for hardware buyers.
 4. **AB Spotter (AI ballistics expert).** Pro-tier domain-trained AI assistant. Our AI Reloading Assistant is Coming Soon at v1.0; landing it before AB Quantum's gap closes is a v1.1 priority.
-5. **AB Learn (educational content).** Integrated podcasts + videos at the Pro tier, drawing on Litz's published research.
-6. **Brand pedigree.** Litz himself is the chief ballistician. We're not him. We use his published math. The framing is "Litz-aware" not "Litz-endorsed" — that distinction has to live in marketing copy.
+5. **AB Learn (educational content).** Integrated podcasts + videos at the Pro tier, drawing on the published research.
+6. **Brand pedigree.** Applied Ballistics is led by the chief ballistician of the modern long-range field. We are not affiliated. We use the published math. The framing is "industry-standard exterior-ballistics math" — never "Applied-Ballistics-endorsed."
 7. **MV truing + BC truing (CDF).** AB ships both as first-class workflows. BC truing service is shipped on our side ([`bc_truing_service.dart`](../lib/services/bc_truing_service.dart)) but the UI is pending. MV truing is v1.1.
 8. **Sector management.** AB ships save/share grouped target sectors — useful for match shooters working ranges with multiple stages. We don't surface this.
 9. **50+ Bluetooth devices.** AB integrates with 50+ devices including Optex chronographs, SORD/BOSS mil/LE solvers, Garmin Montana, multiple Kestrel models. We integrate with 6.
@@ -398,7 +401,7 @@ is the same row groups as the v1 audit so the new columns slot in.
 
 ### vs Ballistic AE
 
-1. **5,000-projectile library.** Larger than Strelok and us. Their library includes Bryan Litz custom G7 BCs in the projectile records — a published-Litz benefit we'd need to license / re-derive.
+1. **5,000-projectile library.** Larger than Strelok and us. Their library includes Applied-Ballistics custom G7 BCs in the projectile records — a published-Applied-Ballistics benefit we'd need to license / re-derive.
 2. **JBM ballistics engine pedigree.** [JBM](https://www.jbmballistics.com/) is a long-running open-math reference; it's not licensed but it's the engine pedigree the Apple-ecosystem audience is used to.
 3. **3D Trajectory imaging.** We have a 2D trajectory display; their 3D trajectory imaging is more visually polished.
 4. **Advanced Wind Kit (8 wind sources).** We support a single wind vector across the trajectory. Modeling 8 wind regions across a 1500-yard course is an ELR-shooter feature.
@@ -418,13 +421,13 @@ either close a structural gap or remove a misleading marketing claim.
 | # | Item | Effort | Priority | Files |
 |---|---|---|---|---|
 | 1 | **WEZ analysis UI polish.** [`wez_analysis_service.dart`](../lib/services/wez_analysis_service.dart) computes the WEZ curve + variance breakdown; [`wez_analysis_screen.dart`](../lib/screens/range_day/wez_analysis_screen.dart) is shipped. v1.0 work: review against AB Quantum's WEZ output for parity (or a defensible difference), wire it into the Range Day tab bar, polish curve rendering. Optionally add a heatmap of `(range × wind)` for v1.2. | **Tiny** (~1 day; integration / polish) | **HIGH** — closes the only solver feature AB Quantum has and we don't | Existing: [`wez_analysis_screen.dart`](../lib/screens/range_day/wez_analysis_screen.dart). Wire into Range Day tabs. |
-| 2 | **BC truing (CDF) UI + persistence.** [`bc_truing_service.dart`](../lib/services/bc_truing_service.dart) already provides single- and multi-observation truing. Build a screen that walks the user through (distance, observed mil hold) entry, runs the solver, and writes the trued BC back. Persist as `UserLoads.bcCorrectionFactor` (new col, schema bump). | **Small** (~2 days; UI + 1 schema column) | **HIGH** — every Litz-aware competitor has truing as a first-class workflow; the v1 marketing claim "truing workspace" was incorrect | New: `lib/screens/ballistics/bc_truing_screen.dart`. Schema bump in [`database.dart`](../lib/database/database.dart). Reuses [`bc_truing_service.dart`](../lib/services/bc_truing_service.dart). |
+| 2 | **BC truing (CDF) UI + persistence.** [`bc_truing_service.dart`](../lib/services/bc_truing_service.dart) already provides single- and multi-observation truing. Build a screen that walks the user through (distance, observed mil hold) entry, runs the solver, and writes the trued BC back. Persist as `UserLoads.bcCorrectionFactor` (new col, schema bump). | **Small** (~2 days; UI + 1 schema column) | **HIGH** — every serious-precision competitor has truing as a first-class workflow; the v1 marketing claim "truing workspace" was incorrect | New: `lib/screens/ballistics/bc_truing_screen.dart`. Schema bump in [`database.dart`](../lib/database/database.dart). Reuses [`bc_truing_service.dart`](../lib/services/bc_truing_service.dart). |
 | 3 | **Tall-target test wizard / DPC calibration.** Take dialed mils + measured impact spread → solve `sightScaleVertical = dialed / measured`. Persists to `UserFirearms.sightScaleVertical` and `.sightScaleHorizontal`. Pre-conditions are already on the form. | **Small** (~1-2 days; one screen + math) | **HIGH** — AB Quantum ships ballistic truing interface; we surface the inputs but no wizard | New: `lib/screens/ballistics/tall_target_wizard.dart`. |
-| 4 | **Atmosphere preset library.** New table `AtmospherePresets(id, name, tempF, pressureInHg, humidityPct, elevationFt, lat, lon, notes, createdAt, updatedAt)`. Picker on the calculator + Range Day screens. Schema migration to v9 alongside #2. | **Small** (~2 days) | **HIGH** — Litz publishes atmospheric switching as core methodology; competitors all support multi-profile | Schema bump in [`database.dart`](../lib/database/database.dart); new `lib/repositories/atmosphere_preset_repository.dart`; new `lib/screens/ballistics/atmosphere_preset_picker.dart`. |
+| 4 | **Atmosphere preset library.** New table `AtmospherePresets(id, name, tempF, pressureInHg, humidityPct, elevationFt, lat, lon, notes, createdAt, updatedAt)`. Picker on the calculator + Range Day screens. Schema migration to v9 alongside #2. | **Small** (~2 days) | **HIGH** — the literature publishes atmospheric switching as core methodology; competitors all support multi-profile | Schema bump in [`database.dart`](../lib/database/database.dart); new `lib/repositories/atmosphere_preset_repository.dart`; new `lib/screens/ballistics/atmosphere_preset_picker.dart`. |
 | 5 | **Wind bracket card.** Re-solve at (`wind_mph - U`, `wind_mph`, `wind_mph + U`). Surface 3 holds in MIL/MOA. Already wired through [`hit_probability_service.dart`](../lib/services/hit_probability_service.dart) — needs UI. | **Small** (~1-2 days) | **HIGH** | New: `lib/widgets/ballistics/wind_bracket_card.dart`. Add to ballistics + Range Day. |
-| 6 | **Group MOA confidence intervals.** Litz publishes `σ` distribution math: σ_estimated × √((n-1)/χ²(α/2, n-1)) for the lower/upper CI bound of σ. ES needs a Monte Carlo of order-statistics distribution (no closed form). | **Medium** (~2 days; math + UI) | **MEDIUM** — Honest framing of group quality; differentiates us from "every app reports group MOA" — we report the band | Update [`group_stats.dart`](../lib/services/ballistics/group_stats.dart). |
+| 6 | **Group MOA confidence intervals.** The literature publishes the `σ` distribution math: σ_estimated × √((n-1)/χ²(α/2, n-1)) for the lower/upper CI bound of σ. ES needs a Monte Carlo of order-statistics distribution (no closed form). | **Medium** (~2 days; math + UI) | **MEDIUM** — Honest framing of group quality; differentiates us from "every app reports group MOA" — we report the band | Update [`group_stats.dart`](../lib/services/ballistics/group_stats.dart). |
 | 7 | **Form factor (i7) on bullet detail screen.** Surface `SD / G7BC` as a derived field. Read-only for v1.0. | **Small** (~1 day; UI only) | **MEDIUM** | Update bullet detail UI in `lib/screens/recipes/component_detail_*.dart`. |
-| 8 | **Twist-rate BC correction.** When `Sg < 1.5` apply Litz's published BC degradation curve from *Modern Advancements* Vol. I (1.5 → 1.0; 1.0 → 0.97; 0.5 → 0.90 — quote actual values from the book at implementation time; rough placeholder). Surface as a "Reduced BC" warning on the recipe screen. | **Small** (~1 day) | **MEDIUM** — Litz Vol. I research; Strelok / Ballistic AE don't surface this | Update [`projectile.dart`](../lib/services/ballistics/projectile.dart) `formFactor` getter. |
+| 8 | **Twist-rate BC correction.** When `Sg < 1.5` apply the published BC degradation curve from *Modern Advancements* Vol. I (1.5 → 1.0; 1.0 → 0.97; 0.5 → 0.90 — quote actual values from the book at implementation time; rough placeholder). Surface as a "Reduced BC" warning on the recipe screen. | **Small** (~1 day) | **MEDIUM** — *Modern Advancements* Vol. I research; Strelok / Ballistic AE don't surface this | Update [`projectile.dart`](../lib/services/ballistics/projectile.dart) `formFactor` getter. |
 | 9 | **Powder humidity sensitivity field.** New optional column `mvHumiditySensitivityFpsPerPctHumid` on `UserLoads`; warn when humidity changes from baseline by > 20% RH. | **Small** (~1 day; schema bump + form field) | **LOW** — Vol. III Ch. 7; few users will populate it | Schema migration to v9 + form field in `lib/screens/recipes/recipe_form_screen.dart`. |
 | 10 | **Update marketing copy + audit v1 to remove the "truing workspace" claim.** [`marketing/CLAUDE.md`](./CLAUDE.md) line under "Multi-shot field truing" needs to be cut or rephrased; the [v1 competitive audit table](./competitive_audit.md) row "Truing by ballistic coefficient" claims `Yes` — that needs to change to `Coming v1.0` until #2 ships, OR truthfully `No` if #2 slips past launch. | **Small** (~30 min) | **HIGH** — maintains marketing integrity | [`marketing/CLAUDE.md`](./CLAUDE.md), [`marketing/competitive_audit.md`](./competitive_audit.md) |
 
@@ -438,7 +441,7 @@ Items that close differentiator gaps but don't block launch.
 | # | Item | Effort | Priority | Notes |
 |---|---|---|---|---|
 | 11 | **AI Reloading Assistant ships.** Anthropic-backed chat trained on user's recipes + the SAAMI / glossary catalogs. Already-Coming-Soon UI. Counters AB Spotter (their Pro-tier AI ballistics expert). | **Large** (~3-4 weeks; Cloudflare Worker + RAG over catalog) | HIGH | Already partially scoped per [`marketing/CLAUDE.md` § 10](./CLAUDE.md#10-whats-coming-dont-market-hard-yet). |
-| 12 | **MV truing workflow.** Same shape as BC truing; back-solves a `mvCorrectionFps`. Adds a "Truing Mode" that lets the user choose MV-truing vs BC-truing per Litz's published trade-off (calibrate the dominant error or both? Litz argues BC if you have a chronograph). | Medium | HIGH | New: `lib/services/ballistics/mv_truing_service.dart`. |
+| 12 | **MV truing workflow.** Same shape as BC truing; back-solves a `mvCorrectionFps`. Adds a "Truing Mode" that lets the user choose MV-truing vs BC-truing per the published trade-off (calibrate the dominant error or both? *Applied Ballistics* argues BC if you have a chronograph). | Medium | HIGH | New: `lib/services/ballistics/mv_truing_service.dart`. |
 | 13 | **Live multi-shot field validation.** Per-distance MV/BC regression across the user's shot history. Surfaces "your dataset says BC = 0.31 not the catalog 0.32." | Medium | HIGH | Builds on #2; needs a regression service. |
 | 14 | **Sector management.** Save/share grouped target cards (8-target stage at PRS match). | Small | MEDIUM | New table; new screen. |
 | 15 | **Reticle library to 1,000+.** Match Strelok's effective floor (currently 258). Data work. | Medium (sustained) | MEDIUM | [`reticles.json`](../assets/seed_data/reticles.json) |
@@ -461,37 +464,38 @@ Long-term plays.
 | 22 | **Custom drag curve drawing tool.** Let users sketch a Cd-vs-Mach curve from published radar data (community-shared CDMs). Closes the AB Doppler-library gap somewhat. | Large | HIGH |
 | 23 | **WEZ UI polish.** v1.0 ships the math; v1.2 ships richer rendering — heatmap with contour overlay, animated wind-call brackets, "what would change my hit %" slider per input. | Medium | HIGH |
 | 24 | **Reticle subtension drawing tool.** Let users sketch their own reticle for scopes we don't have. | Medium | MEDIUM |
-| 25 | **Litz "TOP Gun" precision-class formula.** Estimate rifle precision class from barrel quality + trigger + action inputs. Sourced from *Modern Advancements* Vol. III Ch. 3. Read the book first. | Medium | LOW |
+| 25 | **"TOP Gun" precision-class formula.** Estimate rifle precision class from barrel quality + trigger + action inputs. Sourced from *Modern Advancements* Vol. III Ch. 3. Read the book first. | Medium | LOW |
 | 26 | **More languages: Portuguese, Turkish, Polish.** Already-built ARB framework. | Medium (translation) | MEDIUM |
 | 27 | **WeatherFlow + Skywatch BLE adapters.** EU / UK community demand. | Small | LOW |
 | 28 | **MagnetoSpeed + LabRadar chronograph BLE.** Closes a gap with Ballistic AE / AB Quantum. | Medium | MEDIUM |
 | 29 | **Optex SpeedTracker chronograph.** AB Quantum-only today; community is small but growing. | Small | LOW |
 | 30 | **Doppler-radar curve community sharing.** User-uploaded Cd-vs-Mach curves from their own Doppler captures (LabRadar Doppler, MagnetoSpeed V3 Doppler). Privacy-preserving (anonymized; opt-in upload). | Large | LOW |
 | 31 | **Federated bullet library.** Pull manufacturer-published BCs from Hornady / Berger / Sierra / Lapua APIs. Live updates not store-build-gated. We ship `seed_updater.dart` already; just expand its reach. | Medium | MEDIUM |
-| 32 | **Litz-attribution badge on the bullet detail screen.** When a bullet has a Litz-published custom G7 BC (from *Applied Ballistics* book bullet table or his blog), surface "Bryan Litz custom G7 BC" with attribution. Ballistic AE does this. | Small | MEDIUM |
+| 32 | **AB-attribution badge on the bullet detail screen.** When a bullet has an Applied-Ballistics-published custom G7 BC (from the *Applied Ballistics* book bullet table or the AB blog), surface "Applied-Ballistics custom G7 BC" with attribution. Ballistic AE does this. | Small | MEDIUM |
 
 **Top 5 v1.2+:** 22 (CDM drawing), 23 (WEZ polish), 24 (reticle
-drawing), 31 (federated bullet library), 32 (Litz BC attribution).
+drawing), 31 (federated bullet library), 32 (AB BC attribution).
 
 ---
 
-## Litz-specific implementation backlog
+## Applied-Ballistics-derived implementation backlog
 
-This is the consolidated list of Litz-derived features, sourced
-directly from the methodology table above. Each one ships under
-"Litz-aware ballistics" framing without overclaiming. Do NOT use
-phrasing that implies endorsement, license, or affiliation.
+This is the consolidated list of features derived from the published
+Applied Ballistics literature, sourced directly from the methodology
+table above. Each one ships under "industry-standard exterior-ballistics"
+framing without overclaiming. Do NOT use phrasing that implies
+endorsement, license, or affiliation.
 
-| Feature | Litz source | Math summary | Files that change | Effort |
+| Feature | Literature source | Math summary | Files that change | Effort |
 |---|---|---|---|---|
 | **WEZ analysis surface** (service done; UI pending) | *Accuracy and Precision for Long Range Shooting* Part 3 | Range-window curve of hit probability with per-source variance breakdown. Implemented in [`wez_analysis_service.dart`](../lib/services/wez_analysis_service.dart) 2026-05-08. | Done: [`wez_analysis_service.dart`](../lib/services/wez_analysis_service.dart) + [`test/wez_analysis_test.dart`](../test/wez_analysis_test.dart). Pending: `lib/screens/range_day/wez_screen.dart`. | Small (UI only) |
-| **BC truing (CDF)** (service done; UI pending) | *Applied Ballistics for Long Range Shooting* "Using Ballistics Programs"; full treatment in [Litz 2025 CDF paper](https://appliedballisticsllc.com/wp-content/uploads/2025/01/CDF.pdf) | Bisection on BC for single observation; golden-section search for multi-observation least-squares. Constraint `k ∈ [0.7, 1.3]`. Implemented in [`bc_truing_service.dart`](../lib/services/bc_truing_service.dart) 2026-05-08. | Done: [`bc_truing_service.dart`](../lib/services/bc_truing_service.dart) + [`test/bc_truing_test.dart`](../test/bc_truing_test.dart). Pending: schema migration v9 (`UserLoads.bcCorrectionFactor`), `lib/screens/ballistics/bc_truing_screen.dart`. | Small (UI + 1 column) |
+| **BC truing (CDF)** (service done; UI pending) | *Applied Ballistics for Long Range Shooting* "Using Ballistics Programs"; full treatment in the [Applied Ballistics 2025 CDF paper](https://appliedballisticsllc.com/wp-content/uploads/2025/01/CDF.pdf) | Bisection on BC for single observation; golden-section search for multi-observation least-squares. Constraint `k ∈ [0.7, 1.3]`. Implemented in [`bc_truing_service.dart`](../lib/services/bc_truing_service.dart) 2026-05-08. | Done: [`bc_truing_service.dart`](../lib/services/bc_truing_service.dart) + [`test/bc_truing_test.dart`](../test/bc_truing_test.dart). Pending: schema migration v9 (`UserLoads.bcCorrectionFactor`), `lib/screens/ballistics/bc_truing_screen.dart`. | Small (UI + 1 column) |
 | **MV truing** | *Applied Ballistics* "Using Ballistics Programs" | Same shape as BC truing, solving for `MV + Δ` instead of `BC × k`. | New: `lib/services/ballistics/mv_truing_service.dart`. Schema bump. | Medium |
 | **Tall-target test / DPC wizard** | *Applied Ballistics* "Getting Control of Sights" | `sightScaleVertical = dialed_mils / measured_impact_mils`. Constraint `[0.95, 1.05]` (real scopes track within ~5%). | New: `lib/screens/ballistics/tall_target_wizard.dart`. Existing `UserFirearms.sightScaleVertical` already in schema. | Small |
-| **Atmosphere preset library** | *Applied Ballistics* atmosphere chapter; Litz's standard practice | New table `AtmospherePresets`. Picker UI. | Schema bump in [`database.dart`](../lib/database/database.dart). New: `lib/repositories/atmosphere_preset_repository.dart`. | Small |
+| **Atmosphere preset library** | *Applied Ballistics* atmosphere chapter; the standard practice | New table `AtmospherePresets`. Picker UI. | Schema bump in [`database.dart`](../lib/database/database.dart). New: `lib/repositories/atmosphere_preset_repository.dart`. | Small |
 | **Wind bracket card** | *Applied Ballistics* "Wind Deflection"; *Accuracy and Precision* Part 3 | Re-solve at `wind ± U`. Surface 3 holds. Math is in [`hit_probability_service.dart`](../lib/services/hit_probability_service.dart) already. | New: `lib/widgets/ballistics/wind_bracket_card.dart`. Embed in ballistics + Range Day screens. | Small |
 | **Group MOA confidence intervals** | *Accuracy and Precision* Part 1 | For σ-based metrics (group SD): `σ × √((n-1)/χ²(α/2, n-1))`. For ES: Monte Carlo of order-statistics with `n` draws from N(0, σ_underlying). | Update [`group_stats.dart`](../lib/services/ballistics/group_stats.dart). New: `lib/services/ballistics/group_stats_ci.dart`. | Medium |
-| **Twist-rate effects on BC** | *Modern Advancements* Vol. I twist chapters | When `Sg < 1.5`, multiply BC by published curve. Need Litz's actual coefficients from Vol. I; placeholders for now. | Update [`projectile.dart`](../lib/services/ballistics/projectile.dart). | Small |
+| **Twist-rate effects on BC** | *Modern Advancements* Vol. I twist chapters | When `Sg < 1.5`, multiply BC by published curve. Need the actual coefficients from Vol. I; placeholders for now. | Update [`projectile.dart`](../lib/services/ballistics/projectile.dart). | Small |
 | **Form factor (i7) UX** | *Applied Ballistics* "The Ballistic Coefficient"; "[A Better BC](https://bergerbullets.com/a-better-ballistic-coefficient/)" | `i = SD / BC`. Already computed in [`projectile.dart:283`](../lib/services/ballistics/projectile.dart). Surface read-only on bullet detail. | Update bullet detail UI. | Small |
 | **Powder humidity sensitivity** | *Modern Advancements* Vol. III Ch. 7 | Linear `Δfps = sensitivity × (humidity_pct - baseline)`. | Schema bump. Form field. | Small |
 | **TOP Gun precision-class formula** | *Modern Advancements* Vol. III Ch. 3 | Read the book; coefficients from the published research. | Future. | Medium |
@@ -515,7 +519,7 @@ Specific quotable lines, each cited.
 
 ### vs Applied Ballistics Quantum
 
-- **"Litz-aware ballistics for reloaders, on every platform."** Phrasing: we honor his published methodology (Litz spin drift, Miller stability, aerodynamic jump per *Modern Advancements* Vol. III, Coriolis, atmosphere) — and we layer the bench on top. We do NOT claim affiliation, license, or endorsement. This is a defensible "our math is Litz-aware" framing, not a "Litz-endorsed product" claim.
+- **"Industry-standard exterior-ballistics math, for reloaders, on every platform."** Phrasing: we honor the published Applied Ballistics methodology (spin drift, Miller stability, aerodynamic jump per *Modern Advancements* Vol. III, Coriolis, atmosphere) — and we layer the bench on top. We do NOT claim affiliation, license, or endorsement. This is a defensible "industry-standard math" framing, not an "Applied-Ballistics-endorsed product" claim.
 - **"AB Quantum is a calculator. LoadOut is the workspace your loads live in."** Defensible by their own product framing — AB Quantum has zero reloading concepts. Citation: [AB Quantum product page](https://appliedballisticsllc.com/ab-quantum/).
 - **"Lifetime $79.99 vs $30/yr forever."** AB Quantum is subscription-only above the free tier (Pro $29.99/yr or Pro-licensed-hardware lock). Cite: [App Store](https://apps.apple.com/us/app/ab-quantum/id785619104).
 - **"No Kestrel-required tier." (after #1 in v1.0 ships)** AB Quantum's Pro features unlock with a Kestrel 5700X-WEZ purchase or the Pro subscription. We don't have a hardware-unlock model — every tier is the same on every device. Cite: [Science of Accuracy](https://thescienceofaccuracy.com/understanding-device-license-levels-and-their-benefits-in-ab-quantum/).
@@ -527,7 +531,7 @@ Specific quotable lines, each cited.
 - **"Beyond Apple."** Ballistic AE is iOS-only. Cite: [App Store](https://apps.apple.com/us/app/ballistic-advanced-edition/id303254296). We ship Android, Web, Wear OS, native macOS.
 - **"More than a solver."** Ballistic AE is a polished calculator. We add the bench: recipes, lots, brass, batches, photo OCR, AI Smart Import.
 - **"True end-to-end encryption — even iCloud doesn't have your key."** Ballistic AE iCloud Sync uses Apple-managed keys (without ADP); ours uses passphrase-only AES-256-GCM regardless of cloud provider.
-- **"Hornady 4DOF Doppler curves out of the box."** Ballistic AE ships Stepped BCs and Bryan Litz custom G7 BCs but no Doppler-radar Cd-vs-Mach curves.
+- **"Hornady 4DOF Doppler curves out of the box."** Ballistic AE ships Stepped BCs and Applied-Ballistics custom G7 BCs but no Doppler-radar Cd-vs-Mach curves.
 - **"Hit probability with sensitivity breakdown."** Ballistic AE ships Mil-Dot HUD + group calculator; no Monte Carlo dispersion model with per-source breakdown.
 
 ---
@@ -538,19 +542,20 @@ Re-affirms and extends `marketing/CLAUDE.md` § 13 with the new
 competitor-specific landmines. Every one of these is a real legal /
 trust risk; none of them is theoretical.
 
-### Litz-affiliation overclaims (highest risk)
+### Applied-Ballistics-affiliation overclaims (highest risk)
 
-- **"Built with Bryan Litz"** — false. We have no relationship.
-- **"Litz-endorsed"** — false. Same.
+- **"Built with Applied Ballistics"** — false. We have no relationship.
+- **"Applied-Ballistics-endorsed"** — false. Same.
 - **"Powered by Applied Ballistics"** — false. Applied Ballistics is the publisher of AB Quantum; we're a competitor.
-- **"Berger / Litz / AB official partner"** — false.
-- **"Litz custom G7 BCs included"** — only OK if we license them or only attribute the small handful Litz has published in the *Applied Ballistics* book bullet table (and even then with explicit attribution and version).
+- **"Berger / Applied Ballistics official partner"** — false.
+- **"Applied-Ballistics custom G7 BCs included"** — only OK if we license them or only attribute the small handful that has been published in the *Applied Ballistics* book bullet table (and even then with explicit attribution and version).
 - **"Doppler radar drag library"** — only OK in the narrow sense of "300 Hornady-published 4DOF curves." Do NOT imply we ship Berger / Lapua / Sierra Doppler curves we don't have.
 
-The defensible Litz framing is **"Litz-aware ballistics."** That's
-truthful: we use his published formulas (Litz spin drift, aero jump
-per *Modern Advancements* Vol. III) with attribution. It does NOT
-imply endorsement, license, or affiliation. Use it consistently.
+The defensible framing is **"industry-standard exterior-ballistics math."**
+That's truthful: we use the published Applied-Ballistics formulas (spin
+drift, aero jump per *Modern Advancements* Vol. III) with attribution.
+It does NOT imply endorsement, license, or affiliation. Use it
+consistently.
 
 ### AB Quantum-specific claims to avoid
 
@@ -633,15 +638,15 @@ Frank list. Update this section when authoritative info surfaces.
    LiNK.** The app description lists Kestrel as the only BLE
    integration; community references suggest some rangefinders work
    but the App Store listing doesn't confirm.
-8. **AB Quantum Litz custom G7 BCs in the bullet library.** The
+8. **AB Quantum's Applied-Ballistics custom G7 BCs in the bullet library.** The
    AB-published Doppler CDM library is mentioned; whether the
-   library also contains the historical Litz custom G7 BCs (separate
+   library also contains the historical Applied-Ballistics custom G7 BCs (separate
    from CDMs) is unconfirmed.
-9. **Whether the AB Quantum WEZ output matches Litz's published WEZ
-   examples** in *Accuracy and Precision*. We assume yes (he's the
-   chief ballistician); confirming with a side-by-side test would
-   require purchasing both.
-10. **Specific page references** in Litz's books for the
+9. **Whether the AB Quantum WEZ output matches the published WEZ
+   examples** in *Accuracy and Precision*. We assume yes (it's
+   maintained by the chief ballistician); confirming with a
+   side-by-side test would require purchasing both.
+10. **Specific page references** in the books for the
     methodologies cited above. We have chapter-level citations from
     publisher pages; pinpointing exact page numbers requires owning
     the books. The audit treats chapter-level citation as

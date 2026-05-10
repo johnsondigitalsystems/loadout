@@ -106,6 +106,10 @@ class _BatchFormScreenState extends State<BatchFormScreen> {
     _name = TextEditingController(
       text: e?.name ?? _defaultBatchName(),
     );
+    // Inventory counters; not ballistics-affecting (CLAUDE.md § 0
+    // scope). Pre-fill batch count with 100 (canonical reloading-
+    // session size) and fired count with 0 for new batches; saved
+    // values on edit.
     _count = TextEditingController(text: (e?.count ?? 100).toString());
     _firedCount =
         TextEditingController(text: (e?.firedCount ?? 0).toString());
@@ -226,6 +230,7 @@ class _BatchFormScreenState extends State<BatchFormScreen> {
       firstDate: DateTime(now.year - 30),
       lastDate: DateTime(now.year + 1),
     );
+    if (!mounted) return;
     if (picked != null) {
       setState(() => _loadedAt = picked);
       _autoSave.notifyDirty();

@@ -62,7 +62,7 @@
 // rather than bleed into widget code.
 //
 // The solver this screen drives is a Modified Point-Mass (MPM) Level-3
-// model with G1/G7 drag tables and Litz-style spin-drift correction. The
+// model with G1/G7 drag tables and spin-drift correction. The
 // "modified" part is the spin-drift and Coriolis terms layered on top of
 // the simpler point-mass integration. The italic disclaimer at the bottom
 // of the screen says exactly this.
@@ -119,6 +119,7 @@ import '../../repositories/ballistic_profile_repository.dart';
 import '../../repositories/component_repository.dart';
 import '../../repositories/drag_curve_repository.dart';
 import '../../repositories/firearm_repository.dart';
+import '../../repositories/recipe_repository.dart';
 import '../../services/ballistics/atmosphere.dart';
 import '../../services/ballistics/custom_drag.dart';
 import '../../services/ballistics/drag_functions.dart';
@@ -220,11 +221,18 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   /// fallback value.
   bool _twistMissingFromFirearm = false;
 
-  // ─────────────────────── Bullet picker ───────────────────────
+  // ─────────────────────── Bullet / recipe picker ───────────────────────
   /// One-shot list of every bullet in the reference catalog, joined with
   /// its manufacturer. Null until the future resolves.
   Future<List<({BulletRow bullet, ManufacturerRow mfg})>>? _bulletsFuture;
   ({BulletRow bullet, ManufacturerRow mfg})? _selectedBullet;
+
+  /// Live stream of the user's saved recipes. Drives the unified
+  /// "Pick a Saved Load or Bullet" picker so the user can start
+  /// from one of their own recipes instead of digging through the
+  /// raw bullet catalog.
+  Stream<List<UserLoadRow>>? _recipesStream;
+  UserLoadRow? _selectedRecipe;
 
   /// Indicates whether the currently-selected bullet has a matching
   /// curve in the custom-drag catalog. Drives the "Custom drag
@@ -247,34 +255,44 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   DragCurveRow? _selectedDragCurve;
 
   // ─────────────────────── Projectile ───────────────────────
-  final _diameterCtrl = TextEditingController(text: '0.264');
-  final _weightCtrl = TextEditingController(text: '140');
-  final _lengthCtrl = TextEditingController(text: '1.355');
-  final _bcCtrl = TextEditingController(text: '0.298');
-  final _twistCtrl = TextEditingController(text: '8');
+  // ALL projectile / muzzle / zero / atmosphere fields default to
+  // EMPTY (CLAUDE.md § 0 anti-fake-data rule). The user picks a
+  // load / profile / common factory load to populate them, OR
+  // types values directly into the calculator. Computing against
+  // pre-filled "6.5 CM 140gr ELD-M" defaults the user never picked
+  // is exactly the customer-trust failure mode this rule exists
+  // to prevent.
+  final _diameterCtrl = TextEditingController();
+  final _weightCtrl = TextEditingController();
+  final _lengthCtrl = TextEditingController();
+  final _bcCtrl = TextEditingController();
+  final _twistCtrl = TextEditingController();
   DragModel _dragModel = DragModel.g7;
 
   // ─────────────────────── Muzzle / Zero ───────────────────────
-  final _muzzleVelCtrl = TextEditingController(text: '2750');
-  final _sightHeightCtrl = TextEditingController(text: '1.5');
-  final _zeroRangeCtrl = TextEditingController(text: '100');
-  final _shotAzimuthCtrl = TextEditingController(text: '0');
-  final _targetElevationCtrl = TextEditingController(text: '0');
+  final _muzzleVelCtrl = TextEditingController();
+  final _sightHeightCtrl = TextEditingController();
+  final _zeroRangeCtrl = TextEditingController();
+  final _shotAzimuthCtrl = TextEditingController();
+  final _targetElevationCtrl = TextEditingController();
 
   // ─────────────────────── Environment ───────────────────────
-  final _tempCtrl = TextEditingController(text: '59'); // ICAO 15°C = 59°F
-  final _pressureCtrl = TextEditingController(text: '29.92');
-  final _humidityCtrl = TextEditingController(text: '50');
-  final _altitudeCtrl = TextEditingController(text: '0');
-  final _windSpeedCtrl = TextEditingController(text: '10');
-  final _windDirCtrl = TextEditingController(text: '90');
-  /// Litz wind-bracket uncertainty (mph) — see § wind bracket card.
-  /// Empty / 0 hides the bracket card. Default 2 mph: most field
-  /// shooters can call wind to within ±2 mph after a couple
-  /// observations, and the bracket card itself teaches the user that
-  /// the bracket envelope shrinks as their reading sharpens.
-  final _windUncertaintyCtrl = TextEditingController(text: '2');
-  final _latitudeCtrl = TextEditingController(text: '40');
+  // Empty by default. The solver uses ICAO standard atmosphere as
+  // an internal fallback for empty temp/pressure/humidity/altitude;
+  // the form labels these as "(ICAO standard)" hints so the user
+  // knows the source. Explicitly entering values overrides.
+  final _tempCtrl = TextEditingController();
+  final _pressureCtrl = TextEditingController();
+  final _humidityCtrl = TextEditingController();
+  final _altitudeCtrl = TextEditingController();
+  final _windSpeedCtrl = TextEditingController();
+  final _windDirCtrl = TextEditingController();
+  /// Wind-bracket uncertainty (mph). Empty hides the bracket card —
+  /// the user opts in by typing a value rather than us prescribing
+  /// "2 mph default" and then deriving low/high holds the user
+  /// would attribute to themselves.
+  final _windUncertaintyCtrl = TextEditingController();
+  final _latitudeCtrl = TextEditingController();
 
   // ─────────────────────── Advanced (v16) ───────────────────────
   // Fields hidden behind an "Advanced" expansion: aerodynamic jump
@@ -292,7 +310,11 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   final _powderTempSensitivityCtrl = TextEditingController(text: '');
   final _powderReferenceTempCtrl = TextEditingController(text: '');
   final _aerodynamicJumpCtrl = TextEditingController(text: '');
-  final _inclineAngleCtrl = TextEditingController(text: '0');
+  // Empty default — anti-fake-data rule. Empty parses to 0
+  // (level shot) downstream so behaviour is unchanged for users
+  // who don't enter a value, but the field doesn't display a "0"
+  // the user might mistake for their own input.
+  final _inclineAngleCtrl = TextEditingController();
   bool _advancedExpanded = false;
 
   // ─────────────────────── Output settings ───────────────────────
@@ -378,6 +400,7 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
         context.read<ComponentRepository>().allBulletsWithManufacturer();
     _dragCurvesFuture = context.read<DragCurveRepository>().allCurves();
     _profilesStream = context.read<BallisticProfileRepository>().watchAll();
+    _recipesStream = context.read<RecipeRepository>().watchAll();
     _restoreRangePreferences();
     _loadWeatherHintFlag();
     _autoSave = AutoSaveController(
@@ -1047,16 +1070,24 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
       );
       final shotAzimuth = double.tryParse(_shotAzimuthCtrl.text.trim()) ?? 0.0;
 
-      final temp = _tempToCanonical(
-        _parseAny(_tempCtrl.text, 'Temperature'),
-        units.unitFor(UnitCategory.temperature),
-      );
-      final pressure = _pressureToCanonical(
-        _parsePos(_pressureCtrl.text, 'Pressure'),
-        units.unitFor(UnitCategory.pressure),
-      );
-      final humidity = _parseAny(_humidityCtrl.text, 'Humidity');
-      final altitude = _parseAny(_altitudeCtrl.text, 'Altitude');
+      // Atmosphere defaults to ICAO standard when empty
+      // (CLAUDE.md § 0). The user sees "(ICAO standard)" hints on
+      // the form labels so they know the source. Entering any
+      // value overrides. Note that the user-typed values are in
+      // their CHOSEN display unit, so we still go through the
+      // unit-conversion helpers; the ICAO fallbacks are in
+      // canonical (°F / inHg / %RH / ft) and bypass conversion.
+      final tempDisp = _parseOpt(_tempCtrl.text);
+      final temp = tempDisp == null
+          ? 59.0
+          : _tempToCanonical(tempDisp, units.unitFor(UnitCategory.temperature));
+      final pressureDisp = _parseOpt(_pressureCtrl.text);
+      final pressure = pressureDisp == null
+          ? 29.92
+          : _pressureToCanonical(
+              pressureDisp, units.unitFor(UnitCategory.pressure));
+      final humidity = _parseOpt(_humidityCtrl.text) ?? 50.0;
+      final altitude = _parseOpt(_altitudeCtrl.text) ?? 0.0;
       final windSpeed = _windToCanonical(
         double.tryParse(_windSpeedCtrl.text.trim()) ?? 0,
         units.unitFor(UnitCategory.windSpeed),
@@ -1196,13 +1227,9 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
     return v;
   }
 
-  double _parseAny(String s, String label) {
-    final v = double.tryParse(s.trim());
-    if (v == null) {
-      throw FormatException('$label is invalid.');
-    }
-    return v;
-  }
+  // _parseAny was used for atmosphere fields before they switched to
+  // empty-with-ICAO-fallback semantics. Removed in the CLAUDE.md § 0
+  // sweep; `_parseOpt(...) ?? <ICAO default>` is the current pattern.
 
   double? _parseOpt(String s) {
     final t = s.trim();
@@ -1244,6 +1271,44 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
     final wt = b.weightGr.toStringAsFixed(
         b.weightGr.truncateToDouble() == b.weightGr ? 0 : 1);
     return '${mfg.name} ${b.line} ${_caliberDisplay(b.diameterIn)} ${wt}gr';
+  }
+
+  /// Display label for a user recipe in the projectile picker.
+  /// `r.name` is the canonical recipe name shown everywhere else
+  /// in the app — keep it consistent so the user matches the
+  /// dropdown entry to their Recipes-tab listing without having
+  /// to translate.
+  String _recipeLabel(UserLoadRow r) => r.name;
+
+  /// Apply a user recipe selection to the projectile fields.
+  /// Recipes don't carry diameter / BC directly (the recipe row
+  /// only has bullet name + weight), so the user still has to
+  /// supply diameter / BC manually unless the bullet matches a
+  /// catalog row by name. We populate what we can from the recipe
+  /// row and leave the rest blank for the user to fill in (or for
+  /// a follow-up bullet-catalog fuzzy-match to populate).
+  void _applyRecipeSelection(UserLoadRow recipe) {
+    setState(() {
+      _selectedRecipe = recipe;
+      _selectedBullet = null; // recipe pick supersedes bullet pick
+      _bulletHasCustomCurve = false;
+      // Weight is on the recipe row when it was filled in. The
+      // recipe's weight is in grains (canonical); convert to the
+      // user's chosen bullet-weight unit before dropping it in.
+      final units = context.read<UnitService>();
+      if (recipe.bulletWeightGr != null) {
+        _weightCtrl.text = _formatNumber(_bulletWeightFromCanonical(
+          recipe.bulletWeightGr!,
+          units.unitFor(UnitCategory.bulletWeight),
+        ));
+      }
+      // Diameter / BC don't live on UserLoadRow — leave the
+      // controllers empty (or whatever the user already typed) so
+      // they can fill them in. A future enhancement could fuzzy-
+      // match the recipe's `bullet` name against the catalog and
+      // pre-fill BC / diameter when a unique hit is found.
+    });
+    _autoSave.notifyDirty();
   }
 
   /// Convert a bullet diameter in inches to a colloquial caliber label
@@ -1301,10 +1366,26 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
     _refreshBulletCustomCurveBadge(sel);
   }
 
+  /// Clears the bullet picker AND blanks the projectile fields the
+  /// pick had populated (diameter, weight, BC, length). Without
+  /// blanking the fields the user would tap "Clear" and see the
+  /// fields stay full of the previous bullet's data — exactly the
+  /// "fake placeholder" failure mode CLAUDE.md § 0 warns against.
+  /// Drag model resets to G7 (the default for VLD-style bullets).
+  /// Length is intentionally cleared too — picking a bullet doesn't
+  /// always populate length, but if it did, we blank it on clear.
+  /// `_selectedRecipe` is also cleared so the recipe picker doesn't
+  /// stay highlighted with a stale selection.
   void _clearBulletSelection() {
     setState(() {
       _selectedBullet = null;
+      _selectedRecipe = null;
       _bulletHasCustomCurve = false;
+      _diameterCtrl.clear();
+      _weightCtrl.clear();
+      _bcCtrl.clear();
+      _lengthCtrl.clear();
+      _dragModel = DragModel.g7;
     });
   }
 
@@ -1577,6 +1658,15 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                 ),
               ),
             ),
+            // Bottom-of-page Save / Done button — full width, sticky
+            // (does not scroll with content). Per CLAUDE.md UX rule:
+            // full-size save buttons live at the bottom of the page.
+            // Label adapts to the autosave + profile state:
+            //   * No active profile → "Save as Profile" (creates row)
+            //   * Profile + autosave on → "Done" (already persisting)
+            //   * Profile + autosave off → "Save" (manual flush via
+            //     update of the existing row)
+            _bottomSaveButton(),
           ],
         ),
       ),
@@ -1585,6 +1675,52 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   }
 
   // ─────────────────────── Sections ───────────────────────
+
+  /// Sticky bottom Save / Done button. Adapts its label to the
+  /// current autosave + profile state per the CLAUDE.md UX rule
+  /// (autosave on → "Done"; autosave off → "Save"; no profile yet
+  /// → "Save as Profile" since there's nothing for autosave to
+  /// flush to). Wrapped in a SafeArea so it doesn't slip under
+  /// the home indicator on iOS.
+  Widget _bottomSaveButton() {
+    final theme = Theme.of(context);
+    final autoSaveOn = context.watch<AutoSaveService>()
+        .frequency
+        .savesAutomatically;
+    final hasProfile = _activeProfile != null;
+    final String label;
+    final VoidCallback onPressed;
+    if (!hasProfile) {
+      label = 'Save as Profile';
+      onPressed = _onSaveAsProfile;
+    } else if (autoSaveOn) {
+      label = 'Done';
+      onPressed = () => Navigator.of(context).maybePop();
+    } else {
+      label = 'Save';
+      onPressed = _onUpdateProfile;
+    }
+    return Material(
+      color: theme.colorScheme.surface,
+      elevation: 4,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          child: SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: onPressed,
+              icon: Icon(hasProfile && autoSaveOn
+                  ? Icons.check
+                  : Icons.save_outlined),
+              label: Text(label),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   /// Slim card at the top of the screen that lets the user pick / save
   /// a [BallisticProfileRow]. Live-streams from [BallisticProfileRepository]
@@ -1741,30 +1877,28 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                         ),
                     ],
                   ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: [
-                    OutlinedButton.icon(
-                      icon: const Icon(Icons.save_outlined, size: 16),
-                      label: const Text('Save as Profile'),
-                      onPressed: _onSaveAsProfile,
-                    ),
-                    OutlinedButton.icon(
-                      icon: const Icon(Icons.sync_outlined, size: 16),
-                      label: const Text('Update'),
-                      onPressed:
-                          selected == null ? null : _onUpdateProfile,
-                    ),
-                    OutlinedButton.icon(
-                      icon: const Icon(Icons.delete_outline, size: 16),
-                      label: const Text('Delete'),
-                      onPressed:
-                          selected == null ? null : _onDeleteProfile,
-                    ),
-                  ],
-                ),
+                // Update / Delete only render when a saved profile is
+                // active. For a brand-new (Unsaved) calculator session
+                // there's nothing to update or delete, and showing the
+                // disabled buttons just looked like junk on the screen.
+                // The primary "Save as Profile" CTA lives at the bottom
+                // of the page (see the build method's footer) so the
+                // Profiles card stays focused on selection /
+                // management of EXISTING profiles.
+                if (selected != null) ...[
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      OutlinedButton.icon(
+                        icon: const Icon(Icons.delete_outline, size: 16),
+                        label: const Text('Delete'),
+                        onPressed: _onDeleteProfile,
+                      ),
+                    ],
+                  ),
+                ],
               ],
             );
           },
@@ -1774,31 +1908,40 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   }
 
   Widget _firearmSection() {
-    return _SectionCard(
-      title: 'Rifle / Firearm',
-      icon: Icons.handshake_outlined,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          FutureBuilder<List<UserFirearmRow>>(
-            future: _firearmsFuture,
-            builder: (context, snap) {
-              if (snap.connectionState == ConnectionState.waiting) {
+    // Wrap the FutureBuilder around the section card so the entire
+    // card collapses (not just its body) when the user has no
+    // saved firearms. A "No firearms" placeholder card was just
+    // visual noise on the calculator surface.
+    return FutureBuilder<List<UserFirearmRow>>(
+      future: _firearmsFuture,
+      builder: (context, outerSnap) {
+        if (outerSnap.connectionState == ConnectionState.done &&
+            (outerSnap.data ?? const <UserFirearmRow>[]).isEmpty) {
+          return const SizedBox.shrink();
+        }
+        return _SectionCard(
+          title: 'Rifle / Firearm',
+          icon: Icons.handshake_outlined,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              FutureBuilder<List<UserFirearmRow>>(
+                future: _firearmsFuture,
+                builder: (context, snap) {
+                  if (snap.connectionState == ConnectionState.waiting) {
                 return const Padding(
                   padding: EdgeInsets.symmetric(vertical: 8),
                   child: LinearProgressIndicator(),
                 );
               }
               final firearms = snap.data ?? const <UserFirearmRow>[];
+              // Hide the entire Firearms section when the user has no
+              // saved firearms — same anti-noise pattern as the Range
+              // Day profile / firearm dropdowns. The user's own
+              // typed-in projectile / muzzle / zero values still drive
+              // the solver; firearms are an optional pre-fill layer.
               if (firearms.isEmpty) {
-                return Text(
-                  'No firearms saved yet. Add one on the Firearms tab to '
-                  'pre-fill twist, MV, zero range, and sight height here.',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontStyle: FontStyle.italic,
-                      ),
-                );
+                return const SizedBox.shrink();
               }
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1918,6 +2061,8 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
           ),
         ],
       ),
+        );
+      },
     );
   }
 
@@ -2223,111 +2368,151 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   }
 
   Widget _bulletPicker() {
-    return FutureBuilder<List<({BulletRow bullet, ManufacturerRow mfg})>>(
-      future: _bulletsFuture,
-      builder: (context, snap) {
-        if (snap.connectionState == ConnectionState.waiting) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
-            child: LinearProgressIndicator(),
-          );
-        }
-        final entries = snap.data ?? const [];
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    // Unified picker over BOTH the user's saved recipes AND the
+    // bullet catalog. Recipes surface first (the user's own
+    // materials are always more relevant than browsing the raw
+    // catalog), then catalog bullets. Picking a recipe populates
+    // bullet name + weight from the recipe row; picking a bullet
+    // populates diameter + weight + BC + drag model. The picker is
+    // labeled "Pick a Saved Load or Bullet" to reflect both
+    // sources — the old "Pick from catalog" wording was incorrect
+    // since catalog-only doesn't tell the user their own loads
+    // belong here too.
+    return StreamBuilder<List<UserLoadRow>>(
+      stream: _recipesStream,
+      builder: (context, recipesSnap) {
+        return FutureBuilder<List<({BulletRow bullet, ManufacturerRow mfg})>>(
+          future: _bulletsFuture,
+          builder: (context, snap) {
+            if (snap.connectionState == ConnectionState.waiting) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: LinearProgressIndicator(),
+              );
+            }
+            final bullets = snap.data ?? const [];
+            final recipes = recipesSnap.data ?? const <UserLoadRow>[];
+            // Build the unified entry list. Recipes come first.
+            final entries = <_ProjectileEntry>[
+              for (final r in recipes) _RecipeProjectileEntry(r),
+              for (final b in bullets) _BulletProjectileEntry(b.bullet, b.mfg),
+            ];
+            // Resolve the current display string for the
+            // Autocomplete's initial value: a recipe pick wins over
+            // a bullet pick if both happen to be set (defensive —
+            // `_clearBulletSelection` clears both, but a stale
+            // race could leave both populated for one frame).
+            final initialText = _selectedRecipe != null
+                ? _recipeLabel(_selectedRecipe!)
+                : (_selectedBullet == null
+                    ? ''
+                    : _bulletLabel(
+                        _selectedBullet!.bullet, _selectedBullet!.mfg));
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Autocomplete<({BulletRow bullet, ManufacturerRow mfg})>(
-                    initialValue: TextEditingValue(
-                      text: _selectedBullet == null
-                          ? ''
-                          : _bulletLabel(_selectedBullet!.bullet,
-                              _selectedBullet!.mfg),
-                    ),
-                    displayStringForOption: (e) =>
-                        _bulletLabel(e.bullet, e.mfg),
-                    optionsBuilder: (te) {
-                      final q = te.text.trim().toLowerCase();
-                      if (q.isEmpty) return entries;
-                      // Tokenize on whitespace and require EVERY token to
-                      // appear somewhere in the label. This is what lets a
-                      // search like "berger 109" find
-                      // "Berger Long Range Hybrid Target 6mm 109gr" — the
-                      // tokens don't have to be adjacent in the label.
-                      final tokens = q.split(RegExp(r'\s+'))
-                          .where((t) => t.isNotEmpty)
-                          .toList(growable: false);
-                      if (tokens.isEmpty) return entries;
-                      return entries.where((e) {
-                        final label =
-                            _bulletLabel(e.bullet, e.mfg).toLowerCase();
-                        for (final t in tokens) {
-                          if (!label.contains(t)) return false;
-                        }
-                        return true;
-                      });
-                    },
-                    fieldViewBuilder: (
-                      context,
-                      textCtrl,
-                      focusNode,
-                      onFieldSubmitted,
-                    ) {
-                      return TextField(
-                        controller: textCtrl,
-                        focusNode: focusNode,
-                        autocorrect: false,
-                        enableSuggestions: false,
-                        textCapitalization: TextCapitalization.none,
-                        decoration: InputDecoration(
-                          labelText: 'Pick from catalog',
-                          prefixIcon: const Icon(Icons.search),
-                          suffixIcon: textCtrl.text.isEmpty
-                              ? null
-                              : IconButton(
-                                  icon: const Icon(Icons.close),
-                                  tooltip: 'Clear',
-                                  onPressed: () {
-                                    textCtrl.clear();
-                                    _clearBulletSelection();
+                Row(
+                  children: [
+                    Expanded(
+                      child: Autocomplete<_ProjectileEntry>(
+                        initialValue: TextEditingValue(text: initialText),
+                        displayStringForOption: (e) => e.label,
+                        optionsBuilder: (te) {
+                          final q = te.text.trim().toLowerCase();
+                          if (q.isEmpty) return entries;
+                          final tokens = q
+                              .split(RegExp(r'\s+'))
+                              .where((t) => t.isNotEmpty)
+                              .toList(growable: false);
+                          if (tokens.isEmpty) return entries;
+                          return entries.where((e) {
+                            final label = e.label.toLowerCase();
+                            for (final t in tokens) {
+                              if (!label.contains(t)) return false;
+                            }
+                            return true;
+                          });
+                        },
+                        fieldViewBuilder: (
+                          context,
+                          textCtrl,
+                          focusNode,
+                          onFieldSubmitted,
+                        ) {
+                          return TextField(
+                            controller: textCtrl,
+                            focusNode: focusNode,
+                            autocorrect: false,
+                            enableSuggestions: false,
+                            textCapitalization: TextCapitalization.none,
+                            decoration: InputDecoration(
+                              labelText: 'Pick a Saved Load or Bullet',
+                              prefixIcon: const Icon(Icons.search),
+                              suffixIcon: textCtrl.text.isEmpty
+                                  ? null
+                                  : IconButton(
+                                      icon: const Icon(Icons.close),
+                                      tooltip: 'Clear',
+                                      onPressed: () {
+                                        textCtrl.clear();
+                                        _clearBulletSelection();
+                                      },
+                                    ),
+                            ),
+                            onSubmitted: (_) => onFieldSubmitted(),
+                          );
+                        },
+                        onSelected: (entry) {
+                          switch (entry) {
+                            case _RecipeProjectileEntry(:final recipe):
+                              _applyRecipeSelection(recipe);
+                            case _BulletProjectileEntry(
+                                :final bullet,
+                                :final mfg
+                              ):
+                              _applyBulletSelection(
+                                  (bullet: bullet, mfg: mfg));
+                          }
+                        },
+                        optionsViewBuilder: (context, onSelected, options) {
+                          final theme = Theme.of(context);
+                          return Align(
+                            alignment: Alignment.topLeft,
+                            child: Material(
+                              elevation: 4,
+                              child: ConstrainedBox(
+                                constraints:
+                                    const BoxConstraints(maxHeight: 360),
+                                child: ListView.builder(
+                                  shrinkWrap: true,
+                                  padding: EdgeInsets.zero,
+                                  itemCount: options.length,
+                                  itemBuilder: (context, i) {
+                                    final e = options.elementAt(i);
+                                    return ListTile(
+                                      dense: true,
+                                      leading: Icon(
+                                        e is _RecipeProjectileEntry
+                                            ? Icons.science_outlined
+                                            : Icons.album_outlined,
+                                        size: 18,
+                                        color: theme.colorScheme.primary,
+                                      ),
+                                      title: Text(e.label),
+                                      subtitle: e is _RecipeProjectileEntry
+                                          ? const Text('My Recipe')
+                                          : const Text('Bullet Catalog'),
+                                      onTap: () => onSelected(e),
+                                    );
                                   },
                                 ),
-                        ),
-                        onSubmitted: (_) => onFieldSubmitted(),
-                      );
-                    },
-                    onSelected: _applyBulletSelection,
-                    optionsViewBuilder: (context, onSelected, options) {
-                      return Align(
-                        alignment: Alignment.topLeft,
-                        child: Material(
-                          elevation: 4,
-                          child: ConstrainedBox(
-                            constraints:
-                                const BoxConstraints(maxHeight: 360),
-                            child: ListView.builder(
-                              shrinkWrap: true,
-                              padding: EdgeInsets.zero,
-                              itemCount: options.length,
-                              itemBuilder: (context, i) {
-                                final e = options.elementAt(i);
-                                return ListTile(
-                                  dense: true,
-                                  title:
-                                      Text(_bulletLabel(e.bullet, e.mfg)),
-                                  onTap: () => onSelected(e),
-                                );
-                              },
+                              ),
                             ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                 TextButton.icon(
                   onPressed: _selectedBullet == null
                       ? null
@@ -2348,6 +2533,8 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                 child: _customDragAvailableBadge(),
               ),
           ],
+        );
+      },
         );
       },
     );
@@ -2789,6 +2976,7 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
     final kestrel = context.read<KestrelService>();
     if (kestrel.device == null) return;
     await _kestrelSub?.cancel();
+    if (!mounted) return;
     _kestrelSub = kestrel.readings.listen(_applyKestrelReading);
     setState(() => _useKestrel = true);
     // Apply the latest reading immediately so the UI doesn't sit on
@@ -3010,7 +3198,7 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          // Litz wind-bracket uncertainty input. Drives the wind-bracket
+          // wind-bracket uncertainty input. Drives the wind-bracket
           // card in the Output section; setting it to 0 hides the card.
           TextField(
             controller: _windUncertaintyCtrl,
@@ -3022,7 +3210,7 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                 glossaryTerm: 'Wind uncertainty',
               ),
               helperText:
-                  'How sure are you of the wind speed? Drives the Litz '
+                  'How sure are you of the wind speed? Drives the '
                   'wind-bracket card. Set to 0 to hide.',
               helperMaxLines: 2,
               suffixText: windLabel,
@@ -3050,7 +3238,7 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   /// `ExpansionTile` so the default ballistics screen doesn't get
   /// cluttered. When opened, exposes:
   ///
-  ///   * Aerodynamic jump multiplier (Bryan Litz spin-drift jump term)
+  ///   * Aerodynamic jump multiplier (industry-standard spin-drift jump term)
   ///   * Twist direction (right/left) — flips spin-drift sign
   ///   * Sight scale factors (vertical / horizontal) — corrects scopes
   ///     whose tracking does not match advertised mil/MOA values
@@ -3164,7 +3352,7 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                 ),
                 hintText: 'e.g. 0.0 (off) or ±0.05',
                 helperText:
-                    'Litz aerodynamic jump term. Positive multiplier '
+                    'aerodynamic jump term. Positive multiplier '
                     'tilts the bullet axis with crosswind on launch.',
                 helperMaxLines: 3,
               ),
@@ -3406,7 +3594,7 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
               TrajectoryChart(samples: _samples),
             ],
             const SizedBox(height: 16),
-            // Litz wind-bracket card. Hides when uncertainty is 0 /
+            // wind-bracket card. Hides when uncertainty is 0 /
             // null. Anchored on the longest range in the ladder so
             // the bracket envelope is meaningful (long range is
             // where wind error matters).
@@ -3453,11 +3641,11 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
     );
   }
 
-  /// Litz wind-bracket card. Computes the windage hold at three wind
+  /// wind-bracket card. Computes the windage hold at three wind
   /// speeds — `wind − uncertainty`, `wind`, `wind + uncertainty` — and
   /// renders all three so the shooter can see the +/- envelope of
   /// their wind hold given how unsure they are of the wind speed. Per
-  /// Litz (*Modern Advancements in Long-Range Shooting* vol. 1, ch. 5
+  /// industry standard (exterior-ballistics literature vol. 1, ch. 5
   /// and *Applied Ballistics* 3rd ed., ch. 11), the shooter dials the
   /// MID hold; LOW and HIGH are the boundaries the bullet will fall
   /// within if the wind reading is off. Returns a `SizedBox.shrink()`
@@ -4097,6 +4285,36 @@ class _DopeTable extends StatelessWidget {
   }
 }
 
+// ─────────────────────── Projectile picker entry types ───────────────────────
+
+/// Sealed entry type for the unified projectile picker. The
+/// Autocomplete widget surfaces both the user's saved recipes
+/// AND the bullet catalog in a single search box; this sealed
+/// type lets us pattern-match in the `onSelected` callback to
+/// route to the right populate-fields helper.
+sealed class _ProjectileEntry {
+  String get label;
+}
+
+class _RecipeProjectileEntry extends _ProjectileEntry {
+  _RecipeProjectileEntry(this.recipe);
+  final UserLoadRow recipe;
+  @override
+  String get label => recipe.name;
+}
+
+class _BulletProjectileEntry extends _ProjectileEntry {
+  _BulletProjectileEntry(this.bullet, this.mfg);
+  final BulletRow bullet;
+  final ManufacturerRow mfg;
+  @override
+  String get label {
+    final wt = bullet.weightGr.toStringAsFixed(
+        bullet.weightGr.truncateToDouble() == bullet.weightGr ? 0 : 1);
+    return '${mfg.name} ${bullet.line} ${wt}gr';
+  }
+}
+
 // ─────────────────────── Disclaimer ───────────────────────
 
 class _DisclaimerFooter extends StatelessWidget {
@@ -4107,7 +4325,7 @@ class _DisclaimerFooter extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
       child: Text(
         'Solver is a Modified Point-Mass (MPM) model with G1/G7 standard drag '
-        'curves and Litz spin-drift correction. Output is a planning aid; '
+        'curves and spin-drift correction. Output is a planning aid; '
         'verify in the field before relying on these numbers for any '
         'consequential shot.',
         style: theme.textTheme.bodySmall?.copyWith(

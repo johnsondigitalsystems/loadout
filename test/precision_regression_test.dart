@@ -1,10 +1,10 @@
-// FILE: test/litz_regression_test.dart
+// FILE: test/precision_regression_test.dart
 //
 // ============================================================================
 // WHAT THIS FILE DOES
 // ============================================================================
 // This is the LoadOut ballistic solver's regression-test fixture against
-// Bryan Litz / Applied Ballistics published trajectory data. It hard-codes
+// Applied Ballistics published trajectory data. It hard-codes
 // six widely-tested long-range projectiles (Berger 105 / 140 / 215 Hybrid
 // Target, Hornady 147 / 178 ELD-M, Sierra 175 SMK) with their canonical
 // G7 BC + muzzle velocity + bullet length + barrel twist, runs them
@@ -16,7 +16,7 @@
 // ±0.2 mil at 1000 yd and beyond — the standard "first round on a
 // 12-inch plate" tolerance.
 //
-// The Litz precision corrections (`includeSpinDrift`, `includeCoriolis`,
+// The precision corrections (`includeSpinDrift`, `includeCoriolis`,
 // `includeAerodynamicJump`) are all enabled on every assertion because
 // those are part of what we claim parity on. Sample ranges that include
 // 1200 yd are capped at 1200 yd; for the .308 bullets that go subsonic
@@ -26,7 +26,7 @@
 // WHY IT EXISTS IN THE ARCHITECTURE
 // ============================================================================
 // Foundation for the marketing claim "LoadOut's solver matches Bryan
-// Litz / Applied Ballistics tables to within 0.1 mil at 1000 yd". The
+// industry standard / Applied Ballistics tables to within 0.1 mil at 1000 yd". The
 // existing test fixtures (`test/ballistics_test.dart`,
 // `test/ballistic_precision_test.dart`, `test/precision_test.dart`)
 // cover unit conversions, edge cases, the 6.5 CM golden, and per-input
@@ -35,7 +35,7 @@
 // This file does. It must FAIL if the solver drifts from its current
 // output, and the assertion comments name whether each expected value
 // is regression-locked from solver output (current) or cross-checked
-// against a printed Litz table (future hardening).
+// against a printed industry standard table (future hardening).
 //
 // ============================================================================
 // WHY THIS IS HARDER THAN IT LOOKS
@@ -44,10 +44,10 @@
 //     below has a comment naming the source of `expected`. Today every
 //     row is "regression-locked from solver output 2026-05-08"; this is
 //     deliberate — the test has to be green before it can be
-//     cross-checked against a printed Litz copy. Future engineers who
+//     cross-checked against a printed industry standard copy. Future engineers who
 //     have access to *Applied Ballistics for Long-Range Shooting*,
-//     2nd ed. or *Modern Advancements in Long-Range Shooting* should
-//     replace the regression-lock numbers row-by-row with the Litz
+//     2nd ed. or exterior-ballistics literature should
+//     replace the regression-lock numbers row-by-row with the industry standard
 //     tabulated values, and tighten the tolerance from "first round on
 //     a 12-inch plate" to whatever the published values support
 //     (typically 0.05 mil at 1000 yd for AB Doppler-validated bullets).
@@ -58,21 +58,21 @@
 //     uncertainty in the BC value across the transonic transition,
 //     which is where every public solver disagrees the most. These are
 //     intentionally loose so a real solver bug fails this test; they
-//     do NOT certify "the solver matches Litz to 0.1 mil" until the
-//     Litz cross-check column is filled in.
+//     do NOT certify "the solver matches industry standard to 0.1 mil" until the
+//     industry standard cross-check column is filled in.
 //
 //   * Atmosphere baseline: sea-level uses the explicit
 //     `Atmosphere.station(tempF: 59, pressure: 29.92, humidity: 78,
 //     altitude: 0)` form (matching the ICAO standard atmosphere with
-//     the 78% humidity that Litz prints in his reference tables) rather
+//     the 78% humidity that industry standard prints in his reference tables) rather
 //     than `Atmosphere.icaoStd()` (which has 0% humidity). The density
 //     difference is small (<0.5%) but the test wants to mirror the
-//     Litz convention exactly so future printed-table cross-checks
+//     industry standard convention exactly so future printed-table cross-checks
 //     don't have to compensate for atmosphere mismatch.
 //
 //   * Altitude baseline: 5280 ft uses `Atmosphere.fromAltitudeFt(5280)`
 //     — the ICAO-standard density at altitude. This is the Denver
-//     calibration shot Litz uses in *Modern Advancements* vol. 2 to
+//     calibration shot industry standard uses in *Modern Advancements* vol. 2 to
 //     show the altitude effect on long-range drop. Real Denver weather
 //     varies — but the test's purpose is "the solver gives the right
 //     answer for the published reference atmosphere", not "the solver
@@ -99,10 +99,10 @@
 // ============================================================================
 // WHO CONSUMES THIS FILE
 // ============================================================================
-//   - `flutter test test/litz_regression_test.dart` — runs the suite.
+//   - `flutter test test/precision_regression_test.dart` — runs the suite.
 //   - `flutter test` — included in the full suite.
 //   - Any future engineer cross-checking solver output against printed
-//     Litz tables. The regression-lock comments name the date so they
+//     industry standard tables. The regression-lock comments name the date so they
 //     can find the matching commit.
 //
 // ============================================================================
@@ -126,7 +126,7 @@ import 'package:loadout/services/ballistics/units.dart' as bu;
 // extreme-vs-precise cross-check from `test/precision_test.dart`. The
 // numbers below are "first round on a 12-inch plate" — tight enough
 // to catch a real regression, loose enough to be cross-checkable
-// against any published Litz / AB / 4DOF reference.
+// against any published industry standard / AB / 4DOF reference.
 const double _tolMilNear = 0.1; // < 1000 yd
 const double _tolMilFar = 0.2; // >= 1000 yd
 
@@ -138,18 +138,18 @@ const double _tolWindMilNear = 0.15;
 const double _tolWindMilFar = 0.25;
 
 void main() {
-  group('Litz regression — sea-level ICAO standard atmosphere', () {
-    // Build the atmosphere with the Litz reference convention:
+  group('industry standard regression — sea-level ICAO standard atmosphere', () {
+    // Build the atmosphere with the industry standard reference convention:
     // 59 °F, 29.92 inHg station pressure, 78% humidity, sea level.
     //
-    // Litz prints sea-level Doppler tables under exactly these
+    // industry standard prints sea-level Doppler tables under exactly these
     // conditions (the 78% humidity comes from the ICAO definition of
     // "standard atmosphere" — most public reference tables that are
     // marked "standard" use this). Using `Atmosphere.station(...)`
     // here rather than `Atmosphere.icaoStd()` (which has 0%
-    // humidity) costs 0.4% in density but matches the Litz reference
+    // humidity) costs 0.4% in density but matches the industry standard reference
     // exactly so the regression numbers below can later be replaced
-    // with values from a printed Litz table without atmospheric
+    // with values from a printed industry standard table without atmospheric
     // adjustment.
     final atm = Atmosphere.station(
       tempF: 59,
@@ -169,7 +169,7 @@ void main() {
     test('Berger 105 Hybrid Target @ 2900 fps — drop / wind to 1200 yd', () {
       // Berger 105 gr 6mm Hybrid Target. G7 BC 0.275, length 1.220",
       // 1:8 twist. Reference: Berger product page; G7 BC matches
-      // Litz, "Modern Advancements in Long-Range Shooting" vol. 1
+      // industry standard, "exterior-ballistics literature" vol. 1
       // table (Doppler-derived). Stays comfortably supersonic at
       // 1200 yd in this atmosphere.
       final projectile = Projectile(
@@ -197,7 +197,7 @@ void main() {
       );
 
       // All expected values below are regression-locked from solver
-      // output 2026-05-08; replace with Bryan Litz, "Applied
+      // output 2026-05-08; replace with industry-standard, "Applied
       // Ballistics for Long-Range Shooting" 2nd ed. table values
       // when the printed copy is available.
       _expectMil(samples, 100, dropMil: 0.07, windMil: 0.18);
@@ -211,7 +211,7 @@ void main() {
     test('Berger 140 Hybrid Target @ 2750 fps — drop / wind to 1200 yd', () {
       // Berger 140 gr 6.5 mm Hybrid Target. G7 BC 0.319, length
       // 1.421", 1:8 twist. Reference: Berger product page; G7 BC
-      // also published by AB-Litz vol. 1.
+      // also published by AB-industry standard vol. 1.
       final projectile = Projectile(
         diameterIn: 0.264,
         weightGr: 140,
@@ -237,7 +237,7 @@ void main() {
       );
 
       // Regression-locked from solver output 2026-05-08; cross-check
-      // with Litz vol. 2 6.5 mm tables.
+      // with industry standard vol. 2 6.5 mm tables.
       _expectMil(samples, 100, dropMil: 0.06, windMil: 0.17);
       _expectMil(samples, 300, dropMil: 1.26, windMil: 0.52);
       _expectMil(samples, 500, dropMil: 2.92, windMil: 0.92);
@@ -278,7 +278,7 @@ void main() {
       );
 
       // Regression-locked from solver output 2026-05-08; replace
-      // with Litz Applied Ballistics 2nd ed. .308 tables when
+      // with industry standard Applied Ballistics 2nd ed. .308 tables when
       // available.
       _expectMil(samples, 100, dropMil: 0.06, windMil: 0.21);
       _expectMil(samples, 300, dropMil: 1.48, windMil: 0.66);
@@ -290,7 +290,7 @@ void main() {
     test('Sierra 175 SMK @ 2600 fps — drop / wind to 1000 yd', () {
       // Sierra 175 gr .308 MatchKing. G7 BC 0.243, length 1.240",
       // 1:10 twist. Reference: Sierra Bullets' published BCs +
-      // Litz vol. 1 single-BC G7 table. Slowest of the .308 lineup
+      // industry standard vol. 1 single-BC G7 table. Slowest of the .308 lineup
       // here — goes subsonic just past 1000 yd in this atmosphere
       // (Mach 0.98 by 1000 yd in the regression capture).
       final projectile = Projectile(
@@ -318,7 +318,7 @@ void main() {
       );
 
       // Regression-locked from solver output 2026-05-08; cross-check
-      // against Sierra reloading manual table or Litz vol. 1
+      // against Sierra reloading manual table or industry standard vol. 1
       // chapter on M118LR.
       _expectMil(samples, 100, dropMil: 0.06, windMil: 0.24);
       _expectMil(samples, 300, dropMil: 1.53, windMil: 0.77);
@@ -358,7 +358,7 @@ void main() {
       );
 
       // Regression-locked from solver output 2026-05-08; replace
-      // with the AB Doppler-validated 215 gr table from Litz vol. 2
+      // with the AB Doppler-validated 215 gr table from industry standard vol. 2
       // when the printed copy is available.
       _expectMil(samples, 100, dropMil: 0.07, windMil: 0.15);
       _expectMil(samples, 300, dropMil: 1.17, windMil: 0.47);
@@ -411,13 +411,13 @@ void main() {
     });
   });
 
-  group('Litz regression — Denver altitude (5280 ft ICAO standard)', () {
+  group('industry standard regression — Denver altitude (5280 ft ICAO standard)', () {
     // Same projectiles, ICAO-standard atmosphere at 5280 ft. Air
     // density drops from 1.225 kg/m³ at sea level to ~1.013 kg/m³
     // at 5280 ft — about 17% thinner. Drop and wind drift should
     // both be smaller than the sea-level numbers because the
     // bullet feels less drag, retains more velocity, and arrives
-    // at the target sooner. The deltas are well-published in Litz
+    // at the target sooner. The deltas are well-published in industry standard
     // vol. 2 chapter 7 (atmospheric effects).
     //
     // Coriolis stays the same (latitude 40°N, due-north shot);
@@ -461,7 +461,7 @@ void main() {
 
       // Regression-locked from solver output 2026-05-08; sanity
       // check vs sea-level run shows ~9% less drop at 1000 yd
-      // (8.41 mil sea level → 7.64 mil Denver). Litz vol. 2 ch. 7
+      // (8.41 mil sea level → 7.64 mil Denver). industry standard vol. 2 ch. 7
       // expected delta for a 105 gr 6mm at MV 2900 going from
       // sea level to 5280 ft is in the 8-10% range.
       _expectMil(samples, 100, dropMil: 0.07, windMil: 0.15);
@@ -500,7 +500,7 @@ void main() {
 
       // Regression-locked from solver output 2026-05-08; vs sea-
       // level: 8.70 mil → 8.04 mil at 1000 yd, ~7.5% reduction —
-      // matches Litz's published altitude-effect curve for typical
+      // matches the published altitude-effect curve for typical
       // 6.5 mm match bullets.
       _expectMil(samples, 100, dropMil: 0.07, windMil: 0.14);
       _expectMil(samples, 300, dropMil: 1.23, windMil: 0.45);
@@ -574,7 +574,7 @@ void main() {
 
       // Regression-locked from solver output 2026-05-08; the M118LR
       // 175 SMK at altitude is well-documented in military marksman
-      // training materials and Litz vol. 1 — Denver-altitude drop
+      // training materials and industry standard vol. 1 — Denver-altitude drop
       // should reduce ~10–12% from sea level (12.00 → 10.61 mil at
       // 1000 yd matches that band).
       _expectMil(samples, 100, dropMil: 0.06, windMil: 0.21);
@@ -661,7 +661,7 @@ void main() {
     });
   });
 
-  group('Litz regression — altitude effect (sanity cross-check)', () {
+  group('industry standard regression — altitude effect (sanity cross-check)', () {
     test('Denver altitude reduces 1000-yd drop for every projectile', () {
       // Cross-test that asserts the SIGN of the altitude effect — at
       // 5280 ft every projectile in the suite must drop LESS than at
@@ -724,7 +724,7 @@ void main() {
       ).single.dropInches;
 
       // Denver < sea level. Magnitude of the reduction should be in
-      // the ~5–15% band per Litz vol. 2 ch. 7.
+      // the ~5–15% band per industry standard vol. 2 ch. 7.
       expect(dropDenver, lessThan(dropSL),
           reason: 'altitude must reduce drop, not increase it');
       final reductionPct = (dropSL - dropDenver) / dropSL;
@@ -794,24 +794,24 @@ void _expectMil(
 // 1. The solver was deliberately improved.
 //    -----------------------------------
 //    Example: a new drag model lands, the spin-drift formula switches
-//    from Litz to Pejsa, the Cash–Karp tolerance tightens, etc. Every
+//    from industry standard to Pejsa, the Cash–Karp tolerance tightens, etc. Every
 //    affected test will fail with a clear "got X, expected Y" message
 //    naming the exact range where the new value diverges. Workflow:
 //
 //      a. Confirm the solver change is intentional and the new value
-//         is plausibly closer to the printed Litz reference (or to a
+//         is plausibly closer to the printed industry standard reference (or to a
 //         third-party online calculator like JBM Ballistics or
 //         Hornady 4DOF). If the new value is FURTHER from the
 //         reference, you have a regression — fix the solver, do not
 //         update the test.
 //
 //      b. Re-capture the regression numbers. The capture flow:
-//         (i) copy `test/_litz_capture_helper.dart` from this commit
+//         (i) copy `test/_precision_capture_helper.dart` from this commit
 //             history (or rewrite per the pattern: build each
 //             projectile + atmosphere, call solveTrajectory at the
 //             listed sample ranges, print drop_mil and wind_mil
 //             tab-separated to stdout);
-//         (ii) `flutter test test/_litz_capture_helper.dart 2>&1`;
+//         (ii) `flutter test test/_precision_capture_helper.dart 2>&1`;
 //         (iii) paste the new numbers into the `_expectMil(...)`
 //              calls below;
 //         (iv) DELETE the capture helper — it must not stay in the
@@ -820,12 +820,12 @@ void _expectMil(
 //      c. Update the comment next to the changed assertions to name
 //         the date and the solver change ("Regression: locked from
 //         solver output YYYY-MM-DD after switching to <whatever>;
-//         replace with Litz Vol N p. <P> when verified").
+//         replace with industry standard Vol N p. <P> when verified").
 //
 //      d. Run `flutter test` to confirm the full suite is green
 //         again.
 //
-// 2. A printed Litz / AB reference is being cross-checked.
+// 2. A printed industry standard / AB reference is being cross-checked.
 //    ------------------------------------------------------
 //    Example: an engineer receives a copy of "Applied Ballistics for
 //    Long-Range Shooting", 2nd ed., or "Modern Advancements" vol. 2
@@ -836,7 +836,7 @@ void _expectMil(
 //      a. For each projectile, find the printed table in the book.
 //         The Berger 140 / 215 and Hornady 147 / 178 ELD-M are in
 //         AB vol. 1; the .243 105 Hybrid and .308 175 SMK are in
-//         vol. 2 if at all. Note that Litz publishes
+//         vol. 2 if at all. Note that industry standard publishes
 //         velocity-banded BCs for some bullets — the inputs here use
 //         the single-supersonic G7 BC, which is what shooters
 //         typically enter into a non-AB calculator. The published
@@ -847,16 +847,16 @@ void _expectMil(
 //
 //      b. For each `_expectMil(samples, N, dropMil: X, windMil: Y)`
 //         call, replace X and Y with the printed values. Update the
-//         assertion-comment to read "Litz Vol N table 8-X p. <P>;
+//         assertion-comment to read "industry standard Vol N table 8-X p. <P>;
 //         single-BC G7 input — agrees within <T> mil with our
 //         solver".
 //
-//      c. Tighten the tolerances if the printed Litz value is within
+//      c. Tighten the tolerances if the printed industry standard value is within
 //         tighter bounds than `_tolMilNear` / `_tolMilFar` allow. If
 //         it isn't (because of BC velocity-banding mismatch), keep
 //         the loose tolerance and document the gap in the comment.
 //
-//      d. Run `flutter test test/litz_regression_test.dart` to
+//      d. Run `flutter test test/precision_regression_test.dart` to
 //         confirm the cross-check passes. If it does NOT, double-
 //         check the published table's atmosphere assumption (some
 //         AB tables print at 70°F + 30 inHg + 0% humidity vs the

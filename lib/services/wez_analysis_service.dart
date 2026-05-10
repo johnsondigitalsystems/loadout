@@ -3,12 +3,14 @@
 // ============================================================================
 // WHAT THIS FILE DOES
 // ============================================================================
-// Computes Bryan Litz's Weapon Employment Zone (WEZ) curve: hit probability
-// vs range, given a target geometry and the shooter's intrinsic uncertainty
-// envelope (group capability, wind call, range estimate, MV SD).
+// Computes the Weapon Employment Zone (WEZ) curve: hit probability
+// vs range, given a target geometry and the shooter's intrinsic
+// uncertainty envelope (group capability, wind call, range estimate,
+// MV SD).
 //
-// The output is the standard Litz "WEZ chart" you see in *Modern Advancements
-// in Long Range Shooting Vol 1*: a curve that starts near 100% at short range,
+// The output is the standard "WEZ chart" published in *Modern
+// Advancements in Long Range Shooting Vol 1*: a curve that starts
+// near 100% at short range,
 // drops as variance accumulates, and crosses meaningful thresholds (90 / 75
 // / 50 / 25%) at successively longer distances. The shooter uses it to answer
 // "what's my realistic engagement distance for this target?" — the answer
@@ -22,7 +24,7 @@
 //
 //   * `class WezResult` — the computed curve plus the variance contribution
 //     breakdown at one user-chosen reference range. The breakdown tells the
-//     shooter what to fix to improve the curve (Litz's coaching framing): at
+//     shooter what to fix to improve the curve (the coaching framing): at
 //     short range group dominates, at long range wind dominates.
 //
 //   * `class WezVarianceFactor` — one entry in the breakdown (label +
@@ -90,7 +92,7 @@
 // (variance composition is linear because the contributions are independent
 // Gaussians; sigma composition is the Pythagorean sum.)
 //
-// Litz's coaching observation: at short range σ_group is the dominant term
+// the coaching observation: at short range σ_group is the dominant term
 // (the rifle's intrinsic capability), so a tighter group is the lever to
 // pull. At long range σ_wind dominates because crosswind drift scales with
 // time-of-flight, which grows much faster than range. The MV-SD term
@@ -117,9 +119,9 @@
 // ============================================================================
 // REFERENCES
 // ============================================================================
-//   * Bryan Litz, "Modern Advancements in Long Range Shooting Volume 1",
+//   * industry-standard, "Modern Advancements in Long Range Shooting Volume 1",
 //     ch. 4 (Weapon Employment Zone Analysis). The methodology.
-//   * Bryan Litz, "Applied Ballistics for Long Range Shooting" 2nd ed. —
+//   * industry-standard, "Applied Ballistics for Long Range Shooting" 2nd ed. —
 //     same dispersion math as `HitProbabilityService.compute`.
 //   * `lib/services/hit_probability_service.dart` — the per-point version
 //     of the same calculation.

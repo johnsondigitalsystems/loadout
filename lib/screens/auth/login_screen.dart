@@ -272,7 +272,6 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.read<AuthService>();
-    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: const Text('LoadOut')),
       body: Center(
@@ -285,39 +284,6 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Prominent "Continue as Guest" affordance at the
-                  // top of the screen. Sign-in is always required to
-                  // enter the app, but anonymous is one of the
-                  // always-available options — surfacing it here
-                  // rather than tucking it at the bottom matches the
-                  // product policy: "a user should always be logged
-                  // in, even if it's just the anonymous login."
-                  // Tapping signs the user in anonymously immediately;
-                  // the auth-state stream then routes them to
-                  // HomeScreen via _AuthGate. They can upgrade the
-                  // anonymous account to a real one later from
-                  // Settings → Account.
-                  _GuestCta(
-                    busy: _busy,
-                    onPressed: () => _runAuth(auth.signInAnonymously),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      const Expanded(child: Divider()),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Text(
-                          'or sign in to back up + sync',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                      const Expanded(child: Divider()),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
                   TextFormField(
                     controller: _emailController,
                     decoration: const InputDecoration(labelText: 'Email'),
@@ -382,6 +348,24 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
+                  // "Continue as Guest" is the FIRST option in the
+                  // provider stack, with the same outlined-button
+                  // shape as the social providers. The earlier card-
+                  // at-the-top treatment (`_GuestCta`) made it
+                  // visually distinct, but users read the difference
+                  // as "this is a SECONDARY option" rather than "this
+                  // is one of the equally-available sign-in methods."
+                  // Keeping the same shape + height + alignment as
+                  // Google / Apple / Microsoft / Yahoo gives Guest
+                  // equal weight in the visual hierarchy.
+                  _ProviderButton.material(
+                    icon: Icons.no_accounts_outlined,
+                    label: 'Continue as Guest',
+                    onPressed: _busy
+                        ? null
+                        : () => _runAuth(auth.signInAnonymously),
+                  ),
+                  const SizedBox(height: 8),
                   _ProviderButton(
                     icon: FontAwesomeIcons.google,
                     label: 'Continue with Google',
@@ -424,11 +408,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     icon: const Icon(Icons.help_outline),
                     label: const Text('Get help signing in'),
                   ),
-                  // The "Continue as Guest" affordance now lives at
-                  // the TOP of this screen as a primary call to
-                  // action — see [_GuestCta] above. The bottom-of-
-                  // screen TextButton was removed so the form has
-                  // exactly one entry point per sign-in method.
                 ],
               ),
             ),
@@ -439,100 +418,63 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-/// Prominent "Continue as Guest" call-to-action rendered at the top
-/// of [LoginScreen]. Anonymous sign-in is always available; surfacing
-/// it as a labeled outlined button (instead of the prior subtle
-/// `TextButton` at the bottom of the page) matches the product
-/// policy that "a user should always be logged in — even if it's
-/// just the anonymous login."
-///
-/// Visually distinct from the email/password FilledButton below it
-/// so users understand the two are alternatives, not a sequence.
-class _GuestCta extends StatelessWidget {
-  const _GuestCta({required this.busy, required this.onPressed});
-
-  final bool busy;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      elevation: 0,
-      color: theme.colorScheme.surfaceContainerHighest,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: theme.colorScheme.outlineVariant),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: busy ? null : onPressed,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.no_accounts_outlined,
-                    color: theme.colorScheme.primary,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Continue as Guest',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  Icon(
-                    Icons.arrow_forward,
-                    size: 20,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'No email, no password — your data stays on this device. '
-                'You can upgrade to a real account later if you want '
-                'cloud backup or cross-device sync.',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
+/// One row in the "Or Continue With" provider stack. Same shape +
+/// height + alignment for every entry — Google / Apple / Microsoft /
+/// Yahoo via [_ProviderButton], "Continue as Guest" via the
+/// `_ProviderButton.material` named constructor (which takes a
+/// Material `IconData` instead of the `FaIconData` the social
+/// providers use). All five render at the same visual weight so
+/// the user reads them as equally-available options.
 class _ProviderButton extends StatelessWidget {
   const _ProviderButton({
-    required this.icon,
+    required FaIconData icon,
     required this.label,
     required this.onPressed,
-  });
+  })  : _faIcon = icon,
+        _materialIcon = null;
 
-  final FaIconData icon;
+  /// Variant for entries whose icon is a Material `IconData` rather
+  /// than a `FaIconData`. Used by "Continue as Guest"
+  /// (`Icons.no_accounts_outlined` is Material). Same outer shape +
+  /// height + alignment as the FontAwesome variant above.
+  const _ProviderButton.material({
+    required IconData icon,
+    required this.label,
+    required this.onPressed,
+  })  : _faIcon = null,
+        _materialIcon = icon;
+
+  final FaIconData? _faIcon;
+  final IconData? _materialIcon;
   final String label;
   final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
+    // Icon size bumped from 18/20 to 24 so the brand glyph reads at
+    // a glance — at 18px the FontAwesome marks (G, Apple, Microsoft
+    // squares, Y!) were almost invisible against the dark button
+    // background. 24 matches Material's standard ListTile leading
+    // icon size, which is what users' eyes are calibrated to in a
+    // stacked-button layout.
+    final iconWidget = _faIcon != null
+        ? FaIcon(_faIcon, size: 24)
+        : Icon(_materialIcon, size: 24);
     return OutlinedButton.icon(
       onPressed: onPressed,
-      icon: FaIcon(icon, size: 18),
+      icon: iconWidget,
       label: Text(label),
       style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        alignment: Alignment.centerLeft,
-        minimumSize: const Size.fromHeight(48),
+        // Generous horizontal padding around the icon + label group
+        // so the icon isn't pressed against the rounded-rect edge.
+        // Center alignment puts the (icon, label) pair in the middle
+        // of the button rather than flush-left — the buttons read as
+        // a peer set of options rather than a list of left-justified
+        // rows.
+        padding:
+            const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+        alignment: Alignment.center,
+        minimumSize: const Size.fromHeight(52),
       ),
     );
   }

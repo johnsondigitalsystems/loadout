@@ -266,7 +266,11 @@
       "Bash(git -C /Users/general/Development/Applications/LoadOut diff HEAD -- lib/screens/range_day/range_day_detail_screen.dart)",
       "Bash(git -C /Users/general/Development/Applications/LoadOut diff --cached --stat lib/screens/range_day/range_day_detail_screen.dart)",
       "Bash(git -C /Users/general/Development/Applications/LoadOut status lib/screens/range_day/range_day_detail_screen.dart)",
-      "Bash(ruby -e \"require 'xcodeproj'; puts 'xcodeproj available'\")"
+      "Bash(ruby -e \"require 'xcodeproj'; puts 'xcodeproj available'\")",
+      "Bash(awk '/^  void dispose/,/^  }/' /Users/general/Development/Applications/LoadOut/lib/screens/range_day/range_day_detail_screen.dart)",
+      "Bash(git log *)",
+      "Bash(sed -i '' \"s/'WEZ Analysis'/'Hit Probability Map'/g\" test/wez_analysis_screen_widget_test.dart)",
+      "Bash(sed -i '' \"s/'Sight Calibration'/'Scope Tracking Test'/g\" test/sight_calibration_screen_widget_test.dart)"
     ]
   }
 }

@@ -84,8 +84,8 @@ craft. Reloaders are adults; speak to them as such.
   full SAAMI specs" beats "extensive cartridge library."
 - **Say what's true** about Coming Soon features. "Shipping in v1.1"
   beats "available now" if it isn't.
-- **Cite the source** when the math is borrowed. Litz, McCoy, Miller,
-  ICAO — name the paper / book and let readers verify.
+- **Cite the source** when the math is borrowed. *Applied Ballistics*,
+  McCoy, Miller, ICAO — name the paper / book and let readers verify.
 
 Avoid in copy: "revolutionary," "game-changing," "AI-powered" (we have
 narrow AI but it's a translation tool, not an assistant), "easy"
@@ -234,44 +234,34 @@ flag is set BEFORE the sign-out so a crash mid-flow can't loop the
 user. Subsequent launches see the marker and skip — returning users
 go straight to HomeScreen via the cached refresh token.
 
-**Biometric unlock (optional, opt-in).** Settings → Account exposes
-a **"Unlock with biometrics"** toggle (hidden when the device has
-no Face ID / Touch ID / fingerprint sensor enrolled). When enabled,
-every launch after the user is signed in goes through a
-[BiometricLockScreen] gate before HomeScreen — auto-prompts for
-Face ID / Touch ID on mount, with retry and "Sign out" fallback if
-biometric fails. Biometric is a **local unlock gate** on top of
-Firebase's cached session, NOT a re-authentication: the user's
-Firebase identity (email, Google, anonymous, whichever) is
-unchanged; biometric just decides whether to render HomeScreen vs
-the lock screen. No biometric data leaves the device — the OS does
-the match in the secure enclave.
+**Biometric unlock — present but NOT promoted.** Settings → Account
+exposes a "Unlock with biometrics" toggle for users who want it
+(`local_auth` plugin; iOS `NSFaceIDUsageDescription` + Android
+`USE_BIOMETRIC` / `USE_FINGERPRINT` declared). Hidden when the
+device has no biometric enrolled. **Hidden when the user is
+anonymous** — biometric is only offered to real-account users
+because the anonymous Firebase account is device-local; binding
+biometric to it would sell false security.
 
-**iOS-specific permissions:** `NSFaceIDUsageDescription` shipped in
-`Info.plist` ("LoadOut uses Face ID to unlock the app on your
-device. The unlock is local — your face data never leaves the
-phone.").
+**Don't lead with biometric in marketing copy.** It's a quality-of-
+life toggle, not a flagship capability. Keep it out of headlines,
+home-page bullets, App Store screenshot captions, and the "Pro
+features" pitch. Mention it only when the user-facing surface
+(Settings) is being explained, and only as one bullet among others.
 
-**Android-specific permissions:** `USE_BIOMETRIC` and
-`USE_FINGERPRINT` declared in the manifest. `MainActivity` extends
-`FlutterFragmentActivity` (required by the `local_auth` plugin's
-biometric prompt fragment).
-
-**Marketing language:**
-
-- "Sign in once. Unlock with Face ID or Touch ID after that."
-- "Don't want an account? Continue as Guest — your data stays on
-  this device."
-- "Biometric is a local gate. We never see your face, fingerprint,
-  or password."
+If asked specifically (FAQ, support reply, advanced-feature page),
+the factual description is: "Settings → Account has an optional
+biometric unlock for users with a real account. The platform
+biometric prompt runs locally; no biometric data leaves the
+device. Anonymous users don't see the toggle."
 
 **What we DON'T claim:**
 
-- We don't say "biometric login" without context (it's not a
-  separate authentication method — it's an unlock gate on top of
-  Firebase auth). "Biometric unlock" is the right term.
-- We don't say "Face ID required" — the toggle is opt-in and
-  hidden on devices without biometric support.
+- We don't say "biometric login" — biometric is an unlock gate on
+  top of Firebase's existing session, not a separate auth method.
+- We don't say "Face ID required" — the toggle is opt-in.
+- We don't put a fingerprint icon on the home page or in App Store
+  screenshots.
 
 ---
 
@@ -525,16 +515,16 @@ The solver and the math are documented openly in
 
 - **Modified Point Mass (MPM)** with Cash-Karp adaptive RK45
   integration (1e-4 m tolerance). McCoy-style differential equations
-  with Litz-style add-ons.
+  with add-ons.
 - **Drag tables:** G1, G2, G5, G6, G7, G8 (all six standard tables).
 - **Custom drag curves** (Pro): Hornady 4DOF measured curves
   pre-shipped, plus user-imported CDM files. Interpolated with
   Fritsch-Carlson PCHIP (smoother than linear in the transonic
   region).
 
-### Litz precision corrections (all on by default)
+### precision corrections (all on by default)
 
-- **Spin drift** (Litz published formula).
+- **Spin drift** (industry-standard published formula).
 - **Coriolis** — horizontal + Eötvös vertical (full 3D `−2 Ω × v`).
 - **Aerodynamic jump** from cross-wind — explicit per-sample
   correction, plus the cant×crosswind angular term from *Modern
@@ -550,7 +540,7 @@ The test suite enforces:
 
 - **Self-consistency:** ±0.01 mil agreement between solver runs across
   refactors.
-- **Litz cross-check:** ±0.1 mil agreement against the published
+- **Published cross-check:** ±0.1 mil agreement against the published
   example tables in *Applied Ballistics for Long-Range Shooting* 4th
   ed. (citation in test file).
 
@@ -574,8 +564,11 @@ The test suite enforces:
 - **BC truing** — paste observed drops at distance, get a corrected
   ballistic coefficient via bisection / golden-section search.
   Pro-gated.
-- **Sight calibration** — DPC scope-tracking calibration via
-  tall-target test. Pro-gated.
+- **Scope Tracking Test** — DPC / tall-target calibration that
+  verifies the user's turret tracks the labelled values. Pro-gated.
+  (Formerly "Sight Calibration" — renamed for plain-English
+  shooter-side terminology; the underlying service file is still
+  `sight_calibration_service.dart`.)
 
 ### Free analysis services (still substantial)
 
@@ -638,16 +631,20 @@ the range.
 8. **Moving Target** (Pro) — speed + direction → lead computation. *Now
    a pushed route, not an inline card.*
 9. **Notes.**
-10. **Advanced Analysis** (renamed from "Litz Analysis") — pushed routes
-    for WEZ Analysis, BC Truing, Sight Calibration.
+10. **Advanced Analysis** — pushed routes for **Hit Probability Map**
+    (Monte Carlo across the engagement window — formerly "WEZ
+    Analysis"), **BC Truing**, and **Scope Tracking Test** (formerly
+    "Sight Calibration").
 
 Group Stats and Moving Target moved from inline cards to **pushed
 routes** for screen-real-estate reasons.
 
 ### Defaults (fresh session)
 
-- **Default reticle:** **LoadOut Default Mil Tree** — a LoadOut original
-  archetype, NOT a branded reticle. ID: `loadout_default_mil_tree`.
+- **Default reticle:** **Classic Mil Hash (Generic)** — the
+  public-domain mil hash pattern. ID: `pd_mil_hash_generic`.
+  Renders in BLACK on the daytime backdrop (the brass theme tint
+  blended into the sky / grass and was hard to read).
 - **Default target:** **18 in × 30 in white IPSC silhouette.**
 - **Default load (empty state):** the load picker offers 19 curated
   factory cartridges in a "Pick a Common Load" bottom sheet (see § 12).
@@ -705,6 +702,27 @@ The risks we are deliberately not taking:
 - Other ballistic apps (Strelok Pro, AB Quantum) ship the brand names;
   they have a licensing posture or operating risk we don't share.
 
+### Picker grouping
+
+The reticle picker groups its 40+ entries into five user-facing
+sections so beginners aren't faced with a flat wall: **Mil
+reticles**, **MOA reticles**, **Classic** (formerly labelled
+"Public domain" — renamed for plain-English readability),
+**Combat / Tactical**, **Red dots**. The sections render only when
+two or more buckets have matches (a popular-tag chip filter that
+narrows results to a single bucket falls back to a flat list, no
+header noise). Within each section, favorites still bubble to the
+top.
+
+**Internal data note.** The renamed "Classic" label is a
+display-time transform on top of the existing seed data — rows in
+the database still have `manufacturerId = "Public domain"`, but the
+picker rewrites that to "Classic" everywhere it renders. This means
+the rename is invisible to backups, JSON exports, and the SQLite
+file — only the user-facing UI changed. If we later move to a real
+DB rename we'll add a one-shot migration; for now the display
+transform keeps the change low-risk.
+
 ### What ships today (43 reticles total)
 
 **24 LoadOut-original archetypes** (`loadout_*` IDs):
@@ -761,7 +779,7 @@ to a shooter who's only ever held the branded reticle.
   Default Mil Tree," "LoadOut Christmas Tree MOA").
 - For copy that needs a "we cover the equivalents" pitch, say
   something like: "If your scope ships with a TReMoR3 or an EBR-7C,
-  use the LoadOut Default Mil Tree — same hold-off math, no
+  use the LoadOut Mil Tree archetype — same hold-off math, no
   licensing complications." That's accurate AND honest.
 
 ---
@@ -806,9 +824,30 @@ families: Circle, Square, Rectangle, Silhouette.
   `GlossaryLabel` widget. Tap the label → bottom sheet with the
   definition + an "Open in Glossary" button that pre-filters the
   glossary screen on that term.
+- **Landing tiles for new users.** Above the category list (when
+  no search is active), the glossary surfaces two curated tiles:
+  **"New to reloading"** (21 foundational terms — COAL,
+  headspace, pressure signs, charge weight, neck tension,
+  annealing, etc.) and **"Range Day workflow"** (22 firing-line
+  terms — mil, MOA, drop, wind drift, DOPE, density altitude,
+  cant, hold-over). Tapping a tile filters the glossary to that
+  curated subset; a "Show all" chip clears the filter. Beginners
+  who don't know what to search for get an entry point that isn't
+  "scroll 142 terms looking for the right one."
+
+**Beginner Mode + glossary integration.** When Beginner Mode is on
+(Settings → App preferences), the `(?)` help glyph next to a
+glossary-tracked label renders in the theme's primary color the
+**first time** the user encounters that term in a session, then
+fades to subtle gray on subsequent appearances. The session-scoped
+"first-occurrence" tracker is in-memory only (resets on app
+restart) — fresh sessions get fresh emphasis on terms the user has
+seen before. This is the "auto-tooltip" behavior in marketing
+copy; technically it's "first-occurrence emphasis," not an
+auto-popup.
 
 The glossary is **always free** — no paywall, no sign-in. Same for
-SAAMI specs.
+SAAMI specs (now under the Resources drawer destination).
 
 ---
 
@@ -855,23 +894,46 @@ Surfaces with favorite-star support:
 - Recipes (list + detail).
 - Firearms (list + detail).
 - Ballistic Profiles (list + picker).
-- Cartridges (in the SAAMI screen).
+- Cartridges (in the SAAMI screen + recipe / firearm form pickers).
 - Reticles (Range Day + firearm-form picker).
 - Targets (Range Day picker).
+- **Component dropdowns** — powder, bullet, primer, brass. Each
+  dropdown row has a tappable star in the trailing slot;
+  favoriting bubbles the entry to the top of the picker.
 
 ### Behavior
 
-- Stars work directly in the dropdown / list view, not just the detail
-  screen.
-- A favorited reticle on a fresh Range Day session becomes the default
-  reticle (overriding the LoadOut Default Mil Tree).
-- A favorited target on a fresh Range Day session becomes the default
-  target (overriding the 18×30 silhouette).
-- Reference-data favorites live in a `UserFavorites` join table; the
-  catalog rows themselves are read-only.
+- Stars work directly in the dropdown / list view, not just the
+  detail screen. For component pickers (powder / bullet / primer /
+  brass), the trailing star toggles favorite state without
+  dismissing the dropdown.
+- A favorited reticle on a fresh Range Day session becomes the
+  default reticle (overriding the Classic Mil Hash default).
+- A favorited target on a fresh Range Day session becomes the
+  default target (overriding the 18×30 silhouette).
+- **Cartridge / reticle / target favorites** live in the
+  `UserFavorites` join table (int row-id keyed) — same as before.
+- **Component favorites** (powder / bullet / primer / brass) live
+  in the `UserComponentFavorites` table (name-keyed; survives
+  catalog re-seeds AND custom-component renames). Schema v25.
 
-In marketing copy: "Star your go-to load and it's at the top of every
-picker. Star a target and it's pre-selected on every Range Day open."
+### Sync + export coverage
+
+All favorites participate in the standard export / restore / Cloud
+Sync pipeline:
+
+- **JSON export** (Backup & Export screen) — `user_favorites` and
+  `user_component_favorites` are dumped alongside every other
+  user-data table.
+- **Cloud Sync (Pro)** — same encrypted blob, last-writer-wins
+  reconciliation per row. A favorite added on iPhone shows up on
+  iPad on the next sync pull.
+- **Manual restore** — pulls favorites back along with everything
+  else.
+
+In marketing copy: "Star your go-to load, your favorite powder,
+your usual primer — they're at the top of every picker on every
+device."
 
 ---
 
@@ -1099,8 +1161,11 @@ Categories with brand lists:
 - **Optics** — 26 brands (see § 9).
 - **Firearm parts & accessories** — 50+ brands.
 - **Manufactured ammunition** — Berger, CCI, Federal, Hornady, Sierra.
-- **Ballistic-math literature** — Bryan Litz published works, Robert
-  L. McCoy's *Modern Exterior Ballistics* (1999), Don Miller's 2005
+- **Ballistic-math literature** — published Applied Ballistics
+  literature (*Applied Ballistics for Long-Range Shooting*,
+  *Modern Advancements in Long-Range Shooting* Vols. I–III,
+  *Accuracy and Precision for Long-Range Shooting*), Robert L.
+  McCoy's *Modern Exterior Ballistics* (1999), Don Miller's 2005
   *Precision Shooting* stability paper, ICAO standard atmosphere.
 - **Open-source software** — Flutter, drift, sqlite3, etc.
 
@@ -1139,12 +1204,12 @@ Ballistic AE) is current as of 2026-05-08.
   6 platforms, disclosed solver. They win on: raw catalog count, brand
   pedigree (19 yr).
 - **Applied Ballistics Quantum** — chief-ballistician's product;
-  Litz-authored math, Doppler-radar CDM library, $700+ Kestrel hardware
-  unlocks Pro. We win on: reloading workspace, photo OCR, lifetime
-  pricing, free-tier scope, multi-platform, **passphrase-only Cloud
-  Sync** (theirs is server-decryptable). They win on: Doppler CDM
-  library, full WEZ + sensitivity, Litz-authored brand, AB Spotter
-  AI, AB Learn.
+  Applied-Ballistics-authored math, Doppler-radar CDM library, $700+
+  Kestrel hardware unlocks Pro. We win on: reloading workspace, photo
+  OCR, lifetime pricing, free-tier scope, multi-platform,
+  **passphrase-only Cloud Sync** (theirs is server-decryptable). They
+  win on: Doppler CDM library, full WEZ + sensitivity, chief-ballistician
+  brand, AB Spotter AI, AB Learn.
 - **Ballistic AE** — premium iOS solver; JBM engine, 5,000 projectile
   library, $30 one-time + $9.99 Kestrel IAP. We win on:
   cross-platform (they're iOS-only), reloading workspace, photo OCR,
@@ -1165,8 +1230,9 @@ Ballistic AE) is current as of 2026-05-08.
   Quantum has it; we don't. We compete on workspace + free-tier
   generosity + privacy, not Doppler depth.
 - **Don't claim Strelok's 19-year track record.** It's their moat.
-- **Do** claim Litz-aware. Use of his published math is correct;
-  "Litz-endorsed" or "Litz-affiliated" is not.
+- **Do** claim "industry-standard exterior-ballistics math." Use of
+  the published Applied-Ballistics formulas is correct;
+  "Applied-Ballistics-endorsed" or "Applied-Ballistics-affiliated" is not.
 - **Do** lead with the "no LoadOut backend ever sees your data"
   claim against AB Quantum specifically. Their AB Quantum Sync is
   almost certainly server-decryptable; we're not.
@@ -1184,10 +1250,10 @@ A short tactical checklist for any copy review:
    copy, in-app surfaces, this doc, or formal channels. Limited use OK
    in casual social (one or two per post).
 4. **No exclamation marks in headlines.** Reloaders are deliberate.
-5. **Cite the source** for borrowed math. "Bryan Litz, *Applied
-   Ballistics for Long-Range Shooting* 2nd ed., 2016" — cite the
-   BOOK, not the company. We use his published methodology, not his
-   commercial product.
+5. **Cite the source** for borrowed math. "*Applied Ballistics for
+   Long-Range Shooting* 2nd ed., 2016" — cite the BOOK, not the
+   company. We use the published methodology, not the commercial
+   product built on top of it.
 6. **Privacy as a feature, not a disclaimer.** "Your data lives on
    your device" reads as a benefit, not a legal hedge.
 7. **Always include the safety frame** for any specific load data:
@@ -1259,7 +1325,7 @@ Numbers to NOT cite without verification:
 | "I'm not technical." | "Open it. Tap the Quick FAB. Type your load like you'd write it on paper. Save. Done. Beginner Mode hides every advanced field; turn it off when you're ready." |
 | "What if you go out of business?" | "Your data is local SQLite + JSON export at any time. If we shut down tomorrow, you keep everything. We can't lock you in because we don't host you." |
 | "Why pay a subscription if there's a lifetime?" | "You don't have to. The free tier covers recipes, the ballistics solver, Range Day basics, photo OCR, every reference catalog, and the glossary. Pro adds Bluetooth devices, Hornady 4DOF curves, Cloud Sync, training-mode tooling, and the AI assistant when it ships. Pick whichever fits — yearly if you want to try it, lifetime if you're sure." |
-| "Doesn't AB Quantum already do this with Litz's math?" | "AB Quantum is an excellent ballistics calculator with a Doppler-radar drag library we don't try to match. It also has zero recipe / brass / batch tracking, requires a $700+ Kestrel to unlock Pro features for hardware buyers, and ships sync we'd describe differently than they do. We're the workspace; they're the math. Different jobs." |
+| "Doesn't AB Quantum already do this with the math?" | "AB Quantum is an excellent ballistics calculator with a Doppler-radar drag library we don't try to match. It also has zero recipe / brass / batch tracking, requires a $700+ Kestrel to unlock Pro features for hardware buyers, and ships sync we'd describe differently than they do. We're the workspace; they're the math. Different jobs." |
 
 ---
 
@@ -1300,29 +1366,78 @@ Keep this doc in sync with the source.
 Items where this doc lacks a definitive answer. Resolve these before
 launch copy goes out.
 
-1. **Range Day Quick / Full mode toggle.** The product spec calls for
-   an AppBar toggle that switches Range Day between a minimal "Setup +
-   Solution" view (Quick) and the full layout (Full). The code today
-   has only History + Recalculate in the Range Day AppBar — no mode
-   toggle is shipped yet. Either the toggle ships before launch and
-   this section gets updated, or marketing copy that mentions
-   "Quick mode for fast field use" is premature.
-2. **Apple Watch / Wear OS feature payloads.** Both companion apps are
-   scaffolded with placeholder UIs. The wire protocol is defined
-   (see engineering CLAUDE.md § 15) but no live feature payloads are
-   shipping yet. Don't claim these as live.
+1. ~~**Range Day Quick / Full mode toggle.**~~ ✅ **RESOLVED**
+   (2026-05-09). The toggle is live in the Range Day AppBar — see
+   § 8 for the behaviour. Marketing copy mentioning "Quick mode for
+   fast field use" is now factually correct.
+2. **Apple Watch / Wear OS feature payloads.** ⚠️ Partially
+   resolved. The phone-side bridges are now activated automatically
+   on app launch (`WatchSessionBridge.activate(messenger:)` on iOS,
+   `WatchBridge` instantiation in `MainActivity` on Android). The
+   wire protocol is defined and the channels respond. **What's
+   still NOT shipping yet** is the phone-side code that pushes
+   recipe / DOPE / firearm-glance state into the bridge on every
+   save. Don't claim "Apple Watch app ships with v1" — the watch
+   target itself still needs the manual Xcode wiring documented in
+   engineering CLAUDE.md § 15. Safer claim: "companion apps in
+   development; pairing infrastructure live."
 3. **AI Reloading Assistant ship date.** "v1.1" in earlier copy; not
    confirmed. Use "Coming Soon" rather than a version number.
-4. **Per-Pro AI Smart Import monthly cap.** Engineering doc § 20 says
-   the default cap is 30; the older marketing draft said 20. The
-   Cloudflare Worker config controls this. Verify the deployed value
-   before any copy that names a number.
+4. ~~**Per-Pro AI Smart Import monthly cap.**~~ ✅ **RESOLVED**
+   (2026-05-09). Cap is **20 imports per Pro user per calendar
+   month**, set by `MONTHLY_CAP` in
+   `cloud_worker/anthropic-proxy/src/quota.ts:43` (lowered from 30
+   on 2026-05-08). Both engineering CLAUDE.md § 20 and this doc
+   are aligned.
 5. **Translation review.** Six languages scaffolded (English + DE /
    ES / FR / IT / RU); a native-speaker review hasn't happened. Don't
    advertise "fluent in 6 languages." Safer claim: "available in
    English; additional languages in beta."
 6. **Marketing screenshots.** App Store / Play Store screenshots
-   should be regenerated against the current Range Day, Recipes-with-
-   two-FABs, and reticle-picker UI before next submission. The
-   reticle-picker change in particular invalidates older screenshots
-   that show branded reticle names.
+   should be regenerated against the current Range Day (now with
+   the Quick / Full toggle), Recipes-with-two-FABs and the new
+   empty-state cards, the reticle-picker (now category-grouped
+   with the "Classic" section header), the LoginScreen (now with
+   the prominent "Continue as Guest" card), and the Resources
+   drawer destination. The reticle-picker IP scrub also
+   invalidates any older screenshot that shows a branded reticle
+   name. **Don't show the biometric Settings toggle in marketing
+   screenshots** — it's a quiet quality-of-life feature, not a
+   pitched capability.
+
+### Resolved in 2026-05-09 sweep (for diff context)
+
+The following landed since the prior version of this doc and are
+now reflected throughout:
+
+- Range Day Quick / Full toggle (live).
+- Recipe form Full-mode auto-collapses secondary sections, scrolls
+  to user's last-active section on mode switch, ScrollController
+  + onDrag keyboard dismissal fixed the auto-scroll-to-edge bug.
+- Smart defaults: Favorites → Frequently used → general for every
+  component picker (caliber, powder, bullet, primer, brass).
+- Component favorites in drift (`UserComponentFavorites`, schema
+  v25) — synced via Cloud Sync, dumped in JSON exports.
+- `UserComponentFavorites` migration includes a one-shot
+  copy-from-SharedPreferences for v1 users so existing favorites
+  carry forward.
+- Empty-state next-action cards on Recipes / Firearms / Brass
+  Lots / Batches lists.
+- Reticle picker grouping (Mil / MOA / Classic / Combat / Red
+  dots).
+- "Public domain" → "Classic" rename (display-time transform; DB
+  unchanged).
+- Glossary landing tiles ("New to reloading", "Range Day
+  workflow").
+- Beginner Mode functional (auto-tooltip emphasis, hides BYOK in
+  AI Settings, defaults recipe form to Core).
+- Authentication overhaul: first-launch Keychain clear, prominent
+  Continue as Guest. Optional biometric unlock toggle exists in
+  Settings → Account (real-account users only; not promoted in
+  marketing — see § 2.5).
+- SAAMI Specs moved out of Settings into the new Resources drawer
+  destination.
+- AI Smart Import cap aligned at 20/month between code, engineering
+  doc, and marketing doc.
+- Companion app phone-side bridges activated automatically on
+  launch.

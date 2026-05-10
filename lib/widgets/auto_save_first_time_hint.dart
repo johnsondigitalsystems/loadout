@@ -31,6 +31,24 @@
 // and the rest is automatic.
 //
 // ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+//   * **One persisted flag, four forms.** The hint is shown once
+//     across the entire app, not once per form. The persisted
+//     `auto_save_hint_shown` lives on [AutoSaveService] (not the
+//     widget) so the second form the user opens sees the flag set
+//     from the first form.
+//   * **Banner, not dialog.** A blocking dialog kills the user's
+//     flow. The hint must let the user continue editing while
+//     reading. MaterialBanner sits at the top via a Column wrapper
+//     rather than the Scaffold-level slot so it composes cleanly
+//     inside form bodies that already have an AppBar.
+//   * **Don't watch unnecessarily.** The widget uses `context.watch`
+//     so it rebuilds when the flag flips, but the wrapped child
+//     should NOT be inside the watch boundary — wrap only the
+//     hint logic, pass the child verbatim.
+//
+// ============================================================================
 // WHO CONSUMES THIS FILE
 // ============================================================================
 // - lib/screens/recipes/recipe_form_screen.dart

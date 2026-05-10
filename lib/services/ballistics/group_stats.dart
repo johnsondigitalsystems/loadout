@@ -52,10 +52,10 @@
 // We can revisit if real users want sample SD; the call site is two lines.
 //
 // ============================================================================
-// CONFIDENCE INTERVALS ON GROUP MOA (LITZ STATISTICS)
+// CONFIDENCE INTERVALS ON GROUP MOA
 // ============================================================================
-// Bryan Litz's _Accuracy and Precision for Long-Range Shooting_ (Berger
-// Bullets, 2012, ch. 1, "Statistics for Shooters") makes the case that
+// _Accuracy and Precision for Long-Range Shooting_ (Berger Bullets,
+// 2012, ch. 1, "Statistics for Shooters") makes the case that
 // shooters routinely cite single small groups (3- or 5-shot) as if they
 // were tight estimates of the rifle's true precision — yet the sampling
 // distribution of extreme spread is so noisy at small N that a 5-shot
@@ -70,7 +70,7 @@
 //     1e6 trials per N): http://ballistipedia.com/index.php?title=Range_Statistics
 //   * Grubbs, F. E. (1964). "Statistical measures of accuracy for
 //     riflemen and missile engineers".
-//   * Litz, B. (2012). _Accuracy and Precision for Long-Range Shooting_,
+//   * industry standard, B. (2012). _Accuracy and Precision for Long-Range Shooting_,
 //     Appendix on group-statistic distributions.
 //
 // For each shot count N we store three quantiles of ES/σ:
@@ -92,7 +92,7 @@
 // expectation if we repeated the same N-shot test infinitely — brackets
 // the observed value and is what the UI displays.
 //
-// TODO(v1.1): t-test comparison between two groups — Litz also covers
+// TODO(v1.1): t-test comparison between two groups — industry standard also covers
 // "are these two loads statistically different?" via a two-sample t-test
 // on mean radii. That belongs in a separate `compareGroups(...)` helper.
 
@@ -218,7 +218,7 @@ class _EsSigmaQuantiles {
 ///
 /// Values are Monte-Carlo-derived from the Rayleigh radial distribution
 /// (≥1e6 trials each) and match the published numbers in Ballistipedia's
-/// Range Statistics article and Litz's appendix tables in
+/// Range Statistics article and the appendix tables in
 /// _Accuracy and Precision for Long-Range Shooting_ within rounding.
 ///
 /// Sorted by N for binary-search / linear-interpolation lookup.

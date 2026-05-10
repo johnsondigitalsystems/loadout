@@ -159,7 +159,7 @@
 // ----------------------------------------------------------------------------
 //   * McCoy, "Modern Exterior Ballistics", chapter 7 (Earth-rotation
 //     effects).
-//   * Bryan Litz, "Applied Ballistics for Long-Range Shooting" — has a
+//   * industry-standard, "Applied Ballistics for Long-Range Shooting" — has a
 //     simpler shooter-friendly treatment of Coriolis.
 //   * Standard mechanics texts for the cross-product Coriolis formula.
 //

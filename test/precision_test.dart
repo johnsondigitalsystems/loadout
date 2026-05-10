@@ -4,9 +4,9 @@
 // solver against published reference data from the standard ELR /
 // long-range references:
 //
-//   * Bryan Litz, "Applied Ballistics for Long-Range Shooting",
+//   * industry-standard, "Applied Ballistics for Long-Range Shooting",
 //     1st & 2nd ed., chapter 8 trajectory tables.
-//   * Bryan Litz, "Modern Advancements in Long Range Shooting",
+//   * industry-standard, "Modern Advancements in Long Range Shooting",
 //     vol. 3 (drag tables and Doppler-derived BCs).
 //   * JBM Ballistics online calculator (https://www.jbmballistics.com/)
 //     using the same inputs and the McCoy Modified Point-Mass code path.
@@ -48,14 +48,14 @@ import 'package:loadout/services/ballistics/solver.dart';
 import 'package:loadout/services/ballistics/units.dart';
 
 void main() {
-  group('Litz table 4-3-1 — 308 Win 168gr SMK', () {
-    // Reference: Litz, "Applied Ballistics", 2nd ed., table 4-3-1.
+  group('industry standard table 4-3-1 — 308 Win 168gr SMK', () {
+    // Reference: industry standard, "Applied Ballistics", 2nd ed., table 4-3-1.
     // 168 gr Sierra MatchKing, BC_G7 = 0.218 (single, supersonic-band
     // value), MV = 2650 fps, ICAO standard atmosphere, 100-yard zero,
     // 1.5" sight height. Length/twist used for spin-drift breakdown
-    // only. Our integrator with this single static BC matches Litz to
+    // only. Our integrator with this single static BC matches industry standard to
     // ~0.5 MIL out to ~700 yd. Past the transonic threshold (~Mach
-    // 1.1 around 800–900 yd for this load) Litz's velocity-banded BC
+    // 1.1 around 800–900 yd for this load) the velocity-banded BC
     // predicts ~1.5 MIL less drop than a single-BC solver, which is
     // the published "G7 doesn't quite fit through transonic" caveat.
     Projectile buildProjectile() => Projectile(
@@ -82,7 +82,7 @@ void main() {
       zeroRangeYards: 100,
     );
 
-    test('drop matches Litz/JBM consensus within 0.5 MIL out to 700 yd', () {
+    test('drop matches industry standard/JBM consensus within 0.5 MIL out to 700 yd', () {
       final samples = solveTrajectory(
         projectile: buildProjectile(),
         environment: buildEnvironment(),
@@ -97,7 +97,7 @@ void main() {
       // 100-yd zero — drop should be ≤ 0.5" of LoS.
       expect(samples[0].dropInches.abs(), lessThan(0.5));
 
-      // Litz/JBM consensus single-BC numbers:
+      // industry standard/JBM consensus single-BC numbers:
       //   300 yd: ~1.40 MIL
       //   500 yd: ~3.40 MIL
       //   700 yd: ~6.10 MIL
@@ -114,7 +114,7 @@ void main() {
       // We therefore bracket loosely and only check that the
       // trajectory is in the published-published range:
       //   single-BC G7 (our default): ~12.5 MIL @ 1000 yd
-      //   velocity-banded G7 (Litz/AB): ~10.5 MIL
+      //   velocity-banded G7 (industry standard/AB): ~10.5 MIL
       //   4DOF Doppler tables: ~10.3 MIL
       final samples = solveTrajectory(
         projectile: buildProjectile(),
@@ -625,7 +625,7 @@ void main() {
         accuracy: BallisticsAccuracy.precise,
       ).first;
 
-      // Litz: AJ ≈ 0.01 mil/kt × 10 kt × 36" /1000 ≈ 3.6" at 1000 yd.
+      // industry standard: AJ ≈ 0.01 mil/kt × 10 kt × 36" /1000 ≈ 3.6" at 1000 yd.
       // Bracket loosely; the test wants to catch a sign flip or
       // an order-of-magnitude error.
       final delta = (cross.dropInches - calm.dropInches).abs();

@@ -158,7 +158,10 @@ class _MovingTargetScreenState extends State<MovingTargetScreen>
   @override
   void initState() {
     super.initState();
-    _speedCtrl = TextEditingController(text: '3');
+    // Empty default — user enters the actual mover speed (CLAUDE.md
+    // § 0 anti-fake-data rule). Lead computation hides until a
+    // value is typed.
+    _speedCtrl = TextEditingController();
     _moverController = AnimationController(
       vsync: this,
       duration: _computeSweepDuration(),

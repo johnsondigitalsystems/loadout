@@ -100,7 +100,11 @@ class ReticleRenderer extends StatelessWidget {
   /// half-extent fills 45% of the shortest widget side.
   final double scale;
 
-  /// Override stroke color. Defaults to the theme's `colorScheme.primary`.
+  /// Override stroke color. Defaults to BLACK — etched-glass
+  /// reticles render as black hash lines on the bright daytime
+  /// backdrop. The brass theme primary made the marks blend into
+  /// sky and grass; black reads cleanly against every backdrop and
+  /// matches what the user actually sees through their scope.
   final Color? color;
 
   /// Pixel offset (relative to the widget) where the reticle center
@@ -132,7 +136,9 @@ class ReticleRenderer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final lineColor = color ?? theme.colorScheme.primary;
+    // Default reticle stroke is BLACK app-wide — see the `color`
+    // field doc for rationale.
+    final lineColor = color ?? Colors.black;
     final highlight = holdOverHighlightColor ??
         theme.colorScheme.secondary.withValues(alpha: 0.85);
     return SizedBox(

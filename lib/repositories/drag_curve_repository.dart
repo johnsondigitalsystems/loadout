@@ -32,6 +32,37 @@
 // the storage shape.
 //
 // ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+//   * **`datapointsJson` is a wire format.** The drift column stores
+//     a JSON-encoded list of (mach, cd) pairs. The repository
+//     decodes it on every `toCustomDragCurve` call — there's no
+//     cache. For the typical 50-200 datapoint curves this is fast
+//     enough that caching adds complexity without benefit, but a
+//     future schema migration that bloats the per-curve point count
+//     would change that calculus.
+//   * **`findCurveForBullet` is a fuzzy match.** Bullet diameters
+//     can differ by 0.001" between catalog rows and curve metadata
+//     (.224 vs .2225, .264 vs .2645, etc.). The matcher uses a
+//     small tolerance — don't tighten it without re-validating
+//     against every published Hornady 4DOF curve.
+//   * **The catalog ships SOME bullets with curves and SOME without.**
+//     A null return from `findCurveForBullet` means "no published
+//     CDM/DSF for this bullet," not "lookup error." The UI uses
+//     this as a feature flag for the Pro "Custom drag available"
+//     badge.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - lib/screens/ballistics/ballistics_screen.dart — the calculator's
+//   custom-drag-curve picker.
+// - lib/screens/recipes/recipe_form_screen.dart — bullet picker
+//   surfaces a "Custom drag available" badge based on
+//   `findCurveForBullet`.
+// - lib/app.dart — constructs and provides the singleton.
+//
+// ============================================================================
 // SIDE EFFECTS
 // ============================================================================
 // None beyond drift query I/O. All reads.

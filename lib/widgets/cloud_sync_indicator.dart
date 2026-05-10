@@ -32,6 +32,25 @@
 // level. Two distinct affordances, two distinct widgets.
 //
 // ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+//   * **Dot must auto-hide for free / disabled users.** A dot that
+//     always shows — even gray when sync is off — confuses users
+//     who don't have Pro. The widget reads both `isPro` and
+//     `isEnabled` and renders SizedBox.shrink() when either is
+//     false.
+//   * **`ValueListenable` instead of `context.watch`.** The status
+//     stream fires often (every ~5s during active sync); rebuilding
+//     the parent on every tick would re-render the AppBar
+//     unnecessarily. ValueListenableBuilder scopes the rebuild to
+//     just the dot.
+//   * **AppBarAction is a no-op for non-Pro users — it pushes the
+//     Cloud Sync settings screen instead.** Discoverability without
+//     promising a feature the user doesn't have. The IconButton
+//     icon switches between filled and outlined to make the state
+//     visually distinct.
+//
+// ============================================================================
 // WHO CONSUMES THIS FILE
 // ============================================================================
 // - lib/screens/home/home_screen.dart — appbar action.

@@ -73,6 +73,8 @@ class QuickAddBatchScreen extends StatefulWidget {
 class _QuickAddBatchScreenState extends State<QuickAddBatchScreen> {
   final _formKey = GlobalKey<FormState>();
 
+  // Inventory counter; not ballistics-affecting (CLAUDE.md § 0
+  // scope). Pre-fill with 100 (canonical reloading-session size).
   final _count = TextEditingController(text: '100');
 
   int? _recipeId;
@@ -189,6 +191,7 @@ class _QuickAddBatchScreenState extends State<QuickAddBatchScreen> {
       firstDate: DateTime(now.year - 30),
       lastDate: DateTime(now.year + 1),
     );
+    if (!mounted) return;
     if (picked != null) {
       setState(() => _loadedAt = picked);
     }

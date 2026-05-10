@@ -1,17 +1,17 @@
 // FILE: test/group_stats_ci_test.dart
 //
-// Tests for the Litz-style 90% confidence-interval extensions to
+// Tests for the 90% confidence-interval extensions to
 // `GroupStats` and the `sigmaMultipliersForN` lookup. Covers:
 //
 //   1. Tabulated multipliers at N = 3, 5, 10, 20 match the Rayleigh
 //      ES/σ quantiles within rounding tolerance of the published
-//      (Ballistipedia / Litz Appendix) values.
+//      (Ballistipedia / industry standard Appendix) values.
 //   2. Linear interpolation between tabulated rows (N=12 falls
 //      between N=10 and N=15).
 //   3. N < 3 returns null (no CI).
 //   4. Concrete worked example: 5-shot 1.0" ES at 100 yd produces a
 //      CI on group MOA that brackets the observed value and matches
-//      the Litz expected-bounds-of-true-precision interpretation.
+//      the industry standard expected-bounds-of-true-precision interpretation.
 //   5. Underlying-σ point estimate equals ES / k_mean.
 //   6. CI fields are null when N < 3 even with non-empty points.
 //   7. CI fields in MOA are null when distance is 0 (but inch CI is
@@ -23,7 +23,7 @@ import 'package:loadout/services/ballistics/group_stats.dart';
 
 void main() {
   group('sigmaMultipliersForN — tabulated values', () {
-    test('N=3 matches Litz/Ballistipedia (mean ~1.69, CI [0.68, 2.83])',
+    test('N=3 matches industry standard/Ballistipedia (mean ~1.69, CI [0.68, 2.83])',
         () {
       final m = sigmaMultipliersForN(3)!;
       expect(m.mean, closeTo(1.69, 0.02));
@@ -31,7 +31,7 @@ void main() {
       expect(m.high, closeTo(2.83, 0.02));
     });
 
-    test('N=5 matches Litz/Ballistipedia (mean ~2.33, CI [1.31, 3.34])',
+    test('N=5 matches industry standard/Ballistipedia (mean ~2.33, CI [1.31, 3.34])',
         () {
       final m = sigmaMultipliersForN(5)!;
       expect(m.mean, closeTo(2.33, 0.02));
@@ -39,7 +39,7 @@ void main() {
       expect(m.high, closeTo(3.34, 0.02));
     });
 
-    test('N=10 matches Litz/Ballistipedia (mean ~3.08, CI [2.10, 3.91])',
+    test('N=10 matches industry standard/Ballistipedia (mean ~3.08, CI [2.10, 3.91])',
         () {
       final m = sigmaMultipliersForN(10)!;
       expect(m.mean, closeTo(3.08, 0.02));
@@ -47,7 +47,7 @@ void main() {
       expect(m.high, closeTo(3.91, 0.02));
     });
 
-    test('N=20 matches Litz/Ballistipedia (mean ~3.74, CI [2.85, 4.42])',
+    test('N=20 matches industry standard/Ballistipedia (mean ~3.74, CI [2.85, 4.42])',
         () {
       final m = sigmaMultipliersForN(20)!;
       expect(m.mean, closeTo(3.74, 0.02));
@@ -136,7 +136,7 @@ void main() {
     });
   });
 
-  group('computeGroupStats — Litz CI on group MOA', () {
+  group('computeGroupStats — industry standard CI on group MOA', () {
     test('5-shot ES = 1.0" at 100 yd: CI brackets the observed group',
         () {
       // Five collinear points along the x-axis with the extremes 1.0"
@@ -220,7 +220,7 @@ void main() {
       expect(stats.groupMoaCiHigh90Pct, isNotNull);
       // The observed group MOA must lie within the 90% CI for any
       // sample drawn from a Rayleigh distribution under the standard
-      // assumption — this is the headline "Litz insight" for the UI.
+      // assumption — this is the headline "industry standard insight" for the UI.
       expect(stats.groupMoaCiLow90Pct, lessThanOrEqualTo(stats.groupSizeMoa));
       expect(stats.groupMoaCiHigh90Pct,
           greaterThanOrEqualTo(stats.groupSizeMoa));

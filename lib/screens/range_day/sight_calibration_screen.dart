@@ -181,9 +181,9 @@ class _SightCalibrationScreenState extends State<SightCalibrationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Sight Calibration')),
+      appBar: AppBar(title: const Text('Scope Tracking Test')),
       body: RangeDayErrorBoundary(
-        label: 'sight calibration',
+        label: 'scope tracking test',
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),

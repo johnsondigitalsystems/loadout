@@ -218,7 +218,7 @@ void main() {
   });
 
   group('BC family conversion (rule of thumb)', () {
-    test('Litz published BC_G7 ≈ BC_G1 × 0.512', () {
+    test('industry standard published BC_G7 ≈ BC_G1 × 0.512', () {
       // The conversion constant is the only number in the file with
       // a published source — pin it.
       expect(bcG1ToG7(1.0), closeTo(0.512, 1e-9));

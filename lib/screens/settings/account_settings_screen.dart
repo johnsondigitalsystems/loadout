@@ -240,6 +240,20 @@ class _BiometricTile extends StatelessWidget {
       // automatically (the service is a ChangeNotifier).
       return const SizedBox.shrink();
     }
+    // Biometric is not offered to anonymous users. The Firebase
+    // anonymous account is device-local — losing the device loses
+    // the account, so a "biometric unlock" sells the user a sense
+    // of security that the underlying account doesn't actually
+    // provide. Sign-out + sign-in cycles also discard the anonymous
+    // user, so the biometric flag would be associated with whatever
+    // anonymous UID happened to be active when the user toggled it.
+    // Hiding the tile is cleaner than disabling it — no toggle = no
+    // implication that biometric is "available, you just have to
+    // upgrade." Users with a real account see the toggle as before.
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null || user.isAnonymous) {
+      return const SizedBox.shrink();
+    }
     return SwitchListTile(
       secondary: const Icon(Icons.fingerprint),
       title: const Text('Unlock with biometrics'),

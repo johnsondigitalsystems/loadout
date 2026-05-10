@@ -19,7 +19,7 @@
 // ============================================================================
 // WHY IT EXISTS IN THE ARCHITECTURE
 // ============================================================================
-// Bryan Litz's "Applied Ballistics" methodology calls for the shooter to
+// the "Applied Ballistics" methodology calls for the shooter to
 // keep a small library of named atmosphere profiles ("Camp Atterbury
 // summer", "Big Sandy match", "Cold dry day") so they can switch between
 // known sets of conditions in two taps rather than re-typing four

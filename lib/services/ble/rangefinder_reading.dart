@@ -23,6 +23,33 @@
 // UI doesn't want to think about it. Pick whichever the UI prefers.
 //
 // ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// Five adapters * one consumer (Range Day distance picker) would be
+// 5 * N read sites if each adapter shipped its own struct. A
+// shared [RangefinderReading] type collapses the consumer surface
+// to one — the picker reads `lastReading?.rangeYd` regardless of
+// which brand is connected. Adding a sixth rangefinder later
+// means writing a new adapter that emits this same type; the
+// picker doesn't have to change.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+//   * **Both yards AND metres are populated.** Don't lazily compute
+//     one from the other in the consumer — adapters know the native
+//     unit and convert at the boundary so the UI can read either
+//     side without rounding twice. Use the conversion helpers below.
+//   * **Optional fields encode device capability.** `angleDeg ==
+//     null` means "this rangefinder doesn't report incline," NOT
+//     "level shot." Consumers must check `hasIncline` /
+//     `hasAzimuth` before using the field, never assume zero.
+//   * **`vendor` is a soft string, not an enum.** Some adapters
+//     don't set it (older ones we wrote before the field was
+//     added). Consumers that care about vendor-specific UI hints
+//     should null-check, not switch-default-throw.
+//
+// ============================================================================
 // WHO CONSUMES THIS FILE
 // ============================================================================
 // - lib/services/ble/sig_kilo_service.dart
@@ -32,6 +59,11 @@
 // - lib/services/ble/vectronix_terrapin_service.dart
 // - lib/screens/devices/devices_screen.dart
 // - lib/screens/range_day/range_day_detail_screen.dart
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// None. Pure value type + unit-conversion helpers.
 
 /// One snapshot of a range measurement from a Bluetooth rangefinder.
 /// All units are converted at the adapter boundary so consumers don't

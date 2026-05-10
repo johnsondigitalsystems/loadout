@@ -313,7 +313,7 @@ class _WezAnalysisScreenState extends State<WezAnalysisScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('WEZ Analysis'),
+        title: const Text('Hit Probability Map'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -323,7 +323,7 @@ class _WezAnalysisScreenState extends State<WezAnalysisScreen> {
         ],
       ),
       body: RangeDayErrorBoundary(
-        label: 'WEZ analysis',
+        label: 'hit probability map',
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
@@ -561,7 +561,7 @@ class _WezAnalysisScreenState extends State<WezAnalysisScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              'These uncertainties feed Litz\'s WEZ dispersion model. '
+              'These uncertainties feed the WEZ dispersion model. '
               'Tighten any of them to lift the curve.',
               style: theme.textTheme.bodySmall,
             ),

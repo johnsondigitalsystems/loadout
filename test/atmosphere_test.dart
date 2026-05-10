@@ -112,7 +112,7 @@ void main() {
 
     test('density falls with altitude (5000 ft is ~14% thinner)', () {
       final atm = Atmosphere.fromAltitudeFt(5000);
-      // Bryan Litz / ICAO tables: at 5000 ft density ≈ 1.0556 kg/m³,
+      // industry-standard / ICAO tables: at 5000 ft density ≈ 1.0556 kg/m³,
       // i.e. about 86% of sea level.
       expect(atm.density, lessThan(1.225));
       expect(atm.density, greaterThan(1.0));

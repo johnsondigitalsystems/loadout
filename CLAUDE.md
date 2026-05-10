@@ -3,6 +3,156 @@
 Project guide for the LoadOut Flutter app. Optimized for LLM consumption: brief,
 practical, focused on what is non-obvious or easy to get wrong.
 
+## 0. NEVER SHIP PLACEHOLDER DATA FOR BALLISTICS-AFFECTING FIELDS (firm rule)
+
+**Anything that flows into the ballistics solver — bullet, rifle,
+environment — starts EMPTY. Never pre-fill those fields with
+placeholder values, ever.** Yardage / distance fields are the only
+exception (see below); non-ballistics fields like inventory counts
+can use helpful defaults.
+
+### The four scope buckets
+
+| Category | Examples | Placeholder rule |
+|---|---|---|
+| **Bullet** | Diameter, weight, length, BC, drag model, twist | **NO placeholder.** Empty until the user picks a load / profile / common factory load. |
+| **Rifle** | Muzzle velocity, sight height, twist rate, sight-scale, twist direction, MV temp sensitivity | **NO placeholder.** Empty until the user picks a load / profile / firearm. |
+| **Environment** | Temperature, station pressure, humidity, altitude, wind speed, wind direction, latitude (Coriolis) | **NO placeholder.** When all empty, the solver uses ICAO standard internally and the env summary surfaces "Using ICAO standard atmosphere" so the user knows the source. |
+| **Yardage / distance** | Range Day target distance, firearm default zero range, ballistics calculator output range | **Placeholder OK** when it materially helps the user (100 yd zero, 500 yd target distance, 1000 yd ladder max). The user reads the placeholder as "sensible default I can change" rather than as their own input. |
+| **Non-ballistics** | Brass lot count, batch round count, shots-fired counter, "Record Firing" / "Fire Rounds" dialog steppers, recipe / firearm names | **Placeholder OK.** These don't drive a computed firing solution; defaults are pure ergonomics. |
+
+### Why the bullet / rifle / environment trio is sacred
+
+Reloaders are precision people who immediately distrust an app that
+computes a firing solution from invisible defaults. A fake `8 mph @
+9 o'clock` wind in the Range Day strip, a `140 gr ELD-Match`
+showing up when the user picked nothing, or a "9.8 MOA at 500 yd"
+derived from a default BC the user can't see — every one of these
+makes them suspect the rest of the screen too. The shooting-side
+brand promise is "the math is yours, and ours, and we never invent
+your inputs."
+
+This rule has been violated twice and customer-facing both times:
+
+- Range Day was rendering Group Stats / Hit Probability gauges from
+  placeholder controllers when the user had picked no load.
+- The Range Day Solution strip was showing `Wind 8 mph @ 9 o'clock`
+  because `_windSpeedCtrl` defaulted to `'8'`.
+
+The user flagged each as "we'd lose customers." Treat that
+literally — for the bullet / rifle / environment fields, this is
+the load-bearing brand promise of a precision tool. Yardage and
+inventory counters do not carry the same risk.
+
+### What this means in practice
+
+- **Ballistics-affecting `TextEditingController` defaults are empty.**
+  `TextEditingController()`, not `TextEditingController(text: '2750')`.
+  The solver reads `_parseOpt(...)` and either uses an internal
+  ICAO fallback (atmosphere) or refuses to render computed output
+  (bullet / rifle).
+- **Computed cards refuse to render fake numbers.** When the source
+  inputs aren't user-provided (no load picked, no firearm picked,
+  no shots logged), the card shows an empty-state explanation —
+  never a number derived from placeholders. See `_hasRealLoadData()`
+  in `range_day_detail_screen.dart` for the reference pattern.
+- **Summary chips, header strips, and exports skip the ballistics
+  field entirely when empty.** Don't render `0` / `—` / `N/A` next
+  to a fake unit. Reference patterns: Range Day strip wind chip
+  (hides when wind = 0), `_envSummary()` (says "Using ICAO standard
+  atmosphere" when no env entered), DOPE clipboard text.
+- **Atmosphere has a special pattern.** The solver still needs an
+  atmosphere; we use ICAO standard as an internal fallback when the
+  user hasn't entered actual conditions, AND we tell the user
+  visibly that we did so ("Using ICAO standard atmosphere"
+  indicator). The user sees the disclosure, not the fake values.
+- **Reference catalog rows are NOT placeholder data.** SAAMI specs,
+  manufacturer-published BCs, the ICAO standard atmosphere as a
+  solver fallback, Hornady 4DOF curves — these are factual published
+  values, clearly attributed in the Data Sources screen. Allowed.
+- **Default UI selections are allowed** when the user sees them
+  and can swap (default Range Day target = "18 × 30 IPSC", default
+  reticle = "Classic Mil Hash"). The user can see what was picked.
+- **Yardage placeholders should be common, sensible values.**
+  Range Day target distance = `'500'` (mid-range PRS distance).
+  Firearm default zero range = `'100'` (de-facto reloader
+  convention). Ballistics calculator output range = `_kRangeMin /
+  _kRangeMaxDefault`. These are rounding errors in the user's mental
+  model, not surprising values.
+
+### When in doubt
+
+For bullet / rifle / environment fields: **leave the field empty
+and hide / empty-state any downstream surface that would derive
+numbers from it.** For yardage: pre-fill with a common-sense
+default the user would type anyway. For non-ballistics: use
+whatever helps the workflow.
+
+When adding any new form, controller, or computed card, write down
+in the file header which inputs flow into ballistics and which
+don't. Anything in the first bucket follows the no-placeholder rule.
+
+## 0a. ALWAYS USE TITLE CASE FOR LABELS AND HEADERS (firm rule)
+
+**Every user-visible label or header in this app uses Title Case.**
+This applies to AppBar titles, card headers, section labels, button
+text, dropdown labels, tab names, empty-state headings, dialog
+titles, glossary entries, and any string that names a thing the
+user can interact with.
+
+### Why
+
+The app is precision tooling for a meticulous audience. Mixed casing
+("Ballistic profile" next to "Firing Solution" next to "saved
+loads") reads as sloppy — it's the same kind of small inconsistency
+that makes reloaders distrust everything else on the screen.
+Consistent Title Case across the surface telegraphs care.
+
+### How to apply
+
+Use AP-style Title Case:
+- **Capitalize** the first and last word, plus all nouns, verbs,
+  adjectives, adverbs, pronouns, and subordinating conjunctions
+  (because, although, if, when).
+- **Lowercase** articles (a, an, the), coordinating conjunctions
+  (and, but, or, nor), and short prepositions of three letters or
+  fewer (in, on, at, of, to, by, for) — UNLESS they're the first
+  or last word of the title.
+- Always capitalize prepositions of four letters or more (Over,
+  With, From, Into, Upon).
+- Keep canonical product / brand capitalization as-is even when it
+  breaks the rule (LoadOut, iCloud, RevenueCat, ICAO, MOA, MIL,
+  COAL, CBTO, BC, fps, ft-lbs, OneDrive).
+- Keep parenthetical units lowercased ("Distance (yd)", not
+  "Distance (Yd)") — units are technical glyphs, not display text.
+
+### Examples (correct → wrong)
+
+| ✅ Correct | ❌ Wrong |
+|---|---|
+| Ballistic Profile | Ballistic profile |
+| Firing Solution | Firing solution |
+| No Saved Ballistic Profiles | No saved ballistic profiles |
+| Pick a Common Load | Pick a common load |
+| Create a Ballistic Profile | Create a ballistic profile |
+| Hit Probability Map | Hit probability map |
+| Scope Tracking Test | Scope tracking test |
+| Distance (yd) | Distance (Yd) — units stay lowercase |
+| Save Session | Save session |
+
+### What's NOT in scope
+
+- **Body copy** — paragraph text, helper text, descriptions, hint
+  text inside form fields, error messages. These are sentences;
+  they use sentence case.
+- **Inline glossary definitions** and other prose blocks.
+- **Code identifiers, log messages, debug strings, telemetry tags.**
+  These never reach the user.
+
+If in doubt: is this a NAME of something (button, card, section,
+screen, picker option)? → Title Case. Is it a SENTENCE describing
+something? → sentence case.
+
 ## 1. What it is
 
 LoadOut is a local-first ammo reloading tracker for **iOS, Android, macOS,

@@ -258,7 +258,7 @@ class LoadOutApp extends StatelessWidget {
         Provider<HitProbabilityService>(
           create: (_) => const HitProbabilityService(),
         ),
-        // Bryan Litz / Applied Ballistics parity services (schema v16).
+        // Applied Ballistics parity services (schema v16).
         // All three are stateless and pure-functional, same as
         // HitProbabilityService — one instance per tree is fine.
         Provider<WezAnalysisService>(
@@ -675,7 +675,16 @@ class _AuthGateState extends State<_AuthGate> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
-    if (biometric.isEnabled && !biometric.isUnlocked) {
+    // Biometric only gates HomeScreen for users with a real account.
+    // Anonymous (Continue-as-Guest) users skip the gate even if the
+    // pref happens to be set — see [BiometricService.setEnabled] for
+    // why we don't offer biometric to anonymous users in the first
+    // place. The `!user.isAnonymous` check here is the safety net
+    // for users who enabled biometric on a real account, signed out,
+    // and then continued as guest in the same install.
+    if (!user.isAnonymous &&
+        biometric.isEnabled &&
+        !biometric.isUnlocked) {
       return const BiometricLockScreen();
     }
     return const HomeScreen();

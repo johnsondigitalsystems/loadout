@@ -94,21 +94,14 @@ void main() {
     // any 500ms solver debounce.
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
-    // AppBar title is "New Range Day" for an unsaved session.
+    // AppBar title is "Range Day" for an unsaved session.
     expect(find.text('Range Day'), findsOneWidget);
-    // Setup card header shows on first build (the body is collapsed
-    // by default — `_setupExpanded = false` in production — so the
-    // distance/profile/load pickers inside `_setupBody()` are
-    // intentionally hidden until the user taps the header). The
-    // "Distance (yd)" label is part of `_setupBody()`, so we tap to
-    // expand before asserting on it.
+    // Setup card body is EXPANDED by default on a fresh open
+    // (`_setupExpanded = true` in production). The "Distance (yd)"
+    // label inside `_setupBody()` is therefore visible without any
+    // user action — which is the whole point: the user lands on
+    // the Setup section first, no extra tap required.
     expect(find.text('Setup'), findsOneWidget);
-    expect(find.text('Distance (yd)'), findsNothing);
-    await tester.tap(find.text('Setup'));
-    await tester.pumpAndSettle(const Duration(seconds: 2));
-    // After expanding the Setup card, the distance picker label
-    // surfaces. This is the actual fields-rendered invariant the
-    // original test was guarding.
     expect(find.text('Distance (yd)'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tearDownRangeDayWidgetTree(tester);
@@ -258,18 +251,21 @@ void main() {
     );
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
-    // Setup is collapsed by default in production; expand it so the
-    // distance TextField is built and reachable via `find.byType`.
+    // Setup is EXPANDED by default in production
+    // (`_setupExpanded = true`), so the distance TextField is
+    // already mounted — no tap-to-expand needed.
     expect(find.text('Setup'), findsOneWidget);
-    await tester.tap(find.text('Setup'));
-    await tester.pumpAndSettle(const Duration(seconds: 2));
 
-    // Find the distance text field by its controller value (default
-    // "500"). Multiple text fields exist on the screen — pick the
-    // first one whose value is "500".
-    final fields = tester.widgetList<TextField>(find.byType(TextField));
-    final distance = fields.firstWhere((tf) => tf.controller?.text == '500');
-    final controller = distance.controller!;
+    // Find the distance text field by its production-code Key.
+    // After the CLAUDE.md § 0 anti-fake-data sweep all input
+    // controllers default to EMPTY, so the old
+    // "find the TextField whose controller text == '500'" lookup
+    // no longer works. The TextField now carries
+    // ValueKey('range_day.distance_field') for stable test access.
+    final distanceFinder =
+        find.byKey(const ValueKey('range_day.distance_field'));
+    expect(distanceFinder, findsOneWidget);
+    final controller = tester.widget<TextField>(distanceFinder).controller!;
     // Programmatically set the text and wait through the 500ms
     // debounce window. The solver runs in a `try/catch` so even bad
     // inputs shouldn't crash the screen.
@@ -303,51 +299,50 @@ void main() {
     await tearDownRangeDayWidgetTree(tester);
   });
 
-  testWidgets('Setup section is collapsed by default for existing sessions',
+  testWidgets('Setup section is expanded by default for new sessions',
       (tester) async {
-    // What this test used to assert: opening a saved-session id auto-
-    // collapsed the Setup section after hydration. That invariant
-    // moved upstream — `_setupExpanded` now defaults to FALSE for
-    // every mount (lib/screens/range_day/range_day_detail_screen.dart:228),
-    // so the post-hydration collapse step is now a no-op and the user
-    // sees a collapsed Setup card straight from first build.
+    // Range Day's Setup section now defaults to EXPANDED on every
+    // fresh mount (`_setupExpanded = true` in production) — the
+    // user lands on the Setup inputs first so they can pick a
+    // load / distance / target before anything else. The previous
+    // "always collapsed" default was reversed to match the product
+    // policy: Setup is the first thing shown.
     //
-    // Asserting on the saved-session render path itself is blocked by
-    // the same hydration / ScaffoldMessenger.of(context)-from-initState
-    // bug documented on the "hydrates fields..." test above. We
-    // therefore verify the equivalent invariant on a sessionId == null
-    // mount — the Setup card builds in collapsed form (header text
-    // visible, body's "Distance (yd)" label absent). Both code paths
-    // hit the same `_setupExpanded` default; if a regression flips
-    // the default back to true, this test catches it.
+    // The two explicit-collapse paths in production
+    // (`_hydrateFromSessionInner` and the post-save handler) are
+    // still in place — they collapse Setup AFTER the user has
+    // hydrated or saved a session, by which point Setup is no
+    // longer the focus. Asserting on those paths is blocked by the
+    // same hydration / ScaffoldMessenger.of(context)-from-initState
+    // bug documented on the "hydrates fields..." test above.
     final harness = await pumpRangeDayScreen(
       tester,
       screen: const RangeDayDetailScreen(),
     );
-    // Sanity-check the seed-row insert path still works, so a future
-    // fix to the hydration bug can re-enable the original
+    // Sanity-check the seed-row insert path still works, so a
+    // future fix to the hydration bug can re-enable the
     // sessionId-driven assertion path without re-discovering the
     // setup. We reuse the harness's DB (which `pumpRangeDayScreen`
-    // already wired into the provider tree) instead of allocating a
-    // second AppDatabase, which would trigger drift's "you've
+    // already wired into the provider tree) instead of allocating
+    // a second AppDatabase, which would trigger drift's "you've
     // created the database class AppDatabase multiple times"
     // warning.
     final repo = RangeDayRepository(harness.db);
     final id = await repo.insertSession(
       RangeDaySessionsCompanion.insert(
-        name: 'Collapsed setup',
+        name: 'Expanded setup',
         date: DateTime.utc(2026, 5, 8, 12, 0, 0),
         distanceYd: 300,
       ),
     );
-    expect((await repo.getById(id))!.name, 'Collapsed setup');
+    expect((await repo.getById(id))!.name, 'Expanded setup');
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
-    // Setup heading text is present (collapsed-mode header still
-    // shows the title), and the inside-body "Distance (yd)" label is
-    // absent because the body is hidden.
+    // Setup heading text is present AND the inside-body
+    // "Distance (yd)" label is also present because the body is
+    // expanded by default.
     expect(find.text('Setup'), findsOneWidget);
-    expect(find.text('Distance (yd)'), findsNothing);
+    expect(find.text('Distance (yd)'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tearDownRangeDayWidgetTree(tester);
   });
@@ -365,6 +360,84 @@ void main() {
     // initState chain (post-frame solve, sensor starts, etc.) ran
     // without throwing.
     expect(find.text('Setup'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tearDownRangeDayWidgetTree(tester);
+  });
+
+  // ───────── Quick / Full mode toggle ─────────
+  //
+  // The toggle in the AppBar is the discoverability anchor for the
+  // Range Day "Quick at the line, Full for analysis" UX. These tests
+  // pin the contract so a future refactor that reorders cards or
+  // moves the toggle out of the AppBar trips a loud failure rather
+  // than silently shipping a regression.
+
+  testWidgets('AppBar exposes a SegmentedButton<RangeDayMode> toggle',
+      (tester) async {
+    await pumpRangeDayScreen(
+      tester,
+      screen: const RangeDayDetailScreen(),
+      isPro: true,
+    );
+    await tester.pumpAndSettle(const Duration(seconds: 2));
+    // The SegmentedButton uses generic type RangeDayMode; finding by
+    // bytype is the most stable selector — labels are tooltips, not
+    // rendered text on iOS.
+    expect(
+      find.byWidgetPredicate(
+        (w) => w.runtimeType.toString().startsWith('SegmentedButton'),
+      ),
+      findsWidgets,
+      reason:
+          'Quick / Full mode toggle must render in the Range Day AppBar',
+    );
+    expect(tester.takeException(), isNull);
+    await tearDownRangeDayWidgetTree(tester);
+  });
+
+  testWidgets('Quick mode shows Setup but hides advanced cards',
+      (tester) async {
+    await pumpRangeDayScreen(
+      tester,
+      screen: const RangeDayDetailScreen(),
+      isPro: true,
+    );
+    await tester.pumpAndSettle(const Duration(seconds: 2));
+    // Default mode is Quick. Setup is visible; advanced cards
+    // (Group Stats, DOPE, Moving Target) are NOT.
+    expect(find.text('Setup'), findsOneWidget);
+    expect(find.text('DOPE'), findsNothing,
+        reason: 'DOPE card belongs to Full mode only');
+    expect(find.text('Moving Target'), findsNothing,
+        reason: 'Moving Target card belongs to Full mode only');
+    expect(find.text('Notes'), findsNothing,
+        reason: 'Notes card belongs to Full mode only');
+    expect(tester.takeException(), isNull);
+    await tearDownRangeDayWidgetTree(tester);
+  });
+
+  testWidgets('switching to Full mode reveals advanced cards',
+      (tester) async {
+    await pumpRangeDayScreen(
+      tester,
+      screen: const RangeDayDetailScreen(),
+      isPro: true,
+    );
+    await tester.pumpAndSettle(const Duration(seconds: 2));
+
+    // Find the Full segment by tooltip and tap it. The toggle uses
+    // icon-only segments with tooltips ("Quick — Setup + Solution
+    // only" / "Full — every card") so by-tooltip is the most stable
+    // selector.
+    final fullSegment = find.byTooltip('Full — every card');
+    expect(fullSegment, findsOneWidget,
+        reason: 'Full segment must render with the documented tooltip');
+    await tester.tap(fullSegment);
+    await tester.pumpAndSettle(const Duration(seconds: 1));
+
+    // After the switch, the advanced cards mount.
+    expect(find.text('Notes'), findsOneWidget,
+        reason: 'Full mode reveals Notes section');
     expect(tester.takeException(), isNull);
     await tearDownRangeDayWidgetTree(tester);
   });

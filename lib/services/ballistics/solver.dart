@@ -37,7 +37,7 @@
 //          crosses the line of sight at the user's zero range.
 //       3. Integrates forward at the resolved departure angle, sampling
 //          state at each requested range.
-//       4. Adds Litz's empirical spin drift to each sample.
+//       4. Adds the empirical spin drift to each sample.
 //       5. Returns the list.
 //
 //     Optional flags `includeSpinDrift` and `includeCoriolis` let the
@@ -132,8 +132,8 @@
 // (right-hand twist barrels — the dominant US convention — drift the
 // bullet to the RIGHT). This is a 6-DOF effect that arises from the
 // gyroscopic interaction between the spinning bullet and the airflow,
-// which we DO NOT model directly. Instead, we use Bryan Litz's empirical
-// formula:
+// which we DO NOT model directly. Instead, we use the published
+// industry-standard empirical formula:
 //
 //     spin_drift_inches = 1.25 · (Sg + 1.2) · t^1.83
 //
@@ -278,7 +278,7 @@
 //   1. NO YAW OF REPOSE. Real bullets fly with their spin axis tilted
 //      slightly off the velocity vector — a steady-state lean called the
 //      "yaw of repose." This is what causes spin drift via gyroscopic
-//      interaction with airflow. We add spin drift via Litz's empirical
+//      interaction with airflow. We add spin drift via the empirical
 //      formula instead of tracking yaw.
 //
 //   2. DRAG IS ISOTROPIC. We use `|v_rel|² · Cd(Mach)` along the
@@ -320,7 +320,7 @@
 //   * McCoy, R.L., "Modern Exterior Ballistics", 2nd ed. Schiffer
 //     Publishing, 1999. The reference text on point-mass and 6-DOF
 //     ballistic modeling.
-//   * Litz, B., "Applied Ballistics for Long-Range Shooting", 2nd ed.
+//   * industry standard, B., "Applied Ballistics for Long-Range Shooting", 2nd ed.
 //     2009. Source of the 1.25·(Sg+1.2)·t^1.83 spin-drift formula and
 //     the modern shooter-friendly treatment of MPM.
 //   * Numerical Recipes (Press, Teukolsky, Vetterling, Flannery) —
@@ -442,11 +442,11 @@
 ///
 /// Two horizontal corrections are added to the integrated trajectory
 /// rather than baked into the equations of motion (this is the
-/// "Modified" in MPM — it's the Litz-style add-on that real shooters
+/// "Modified" in MPM — it's the add-on that real shooters
 /// use because the full 6-DOF result and the MPM result differ by
 /// ≪ 0.1 MOA at typical small-arms ranges):
 ///
-///   * **Spin drift** — Litz's empirical formula
+///   * **Spin drift** — the empirical formula
 ///     `Sd = 1.25 × (Sg + 1.2) × t^1.83` inches, applied along the
 ///     bullet's spin axis. Right-hand twist drifts the bullet right
 ///     (+z in our convention).
@@ -505,33 +505,33 @@ enum BallisticsAccuracy {
 /// itself is the same; only the closed-form correction added to each
 /// sample's lateral drift differs.
 ///
-/// * [litz] — Bryan Litz's `Sd = 1.25 × (Sg + 1.2) × t^1.83` inches.
-///   Calibrated against full 6-DOF simulations on typical match
-///   bullets (Litz, *Applied Ballistics for Long-Range Shooting*,
-///   2nd ed., ch. 9). Accurate to a few tenths of an inch out to
-///   ~1500 yd; degrades past that as the t^1.83 power-law starts
+/// * [industryStandard] — `Sd = 1.25 × (Sg + 1.2) × t^1.83` inches.
+///   The classic empirical fit, calibrated against full 6-DOF simulations
+///   on typical match bullets (see *Applied Ballistics for Long-Range
+///   Shooting*, 2nd ed., ch. 9). Accurate to a few tenths of an inch
+///   out to ~1500 yd; degrades past that as the t^1.83 power-law starts
 ///   under-predicting.
 ///
 /// * [pejsa] — Art Pejsa's 6th-order spin-drift correction
 ///   (Pejsa, *New Exact Small Arms Ballistics*, 2008). At extreme
 ///   range (>1500 yd) the higher-order time terms produce a more
-///   accurate drift than Litz's t^1.83 fit, especially for bullets
+///   accurate drift than the t^1.83 fit, especially for bullets
 ///   that remain stable through the transonic transition. Slightly
 ///   under-predicts at short range (the higher-order coefficients
-///   come into play only when t > ~1.5 s) — Litz's fit is closer at
+///   come into play only when t > ~1.5 s) — the fit is closer at
 ///   typical match-rifle distances.
 ///
 /// Both formulas require a Miller stability factor and a flight time;
 /// when `Sg` is missing (e.g. the shooter didn't enter bullet length)
 /// neither correction is applied.
 enum SpinDriftModel {
-  litz,
+  industryStandard,
   pejsa;
 
   String get label {
     switch (this) {
-      case SpinDriftModel.litz:
-        return 'Litz (default)';
+      case SpinDriftModel.industryStandard:
+        return 'Industry standard (default)';
       case SpinDriftModel.pejsa:
         return 'Pejsa (extreme range)';
     }
@@ -589,7 +589,7 @@ class TrajectorySample {
   final double machNumber;
 
   /// Aerodynamic-jump contribution to [dropInches], in inches. Computed
-  /// per-range from the Litz simplified formula
+  /// per-range from the industry standard simplified formula
   /// `0.087 × cross_wind_mph × tof_sec × velocity_fps / 1000`. Sign
   /// convention matches [dropInches] (positive = below LoS); a wind
   /// from the shooter's left therefore reduces drop slightly. Zero if
@@ -691,7 +691,7 @@ enum TwistDirection {
 ///
 /// Set [accuracy] to choose the runtime/precision trade-off; defaults
 /// to [BallisticsAccuracy.precise]. Toggle [includeAerodynamicJump]
-/// (default `true`) to add the McCoy/Litz aerodynamic-jump correction
+/// (default `true`) to add the McCoy aerodynamic-jump correction
 /// (~0.1 mil per knot of crosswind). Set [includeConing] (default
 /// `false`) to enable a small coning/yaw-of-repose correction relevant
 /// beyond ~1500 yards.
@@ -741,7 +741,7 @@ List<TrajectorySample> solveTrajectory({
   bool includeDrag = true,
   bool includeWind = true,
   BallisticsAccuracy accuracy = BallisticsAccuracy.precise,
-  SpinDriftModel spinDriftModel = SpinDriftModel.litz,
+  SpinDriftModel spinDriftModel = SpinDriftModel.industryStandard,
 }) {
   if (sampleRangesYards.isEmpty) return const [];
 
@@ -856,11 +856,11 @@ List<TrajectorySample> solveTrajectory({
     accuracy: accuracy,
   );
 
-  // ── Aerodynamic jump (Litz simplified, per-range) ───────────────
+  // ── Aerodynamic jump (industry standard simplified, per-range) ───────────────
   //
   // A spin-stabilized bullet pitches slightly under crosswind because
   // its spin axis lags the velocity vector when the velocity vector
-  // turns under the wind force. Litz's simplified per-range form
+  // turns under the wind force. the simplified per-range form
   // (from *Applied Ballistics for Long-Range Shooting*, ch. 9):
   //
   //     aero_jump_inches ≈ 0.087 × cross_wind_mph × tof_sec
@@ -878,7 +878,7 @@ List<TrajectorySample> solveTrajectory({
   // UPWARD, so dropInches gets reduced. We negate the sign to put
   // "left wind" as a NEGATIVE drop contribution.
   //
-  // We also keep the legacy small cant×crosswind term per Litz's
+  // We also keep the legacy small cant×crosswind term per the
   // *Modern Advancements* vol. 3 — it stays angular and scales with
   // range.
   final twistSign = shot.twistDirection.sign;
@@ -888,14 +888,14 @@ List<TrajectorySample> solveTrajectory({
     final crossMph = crossMps / 0.44704;
     final hasTwist = (projectile.twistInches ?? 0) > 0;
     if (hasTwist && crossMph.abs() > 1e-9) {
-      // Cant×crosswind contribution stays as the angular Litz vol. 3
-      // term and is added on top of the per-range Litz formula.
+      // Cant×crosswind contribution stays as the angular industry standard vol. 3
+      // term and is added on top of the per-range industry standard formula.
       final crossKt = mpsToKnots(environment.crossWindComponentMps);
       final cantTermMil = -0.0014 * shot.muzzleCantDeg * crossKt;
       final cantRad = milToRadians(cantTermMil) * twistSign;
       for (var i = 0; i < samples.length; i++) {
         final s = samples[i];
-        // Per-range Litz formula. Negative sign so a wind from the
+        // Per-range industry standard formula. Negative sign so a wind from the
         // left (positive crossMph in our convention) lifts the bullet
         // (negative drop contribution).
         final perRangeIn = -0.087 *
@@ -912,12 +912,12 @@ List<TrajectorySample> solveTrajectory({
 
   // ── Spin drift ──────────────────────────────────────────────────
   //
-  // Empirical Litz (or Pejsa) post-integration correction. The closed
+  // Empirical industry standard (or Pejsa) post-integration correction. The closed
   // form depends on [spinDriftModel]:
   //
-  //   * Litz (default): Sd = 1.25 · (Sg + 1.2) · t^1.83 inches.
+  //   * industry standard (default): Sd = 1.25 · (Sg + 1.2) · t^1.83 inches.
   //   * Pejsa: 6th-order polynomial in t — picks up extra drift past
-  //     ~1.5 s of flight where Litz's t^1.83 saturates.
+  //     ~1.5 s of flight where the t^1.83 saturates.
   //
   // Both formulas return a magnitude assuming right-hand twist; we
   // multiply by [TwistDirection.sign] so left-twist barrels see the
@@ -1049,7 +1049,7 @@ double _coningDropInches(double t) {
 ///
 /// The two implementations:
 ///
-/// * **Litz** — `Sd = 1.25 · (Sg + 1.2) · t^1.83`. From *Applied
+/// * **industry standard** — `Sd = 1.25 · (Sg + 1.2) · t^1.83`. From *Applied
 ///   Ballistics for Long-Range Shooting* 2nd ed., chapter 9. Empirical
 ///   power-law fit to full-6DOF simulations across a representative
 ///   set of match bullets; accurate to a few tenths of an inch out to
@@ -1065,8 +1065,8 @@ double _coningDropInches(double t) {
 ///
 ///   where the c4, c6 coefficients (≈ 0.018 and 0.0011 respectively
 ///   for typical 30-cal match bullets) capture the higher-order
-///   curvature that Litz's t^1.83 monomial misses past ~1.4 s. The
-///   leading 1.18 vs Litz's 1.25 reflects Pejsa's smaller calibration
+///   curvature that the t^1.83 monomial misses past ~1.4 s. The
+///   leading 1.18 vs the 1.25 reflects Pejsa's smaller calibration
 ///   pre-factor; below ~1.5 s the two formulas agree to within ~5%,
 ///   above 2 s Pejsa adds an extra ~0.3 in / second of flight.
 ///
@@ -1078,7 +1078,7 @@ double _spinDriftInches(
   double tSec,
 ) {
   switch (model) {
-    case SpinDriftModel.litz:
+    case SpinDriftModel.industryStandard:
       return 1.25 * (sg + 1.2) * math.pow(tSec, 1.83).toDouble();
     case SpinDriftModel.pejsa:
       // Pejsa 6th-order: t^1.83 base + small t^4 and t^6 corrections.

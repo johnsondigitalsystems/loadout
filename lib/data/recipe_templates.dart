@@ -39,11 +39,37 @@
 // recommendation.
 //
 // ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+//   * **Liability is the whole point of [disclaimer].** Every
+//     template carries an explicit disclaimer string that the
+//     Quick Add screen renders verbatim. Don't drop it from the
+//     UI as "obvious" — the disclaimer is what keeps these
+//     templates from being interpreted as load recommendations.
+//     If a template is added without a disclaimer string, the
+//     screen should refuse to apply it.
+//   * **Charge values are intentionally MID-RANGE, not max.** Each
+//     template's `powderChargeGr` is pulled from a published
+//     manual's mid-range entry — never the manual's listed maximum.
+//     If we ever programmatically derive these from a load-data
+//     table, the derivation must respect this rule.
+//   * **Templates are NOT migrated as User Loads on first run.**
+//     They stay in source until the user picks one in Quick Add,
+//     at which point the resulting row is a normal `UserLoadRow`.
+//     This avoids polluting the user's recipe list with values
+//     they never picked.
+//
+// ============================================================================
 // WHO CONSUMES THIS FILE
 // ============================================================================
 // - lib/screens/recipes/quick_add_recipe_screen.dart — the only consumer.
 //   Reads `kRecipeTemplates`, displays the picker dropdown, and applies
 //   the chosen template's values to the in-progress form.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// None. Pure const data — every value ships in the binary.
 
 /// One starter recipe surfaced from the Quick Add flow. All values are
 /// starting points only — the [disclaimer] field is shown verbatim in

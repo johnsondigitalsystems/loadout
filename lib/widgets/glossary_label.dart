@@ -41,7 +41,7 @@
 // WHY IT EXISTS IN THE ARCHITECTURE
 // ============================================================================
 // LoadOut's reloading vocabulary is dense (BC G1, CBTO, density
-// altitude, spin drift, aerodynamic jump, Litz CI). Without an
+// altitude, spin drift, aerodynamic jump, industry standard CI). Without an
 // in-form learning affordance, novices have to leave the form, open
 // the side drawer, search the glossary, then come back. That's
 // friction enough to make the form abandon-able. This widget is the

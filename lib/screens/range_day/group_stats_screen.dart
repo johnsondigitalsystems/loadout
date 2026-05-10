@@ -5,7 +5,7 @@
 // ============================================================================
 // Full-screen surface that shows the rich Group Statistics block —
 // extreme spread, mean radius, group MOA, σ horizontal / σ vertical, the
-// 90% Litz confidence interval (when N >= 3), and the centroid + zero-
+// 90% industry standard confidence interval (when N >= 3), and the centroid + zero-
 // adjust paragraph — for the shots recorded in the current Range Day
 // session. Entry point is the "Group Statistics" launcher tile inside
 // `range_day_detail_screen.dart`; the user pushes here when they want a
@@ -371,7 +371,7 @@ class _GroupStatsScreenState extends State<GroupStatsScreen> {
       stats.groupSizeCiLow90PctIn != null &&
       stats.groupSizeCiHigh90PctIn != null;
 
-  /// Litz-style 90% confidence-interval block. Shows the user that the
+  /// 90% confidence-interval block. Shows the user that the
   /// observed group size has uncertainty bands that depend on sample
   /// size, and adds a small coaching caption that gets less alarming as
   /// N grows. Color-coded: amber (N=3..4), yellow (N=5..9), green
@@ -431,7 +431,7 @@ class _GroupStatsScreenState extends State<GroupStatsScreen> {
     }
 
     // Coaching caption tied to sample-size tier. Phrased as observation
-    // rather than nag — Litz's whole point is that the shooter should
+    // rather than nag — the whole point is that the shooter should
     // care, not that the app should hector.
     String caption;
     if (n == 3) {

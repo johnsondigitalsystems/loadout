@@ -67,6 +67,13 @@
 // - lib/screens/firearms/firearms_list_screen.dart
 // - lib/screens/brass_lots/brass_lots_list_screen.dart
 // - lib/screens/batches/batches_list_screen.dart
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// None directly. Renders two FloatingActionButtons; the actual
+// route pushes happen inside the caller-supplied
+// [onQuickPressed] / [onAddPressed] callbacks.
 
 import 'package:flutter/material.dart';
 

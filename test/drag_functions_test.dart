@@ -10,7 +10,7 @@
 // values plus some deep monotonicity properties; this file fills the
 // remainder:
 //
-//   * Cd lookup against published Sierra / McCoy / Litz reference values
+//   * Cd lookup against published Sierra / McCoy reference values
 //     at Mach 1.0, 1.5, 2.0, 3.0 for the two most-used tables (G1 / G7);
 //   * non-negative Cd across the full supported Mach range;
 //   * out-of-range clamping behaviour (Mach < 0 and Mach > 5);
@@ -99,7 +99,7 @@ void main() {
   });
 
   group('G7 drag table — published reference samples', () {
-    // Reference: McCoy table 8.7 / Litz "Applied Ballistics" appendix.
+    // Reference: McCoy table 8.7 / industry standard "Applied Ballistics" appendix.
     test('Mach 1.0 → Cd ≈ 0.3803', () {
       expect(dragCoefficient(DragModel.g7, 1.0), closeTo(0.3803, 1e-3));
     });

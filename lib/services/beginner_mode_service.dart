@@ -33,6 +33,25 @@
 // across the codebase.
 //
 // ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+//   * **Hydration is async.** `_hydrate` reads SharedPreferences
+//     during construction; until it completes, [isEnabled] returns
+//     the constant default ([_kDefaultEnabled]). Forms that pick a
+//     different detail level based on Beginner Mode must either wait
+//     for [isHydrated] to flip OR accept the default-during-startup
+//     window. The recipe form opts for the second pattern: the
+//     `_loadDetailLevel` flow runs inside the form's own initState
+//     and can simply re-read once the hydration completes.
+//   * **The default is ON.** Flipping it OFF later (after a marketing
+//     decision) would be surprising for existing installs that
+//     enabled features assuming Beginner Mode was off. Audit
+//     consumer call sites before changing [_kDefaultEnabled].
+//   * **Don't reach into prefs from consumers.** Read the cached
+//     [isEnabled] via the provider; the service owns the prefs key
+//     and any future migration of the storage layer.
+//
+// ============================================================================
 // WHO CONSUMES THIS FILE
 // ============================================================================
 // - lib/app.dart — provided once at the root.

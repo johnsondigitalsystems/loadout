@@ -173,7 +173,7 @@ void main() {
     });
 
     test('A4: probability monotonically decreases with wind uncertainty', () {
-      // 1000 yd is the regime where wind dominates — the Litz coaching
+      // 1000 yd is the regime where wind dominates — the industry standard coaching
       // observation we test elsewhere — so this delta is large and
       // reliable.
       final p0 =
@@ -535,7 +535,7 @@ void main() {
     test(
         'F1: 1.0 MOA rifle / 600 yd / 18" steel circle / 5 mph wind — broad sane band',
         () {
-      // Litz/PRB regression case: 1 MOA shooter, 18" plate, 600 yd,
+      // industry standard/PRB regression case: 1 MOA shooter, 18" plate, 600 yd,
       // ±5 mph wind call uncertainty. This is the classic "is my call
       // good enough?" scenario.
       final r = _baselineCompute(

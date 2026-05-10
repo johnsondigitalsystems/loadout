@@ -123,7 +123,13 @@ class _BrassLotFormScreenState extends State<BrassLotFormScreen> {
     _manufacturer = TextEditingController(text: e?.manufacturer ?? '');
     _caliber = TextEditingController(text: e?.caliber ?? '');
     _headstampLot = TextEditingController(text: e?.headstampLot ?? '');
+    // Inventory counter, not a ballistics-affecting field (CLAUDE.md
+    // § 0 scope). Pre-fill with 0 for new lots so the user can
+    // increment by typing rather than starting from blank; saved
+    // value on edit.
     _count = TextEditingController(text: (e?.count ?? 0).toString());
+    // Inventory counter; not ballistics-affecting. Pre-fill with 0
+    // for new lots; saved value on edit.
     _firingCount =
         TextEditingController(text: (e?.firingCount ?? 0).toString());
     _avgWeight =
@@ -267,6 +273,7 @@ class _BrassLotFormScreenState extends State<BrassLotFormScreen> {
       firstDate: DateTime(now.year - 30),
       lastDate: DateTime(now.year + 1),
     );
+    if (!mounted) return;
     if (picked != null) {
       setState(() => _lastAnnealed = picked);
       _autoSave.notifyDirty();
@@ -315,6 +322,9 @@ class _BrassLotFormScreenState extends State<BrassLotFormScreen> {
   Future<void> _recordFiring() async {
     final repo = context.read<BrassLotRepository>();
     final messenger = ScaffoldMessenger.of(context);
+    // Increment-stepper dialog; not ballistics-affecting. Pre-fill
+    // with 1 (the canonical "+1 firing" case) so the user can hit
+    // Save with a single tap for the most common workflow.
     final controller = TextEditingController(text: '1');
     final result = await showDialog<int>(
       context: context,
@@ -356,6 +366,7 @@ class _BrassLotFormScreenState extends State<BrassLotFormScreen> {
     if (result == null || widget.existing == null) return;
 
     await repo.recordFiring(widget.existing!.id, result);
+    if (!mounted) return;
     final next =
         (_parseInt(_firingCount) + result).clamp(0, 1 << 31).toString();
     setState(() => _firingCount.text = next);
@@ -413,6 +424,7 @@ class _BrassLotFormScreenState extends State<BrassLotFormScreen> {
     if (result == null || widget.existing == null) return;
 
     await repo.markAnnealed(widget.existing!.id, result.method);
+    if (!mounted) return;
     setState(() {
       _lastAnnealed = result.when;
       _annealMethod = result.method;
@@ -466,6 +478,7 @@ class _BrassLotFormScreenState extends State<BrassLotFormScreen> {
     if (result == null || widget.existing == null) return;
 
     await repo.setCount(widget.existing!.id, result);
+    if (!mounted) return;
     setState(() => _count.text = result.toString());
     _autoSave.notifyDirty();
   }

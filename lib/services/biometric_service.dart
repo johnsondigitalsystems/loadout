@@ -108,6 +108,7 @@
 //   [authenticate] call (Face ID / Touch ID / fingerprint sheet,
 //   on whichever platform).
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -118,13 +119,23 @@ const String _kEnabledKey = 'biometric_unlock_enabled';
 /// contract and the relationship between this service, Firebase Auth,
 /// and the `_AuthGate` in `lib/app.dart`.
 class BiometricService extends ChangeNotifier {
-  BiometricService({LocalAuthentication? auth})
-      : _auth = auth ?? LocalAuthentication() {
+  BiometricService({
+    LocalAuthentication? auth,
+    User? Function()? currentUserGetter,
+  })  : _auth = auth ?? LocalAuthentication(),
+        _currentUser =
+            currentUserGetter ?? (() => FirebaseAuth.instance.currentUser) {
     // ignore: discarded_futures
     _hydrate();
   }
 
   final LocalAuthentication _auth;
+
+  /// Indirection so tests can supply a fake current-user without
+  /// having to bind FirebaseAuth in the test harness. Production code
+  /// constructs the service with the default getter, which reads
+  /// `FirebaseAuth.instance.currentUser` synchronously.
+  final User? Function() _currentUser;
 
   bool _isAvailable = false;
   bool _isEnabled = false;
@@ -222,9 +233,25 @@ class BiometricService extends ChangeNotifier {
   /// step, the toggle stays off and listeners see [isEnabled] ==
   /// false. Disabling is unconditional (no auth required to turn
   /// the gate off — same posture as iOS Settings → Touch ID).
+  ///
+  /// Refuses to enable for anonymous / unauthenticated users. The
+  /// anonymous Firebase account is device-local; binding biometric
+  /// to it sells false security (losing the device or signing out
+  /// loses both the account AND any biometric "protection"). The
+  /// settings UI already hides the toggle for anonymous users —
+  /// this is defense-in-depth so any future call site can't
+  /// accidentally re-enable for them.
   Future<bool> setEnabled(bool value) async {
     if (value == _isEnabled) return true;
     if (value) {
+      final user = _currentUser();
+      if (user == null || user.isAnonymous) {
+        debugPrint(
+          '[biometric] setEnabled(true) refused — '
+          '${user == null ? "no signed-in user" : "anonymous account"}.',
+        );
+        return false;
+      }
       if (!_isAvailable) return false;
       final ok = await authenticate(
         reason: 'Confirm with biometrics to enable unlock',

@@ -46,6 +46,51 @@
 // on-device — Microsoft sees the user's Microsoft account email (their
 // OneDrive identity) but LoadOut never receives the access or refresh
 // token outside the local secure-storage layer.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// Every cloud-storage provider needs a constants file with the
+// public client identifiers + an `isPlaceholder` escape hatch. This
+// is the OneDrive analogue of `lib/services/revenue_cat_config.dart`
+// — same pattern, different vendor. Splitting the operator-only
+// identifiers from the OAuth flow code (`onedrive_backup_service.dart`)
+// keeps the secret-rotation surface tiny.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+//   * **`tenantId` is `consumers`, not `common`.** Microsoft's
+//     `/consumers/oauth2/...` endpoint is what authorizes against
+//     personal OneDrive storage with the
+//     `Files.ReadWrite.AppFolder` scope. Switching to `common` for
+//     "multi-tenant" support breaks consumer OneDrive flows.
+//   * **The two redirect URI schemes are NOT interchangeable.**
+//     iOS uses `loadout://onedrive-callback`; Android uses
+//     `msauth.com.johnsondigital.loadout://auth`. Both must be
+//     registered in the Azure App Registration AND in the
+//     respective platform manifest (CFBundleURLTypes on iOS,
+//     `<intent-filter>` on Android). Using the wrong one per
+//     platform means Microsoft's authorize endpoint rejects with a
+//     redirect_uri_mismatch error.
+//   * **No client secret.** PKCE-only public clients are stateless
+//     in source — anyone can read the binary and copy the
+//     `clientId`. Don't add a "secret" field; the OAuth flow MUST
+//     stay PKCE.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - lib/services/onedrive_backup_service.dart — reads [clientId] +
+//   [tenantId] when constructing the OAuth authorize URL.
+// - lib/screens/sync/cloud_sync_screen.dart — checks
+//   [isPlaceholder] to hide the OneDrive option until the operator
+//   ships a real client ID.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// None. Pure constants + a static `isPlaceholder` getter.
 
 /// Placeholder constant used to detect "not yet configured" mode. When
 /// [clientId] starts with this prefix, the OneDrive provider returns

@@ -138,6 +138,9 @@ class _BatchDetailScreenState extends State<BatchDetailScreen> {
     final batches = context.read<BatchRepository>();
     final lots = context.read<BrassLotRepository>();
     final messenger = ScaffoldMessenger.of(context);
+    // Increment-stepper dialog; not ballistics-affecting. Pre-fill
+    // with 1 (the canonical "+1 round fired" case) so the user can
+    // hit Save with a single tap for the most common workflow.
     final controller = TextEditingController(text: '1');
     final picked = await showDialog<int>(
       context: context,

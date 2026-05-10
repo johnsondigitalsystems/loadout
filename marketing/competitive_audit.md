@@ -117,7 +117,7 @@ public data; treat as a data gap, not a claim.
 | **SOLVER — EARTH-FRAME EFFECTS** | | | |
 | Coriolis (horizontal) | Yes ([source](https://www.strelokpro.online/StrelokPro/android/default.asp)) | Yes ([solver.dart](../lib/services/ballistics/solver.dart) lines 111–127) | **parity** |
 | Coriolis (Eötvös vertical) | Yes — "vertical deflection of crosswind" ([source](https://www.strelokpro.online/)) | Yes — full 3D `−2 Ω × v` formula | **parity** |
-| Spin drift (Litz formula) | Yes — gyroscopic drift ([source](https://bulletaddict.com/en/blogs/review-materiel-de-tir/utiliser-un-calculateur-balistique-strelok-pro-ou-autre)) | Yes — `Sd = 1.25 × (Sg + 1.2) × t^1.83` (Litz) ([solver.dart](../lib/services/ballistics/solver.dart) lines 138–144) | **parity** |
+| Spin drift (industry-standard empirical formula) | Yes — gyroscopic drift ([source](https://bulletaddict.com/en/blogs/review-materiel-de-tir/utiliser-un-calculateur-balistique-strelok-pro-ou-autre)) | Yes — `Sd = 1.25 × (Sg + 1.2) × t^1.83`  ([solver.dart](../lib/services/ballistics/solver.dart) lines 138–144) | **parity** |
 | Aerodynamic jump from cant + cross-wind | Mentioned in some app surveys ([PrecisionRifleBlog](https://precisionrifleblog.com/2019/05/22/ballistic-app/)) but Strelok's own marketing does not surface a separate aero-jump component | Yes — `muzzleCantDeg` parameter + initial vertical-angle perturbation ([solver.dart](../lib/services/ballistics/solver.dart) lines 290–297, 444–457) | **lead — explicit knob** |
 | Spin stability factor (Miller) | Yes — gyroscopic stability factor ([source](https://www.strelokpro.online/)) | Yes — Miller stability factor surfaced in projectile inputs | **parity** |
 | **SOLVER — SHOOTER-INDUCED CORRECTIONS** | | | |
@@ -132,7 +132,7 @@ public data; treat as a data gap, not a claim.
 | Live multi-shot field validation | Strelok provides single-distance truing screen | LoadOut surfaces multi-distance truing in Range Day group-stats workspace | **lead** |
 | **SOLVER — NUMERICAL METHOD** | | | |
 | Integration scheme | "Proprietary algorithm" — undisclosed ([Recoil review](https://www.recoilweb.com/ballistics-in-the-palm-of-your-hand-109258.html)) | **Cash-Karp adaptive RK45** (default `precise`); fixed-step RK4 with transonic refinement (`fast` mode); 1e-6 m tolerance available (`extreme` mode) ([solver.dart](../lib/services/ballistics/solver.dart) lines 471–500) | **lead — disclosed + adaptive** |
-| 6-DOF flag | Marketed as "6-DOF" by some Strelok-Pro reviewers but the engine is point-mass with empirical add-ons; Lapua Ballistics is the named "first 6-DOF mobile app" ([forum source](https://forum.accurateshooter.com/threads/latest-greatest-ballistic-calculator-apps.4094080/)) | **Modified Point-Mass (McCoy MPM)** with explicit Litz-style empirical add-ons; we don't claim full 6-DOF ([solver.dart](../lib/services/ballistics/solver.dart) lines 270–315) | **honesty parity** |
+| 6-DOF flag | Marketed as "6-DOF" by some Strelok-Pro reviewers but the engine is point-mass with empirical add-ons; Lapua Ballistics is the named "first 6-DOF mobile app" ([forum source](https://forum.accurateshooter.com/threads/latest-greatest-ballistic-calculator-apps.4094080/)) | **Modified Point-Mass (McCoy MPM)** with explicit empirical add-ons; we don't claim full 6-DOF ([solver.dart](../lib/services/ballistics/solver.dart) lines 270–315) | **honesty parity** |
 | **HARDWARE — KESTREL** | | | |
 | Kestrel 5xxx Link (live BLE) | Yes — Kestrel DROP, Kestrel 5500 with LiNK ([source](https://www.strelokpro.online/StrelokPro/android/default.asp)) | Yes — `KestrelService` ([kestrel_service.dart](../lib/services/ble/kestrel_service.dart)) | **parity** |
 | Listed on Kestrel's official partner page | **No — Strelok / BC2026 not present** ([Kestrel partner list](https://kestrelinstruments.com/kestrel-3rd-party-software-and-applications)) | Not yet listed (we're new) | **shared gap — neither is officially endorsed** |
@@ -383,8 +383,8 @@ Recoil Magazine's review of Strelok Pro describes the solver as a
 LoadOut's solver is **fully documented** down to the integration
 scheme: Cash-Karp adaptive RK45 (default), with fixed-step RK4
 fallback, transonic-band refinement, Cd interpolation via
-Fritsch-Carlson PCHIP, Litz spin-drift formula, Miller stability
-factor, and explicit references to McCoy and Litz's textbooks
+Fritsch-Carlson PCHIP, spin-drift formula, Miller stability
+factor, and explicit references to McCoy and the textbooks
 ([solver.dart](../lib/services/ballistics/solver.dart) lines 270–425).
 
 For the technical audience (Sniper's Hide, AccurateShooter), this
@@ -485,7 +485,7 @@ Closing it via:
 
 **Honest line:** "Strelok has 19 years of trust. We're new. Our solver
 is documented down to the integration scheme — Cash-Karp adaptive
-RK45, Litz spin drift, Miller stability — and verifiable against
+RK45, spin drift, Miller stability — and verifiable against
 published Hornady tables. Run our trajectories side-by-side against
 Strelok's at the range and decide for yourself."
 
@@ -746,14 +746,14 @@ Specific claims to **avoid**:
 
 - **"Patented" or "proprietary" anything** — explicitly called out
   in `marketing/CLAUDE.md` § 12. We use public-domain physics
-  (Litz spin drift, ICAO atmosphere, Miller stability, McCoy MPM).
+  (spin drift, ICAO atmosphere, Miller stability, McCoy MPM).
 
 - **"6-DOF solver"** — `marketing/CLAUDE.md` says "6-DOF Modified
   Point Mass solver." Strictly speaking, **MPM is 3-DOF + empirical
   add-ons**; the only fully 6-DOF mobile app is Lapua Ballistics
   ([source](https://forum.accurateshooter.com/threads/latest-greatest-ballistic-calculator-apps.4094080/)).
-  The honest framing is: "Modified Point-Mass solver with Litz spin
-  drift, aerodynamic jump, Miller stability, Coriolis, and full
+  The honest framing is: "Modified Point-Mass solver with industry-standard
+  spin drift, aerodynamic jump, Miller stability, Coriolis, and full
   atmospheric modeling — the same model class Strelok uses." Don't
   claim "6-DOF" as a standalone bullet.
 

@@ -141,6 +141,7 @@ class _NotebookOnboardingScreenState extends State<NotebookOnboardingScreen> {
     );
     if (!mounted) return;
     final after = (await repo.allOnce()).length;
+    if (!mounted) return;
     final delta = after - before;
     if (delta <= 0) {
       // User cancelled or didn't save. Stay on the explainer so they

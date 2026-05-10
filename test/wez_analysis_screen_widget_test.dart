@@ -76,7 +76,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // AppBar title is present.
-    expect(find.text('WEZ Analysis'), findsOneWidget);
+    expect(find.text('Hit Probability Map'), findsOneWidget);
     // No silent layout exceptions.
     expect(tester.takeException(), isNull);
     await tearDownRangeDayWidgetTree(tester);
@@ -92,7 +92,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('WEZ Analysis'), findsOneWidget);
+    expect(find.text('Hit Probability Map'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tearDownRangeDayWidgetTree(tester);
   });
@@ -109,7 +109,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('WEZ Analysis'), findsOneWidget);
+    expect(find.text('Hit Probability Map'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tearDownRangeDayWidgetTree(tester);
   });
@@ -122,7 +122,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('WEZ Analysis'), findsOneWidget);
+    expect(find.text('Hit Probability Map'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tearDownRangeDayWidgetTree(tester);
   });
@@ -139,7 +139,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('WEZ Analysis'), findsOneWidget);
+    expect(find.text('Hit Probability Map'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tearDownRangeDayWidgetTree(tester);
   });
@@ -186,7 +186,7 @@ void main() {
     // the screen tolerates the populated state without crashing.
     await tester.pumpAndSettle();
 
-    expect(find.text('WEZ Analysis'), findsOneWidget);
+    expect(find.text('Hit Probability Map'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tearDownRangeDayWidgetTree(tester);
   });

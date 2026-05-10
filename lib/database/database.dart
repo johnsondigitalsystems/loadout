@@ -1494,7 +1494,7 @@ class ShotImpacts extends Table {
       dateTime().withDefault(currentDateAndTime)();
 }
 
-// ─────────────────────── Bryan Litz / Applied Ballistics parity (schema v16) ───────────────────────
+// ─────────────────────── Applied Ballistics parity (schema v16) ───────────────────────
 //
 // Three additive tables that turn LoadOut into a peer of Applied Ballistics on
 // math depth without giving up the local-first storage model. All three are
@@ -1507,8 +1507,8 @@ class ShotImpacts extends Table {
 
 /// One saved Weapon Employment Zone (WEZ) profile. A WEZ profile is the
 /// (load, firearm, target, uncertainty inputs) → hit-probability-vs-range
-/// curve described in Bryan Litz's *Modern Advancements in Long Range
-/// Shooting Vol 1*. The user runs the WEZ analysis screen, tunes the
+/// curve described in *Modern Advancements in Long Range Shooting
+/// Vol 1*. The user runs the WEZ analysis screen, tunes the
 /// inputs, and saves the result with a name so they can pull it back up
 /// later or compare two WEZ profiles side-by-side.
 ///
@@ -1550,7 +1550,7 @@ class WezProfiles extends Table {
       dateTime().withDefault(currentDateAndTime)();
 }
 
-/// One BC-truing override. Litz's BC truing methodology takes an observed
+/// One BC-truing override. the BC truing methodology takes an observed
 /// shot impact at a known range and back-solves the effective BC that
 /// reproduces the observation. The result is a load-specific, firearm-
 /// specific, drag-model-specific override that the solver consults
@@ -1559,7 +1559,7 @@ class WezProfiles extends Table {
 /// `observationJson` stores the (range, observed-drop) pairs the truing
 /// was derived from, as a JSON array of `{"rangeYd": x, "observedDropMil":
 /// y, "predictedDropMil": z}` objects. Single-distance truing is one
-/// element; multi-distance truing (Litz's preferred form) has N elements.
+/// element; multi-distance truing (the preferred form) has N elements.
 ///
 /// `(loadId, firearmId, dragModel)` is the natural unique key — at any
 /// time a particular (recipe × rifle × drag family) has at most one
@@ -1614,7 +1614,7 @@ class TruedBcOverrides extends Table {
 @DataClassName('SightCalibrationRow')
 // ─────────────────────── Atmosphere presets (schema v17) ───────────────────────
 //
-// User-saved atmospheric profiles. Bryan Litz's "Applied Ballistics" methodology
+// User-saved atmospheric profiles. the "Applied Ballistics" methodology
 // recommends keeping multiple named profiles (e.g. "Camp Atterbury summer",
 // "Big Sandy", "Cold dry day") so the shooter can quickly switch between them
 // rather than re-typing pressure / temperature / humidity / altitude every
@@ -1855,7 +1855,7 @@ class UserComponentFavorites extends Table {
     DragCurves,
     // Schema v14 additions.
     FactoryLoads,
-    // Schema v16 additions (Bryan Litz / Applied Ballistics parity features).
+    // Schema v16 additions (Applied Ballistics parity features).
     WezProfiles,
     TruedBcOverrides,
     SightCalibrations,
@@ -1889,7 +1889,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 25;
+  int get schemaVersion => 26;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -2175,7 +2175,7 @@ class AppDatabase extends _$AppDatabase {
                 rangeDaySessions, rangeDaySessions.inclineAngleDeg);
           }
           if (from < 16) {
-            // v16 — Bryan Litz / Applied Ballistics parity. Three purely
+            // v16 — Applied Ballistics parity. Three purely
             // additive tables that record the outputs of the new analysis
             // features: WEZ profiles, BC truing overrides, and sight-scale
             // (DPC) calibrations. The solver does not require any of these
@@ -2358,6 +2358,18 @@ class AppDatabase extends _$AppDatabase {
             // not here, because SharedPreferences is async-only and
             // shouldn't block a synchronous migration step.
             await m.createTable(userComponentFavorites);
+          }
+          if (from < 26) {
+            // v26 — wipe targets so the updated catalog ships:
+            //   * Texas Star is now shape='star' (was 'circle' — the
+            //     painter rendered it as a flat disc).
+            //   * Added IPSC Mini (66%), IPSC A4 (75%), IDPA Reduced
+            //     (75%) variants per the user's "more sizes" request.
+            // The user-data tables (RangeDaySessions etc.) reference
+            // targets by INT id; deleting catalog rows is a fk-soft
+            // operation here because the picker resolves a missing
+            // id to "— None —" without crashing.
+            await delete(targets).go();
           }
         },
       );

@@ -84,9 +84,26 @@ firebase deploy --only hosting                     # AASA + assetlinks updates
 
 ---
 
-## 3. The data model (drift schema v5)
+## 3. The data model (drift schema v25)
 
-Schema lives in `lib/database/database.dart`. drift generates `database.g.dart` from it (NEVER edit the `.g.dart` file by hand). `schemaVersion = 5` as of this release.
+Schema lives in `lib/database/database.dart`. drift generates `database.g.dart` from it (NEVER edit the `.g.dart` file by hand). `schemaVersion = 25` as of this release.
+
+> **Schema-version history** (concise — full migration log in
+> `database.dart`'s `MigrationStrategy.onUpgrade`):
+> v2 SAAMI cartridge fields • v3 primer `productLine` re-seed •
+> v4 standard process-step seed + custom fields •
+> v5 load-development sessions • v7 Optics •
+> v8 BallisticProfiles • v10 Targets / RangeDaySessions /
+> ShotImpacts • v11 Reticles • v12 DragCurves •
+> v14 FactoryLoads • v15 powder temp-sensitivity columns •
+> v16 WezProfiles / TruedBcOverrides / SightCalibrations •
+> v17 AtmospherePresets • v18-v21 target rack catalogue
+> evolution • v22 verified scope catalog •
+> v23 ManufacturedAmmo + rack persistence •
+> v24 per-row `isFavorite` columns + `UserFavorites` join table •
+> v25 `UserComponentFavorites` (name-keyed component favorites
+> for powder/bullet/primer/brass; participates in Cloud Sync +
+> exports).
 
 ### Reference tables (read-only, seeded from `assets/seed_data/`)
 
@@ -129,15 +146,20 @@ These are **read by `ComponentRepository`**, **read by `SaamiScreen`** for the c
 
 ## 4. Feature inventory
 
+> **Currency note (2026-05-09).** The schema version is **v25**, not v5
+> as some older sections of this README still mention. The drift table
+> count is 30+ tables — see `lib/database/database.dart` for the
+> current `@DriftDatabase(tables: [...])` list.
+
 ### 4.1 Bottom-nav tabs
 
 | Tab | File | Notes |
 |---|---|---|
-| **Recipes** | `lib/screens/recipes/recipes_list_screen.dart` + `recipe_form_screen.dart` (~95 KB) | 57 fields across 9 sections. Search filter at the top, three-level density toggle (Basic/Detailed/All), lot pickers (powder/bullet/primer/brass), inline custom fields. |
-| **Firearms** | `lib/screens/firearms/` | Form covers manufacturer, model, type, action, caliber, barrel length, twist, shots fired, throat-erosion CBTO, last throat measurement date, `referenceFirearmId` link. |
-| **Batches** | `lib/screens/batches/` | List + form + detail. Detail screen shows a caliber-filtered process checklist driven by `UserProcessSteps.appliesTo*`. "Fire X rounds" cascades into `BrassLots.firingCount`. |
+| **Recipes** | `lib/screens/recipes/recipes_list_screen.dart` + `recipe_form_screen.dart` (~95 KB) | 57+ fields across 10 sections. Search filter, three-level density toggle (Core/Extended/Full), lot pickers (powder/bullet/primer/brass), inline custom fields. **Full mode auto-collapses secondary sections** and preserves the user's last-active section across mode switches. Two-FAB cluster: Quick (notebook-line capture) + Standard (full form). Empty-state card with horizontal Quick/Standard buttons when no recipes. |
+| **Firearms** | `lib/screens/firearms/` | Form covers manufacturer, model, type, action, caliber, barrel length, twist, shots fired, throat-erosion CBTO, last throat measurement date, `referenceFirearmId` link. Empty-state card. |
+| **Batches** | `lib/screens/batches/` | List + form + detail. Detail screen shows a caliber-filtered process checklist driven by `UserProcessSteps.appliesTo*`. "Fire X rounds" cascades into `BrassLots.firingCount`. Empty-state card. |
 | **Ballistics** | `lib/screens/ballistics/ballistics_screen.dart` (Pro) | See section 5. |
-| **SAAMI Specs** | `lib/screens/saami/saami_screen.dart` | Cartridge picker + spec card. Renders cartridge + chamber drawings (Pro-gated drawings via `lib/widgets/cartridge_diagram.dart`). |
+| **Range Day** | `lib/screens/range_day/range_day_detail_screen.dart` (~7800 LOC) | Replaces the SAAMI Specs slot. Solver, target plot, group stats, hit probability, DOPE table, moving target (Pro), notes, advanced analysis routes (WEZ / BC truing / sight calibration). **Quick / Full mode toggle** in AppBar — Quick collapses to Setup + Solution, Full reveals everything. |
 
 ### 4.2 Drawer destinations
 
@@ -145,20 +167,65 @@ These are **read by `ComponentRepository`**, **read by `SaamiScreen`** for the c
 |---|---|
 | How It Works | `lib/screens/how_it_works/how_it_works_screen.dart` (topical menu + Quick Tour, deep-links into tabs via `HomeScreen.switchTab`) |
 | Reloading Guide | `lib/screens/guide/reloading_guide_screen.dart` (8 stages of reloading, high-level) |
-| Glossary | `lib/screens/glossary/glossary_screen.dart` (searchable terms reference) |
+| Glossary | `lib/screens/glossary/glossary_screen.dart` (142 terms, 10 categories, 34 worked examples; landing tiles for "New to reloading" + "Range Day workflow") |
+| **Resources** | `lib/screens/resources/resources_screen.dart` — host for read-only reference material. SAAMI Specs lives here now (moved out of Settings). |
 | Brass Lots | `lib/screens/brass_lots/` |
 | Load Development | `lib/screens/load_development/` (Pro) |
 | Reloading Steps | `lib/screens/process_steps/process_steps_screen.dart` (workflow editor) |
-| Reloading Assistant | `lib/screens/ai_chat/ai_chat_screen.dart` (Pro, see section 9) |
+| Reloading Assistant | `lib/screens/ai_chat/ai_chat_screen.dart` (Coming Soon — placeholder UI today) |
 | Backup & Export | `lib/screens/backup/backup_screen.dart` (Pro for cloud; local always free, see section 6) |
+| Settings | `lib/screens/settings/settings_screen.dart` (Account, App preferences, Cloud Sync, Watch & Wear, Connected Devices, AI features, Privacy & Data, Data Sources, Help & Support) |
 | Privacy Policy | `lib/screens/privacy/privacy_screen.dart` |
 | Sign Out | `AuthService.signOut()` |
+
+### 4.3 Authentication
+
+Sign-in is **required** to enter the app, but anonymous (Continue as
+Guest) is one of the always-available options on
+`LoginScreen` — surfaced as the topmost CTA so a user who doesn't
+want an account can proceed in one tap.
+
+- **Providers wired:** email/password, email-link (passwordless),
+  anonymous, Google, Apple, Microsoft, Yahoo.
+- **First-launch enforcement:** iOS Firebase persists the refresh
+  token in the system Keychain across uninstalls, so a "fresh
+  install" was previously already-signed-in. `main.dart`'s
+  `_enforceLoginOnFirstLaunch` clears any cached session on the
+  very first launch on this install (detected via
+  `app_launched_before` SharedPreferences flag) so the user lands
+  on `LoginScreen`. Subsequent launches skip — returning users go
+  straight to HomeScreen via the cached refresh token.
+- **Biometric unlock (opt-in):** Settings → Account exposes a
+  "Unlock with biometrics" toggle. When enabled, every launch
+  goes through `BiometricLockScreen` between auth state and
+  HomeScreen. Biometric is a **local unlock gate** on top of
+  Firebase's cached session, NOT a re-authentication. Built on
+  `local_auth: ^2.3.0`. iOS `NSFaceIDUsageDescription` shipped;
+  Android `USE_BIOMETRIC` / `USE_FINGERPRINT` declared;
+  `MainActivity` extends `FlutterFragmentActivity` (required by
+  the plugin's biometric prompt fragment).
+
+### 4.4 Smart defaults that learn
+
+Component pickers (caliber, powder, bullet, primer, brass) sort
+options by **Favorites → Frequently used → general
+(alphabetical)**:
+
+- Favorites for cartridges live in `UserFavorites` (int row-id
+  keyed). Favorites for components (powder/bullet/primer/brass)
+  live in `UserComponentFavorites` (name-keyed; schema v25). Both
+  participate in JSON exports + Cloud Sync.
+- "Frequently used" is computed via `GROUP BY` over `UserLoads`
+  rows (top 5 most-used names per kind), surfaced via
+  `RecipeRepository.mostUsedComponentNames(kind)`.
+- Tap-to-favorite from any component dropdown row (trailing star
+  toggles favorite state without dismissing the dropdown).
 
 ---
 
 ## 5. Deep-dive: Ballistics Calculator
 
-Code lives under `lib/services/ballistics/`. The solver is a **Modified Point-Mass (MPM)** implementation in the McCoy / Litz tradition — a 3D point-mass equation of motion with empirical add-ons for the corrections that a true 6-DOF would otherwise need. At typical small-arms ranges the difference vs. a full 6-DOF is well below 0.1 MOA.
+Code lives under `lib/services/ballistics/`. The solver is a **Modified Point-Mass (MPM)** implementation in the McCoy tradition — a 3D point-mass equation of motion with empirical add-ons for the corrections that a true 6-DOF would otherwise need. At typical small-arms ranges the difference vs. a full 6-DOF is well below 0.1 MOA.
 
 ### State vector
 
@@ -168,7 +235,7 @@ Code lives under `lib/services/ballistics/`. The solver is a **Modified Point-Ma
 - `(vx, vy, vz)` — velocity in m/s
 - `t` — elapsed time in seconds since muzzle exit
 
-Spin rate is computed once at the muzzle from twist (`Projectile.initialSpinRadPerSec`) but is NOT integrated as a state variable — spin drift is added post-integration via the Litz formula (see below).
+Spin rate is computed once at the muzzle from twist (`Projectile.initialSpinRadPerSec`) but is NOT integrated as a state variable — spin drift is added post-integration via the industry-standard empirical formula (see below).
 
 ### Forces in the equations of motion
 
@@ -228,7 +295,7 @@ Three constructors: `Atmosphere.icaoStd()`, `Atmosphere.station(...)` (real weat
 In `Projectile`:
 
 - **Miller stability factor `Sg`** — from Miller's "A New Rule for Estimating Rifling Twist" (Precision Shooting, March 2005). Velocity-corrected by `(V/2800)^(1/3)`.
-- **Litz spin drift** — applied AFTER integration, not in the EoM:
+- **spin drift** — applied AFTER integration, not in the EoM:
 
    ```
    Sd = 1.25 · (Sg + 1.2) · t^1.83    [inches]
@@ -270,7 +337,7 @@ Compared to a full McCoy MPM / 6-DOF, we omit:
 ### Recommended further reading
 
 - Robert L. McCoy — *Modern Exterior Ballistics* (1999). The canonical text for Modified Point-Mass.
-- Bryan Litz — *Applied Ballistics for Long-Range Shooting* (2009). Source of the spin-drift formula and many practical corrections.
+- *Applied Ballistics for Long-Range Shooting* (Applied Ballistics LLC, 2009). Source of the spin-drift formula and many practical corrections.
 
 ---
 
@@ -280,16 +347,16 @@ All user-data flows through `lib/services/export_service.dart` and (for cloud) `
 
 ### Local export (always free)
 
-1. `ExportService.exportToJson()` walks `kUserDataTableOrder` (a hand-maintained, FK-safe ordering: `custom_components` → `*_lots` → `user_process_steps` → `user_firearms` → `user_loads` → `batches` → `test_sessions` → `user_custom_fields` → `user_custom_field_values`).
+1. `ExportService.exportToJson()` walks `kUserDataTableOrder` (a hand-maintained, FK-safe ordering — current list: `custom_components` → `powder_lots` / `bullet_lots` / `primer_lots` / `brass_lots` → `user_process_steps` → `user_firearms` → `user_loads` → `batches` → `test_sessions` → `user_custom_fields` → `user_custom_field_values` → `load_development_sessions` → `ballistic_profiles` → `user_component_favorites`). Adding a new user-data table means appending its name here and adding a `_dump<Table>()` helper plus an import-dispatch case.
 2. Each table dumps via the drift-generated `Row.toJson()` so unknown columns auto-roll-forward as the schema evolves.
 3. Output wrapper (pretty-printed JSON):
 
    ```json
    {
      "loadout_export_version": 1,
-     "exported_at": "2026-05-07T12:34:56.000Z",
-     "schema_version": 5,
-     "tables": { "user_loads": [...], ... }
+     "exported_at": "2026-05-09T12:34:56.000Z",
+     "schema_version": 25,
+     "tables": { "user_loads": [...], "user_component_favorites": [...], ... }
    }
    ```
 
@@ -358,6 +425,31 @@ Blob layout:
 - The bridge `extension_google_sign_in_as_googleapis_auth` is **not yet compatible** with the v7 singleton API, so `_GoogleAuthClient` (a small `http.BaseClient` subclass) injects bearer tokens manually. That client feeds the v3 `drive.DriveApi`.
 - File naming: every blob suffixed `.lo1`. `_findByName` is used on upload to update in-place rather than leave duplicates.
 
+#### Microsoft OneDrive (cross-platform) — `lib/services/onedrive_backup_service.dart`
+
+- Scope: `Files.ReadWrite.AppFolder` + `offline_access` (refresh-token flow).
+- Auth flow: PKCE-only public-client OAuth via the platform's
+  in-app web auth view. No client secret to ship.
+- Container: the **per-app approot** folder (`/drive/special/approot`) — Microsoft's equivalent of Drive's appDataFolder; hidden from the user's OneDrive UI.
+- Configuration: `lib/services/onedrive_config.dart` ships a placeholder client ID until the operator runs the Azure portal steps in `engineering CLAUDE.md § 18`. With the placeholder in place, OneDrive cards self-hide behind `OneDriveConfig.isPlaceholder` and the rest of the app keeps working.
+- File naming: every blob suffixed `.lo1`, same as Drive / iCloud.
+
+#### Cloud Sync (Pro, continuous) — `lib/services/cloud_sync_service.dart`
+
+A continuous variant of the manual Cloud Backup flow. Same
+encryption (AES-256-GCM + PBKDF2 200k iterations + user
+passphrase), same providers (iCloud / Drive / OneDrive), same
+per-user-blob storage shape. Differences:
+
+- Auto-syncs ~5 seconds after each AutoSave fires (debounced).
+- Pulls on app launch + manual "Sync Now" button.
+- Conflict policy: **last-writer-wins by row `updatedAt`**
+  (fall back to `createdAt`, then "remote wins" if neither side
+  has a clock — preserves manual-restore semantics).
+- Component favorites (`UserComponentFavorites`, schema v25) are
+  in the encrypted payload via the standard `kUserDataTableOrder`
+  table walk — no per-feature sync plumbing.
+
 ### Restore flow (`backup_screen.dart`)
 
 User picks a blob → enters passphrase → derive key (PBKDF2) → AES-GCM decrypt → choose merge mode → `ExportService.importFromJson()`.
@@ -424,15 +516,30 @@ The auth-state listener in `_AuthGate` calls `PurchasesService.setAppUserId(user
 
 - Cartridge / chamber drawings on `SaamiScreen`
 - Ballistics Calculator (`BallisticsScreen`)
-- AI Reloading Assistant (`AiChatScreen`)
-- Cloud backup (iCloud / Drive — local export stays free)
+- AI Reloading Assistant (`AiChatScreen`) — **Coming Soon**, placeholder UI today; see § 9.
+- AI Smart Import (the only LIVE Anthropic-using surface) — only fires from the photo-import flow when the on-device parser flags low confidence AND the user explicitly taps "Improve with AI."
+- Cloud Backup (iCloud / Drive / OneDrive — local export stays free)
+- Cloud Sync (continuous, encrypted, user's-own-cloud)
 - Load Development (`LoadDevelopmentListScreen`)
+- Custom Drag Models / Hornady 4DOF curves
+- Bluetooth devices (Kestrel, rangefinders, Garmin Xero)
+- Scope View Pro reticle visualization + training mode
+- Moving Target lead computation
+- Live weather pull (Range Day + firearm form Zero Atmosphere)
+- Custom fields (unlimited; free tier capped)
 
 Setup runbook for App Store Connect, Play Console, and the RevenueCat dashboard: `REVENUECAT_SETUP.md`.
 
 ---
 
-## 9. Deep-dive: AI chat (liability)
+## 9. Deep-dive: AI chat (liability) — Coming Soon
+
+> The AI Reloading Assistant chat ships its `Coming Soon`
+> placeholder today. The architecture below is implemented (system
+> prompt, three-layer safety filter, quota plumbing) but the chat
+> screen renders a placeholder card rather than the live chat
+> surface. **AI Smart Import** (recipe photo OCR Improve-with-AI
+> path) is the only Anthropic-using surface that actually ships.
 
 `lib/services/ai_chat_service.dart` + `lib/services/ai_chat_config.dart`.
 

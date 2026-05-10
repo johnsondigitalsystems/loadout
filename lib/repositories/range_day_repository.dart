@@ -1,9 +1,59 @@
 // FILE: lib/repositories/range_day_repository.dart
 //
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
 // Owns CRUD over [RangeDaySessions] and [ShotImpacts]. The Range Day
 // workspace lets the user record where each shot landed during a range
 // trip and re-runs the ballistics solver as wind / environment / range
 // changes; this repository is the persistence side of that.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// Range Day's UI is huge — ~7800 LOC across one detail screen plus
+// supporting widgets. Without a dedicated repository, every CRUD
+// path on [RangeDaySessions] / [ShotImpacts] would inline drift
+// queries, and the screen would couple directly to the schema.
+// This file is the only Dart code that hits those two tables;
+// changes to FK shape, sort order, or migration cleanup happen
+// here.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+//   * **Two related tables, one repository.** Sessions own shots
+//     via `ShotImpacts.sessionId` (FK). Deleting a session must
+//     cascade to its shots; the repository handles this in a
+//     single transaction so a partial failure doesn't strand
+//     orphan shots.
+//   * **`updatedAt` bumps on EVERY insert / update / delete.**
+//     Cloud Sync's last-writer-wins reconciler reads this column.
+//     A future "silent" update path (e.g. derived-field backfill)
+//     that bypasses the bump would stop sync from seeing the
+//     change.
+//   * **`watchShots(sessionId)` is filtered + ordered.** The shot
+//     plot needs shots in chronological order to draw the impact
+//     trail correctly. A Stream that doesn't preserve insertion
+//     order (e.g. one that re-emits unsorted on every change)
+//     would scramble the plot.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - lib/screens/range_day/range_day_detail_screen.dart — the heavy
+//   consumer; reads sessions + shots, writes saves on every field
+//   change.
+// - lib/screens/range_day/range_day_screen.dart — the History list.
+// - lib/services/cloud_sync_service.dart (via ExportService) —
+//   indirect; the export pipeline walks every user-data table.
+// - lib/app.dart — constructs and provides the singleton.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// Reads / writes the local SQLite DB via drift. No JSON encoding
+// (every column is typed). No network. No shared preferences.
 //
 // Public methods on [RangeDayRepository]:
 //

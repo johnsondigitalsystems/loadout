@@ -126,7 +126,7 @@
 // ----------------------------------------------------------------------------
 //   * Don Miller, "A New Rule for Estimating Rifling Twist", Precision
 //     Shooting Magazine, March 2005.
-//   * Bryan Litz, "Applied Ballistics for Long-Range Shooting" — chapter
+//   * industry-standard, "Applied Ballistics for Long-Range Shooting" — chapter
 //     on stability has worked examples.
 //   * McCoy, "Modern Exterior Ballistics" — chapter 9 derives the more
 //     complete stability theory from the moments of inertia.
@@ -240,7 +240,7 @@ class Projectile {
   /// Bullet length, inches. Optional — used only for the Miller spin
   /// stability formula. If null, the Miller calc is skipped (the user
   /// won't see a stability factor; spin drift falls back to the
-  /// muzzle-twist-only Litz approximation).
+  /// muzzle-twist-only industry standard approximation).
   final double? lengthIn;
 
   /// Barrel twist rate in inches per turn (e.g. `8.0` for "1:8").
@@ -288,7 +288,7 @@ class Projectile {
   /// Form factor referenced explicitly to the **G7 standard projectile**
   /// (i7).
   ///
-  /// Bryan Litz argues form factor is a more honest single-number
+  /// industry-standard argues form factor is a more honest single-number
   /// efficiency metric than BC, because BC normalizes by sectional
   /// density (mass / diameter²) and therefore makes a heavy bullet
   /// look "better" than a lighter bullet with identical drag. The
@@ -395,7 +395,7 @@ class Projectile {
   /// References:
   ///   * Pejsa, A.J., *Modern Practical Ballistics*, Kenwood
   ///     Publishing, 1992 — chapter on bullet stability.
-  ///   * Bryan Litz, *Applied Ballistics for Long-Range Shooting*,
+  ///   * industry-standard, *Applied Ballistics for Long-Range Shooting*,
   ///     ch. 10 — cross-references the Pejsa form against Miller
   ///     for an array of match bullets.
   double? pejsaStability(double muzzleVelocityFps) {

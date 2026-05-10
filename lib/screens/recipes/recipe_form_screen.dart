@@ -2987,14 +2987,21 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
                     label: const Text('Import velocity from Garmin .fit'),
                   ),
                   const SizedBox(height: 16),
-                  // When autosave is ON we don't render Save / Done at
-                  // all — the autosave service handles persistence and
-                  // the system back button handles the navigation pop.
-                  // When autosave is OFF we surface Save (stays on
-                  // page) AND Done (saves + pops) side by side via a
-                  // `Wrap` so a narrow phone reflows them onto two
-                  // lines instead of overflowing.
-                  if (!autoSaveOn)
+                  // Per CLAUDE.md UX rule: every page affected by
+                  // autosave shows a button at the bottom.
+                  //   * Autosave ON  → "Done" (autosave already
+                  //     persisted; this just dismisses the screen).
+                  //   * Autosave OFF → "Save" + "Done" pair (Save
+                  //     stays on page; Done saves + pops).
+                  if (autoSaveOn)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: FilledButton(
+                        onPressed: _busy ? null : _save,
+                        child: const Text('Done'),
+                      ),
+                    )
+                  else
                     Wrap(
                       spacing: 12,
                       runSpacing: 12,
@@ -3647,6 +3654,8 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     final mfgCtrl = TextEditingController(text: parsed.manufacturer);
     final caliberCtrl = TextEditingController(text: _caliber.text.trim());
     final headstampCtrl = TextEditingController();
+    // Inventory counter; not ballistics-affecting (CLAUDE.md § 0
+    // scope). Pre-fill with 0 so the user can increment by typing.
     final countCtrl = TextEditingController(text: '0');
     final formKey = GlobalKey<FormState>();
     final theme = Theme.of(context);

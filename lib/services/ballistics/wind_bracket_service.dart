@@ -3,13 +3,13 @@
 // ============================================================================
 // WHAT THIS FILE DOES
 // ============================================================================
-// Computes Bryan Litz's "wind bracket" — three windage holds for the
+// Computes the published "wind bracket" — three windage holds for the
 // shooter's lower-bound, mid, and upper-bound estimates of the wind
 // speed. The shooter is rarely 100% sure of the wind; bracketing it
 // turns "wind miss" into a confidence interval the shooter can read
 // off the screen.
 //
-// Litz introduces the bracket method in *Applied Ballistics for
+// The bracket method is introduced in *Applied Ballistics for
 // Long-Range Shooting* (3rd ed. ch. 11) and *Modern Advancements in
 // Long-Range Shooting* vol. 1 (ch. 5). The method is simple: instead
 // of computing one wind hold for the user's best-guess wind, run the
@@ -113,7 +113,7 @@ class WindBracketResult {
   final TrajectorySample high;
 }
 
-/// Computes the Litz wind bracket: three [TrajectorySample]s at
+/// Computes the wind bracket: three [TrajectorySample]s at
 /// `wind_estimate − uncertainty`, `wind_estimate`, and
 /// `wind_estimate + uncertainty`.
 ///
@@ -146,7 +146,7 @@ WindBracketResult? computeWindBracket({
   bool includeAerodynamicJump = true,
   bool includeConing = false,
   BallisticsAccuracy accuracy = BallisticsAccuracy.precise,
-  SpinDriftModel spinDriftModel = SpinDriftModel.litz,
+  SpinDriftModel spinDriftModel = SpinDriftModel.industryStandard,
 }) {
   final unc = windUncertaintyMph;
   if (unc == null || !unc.isFinite || unc <= 0) {

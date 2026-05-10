@@ -43,6 +43,25 @@
 // itself.
 //
 // ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+//   * **Two notifiers, one banner.** The banner watches BOTH the
+//     global AutoSaveService (frequency preference) AND the per-form
+//     controller's status notifier. A naive `context.watch` on just
+//     one would miss the other axis. We use `ListenableBuilder` to
+//     scope the rebuild to the banner subtree without rebuilding the
+//     parent form.
+//   * **Cloud sync dot must self-hide.** The dot lives inside the
+//     banner but is owned by [CloudSyncDot] which checks isPro +
+//     isEnabled and shrinks to zero when not applicable. Don't
+//     surface a dot that doesn't reflect a live state — it'd
+//     confuse free users into thinking sync is running.
+//   * **Layout must survive narrow phones.** The "Saved · 2:34 PM"
+//     string + status icon + dot risks overflowing on a 360px-wide
+//     phone. The banner uses Flexible + ellipsis on the text so the
+//     icon + dot always stay visible.
+//
+// ============================================================================
 // WHO CONSUMES THIS FILE
 // ============================================================================
 // - lib/screens/recipes/recipe_form_screen.dart

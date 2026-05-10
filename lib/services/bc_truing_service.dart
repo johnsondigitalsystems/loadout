@@ -3,8 +3,9 @@
 // ============================================================================
 // WHAT THIS FILE DOES
 // ============================================================================
-// Bryan Litz's BC truing methodology, implemented as a back-solver against
-// the same RK4 ballistic engine the rest of the app uses.
+// The published Applied Ballistics BC truing methodology, implemented
+// as a back-solver against the same RK4 ballistic engine the rest of
+// the app uses.
 //
 // The premise: the ballistic coefficient a bullet manufacturer publishes is
 // measured against a standard reference shape (G7 for VLDs, G1 for hunting
@@ -30,7 +31,7 @@
 //        - `trueBcFromSingleObservation(...)`  — bisection back-solve
 //          against ONE (range, observed drop) pair. The simplest workflow.
 //        - `trueBcFromObservations(...)`       — least-squares fit against
-//          a list of observations. Litz's preferred form for shooters with
+//          a list of observations. the preferred form for shooters with
 //          dope at multiple distances.
 //
 // ============================================================================
@@ -90,7 +91,7 @@
 //   * The mismatch between G7 (or G1) reference shape and the bullet's
 //     actual Cd-vs-Mach curve.
 //
-// This is intentional — it's exactly what Litz's methodology produces, and
+// This is intentional — it's exactly what the methodology produces, and
 // it's the right thing for the shooter because it makes the solver's
 // long-range predictions match what they'll experience under the same
 // conditions. It's NOT the right number to use across radically different
@@ -100,10 +101,10 @@
 // ============================================================================
 // REFERENCES
 // ============================================================================
-//   * Bryan Litz, "Modern Advancements in Long Range Shooting Volume 1",
+//   * industry-standard, "Modern Advancements in Long Range Shooting Volume 1",
 //     ch. 3 (Effects of Cartridge Over All Length and Bullet Trim on
 //     Precision and Drag) and ch. 13 (BC Truing).
-//   * Litz, "Applied Ballistics for Long-Range Shooting" 2nd ed. — the
+//   * industry standard, "Applied Ballistics for Long-Range Shooting" 2nd ed. — the
 //     short shooter-friendly version of the same methodology.
 //   * `lib/services/ballistics/solver.dart` — the integrator the back-solve
 //     calls into.
@@ -214,7 +215,7 @@ class BcTruingService {
   static const int _goldenIterations = 30;
 
   /// Bracket fraction either side of `nominalBc`. ±40 % handles every
-  /// real-world bullet (the largest manufacturer-vs-truth deltas Litz
+  /// real-world bullet (the largest manufacturer-vs-truth deltas industry standard
   /// reports are ~20 %; we double the range to leave headroom for
   /// extreme-MV / extreme-atmosphere truing).
   static const double _bracketFraction = 0.40;

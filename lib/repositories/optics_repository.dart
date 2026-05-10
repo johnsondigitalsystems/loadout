@@ -34,6 +34,19 @@
 // `context.read<OpticsRepository>()`.
 //
 // ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+//   * **The optic catalog is per-row joined with `Manufacturers`.**
+//     `allOptics()` returns records — not raw `OpticRow` — because
+//     the dropdown UI needs to render "Vortex Razor HD Gen III"
+//     which is the join. Don't break that contract by exposing the
+//     unjoined row.
+//   * **Natural-sort is a UX concern.** The catalog has many "Mark
+//     II / III / IV" suffixes; lexicographic sorting puts "X" before
+//     "II" alphabetically. The repository uses [naturalCompare] to
+//     keep the order intuitive — don't replace with `compareTo`.
+//
+// ============================================================================
 // WHO CONSUMES THIS FILE
 // ============================================================================
 // - lib/screens/firearms/firearm_form_screen.dart — uses `allOptics()`

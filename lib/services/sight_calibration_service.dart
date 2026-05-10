@@ -10,7 +10,7 @@
 // Many scopes don't track exactly to their advertised increments. A turret
 // labeled "0.1 mil per click" might actually move 0.097 mil per click.
 // Across a 50-click dial that's a 1.5-click error — at 1000 yards that's
-// over a foot of impact-point error. Litz / Long Range Shooting (and
+// over a foot of impact-point error. industry standard / Long Range Shooting (and
 // Applied Ballistics) have a standard procedure to detect and correct
 // this, called the "tall target test":
 //
@@ -96,7 +96,7 @@
 // ============================================================================
 // REFERENCES
 // ============================================================================
-//   * Bryan Litz, "Modern Advancements in Long Range Shooting Vol 1",
+//   * industry-standard, "Modern Advancements in Long Range Shooting Vol 1",
 //     ch. 1 (Tall Target Test). The methodology.
 //   * Frank Galli, "Tall target test" — Sniper's Hide tutorial covering
 //     the operator-side procedure.

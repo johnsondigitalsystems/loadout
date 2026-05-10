@@ -583,7 +583,7 @@ class _BallisticsMathCard extends StatelessWidget {
               "LoadOut's solver builds on public ballistic-math "
               "literature: Pejsa stability formulas, Don Miller's "
               "stability formula, McCoy's exterior ballistics, and "
-              "Bryan Litz's published precision-shooting math "
+              "published exterior-ballistics math "
               '(Applied Ballistics for Long-Range Shooting, 2nd ed., '
               '2016). These are reference works in the public-shooting-'
               'science literature; LoadOut is not affiliated with '

@@ -46,6 +46,15 @@
 // version.
 //
 // ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// Resist the urge to "improve" this widget by per-reticle rendering
+// at small sizes — that's the design we already abandoned. The
+// row's name + unit + family carries the identity; this glyph
+// carries the affordance ("this row is a reticle, tap the preview
+// to see it"). A custom-drawn 32px reticle defeats both purposes.
+//
+// ============================================================================
 // WHO CONSUMES THIS FILE
 // ============================================================================
 // - `lib/widgets/reticle_picker.dart` — the picker's list rows.

@@ -89,6 +89,9 @@
 
 import 'package:flutter/material.dart';
 
+import '../backup/backup_screen.dart';
+import '../batches/batches_list_screen.dart';
+import '../brass_lots/brass_lots_list_screen.dart';
 import '../disclaimer/disclaimer_screen.dart';
 import '../glossary/glossary_screen.dart';
 import '../guide/reloading_guide_screen.dart';
@@ -96,6 +99,8 @@ import '../home/home_screen.dart';
 import '../onboarding/onboarding_screen.dart';
 import '../paywall/paywall_screen.dart';
 import '../privacy/privacy_screen.dart';
+import '../resources/resources_screen.dart';
+import '../settings/settings_screen.dart';
 
 /// Topic-based explainer screen reachable from the side drawer
 /// ("How It Works"). Acts as a menu of bite-sized topic cards — each
@@ -190,9 +195,17 @@ enum _Section {
 enum _TopicId {
   recipes,
   firearms,
+  rangeDay,
+  ballistics,
+  batches,
+  brassLots,
   saami,
   glossary,
   reloadingGuide,
+  beginnerMode,
+  smartImport,
+  cloudSync,
+  companionApps,
   pro,
   privacy,
   disclaimer,
@@ -237,20 +250,31 @@ const List<_Topic> _allTopics = [
     icon: Icons.receipt_long,
     title: 'Recipes',
     tagline:
-        'Build, edit, and search your load formulas. Toggle Basic / Detailed / All.',
+        'Capture loads in seconds with Quick, or every detail with Standard. Toggle Core / Extended / Full.',
     body:
         'A recipe is your specific load formula — caliber, powder, charge, '
         'bullet, primer, brass, and dimensions like COAL or CBTO. Save it, '
         'search it, edit it on the Recipes tab.\n\n'
-        'Use the detail toggle at the top of any recipe to switch between '
-        'Basic, Detailed, and All field views. Filter the form by typing '
-        'into the search field at the top.',
+        'Two FABs: Quick (notebook-line capture — four fields, no naming '
+        'required) and Standard (the full form). Use the detail toggle at '
+        'the top of any recipe to switch between Core, Extended, and Full '
+        'field views. In Full mode the form is a navigable accordion — '
+        'tap a section header to expand, and switching modes scrolls back '
+        'to the section you were just editing.\n\n'
+        'Component pickers (caliber, powder, bullet, primer, brass) sort '
+        'options by Favorites first, then your most-frequently-used, then '
+        'the rest. Star a powder once and it bubbles to the top of every '
+        'future picker.',
     bullets: [
-      _TopicBullet(Icons.search, 'Filter fields by name to find what you need fast.'),
-      _TopicBullet(Icons.tune, 'Three detail levels: Basic, Detailed, All.'),
+      _TopicBullet(Icons.bolt, 'Quick FAB: capture a load in 30 seconds.'),
+      _TopicBullet(Icons.tune, 'Three detail levels: Core, Extended, Full.'),
       _TopicBullet(
-        Icons.folder_open,
-        'Sectioned by Powder, Primer, Bullet, Brass, etc.',
+        Icons.search,
+        'Filter fields by name. Tap any (?) glyph for a glossary definition.',
+      ),
+      _TopicBullet(
+        Icons.star_border,
+        'Smart defaults: Favorites → Frequently used → general.',
       ),
     ],
     ctaLabel: 'Open Recipes',
@@ -261,21 +285,175 @@ const List<_Topic> _allTopics = [
     icon: Icons.handshake,
     title: 'Firearms',
     tagline:
-        'Catalog every rifle, pistol, and shotgun. Track shots fired across recipes.',
+        'Catalog every gun, link an optic + reticle, track shots fired and throat erosion.',
     body:
-        'Add every firearm you reload for. Pick from the reference catalog '
-        '(Ruger, Tikka, Bergara, etc.) or add a custom build with your '
-        'barrel, twist rate, and notes.\n\n'
-        'Each firearm tracks shots fired so you can monitor barrel life over time.',
+        'Add every firearm you reload for. Pick from the reference '
+        'catalog or add a custom build. Capture barrel length, twist '
+        'rate, action, chambering, and notes.\n\n'
+        'Each firearm tracks shots fired across every recipe / batch '
+        'so you can monitor barrel life over time. Optional throat-'
+        'erosion fields (last-measured CBTO + measurement date) let '
+        'you re-zero seating depth as the throat moves.\n\n'
+        'Pair an optic from the 47-scope, 26-brand catalog and pick a '
+        'reticle from the LoadOut + Classic library — your firearm '
+        "remembers both, so the Range Day setup card pre-fills the "
+        'reticle when you select this gun. Star a firearm to surface '
+        "it at the top of every picker.",
     bullets: [
       _TopicBullet(
         Icons.library_add,
-        'Pick from the reference catalog or add a custom firearm.',
+        'Pick from 47 scopes / 26 brands or add a custom build.',
       ),
       _TopicBullet(Icons.timer, 'Tracks shots fired across all your recipes.'),
-      _TopicBullet(Icons.tune, 'Capture barrel length, twist rate, and chambering.'),
+      _TopicBullet(
+        Icons.straighten,
+        'Throat erosion: last-CBTO + date for re-zero work.',
+      ),
+      _TopicBullet(
+        Icons.star_border,
+        'Favorite a firearm and it floats to the top of every picker.',
+      ),
     ],
     ctaLabel: 'Open Firearms',
+  ),
+  _Topic(
+    id: _TopicId.rangeDay,
+    section: _Section.basics,
+    icon: Icons.gps_fixed,
+    title: 'Range Day',
+    tagline:
+        'The screen you live in at the line. Quick mode for fast field use; Full mode for analysis.',
+    body:
+        'Open the Range Day tab and you land on a fresh session — pick '
+        'distance, target, profile, load, firearm, and reticle. The '
+        'pinned solution strip at the top stays in view as you scroll: '
+        'glance → fire → glance.\n\n'
+        'A Quick / Full toggle lives in the AppBar. Quick collapses the '
+        'screen to Setup + Firing Solution — the bare minimum at the '
+        'line. Full reveals every advanced card: Environment, Wind '
+        'Bracket, Hit Probability, Target Plot (tap-to-record-shot), '
+        'Group Stats, Last Shot Correction, DOPE table, Moving Target '
+        'lead, Notes.\n\n'
+        'Three Pro analysis routes push from the screen rather than '
+        'inline:\n\n'
+        '  • Hit Probability Map — Monte Carlo hit probability '
+        'across the engagement window (wind / range / shooter '
+        'dispersion).\n'
+        '  • BC Truing — back out the actual ballistic coefficient '
+        'from observed drops at known distances.\n'
+        '  • Scope Tracking Test — verify your scope\'s click value '
+        'against measured group offsets (tall-target / DPC test).\n\n'
+        'Saved sessions live in History (AppBar action). Auto-saves '
+        'on every field change.',
+    bullets: [
+      _TopicBullet(Icons.bolt, 'Quick mode: Setup + Solution only.'),
+      _TopicBullet(Icons.tune, 'Full mode: every analysis card.'),
+      _TopicBullet(Icons.history, 'History menu surfaces every saved session.'),
+      _TopicBullet(
+        Icons.science_outlined,
+        'Pro routes: Hit Probability Map, BC Truing, Scope Tracking Test.',
+      ),
+      _TopicBullet(
+        Icons.bluetooth,
+        'Pair Kestrel / Garmin Xero / rangefinders for live data (Pro).',
+      ),
+    ],
+    ctaLabel: 'Open Range Day',
+  ),
+  _Topic(
+    id: _TopicId.ballistics,
+    section: _Section.basics,
+    icon: Icons.calculate_outlined,
+    title: 'Ballistics Calculator (Pro)',
+    tagline:
+        'Modified Point-Mass solver with the precision corrections that matter past 600 yd.',
+    body:
+        'A Modified Point-Mass solver in the McCoy tradition. '
+        'Free at every range:\n\n'
+        '  • G1 / G7 drag tables (every catalog bullet ships with both).\n'
+        '  • Spin drift .\n'
+        '  • Coriolis (latitude + shot azimuth).\n'
+        '  • Aerodynamic jump (crosswind-driven).\n'
+        '  • Density altitude (full ICAO atmosphere).\n'
+        '  • Per-firearm Ballistic Profiles.\n'
+        '  • Atmosphere presets you can save per range.\n\n'
+        'Pro adds:\n\n'
+        '  • Custom Drag Models — Hornady 4DOF curves and per-bullet '
+        'DSF curves on the bullets that ship with them. Roughly +0.3 '
+        'MOA accuracy gain past 800 yd vs G7 for transonic-zone shots.\n'
+        '  • Live weather pull — populate temp / pressure / humidity '
+        'from your current location in one tap.\n\n'
+        'Output: drop, wind drift, time of flight, velocity, energy at '
+        'any distance.',
+    bullets: [
+      _TopicBullet(Icons.timeline, 'G1 / G7 (free). Custom Drag Models (Pro).'),
+      _TopicBullet(
+        Icons.thermostat,
+        'Spin drift, Coriolis, aerodynamic jump, density altitude — all free.',
+      ),
+      _TopicBullet(
+        Icons.bookmark_outline,
+        'Save atmosphere presets per range.',
+      ),
+      _TopicBullet(
+        Icons.gps_fixed,
+        'Live weather pull from your location (Pro).',
+      ),
+    ],
+    ctaLabel: 'Open Ballistics',
+  ),
+  _Topic(
+    id: _TopicId.batches,
+    section: _Section.basics,
+    icon: Icons.inventory_2_outlined,
+    title: 'Batches',
+    tagline:
+        'Track each loading run end-to-end with a per-cartridge process checklist.',
+    body:
+        'A batch is one production run — pick a recipe, pick a brass lot, '
+        'set how many rounds you\'re loading, and step through the process. '
+        'The checklist auto-filters by cartridge type (rifle vs pistol vs '
+        'shotgun) so you only see steps that apply.\n\n'
+        'When you "Fire X rounds" from the batch detail screen, it cascades '
+        'into the brass lot\'s firing count automatically.',
+    bullets: [
+      _TopicBullet(
+        Icons.checklist,
+        'Caliber-filtered process checklist per batch.',
+      ),
+      _TopicBullet(
+        Icons.local_fire_department_outlined,
+        'Fire-rounds action cascades into brass-lot firing count.',
+      ),
+      _TopicBullet(
+        Icons.tune,
+        'Edit the standard process steps under Reloading Steps.',
+      ),
+    ],
+    ctaLabel: 'Open Batches',
+  ),
+  _Topic(
+    id: _TopicId.brassLots,
+    section: _Section.basics,
+    icon: Icons.factory_outlined,
+    title: 'Brass Lots',
+    tagline:
+        'Track each batch of brass through firings, sizing, trimming, annealing.',
+    body:
+        'A brass lot tracks one batch of cases — manufacturer, headstamp, '
+        'count, firings, last anneal date + method. Helps you retire brass '
+        'before it splits.\n\n'
+        'Recipes link to a brass lot by FK, so the lot label survives even '
+        'if the original brass is consumed and replaced.',
+    bullets: [
+      _TopicBullet(Icons.refresh, 'Firing-count tracker (auto from Batches).'),
+      _TopicBullet(
+        Icons.local_fire_department_outlined,
+        'Anneal date + method log.',
+      ),
+      _TopicBullet(Icons.straighten, 'Adjust on-hand count for splits / loss.'),
+    ],
+    ctaLabel: 'Open Brass Lots',
   ),
   _Topic(
     id: _TopicId.saami,
@@ -283,13 +461,16 @@ const List<_Topic> _allTopics = [
     icon: Icons.straighten,
     title: 'SAAMI Specs',
     tagline:
-        'Look up dimensions for 200+ cartridges. Pro unlocks technical drawings.',
+        'Look up dimensions for 200+ cartridges. Lives under Resources in the side menu.',
     body:
         'Look up authoritative cartridge dimensions for 200+ rifle, pistol, '
         'rimfire, and shotgun cartridges, sourced from SAAMI Z299.1–4 and '
         'CIP TDCC.\n\n'
         'Pick any cartridge to see bullet, case, body, neck, shoulder, and '
-        'rim dimensions, plus pressure and twist-rate references.',
+        'rim dimensions, plus pressure and twist-rate references.\n\n'
+        'SAAMI Specs lives under the side menu → Resources (it used to be '
+        'in Settings; reference material got its own home so Settings could '
+        'stay focused on preferences).',
     bullets: [
       _TopicBullet(
         Icons.search,
@@ -304,24 +485,46 @@ const List<_Topic> _allTopics = [
         'Pro: technical drawings of cartridge + chamber profiles.',
       ),
     ],
-    ctaLabel: 'Open SAAMI Specs',
+    ctaLabel: 'Open Resources',
   ),
   _Topic(
     id: _TopicId.glossary,
     section: _Section.basics,
     icon: Icons.menu_book,
     title: 'Glossary',
-    tagline: 'Quick reference for reloading terms — searchable, alphabetical.',
+    tagline:
+        '142 reloading + ballistics terms across 10 categories. Two beginner landing tiles.',
     body:
-        'A searchable reference for reloading terms — from CBTO and shoulder '
-        'bump to seating depth and headspace.\n\n'
-        'Open it anytime from the side menu.',
+        'A searchable reference for the vocabulary you\'ll meet across '
+        'the app — 142 terms grouped into 10 categories (Cartridge '
+        'anatomy, Ballistics, Range day, Optics, Load development, '
+        'Powder, Primers, Brass, Reloading process, Firearm-side). '
+        '34 entries include a worked example with concrete numbers.\n\n'
+        'Two landing tiles at the top help newcomers anchor: '
+        '"New to reloading" curates 21 foundational terms (COAL, '
+        'headspace, pressure signs, charge weight, etc.); "Range Day '
+        'workflow" curates 22 firing-line terms (mil, MOA, drop, wind '
+        'drift, DOPE, density altitude). Tap a tile to filter the '
+        'glossary down to that subset; tap "Show all" to clear.\n\n'
+        'Field labels across the recipe / Range Day / ballistics forms '
+        'are wrapped in a tappable (?) glyph — tap any term in any form '
+        'to get its definition without leaving the form.',
     bullets: [
-      _TopicBullet(Icons.search, 'Search across every term and definition.'),
-      _TopicBullet(Icons.sort_by_alpha, 'Browse alphabetically.'),
       _TopicBullet(
-        Icons.menu_book,
-        'Plain-English explanations — no expert jargon.',
+        Icons.school_outlined,
+        'Two landing tiles: "New to reloading" + "Range Day workflow".',
+      ),
+      _TopicBullet(
+        Icons.help_outline,
+        'Tappable (?) glyph on every glossary term in every form.',
+      ),
+      _TopicBullet(
+        Icons.format_quote,
+        '34 worked examples with concrete numbers.',
+      ),
+      _TopicBullet(
+        Icons.search,
+        'Full-text search across terms, acronyms, and definitions.',
       ),
     ],
     ctaLabel: 'Open Glossary',
@@ -355,28 +558,207 @@ const List<_Topic> _allTopics = [
     ctaLabel: 'Open Reloading Guide',
   ),
   _Topic(
+    id: _TopicId.beginnerMode,
+    section: _Section.goingDeeper,
+    icon: Icons.school_outlined,
+    title: 'Beginner Mode',
+    tagline:
+        'Tooltips, simpler defaults, and no power-user clutter. Settings → App preferences.',
+    body:
+        'Toggle Beginner Mode on (Settings → App preferences) and the app '
+        'biases for clarity over density. Recipe forms default to Core. '
+        'The (?) glyph next to glossary-tracked field labels gets visual '
+        'emphasis the first time you encounter a new term in a session, '
+        'then fades to subtle on subsequent appearances. Power-user '
+        'surfaces like the BYOK ("bring your own Anthropic key") section '
+        'in AI Settings hide entirely.\n\n'
+        'Flip it off any time and every advanced affordance comes back.',
+    bullets: [
+      _TopicBullet(Icons.tune, 'Recipe forms default to Core mode.'),
+      _TopicBullet(
+        Icons.help_outline,
+        'First-occurrence emphasis on glossary tooltips.',
+      ),
+      _TopicBullet(
+        Icons.visibility_off_outlined,
+        'Hides BYOK and other power-user toggles.',
+      ),
+    ],
+    ctaLabel: 'Open Settings',
+  ),
+  _Topic(
+    id: _TopicId.smartImport,
+    section: _Section.goingDeeper,
+    icon: Icons.auto_fix_high_outlined,
+    title: 'Imports & QR sharing',
+    tagline:
+        'Photo OCR, CSV / Excel, paste, QR — all free. AI cleanup is an optional Pro add-on.',
+    body:
+        'Imports live in a single section of the recipe form. Every '
+        'source below is FREE — the only Pro / paid piece is the '
+        'optional AI cleanup at the end:\n\n'
+        '  • Spreadsheet (CSV / Excel) with a fuzzy header-mapping wizard.\n'
+        '  • Photo (on-device OCR via ML Kit, plus a 444-entry '
+        'handwriting alias dictionary so a notebook line "6.5 CM 41.0gr '
+        'H4350" parses cleanly).\n'
+        '  • File — re-import a LoadOut JSON export.\n'
+        '  • Another reloading app — Hornady 4DOF / GRT / QuickLOAD / '
+        'Strelok export shapes are detected.\n'
+        '  • Paste from clipboard — best-effort heuristic parse.\n'
+        '  • iCloud Drive / Google Drive / OneDrive — pull a CSV '
+        'directly from your cloud.\n'
+        '  • QR scan — scan another LoadOut user\'s recipe QR.\n\n'
+        'AI Smart Import (Pro, opt-in per use) is the only paid add-on. '
+        'It only fires when the on-device parser flags low confidence '
+        'AND you tap "Improve with AI." 20 imports / month for Pro '
+        'users via the hosted Cloudflare Worker; unlimited if you bring '
+        'your own Anthropic key (BYOK). Only the OCR\'d text is sent — '
+        'never your saved recipes, firearms, or anything else.',
+    bullets: [
+      _TopicBullet(
+        Icons.camera_alt_outlined,
+        'Photo OCR + 444-entry handwriting alias dictionary (free).',
+      ),
+      _TopicBullet(
+        Icons.qr_code_scanner_outlined,
+        'QR-share recipes with another LoadOut user (free).',
+      ),
+      _TopicBullet(
+        Icons.table_view_outlined,
+        'CSV / Excel + fuzzy header mapping (free).',
+      ),
+      _TopicBullet(
+        Icons.auto_fix_high,
+        'AI Smart Import (Pro): per-import opt-in. Off by default.',
+      ),
+    ],
+    ctaLabel: 'Open Recipes',
+  ),
+  _Topic(
+    id: _TopicId.cloudSync,
+    section: _Section.goingDeeper,
+    icon: Icons.cloud_sync_outlined,
+    title: 'Cloud Backup & Sync (Pro)',
+    tagline:
+        'Encrypted on-device with your passphrase. Lives in YOUR iCloud / Drive / OneDrive.',
+    body:
+        'Pro unlocks two cloud features: manual Cloud Backup (one-shot '
+        'export, encrypted, uploaded to your provider) and continuous '
+        'Cloud Sync (auto-uploads ~5 sec after each save, pulls on app '
+        'launch).\n\n'
+        'Both use the same encryption (AES-256-GCM with PBKDF2 200k '
+        'iterations + your passphrase). The encrypted blob lives in '
+        'YOUR iCloud Drive, Google Drive, or Microsoft OneDrive — '
+        'LoadOut runs no backend that receives this blob. Lost '
+        'passphrase = lost data, by design.\n\n'
+        "What's in the encrypted payload: every user-data table —"
+        ' recipes, firearms, brass lots, batches, custom components, '
+        'custom fields, ballistic profiles, atmosphere presets, lots, '
+        'load-development sessions, AND every favorite (cartridges, '
+        'reticles, targets, plus your starred powders / bullets / '
+        'primers / brass). Reference catalogs (the 200+ SAAMI '
+        'cartridges, the scope catalog, etc.) are NOT in the payload '
+        '— they ship with every install and would only inflate the '
+        "blob.\n\nConflict policy is last-writer-wins per row by "
+        '`updatedAt`. A favorite added on iPhone shows up on iPad on '
+        'the next sync pull.',
+    bullets: [
+      _TopicBullet(Icons.lock_outline, 'AES-256-GCM, passphrase-derived key.'),
+      _TopicBullet(
+        Icons.cloud_outlined,
+        'iCloud Drive (iOS), Google Drive, Microsoft OneDrive.',
+      ),
+      _TopicBullet(
+        Icons.sync,
+        'Cloud Sync: continuous, last-writer-wins per row.',
+      ),
+      _TopicBullet(
+        Icons.star_border,
+        'Favorites + component favorites round-trip across devices.',
+      ),
+    ],
+    ctaLabel: 'Open Backup & Export',
+  ),
+  _Topic(
+    id: _TopicId.companionApps,
+    section: _Section.goingDeeper,
+    icon: Icons.watch_outlined,
+    title: 'Apple Watch + Wear OS',
+    tagline:
+        'Native companion apps. Pairing infrastructure live; payloads coming next.',
+    body:
+        'Native watchOS (SwiftUI) and Wear OS (Compose) companion apps '
+        'are scaffolded. The phone-side bridges (`WatchSessionBridge` on '
+        'iOS, `WatchBridge` on Android) activate automatically on app '
+        'launch, so the channels respond to pair / reachable queries '
+        'today. Live feature payloads (DOPE glance, active load, stage '
+        'timer, shot logging) are coming soon — they need the watch '
+        'target to be wired up in Xcode and the phone-side code to push '
+        'state on every save.',
+    bullets: [
+      _TopicBullet(Icons.bluetooth, 'WatchConnectivity (iOS) / Wearable Data Layer (Android).'),
+      _TopicBullet(
+        Icons.timer_outlined,
+        'Planned: stage timer, DOPE glance, shot logging.',
+      ),
+      _TopicBullet(
+        Icons.visibility_off_outlined,
+        'No HTTP, no Firebase, no analytics on the watch.',
+      ),
+    ],
+    ctaLabel: 'Open Settings',
+  ),
+  // (No dedicated How It Works topic for biometric. The toggle
+  // lives in Settings → Account for users who want it. We don't
+  // surface it as a marketed feature — it's an implementation
+  // detail of "stay signed in," not a user-facing capability we
+  // pitch.)
+  _Topic(
     id: _TopicId.pro,
     section: _Section.goingDeeper,
     icon: Icons.workspace_premium_outlined,
     title: 'LoadOut Pro',
     tagline:
-        'Yearly or Lifetime — unlock technical drawings, ballistics, future cloud backup.',
+        'Yearly or Lifetime. Unlocks the ballistics solver, encrypted cloud sync, BLE devices, and more.',
     body:
-        'Pro unlocks the cartridge + chamber technical drawings on the SAAMI '
-        'Specs page, the ballistics calculator (coming soon), and future '
-        'cloud backup.\n\n'
-        'Two plans — yearly subscription or lifetime one-time purchase. '
-        'Restore prior purchases anytime from the paywall screen.',
+        'Two plans — yearly subscription or lifetime one-time '
+        'purchase. Restore prior purchases anytime from the paywall '
+        'screen.\n\n'
+        'What Pro unlocks today:\n\n'
+        '  • Ballistics calculator (Modified Point-Mass solver).\n'
+        '  • Custom drag curves (Hornady 4DOF / DSF) on top of '
+        'G1 / G7.\n'
+        '  • Cloud Backup + Cloud Sync (encrypted to your '
+        'iCloud / Drive / OneDrive).\n'
+        '  • Bluetooth devices: Kestrel weather meters, Garmin Xero '
+        'chronograph, rangefinders (Sig, Bushnell, Vortex, Leica, '
+        'Vectronix).\n'
+        '  • Scope View Pro reticle visualization + training mode.\n'
+        '  • Moving Target lead computation.\n'
+        '  • Live weather pull from your current location.\n'
+        '  • Load Development sessions (charge / seating ladders).\n'
+        '  • SAAMI cartridge + chamber technical drawings.\n'
+        '  • AI Smart Import (per-import opt-in, 20 imports / month).\n'
+        '  • Unlimited custom fields.\n\n'
+        'Coming soon (also Pro-gated when shipped): AI Reloading '
+        'Assistant chat. The placeholder UI today is honest about '
+        "this — we don't show a Pro paywall on a feature that "
+        "doesn't ship yet.",
     bullets: [
+      _TopicBullet(Icons.calculate_outlined, 'Ballistics + custom drag curves.'),
+      _TopicBullet(Icons.cloud_sync, 'Encrypted Cloud Backup + Sync.'),
+      _TopicBullet(
+        Icons.bluetooth,
+        'BLE devices (Kestrel, Xero, rangefinders).',
+      ),
+      _TopicBullet(
+        Icons.auto_fix_high,
+        'AI Smart Import (per-import opt-in).',
+      ),
       _TopicBullet(
         Icons.image_outlined,
-        'Cartridge + chamber technical drawings.',
+        'SAAMI technical drawings + Scope View Pro.',
       ),
-      _TopicBullet(
-        Icons.calculate_outlined,
-        'Ballistics calculator (coming soon).',
-      ),
-      _TopicBullet(Icons.cloud_upload_outlined, 'Cloud backup (coming soon).'),
     ],
     ctaLabel: 'View Pro',
   ),
@@ -386,23 +768,43 @@ const List<_Topic> _allTopics = [
     icon: Icons.shield_outlined,
     title: 'Local-First & Privacy',
     tagline:
-        'Your reloading data stays on this device. No cloud, no telemetry.',
+        'Reloading data stays on your device. Optional encrypted cloud sync to YOUR own cloud — never ours.',
     body:
-        'Your reloading data — recipes, firearms, custom components — stays '
-        'on this device only. We never see it, never upload it, and never '
-        'share it.\n\n'
-        'Firebase Auth handles your sign-in (Google, Apple, email) but no '
-        'reloading data ever leaves your phone. Uninstall the app and your '
-        'data is gone with it.',
+        'Your reloading data — recipes, firearms, brass lots, batches, '
+        'custom components, custom fields, favorites — lives in the '
+        'on-device SQLite database. LoadOut runs no backend that '
+        'receives this data. No telemetry, no analytics, no third-party '
+        'trackers.\n\n'
+        'Firebase Auth handles sign-in (email, password, email-link, '
+        'Google, Apple, Microsoft, Yahoo, anonymous). Sign-in is the '
+        'ONLY thing Firebase sees about you.\n\n'
+        'Optional Pro features layer on without breaking the local-'
+        'first promise: Cloud Backup (one-shot) and Cloud Sync '
+        '(continuous) encrypt the data on YOUR device with a passphrase '
+        'only you know, then upload the encrypted blob to YOUR own '
+        'iCloud Drive, Google Drive, or OneDrive. We never see the '
+        'encrypted blob. Lost passphrase = lost data, by design — we '
+        "can't recover what we can't decrypt.\n\n"
+        'AI Smart Import (Pro, opt-in per use) is the only surface '
+        "that sends user-typed text outside the device. It's scoped "
+        'strictly to OCR\'d recipe-photo text and only fires when you '
+        'tap "Improve with AI" on a low-confidence parse.',
     bullets: [
-      _TopicBullet(Icons.shield, 'All recipe + firearm data lives on-device only.'),
+      _TopicBullet(
+        Icons.shield,
+        'Reloading data lives in on-device SQLite.',
+      ),
       _TopicBullet(
         Icons.cloud_off,
         'No telemetry, no analytics, no third-party trackers.',
       ),
       _TopicBullet(
+        Icons.lock_outline,
+        'Cloud Sync (Pro): AES-256-GCM, encrypted with YOUR passphrase.',
+      ),
+      _TopicBullet(
         Icons.delete_forever,
-        "Uninstall = wipe. We can't recover your data.",
+        "Uninstall = wipe. Lost passphrase = lost cloud blob (by design).",
       ),
     ],
     ctaLabel: 'Privacy Details',
@@ -684,10 +1086,36 @@ class _TopicDetailScreen extends StatelessWidget {
       case _TopicId.firearms:
         _popToHomeAndSwitchTab(context, 1);
         break;
+      case _TopicId.batches:
+        // Batches list lives in the drawer. The bottom-nav slot is
+        // taken by Range Day; we push the drawer destination
+        // directly so users hit the same screen they'd see from
+        // the side menu.
+        _popToHomeAndPush(
+          context,
+          MaterialPageRoute(builder: (_) => const BatchesListScreen()),
+        );
+        break;
+      case _TopicId.brassLots:
+        _popToHomeAndPush(
+          context,
+          MaterialPageRoute(builder: (_) => const BrassLotsListScreen()),
+        );
+        break;
+      case _TopicId.rangeDay:
+        // Range Day index in the bottom nav — see HomeScreenState._pages.
+        _popToHomeAndSwitchTab(context, 4);
+        break;
+      case _TopicId.ballistics:
+        _popToHomeAndSwitchTab(context, 3);
+        break;
       case _TopicId.saami:
-        // SAAMI moved to index 5 when Batches/Ballistics/Range Day joined
-        // the bottom nav. Keep this in sync with HomeScreenState._pages.
-        _popToHomeAndSwitchTab(context, 5);
+        // SAAMI moved out of the bottom nav into the Resources drawer
+        // destination. CTA now opens Resources rather than a tab.
+        _popToHomeAndPush(
+          context,
+          MaterialPageRoute(builder: (_) => const ResourcesScreen()),
+        );
         break;
       case _TopicId.glossary:
         _popToHomeAndPush(
@@ -699,6 +1127,26 @@ class _TopicDetailScreen extends StatelessWidget {
         _popToHomeAndPush(
           context,
           MaterialPageRoute(builder: (_) => const ReloadingGuideScreen()),
+        );
+        break;
+      case _TopicId.beginnerMode:
+      case _TopicId.companionApps:
+        // These topics live in Settings (App preferences for Beginner
+        // Mode, Watch & Wear for companion apps). CTA opens Settings
+        // root; the user navigates one level deeper themselves. Keeps
+        // the topic body honest about exactly where the toggle lives.
+        _popToHomeAndPush(
+          context,
+          MaterialPageRoute(builder: (_) => const SettingsScreen()),
+        );
+        break;
+      case _TopicId.smartImport:
+        _popToHomeAndSwitchTab(context, 0);
+        break;
+      case _TopicId.cloudSync:
+        _popToHomeAndPush(
+          context,
+          MaterialPageRoute(builder: (_) => const BackupScreen()),
         );
         break;
       case _TopicId.pro:

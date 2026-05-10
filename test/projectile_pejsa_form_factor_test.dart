@@ -1,6 +1,6 @@
 // FILE: test/projectile_pejsa_form_factor_test.dart
 //
-// Regression tests for the new Litz-aware projectile getters:
+// Regression tests for the new industry standard-aware projectile getters:
 //   * `Projectile.pejsaStability(...)` — Pejsa Sg with the same
 //     velocity correction as Miller, expected within ~5–10% of
 //     Miller for typical match bullets.

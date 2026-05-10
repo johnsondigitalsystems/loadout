@@ -20,18 +20,49 @@
 // `widthClass(context)` returns the enum form for switch statements.
 //
 // ============================================================================
-// USAGE
+// WHY IT EXISTS IN THE ARCHITECTURE
 // ============================================================================
+// Without a central breakpoint registry, every screen would re-roll
+// its own "is this a tablet?" check. Two screens picking 600 vs 768
+// would render inconsistently — bottom-nav on one, NavigationRail on
+// the next, on the same iPad. Centralizing the cutoffs (tablet=600,
+// desktop=1024) keeps every screen on the same page.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+//   * **Always read width from `MediaQuery.of(context).size.width`**,
+//     never from `LayoutBuilder` constraints when you want full
+//     screen width — a LayoutBuilder inside a master-detail split
+//     only sees its pane's width, not the full screen.
+//   * **The cutoffs straddle device categories carefully.** iPad mini
+//     portrait (~744px) needs to fall on the tablet side of 600, and
+//     iPad Pro 12.9" landscape (1366px) needs to fall on the desktop
+//     side of 1024. Don't move the cutoffs without re-checking the
+//     iPad / Galaxy Tab / Surface family widths.
+//   * **`isWide` is `!isPhone`, NOT `isDesktop`.** A tablet is wide.
+//     Master-detail layouts that ask "should I split?" should use
+//     `isWide`, not `isDesktop`.
+//
+// USAGE
 //
 //   if (Breakpoints.isPhone(context)) {
 //     return const _PhoneLayout();
 //   }
 //   return const _WideLayout();
 //
-// Always read width from `MediaQuery.of(context).size.width` rather than
-// `LayoutBuilder` constraints when you want the full screen width — a
-// `LayoutBuilder` inside a master-detail split would only see one pane's
-// width, which is not the same thing.
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// Potentially many places — every screen with a phone vs tablet vs
+// desktop layout decision. Imported by Range Day, Recipes,
+// Firearms, Brass Lots, Batches list screens, plus the home shell
+// for the bottom-nav vs NavigationRail switch.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// None. Pure read of `MediaQuery.of(context).size.width`.
 
 import 'package:flutter/widgets.dart';
 

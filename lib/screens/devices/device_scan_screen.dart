@@ -216,11 +216,25 @@ class _DeviceScanScreenState extends State<DeviceScanScreen> {
   String? _error;
   bool _scanning = false;
 
+  /// Cached `BleService` reference so [dispose] can call
+  /// `stopScan()` without `context.read<>` on a deactivated
+  /// element. Captured in [didChangeDependencies] (the standard
+  /// safe site for ancestor lookups). Same bug class as the
+  /// Range Day sensor cleanup — see `range_day_detail_screen.dart`
+  /// for the precedent fix.
+  BleService? _cachedBleService;
+
   @override
   void initState() {
     super.initState();
     // ignore: discarded_futures
     _startScan();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _cachedBleService = context.read<BleService>();
   }
 
   Future<void> _startScan() async {
@@ -266,8 +280,10 @@ class _DeviceScanScreenState extends State<DeviceScanScreen> {
   void dispose() {
     // ignore: discarded_futures
     _sub?.cancel();
+    // Use the cached service ref — `context.read<>` here would
+    // throw "Looking up a deactivated widget's ancestor is unsafe".
     // ignore: discarded_futures
-    context.read<BleService>().stopScan();
+    _cachedBleService?.stopScan();
     super.dispose();
   }
 
