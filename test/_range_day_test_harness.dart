@@ -114,6 +114,7 @@ import 'package:loadout/services/sensors/magnetometer_service.dart';
 import 'package:loadout/services/scope_tracking_service.dart';
 import 'package:loadout/services/unit_service.dart';
 import 'package:loadout/services/hit_probability_map_service.dart';
+import 'package:loadout/services/watch_bridge_service.dart';
 
 /// `EntitlementNotifier` subclass with deterministic `isPro`. The
 /// production class respects `debugForceProActive` (always-true in debug
@@ -280,6 +281,15 @@ Future<RangeDayHarness> pumpRangeDayScreen(
   final autoSave = AutoSaveService();
   addTearDown(autoSave.dispose);
 
+  // Watch bridge in unsupported mode. Range Day screens push to the
+  // bridge whenever the user picks a load / firearm / common load /
+  // when the solver runs; in tests we want those calls to short-
+  // circuit silently rather than try to fire MethodChannel calls
+  // against a non-existent platform handler. `isSupportedOverride:
+  // false` makes every typed `send*` method an immediate no-op.
+  final watchBridge = WatchBridgeService(isSupportedOverride: false);
+  addTearDown(watchBridge.dispose);
+
   final observer = navigatorObserver ?? NoOpNavigatorObserver();
 
   // Range Day screens are dense — at any width >= 600 logical px the
@@ -369,6 +379,7 @@ Future<RangeDayHarness> pumpRangeDayScreen(
         ChangeNotifierProvider<CantService>.value(value: cant),
         ChangeNotifierProvider<MagnetometerService>.value(value: magnetometer),
         ChangeNotifierProvider<InclinometerService>.value(value: inclinometer),
+        Provider<WatchBridgeService>.value(value: watchBridge),
       ],
       child: MaterialApp(
         navigatorObservers: [observer],

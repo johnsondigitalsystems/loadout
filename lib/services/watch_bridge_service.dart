@@ -14,17 +14,54 @@
 //            (Google Play Services Wearable Data Layer)
 //
 // The Dart layer is platform-agnostic — call `sendDope`, `sendActiveLoad`,
-// `sendFirearmGlance`, listen on `incomingShots`, and the right thing
-// happens on whichever device the user is paired to. Web / desktop /
-// platforms without WatchConnectivity drop everything silently.
+// `sendFirearmGlance`, `sendTimerEvent`, listen on `incomingShots` and
+// `incomingTimerEvents`, and the right thing happens on whichever
+// device the user is paired to. Web / desktop / platforms without
+// WatchConnectivity drop everything silently.
 //
 // Reserved paths (CLAUDE.md §15):
 //
-//   active_load     phone -> watch     ActiveLoadSnapshot
-//   dope            phone -> watch     DopeSnapshot
-//   firearm_glance  phone -> watch     FirearmGlanceSnapshot
-//   log_shot        watch -> phone     ShotLogged
-//   timer_event     watch <-> phone    TimerEvent
+//   active_load               phone -> watch     ActiveLoadSnapshot
+//   dope                      phone -> watch     DopeSnapshot
+//   firearm_glance            phone -> watch     FirearmGlanceSnapshot
+//   shot_capture_sensitivity  phone -> watch     {value: 'off'|'low'|...}
+//   log_shot                  watch -> phone     ShotLogged
+//   timer_event               watch <-> phone    TimerEvent
+//
+// Phone-side push call sites (the screens that produce each payload):
+//
+//   active_load    lib/screens/range_day/range_day_detail_screen.dart
+//                  in `_applyLoadDefaults`, `_applyProfile`, and
+//                  `_applyCommonLoad` — fires whenever the user picks
+//                  a recipe, ballistic profile, or common factory load.
+//   dope           same screen, end of `_solve()` — fires whenever the
+//                  ballistic solver produces a fresh trajectory ladder.
+//                  Suppressed when the solver bailed (no `_solution`).
+//   firearm_glance same screen, in `_applyFirearmDefaults` — fires
+//                  whenever the user picks a firearm.
+//   shot_capture_sensitivity
+//                  lib/services/watch_settings_service.dart — fires
+//                  on every successful sensitivity change in
+//                  Settings → Watch & Wear.
+//   timer_event    no phone-side producer in v1; the watch is the
+//                  exclusive source today and the phone is a passive
+//                  observer (subscribed via [incomingTimerEvents]).
+//                  `sendTimerEvent` is exposed for parity so a future
+//                  phone-side stage timer UI can publish events
+//                  without further bridge changes.
+//
+// Phone-side incoming-payload subscribers:
+//
+//   incomingShots         lib/app.dart → `_AuthGate._wireWatchShotIngest`
+//                         resolves the active Range Day session id from
+//                         SharedPreferences (written by the Range Day
+//                         detail screen as it saves) and routes the
+//                         payload through `RangeDayRepository.insertShot`.
+//                         Drops cleanly when no active session exists.
+//   incomingTimerEvents   no phone-side consumer in v1. The hook is
+//                         documented in CLAUDE.md §15 so a future
+//                         stage-timer surface can wire up without
+//                         bridge changes.
 //
 // Privacy: the bridge does not hit the network. All transport goes
 // over Apple's WatchConnectivity (encrypted peer-to-peer) or Google's
@@ -168,6 +205,21 @@ class WatchBridgeService {
       WatchPaths.firearmGlance,
       snapshot.toJsonForWatch(),
       lossy: true,
+    );
+  }
+
+  /// Push a stage-timer event to the watch. The path is bidirectional
+  /// (CLAUDE.md §15) — the watch is the primary producer today, but
+  /// this method exists so a future phone-side stage-timer UI can
+  /// publish events without further bridge changes. Non-lossy: each
+  /// `start` / `pause` / `tick` / `expired` event matters and the
+  /// watch needs the full sequence to keep its display in sync.
+  Future<void> sendTimerEvent(TimerEvent event) async {
+    if (!_isSupported) return;
+    await _send(
+      WatchPaths.timerEvent,
+      event.toJsonForWatch(),
+      lossy: false,
     );
   }
 

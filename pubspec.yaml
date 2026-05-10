@@ -173,7 +173,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+version: 1.1.0+2
 
 environment:
   sdk: ^3.11.5
@@ -313,6 +313,16 @@ dependencies:
   # value listed in `pubspec.yaml` `version:`. Cross-platform.
   package_info_plus: ^8.0.0
 
+  # Device-info introspection. Used by `lib/services/device_compatibility_service.dart`
+  # and `lib/screens/settings/device_compatibility_screen.dart` to detect
+  # the OS version at runtime so we can hide hardware-linked features
+  # (BLE devices, Wear OS pairing, motion sensors) on Android versions
+  # too old to support them — Pattern C device-compatibility UX, see
+  # CLAUDE.md § 9. Read-only on every platform; no permissions, no PII
+  # leaves the device. iOS / macOS implementations return
+  # `iosInfo.systemVersion` and `macOsInfo.osRelease` respectively.
+  device_info_plus: ^11.0.0
+
   # Bluetooth Low Energy connectivity (Pro feature).
   # `flutter_blue_plus` is the most-maintained Flutter BLE package; it
   # exposes a stream-based API for scanning, connecting, and reading from
@@ -443,6 +453,7 @@ flutter:
     # whenever a new seed_data subdirectory is created.
     - assets/seed_data/
     - assets/seed_data/drag_curves/
+    - assets/seed_data/components/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -11690,6 +11690,98 @@ class $UserFirearmsTable extends UserFirearms
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _isCustomBuildMeta = const VerificationMeta(
+    'isCustomBuild',
+  );
+  @override
+  late final GeneratedColumn<bool> isCustomBuild = GeneratedColumn<bool>(
+    'is_custom_build',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_custom_build" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _chassisNameMeta = const VerificationMeta(
+    'chassisName',
+  );
+  @override
+  late final GeneratedColumn<String> chassisName = GeneratedColumn<String>(
+    'chassis_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _barrelNameMeta = const VerificationMeta(
+    'barrelName',
+  );
+  @override
+  late final GeneratedColumn<String> barrelName = GeneratedColumn<String>(
+    'barrel_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _triggerNameMeta = const VerificationMeta(
+    'triggerName',
+  );
+  @override
+  late final GeneratedColumn<String> triggerName = GeneratedColumn<String>(
+    'trigger_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _buttstockNameMeta = const VerificationMeta(
+    'buttstockName',
+  );
+  @override
+  late final GeneratedColumn<String> buttstockName = GeneratedColumn<String>(
+    'buttstock_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _muzzleBrakeNameMeta = const VerificationMeta(
+    'muzzleBrakeName',
+  );
+  @override
+  late final GeneratedColumn<String> muzzleBrakeName = GeneratedColumn<String>(
+    'muzzle_brake_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _suppressorNameMeta = const VerificationMeta(
+    'suppressorName',
+  );
+  @override
+  late final GeneratedColumn<String> suppressorName = GeneratedColumn<String>(
+    'suppressor_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _bipodNameMeta = const VerificationMeta(
+    'bipodName',
+  );
+  @override
+  late final GeneratedColumn<String> bipodName = GeneratedColumn<String>(
+    'bipod_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -11724,6 +11816,14 @@ class $UserFirearmsTable extends UserFirearms
     zeroTemperatureF,
     zeroHumidityPct,
     isFavorite,
+    isCustomBuild,
+    chassisName,
+    barrelName,
+    triggerName,
+    buttstockName,
+    muzzleBrakeName,
+    suppressorName,
+    bipodName,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -11982,6 +12082,72 @@ class $UserFirearmsTable extends UserFirearms
         isFavorite.isAcceptableOrUnknown(data['is_favorite']!, _isFavoriteMeta),
       );
     }
+    if (data.containsKey('is_custom_build')) {
+      context.handle(
+        _isCustomBuildMeta,
+        isCustomBuild.isAcceptableOrUnknown(
+          data['is_custom_build']!,
+          _isCustomBuildMeta,
+        ),
+      );
+    }
+    if (data.containsKey('chassis_name')) {
+      context.handle(
+        _chassisNameMeta,
+        chassisName.isAcceptableOrUnknown(
+          data['chassis_name']!,
+          _chassisNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('barrel_name')) {
+      context.handle(
+        _barrelNameMeta,
+        barrelName.isAcceptableOrUnknown(data['barrel_name']!, _barrelNameMeta),
+      );
+    }
+    if (data.containsKey('trigger_name')) {
+      context.handle(
+        _triggerNameMeta,
+        triggerName.isAcceptableOrUnknown(
+          data['trigger_name']!,
+          _triggerNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('buttstock_name')) {
+      context.handle(
+        _buttstockNameMeta,
+        buttstockName.isAcceptableOrUnknown(
+          data['buttstock_name']!,
+          _buttstockNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('muzzle_brake_name')) {
+      context.handle(
+        _muzzleBrakeNameMeta,
+        muzzleBrakeName.isAcceptableOrUnknown(
+          data['muzzle_brake_name']!,
+          _muzzleBrakeNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('suppressor_name')) {
+      context.handle(
+        _suppressorNameMeta,
+        suppressorName.isAcceptableOrUnknown(
+          data['suppressor_name']!,
+          _suppressorNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('bipod_name')) {
+      context.handle(
+        _bipodNameMeta,
+        bipodName.isAcceptableOrUnknown(data['bipod_name']!, _bipodNameMeta),
+      );
+    }
     return context;
   }
 
@@ -12119,6 +12285,38 @@ class $UserFirearmsTable extends UserFirearms
         DriftSqlType.bool,
         data['${effectivePrefix}is_favorite'],
       )!,
+      isCustomBuild: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_custom_build'],
+      )!,
+      chassisName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}chassis_name'],
+      ),
+      barrelName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}barrel_name'],
+      ),
+      triggerName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}trigger_name'],
+      ),
+      buttstockName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}buttstock_name'],
+      ),
+      muzzleBrakeName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}muzzle_brake_name'],
+      ),
+      suppressorName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}suppressor_name'],
+      ),
+      bipodName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bipod_name'],
+      ),
     );
   }
 
@@ -12160,6 +12358,18 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
 
   /// Last-measured / preferred muzzle velocity for this firearm.
   /// Used by the ballistics calculator's rifle picker to pre-fill MV.
+  ///
+  /// As of the v33 UI pass the firearm CREATION / EDIT form no
+  /// longer surfaces an input for this field — MV changes per-load,
+  /// so asking the user to pin one value to a rifle was the wrong
+  /// affordance. The column stays in the schema so any existing
+  /// row's saved value continues to feed downstream consumers
+  /// (Range Day's `_applyFirearmDefaults`, the Ballistics calculator's
+  /// rifle picker, BC Truing, Hit Probability Map). The Garmin Xero
+  /// `.fit` import + Photo OCR MV-capture affordances also moved off
+  /// the firearm form into the reusable `MvCaptureButtons` widget,
+  /// which now lives next to the MV input on the External Ballistics
+  /// calculator and the Ballistic Profile form.
   final double? defaultMuzzleVelocityFps;
 
   /// Typical zero range in yards (e.g. 100 or 200).
@@ -12218,6 +12428,40 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
   /// the migration remain un-favorited. The toggle lives on
   /// `FirearmRepository.toggleFavorite(id)`.
   final bool isFavorite;
+
+  /// `true` when the row represents a user-assembled custom rifle
+  /// (chassis + barrel + trigger + buttstock + muzzle brake +
+  /// suppressor + bipod selections rather than a factory model).
+  /// Drives the firearm form's mode toggle: `false` = "Factory Rifle"
+  /// (existing manufacturer/model + optional `referenceFirearmId`
+  /// path), `true` = "Custom Build" (the seven component fields
+  /// below).
+  ///
+  /// `referenceFirearmId` is forced null when this is true — a custom
+  /// build by definition has no factory-catalog parent. Existing
+  /// firearm rows migrate with `isCustomBuild = false` so the form
+  /// reads them back as factory rifles.
+  final bool isCustomBuild;
+
+  /// User-picked chassis. Free-form text — typically `"<Manufacturer>
+  /// <Model>"` populated by the form's autocomplete from the
+  /// `FirearmComponents` catalog (kind = 'chassis'), but the user can
+  /// override with any string so products outside the catalog are
+  /// still usable. Only meaningful when `isCustomBuild` is true.
+  final String? chassisName;
+
+  /// Same shape as [chassisName] for the barrel selection. Distinct
+  /// from [barrelManufacturer] (which has lived on this row since v4
+  /// for free-form barrel-maker entry on factory rifles) — for custom
+  /// builds the catalog-backed picker writes through to this field
+  /// instead so the autocomplete and the saved value are wired
+  /// together.
+  final String? barrelName;
+  final String? triggerName;
+  final String? buttstockName;
+  final String? muzzleBrakeName;
+  final String? suppressorName;
+  final String? bipodName;
   const UserFirearmRow({
     required this.id,
     required this.name,
@@ -12251,6 +12495,14 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
     this.zeroTemperatureF,
     this.zeroHumidityPct,
     required this.isFavorite,
+    required this.isCustomBuild,
+    this.chassisName,
+    this.barrelName,
+    this.triggerName,
+    this.buttstockName,
+    this.muzzleBrakeName,
+    this.suppressorName,
+    this.bipodName,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -12339,6 +12591,28 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
       map['zero_humidity_pct'] = Variable<double>(zeroHumidityPct);
     }
     map['is_favorite'] = Variable<bool>(isFavorite);
+    map['is_custom_build'] = Variable<bool>(isCustomBuild);
+    if (!nullToAbsent || chassisName != null) {
+      map['chassis_name'] = Variable<String>(chassisName);
+    }
+    if (!nullToAbsent || barrelName != null) {
+      map['barrel_name'] = Variable<String>(barrelName);
+    }
+    if (!nullToAbsent || triggerName != null) {
+      map['trigger_name'] = Variable<String>(triggerName);
+    }
+    if (!nullToAbsent || buttstockName != null) {
+      map['buttstock_name'] = Variable<String>(buttstockName);
+    }
+    if (!nullToAbsent || muzzleBrakeName != null) {
+      map['muzzle_brake_name'] = Variable<String>(muzzleBrakeName);
+    }
+    if (!nullToAbsent || suppressorName != null) {
+      map['suppressor_name'] = Variable<String>(suppressorName);
+    }
+    if (!nullToAbsent || bipodName != null) {
+      map['bipod_name'] = Variable<String>(bipodName);
+    }
     return map;
   }
 
@@ -12422,6 +12696,28 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
           ? const Value.absent()
           : Value(zeroHumidityPct),
       isFavorite: Value(isFavorite),
+      isCustomBuild: Value(isCustomBuild),
+      chassisName: chassisName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(chassisName),
+      barrelName: barrelName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(barrelName),
+      triggerName: triggerName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(triggerName),
+      buttstockName: buttstockName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(buttstockName),
+      muzzleBrakeName: muzzleBrakeName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(muzzleBrakeName),
+      suppressorName: suppressorName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(suppressorName),
+      bipodName: bipodName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bipodName),
     );
   }
 
@@ -12479,6 +12775,14 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
       zeroTemperatureF: serializer.fromJson<double?>(json['zeroTemperatureF']),
       zeroHumidityPct: serializer.fromJson<double?>(json['zeroHumidityPct']),
       isFavorite: serializer.fromJson<bool>(json['isFavorite']),
+      isCustomBuild: serializer.fromJson<bool>(json['isCustomBuild']),
+      chassisName: serializer.fromJson<String?>(json['chassisName']),
+      barrelName: serializer.fromJson<String?>(json['barrelName']),
+      triggerName: serializer.fromJson<String?>(json['triggerName']),
+      buttstockName: serializer.fromJson<String?>(json['buttstockName']),
+      muzzleBrakeName: serializer.fromJson<String?>(json['muzzleBrakeName']),
+      suppressorName: serializer.fromJson<String?>(json['suppressorName']),
+      bipodName: serializer.fromJson<String?>(json['bipodName']),
     );
   }
   @override
@@ -12523,6 +12827,14 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
       'zeroTemperatureF': serializer.toJson<double?>(zeroTemperatureF),
       'zeroHumidityPct': serializer.toJson<double?>(zeroHumidityPct),
       'isFavorite': serializer.toJson<bool>(isFavorite),
+      'isCustomBuild': serializer.toJson<bool>(isCustomBuild),
+      'chassisName': serializer.toJson<String?>(chassisName),
+      'barrelName': serializer.toJson<String?>(barrelName),
+      'triggerName': serializer.toJson<String?>(triggerName),
+      'buttstockName': serializer.toJson<String?>(buttstockName),
+      'muzzleBrakeName': serializer.toJson<String?>(muzzleBrakeName),
+      'suppressorName': serializer.toJson<String?>(suppressorName),
+      'bipodName': serializer.toJson<String?>(bipodName),
     };
   }
 
@@ -12559,6 +12871,14 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
     Value<double?> zeroTemperatureF = const Value.absent(),
     Value<double?> zeroHumidityPct = const Value.absent(),
     bool? isFavorite,
+    bool? isCustomBuild,
+    Value<String?> chassisName = const Value.absent(),
+    Value<String?> barrelName = const Value.absent(),
+    Value<String?> triggerName = const Value.absent(),
+    Value<String?> buttstockName = const Value.absent(),
+    Value<String?> muzzleBrakeName = const Value.absent(),
+    Value<String?> suppressorName = const Value.absent(),
+    Value<String?> bipodName = const Value.absent(),
   }) => UserFirearmRow(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -12618,6 +12938,20 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
         ? zeroHumidityPct.value
         : this.zeroHumidityPct,
     isFavorite: isFavorite ?? this.isFavorite,
+    isCustomBuild: isCustomBuild ?? this.isCustomBuild,
+    chassisName: chassisName.present ? chassisName.value : this.chassisName,
+    barrelName: barrelName.present ? barrelName.value : this.barrelName,
+    triggerName: triggerName.present ? triggerName.value : this.triggerName,
+    buttstockName: buttstockName.present
+        ? buttstockName.value
+        : this.buttstockName,
+    muzzleBrakeName: muzzleBrakeName.present
+        ? muzzleBrakeName.value
+        : this.muzzleBrakeName,
+    suppressorName: suppressorName.present
+        ? suppressorName.value
+        : this.suppressorName,
+    bipodName: bipodName.present ? bipodName.value : this.bipodName,
   );
   UserFirearmRow copyWithCompanion(UserFirearmsCompanion data) {
     return UserFirearmRow(
@@ -12693,6 +13027,28 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
       isFavorite: data.isFavorite.present
           ? data.isFavorite.value
           : this.isFavorite,
+      isCustomBuild: data.isCustomBuild.present
+          ? data.isCustomBuild.value
+          : this.isCustomBuild,
+      chassisName: data.chassisName.present
+          ? data.chassisName.value
+          : this.chassisName,
+      barrelName: data.barrelName.present
+          ? data.barrelName.value
+          : this.barrelName,
+      triggerName: data.triggerName.present
+          ? data.triggerName.value
+          : this.triggerName,
+      buttstockName: data.buttstockName.present
+          ? data.buttstockName.value
+          : this.buttstockName,
+      muzzleBrakeName: data.muzzleBrakeName.present
+          ? data.muzzleBrakeName.value
+          : this.muzzleBrakeName,
+      suppressorName: data.suppressorName.present
+          ? data.suppressorName.value
+          : this.suppressorName,
+      bipodName: data.bipodName.present ? data.bipodName.value : this.bipodName,
     );
   }
 
@@ -12732,7 +13088,15 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
           ..write('zeroPressureInHg: $zeroPressureInHg, ')
           ..write('zeroTemperatureF: $zeroTemperatureF, ')
           ..write('zeroHumidityPct: $zeroHumidityPct, ')
-          ..write('isFavorite: $isFavorite')
+          ..write('isFavorite: $isFavorite, ')
+          ..write('isCustomBuild: $isCustomBuild, ')
+          ..write('chassisName: $chassisName, ')
+          ..write('barrelName: $barrelName, ')
+          ..write('triggerName: $triggerName, ')
+          ..write('buttstockName: $buttstockName, ')
+          ..write('muzzleBrakeName: $muzzleBrakeName, ')
+          ..write('suppressorName: $suppressorName, ')
+          ..write('bipodName: $bipodName')
           ..write(')'))
         .toString();
   }
@@ -12771,6 +13135,14 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
     zeroTemperatureF,
     zeroHumidityPct,
     isFavorite,
+    isCustomBuild,
+    chassisName,
+    barrelName,
+    triggerName,
+    buttstockName,
+    muzzleBrakeName,
+    suppressorName,
+    bipodName,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -12808,7 +13180,15 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
           other.zeroPressureInHg == this.zeroPressureInHg &&
           other.zeroTemperatureF == this.zeroTemperatureF &&
           other.zeroHumidityPct == this.zeroHumidityPct &&
-          other.isFavorite == this.isFavorite);
+          other.isFavorite == this.isFavorite &&
+          other.isCustomBuild == this.isCustomBuild &&
+          other.chassisName == this.chassisName &&
+          other.barrelName == this.barrelName &&
+          other.triggerName == this.triggerName &&
+          other.buttstockName == this.buttstockName &&
+          other.muzzleBrakeName == this.muzzleBrakeName &&
+          other.suppressorName == this.suppressorName &&
+          other.bipodName == this.bipodName);
 }
 
 class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
@@ -12844,6 +13224,14 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
   final Value<double?> zeroTemperatureF;
   final Value<double?> zeroHumidityPct;
   final Value<bool> isFavorite;
+  final Value<bool> isCustomBuild;
+  final Value<String?> chassisName;
+  final Value<String?> barrelName;
+  final Value<String?> triggerName;
+  final Value<String?> buttstockName;
+  final Value<String?> muzzleBrakeName;
+  final Value<String?> suppressorName;
+  final Value<String?> bipodName;
   const UserFirearmsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -12877,6 +13265,14 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
     this.zeroTemperatureF = const Value.absent(),
     this.zeroHumidityPct = const Value.absent(),
     this.isFavorite = const Value.absent(),
+    this.isCustomBuild = const Value.absent(),
+    this.chassisName = const Value.absent(),
+    this.barrelName = const Value.absent(),
+    this.triggerName = const Value.absent(),
+    this.buttstockName = const Value.absent(),
+    this.muzzleBrakeName = const Value.absent(),
+    this.suppressorName = const Value.absent(),
+    this.bipodName = const Value.absent(),
   });
   UserFirearmsCompanion.insert({
     this.id = const Value.absent(),
@@ -12911,6 +13307,14 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
     this.zeroTemperatureF = const Value.absent(),
     this.zeroHumidityPct = const Value.absent(),
     this.isFavorite = const Value.absent(),
+    this.isCustomBuild = const Value.absent(),
+    this.chassisName = const Value.absent(),
+    this.barrelName = const Value.absent(),
+    this.triggerName = const Value.absent(),
+    this.buttstockName = const Value.absent(),
+    this.muzzleBrakeName = const Value.absent(),
+    this.suppressorName = const Value.absent(),
+    this.bipodName = const Value.absent(),
   }) : name = Value(name);
   static Insertable<UserFirearmRow> custom({
     Expression<int>? id,
@@ -12945,6 +13349,14 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
     Expression<double>? zeroTemperatureF,
     Expression<double>? zeroHumidityPct,
     Expression<bool>? isFavorite,
+    Expression<bool>? isCustomBuild,
+    Expression<String>? chassisName,
+    Expression<String>? barrelName,
+    Expression<String>? triggerName,
+    Expression<String>? buttstockName,
+    Expression<String>? muzzleBrakeName,
+    Expression<String>? suppressorName,
+    Expression<String>? bipodName,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -12988,6 +13400,14 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
       if (zeroTemperatureF != null) 'zero_temperature_f': zeroTemperatureF,
       if (zeroHumidityPct != null) 'zero_humidity_pct': zeroHumidityPct,
       if (isFavorite != null) 'is_favorite': isFavorite,
+      if (isCustomBuild != null) 'is_custom_build': isCustomBuild,
+      if (chassisName != null) 'chassis_name': chassisName,
+      if (barrelName != null) 'barrel_name': barrelName,
+      if (triggerName != null) 'trigger_name': triggerName,
+      if (buttstockName != null) 'buttstock_name': buttstockName,
+      if (muzzleBrakeName != null) 'muzzle_brake_name': muzzleBrakeName,
+      if (suppressorName != null) 'suppressor_name': suppressorName,
+      if (bipodName != null) 'bipod_name': bipodName,
     });
   }
 
@@ -13024,6 +13444,14 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
     Value<double?>? zeroTemperatureF,
     Value<double?>? zeroHumidityPct,
     Value<bool>? isFavorite,
+    Value<bool>? isCustomBuild,
+    Value<String?>? chassisName,
+    Value<String?>? barrelName,
+    Value<String?>? triggerName,
+    Value<String?>? buttstockName,
+    Value<String?>? muzzleBrakeName,
+    Value<String?>? suppressorName,
+    Value<String?>? bipodName,
   }) {
     return UserFirearmsCompanion(
       id: id ?? this.id,
@@ -13061,6 +13489,14 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
       zeroTemperatureF: zeroTemperatureF ?? this.zeroTemperatureF,
       zeroHumidityPct: zeroHumidityPct ?? this.zeroHumidityPct,
       isFavorite: isFavorite ?? this.isFavorite,
+      isCustomBuild: isCustomBuild ?? this.isCustomBuild,
+      chassisName: chassisName ?? this.chassisName,
+      barrelName: barrelName ?? this.barrelName,
+      triggerName: triggerName ?? this.triggerName,
+      buttstockName: buttstockName ?? this.buttstockName,
+      muzzleBrakeName: muzzleBrakeName ?? this.muzzleBrakeName,
+      suppressorName: suppressorName ?? this.suppressorName,
+      bipodName: bipodName ?? this.bipodName,
     );
   }
 
@@ -13173,6 +13609,30 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
     if (isFavorite.present) {
       map['is_favorite'] = Variable<bool>(isFavorite.value);
     }
+    if (isCustomBuild.present) {
+      map['is_custom_build'] = Variable<bool>(isCustomBuild.value);
+    }
+    if (chassisName.present) {
+      map['chassis_name'] = Variable<String>(chassisName.value);
+    }
+    if (barrelName.present) {
+      map['barrel_name'] = Variable<String>(barrelName.value);
+    }
+    if (triggerName.present) {
+      map['trigger_name'] = Variable<String>(triggerName.value);
+    }
+    if (buttstockName.present) {
+      map['buttstock_name'] = Variable<String>(buttstockName.value);
+    }
+    if (muzzleBrakeName.present) {
+      map['muzzle_brake_name'] = Variable<String>(muzzleBrakeName.value);
+    }
+    if (suppressorName.present) {
+      map['suppressor_name'] = Variable<String>(suppressorName.value);
+    }
+    if (bipodName.present) {
+      map['bipod_name'] = Variable<String>(bipodName.value);
+    }
     return map;
   }
 
@@ -13212,7 +13672,15 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
           ..write('zeroPressureInHg: $zeroPressureInHg, ')
           ..write('zeroTemperatureF: $zeroTemperatureF, ')
           ..write('zeroHumidityPct: $zeroHumidityPct, ')
-          ..write('isFavorite: $isFavorite')
+          ..write('isFavorite: $isFavorite, ')
+          ..write('isCustomBuild: $isCustomBuild, ')
+          ..write('chassisName: $chassisName, ')
+          ..write('barrelName: $barrelName, ')
+          ..write('triggerName: $triggerName, ')
+          ..write('buttstockName: $buttstockName, ')
+          ..write('muzzleBrakeName: $muzzleBrakeName, ')
+          ..write('suppressorName: $suppressorName, ')
+          ..write('bipodName: $bipodName')
           ..write(')'))
         .toString();
   }
@@ -35860,6 +36328,500 @@ class ComponentInventoryAdjustmentsCompanion
   }
 }
 
+class $FirearmComponentsTable extends FirearmComponents
+    with TableInfo<$FirearmComponentsTable, FirearmComponentRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FirearmComponentsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _manufacturerMeta = const VerificationMeta(
+    'manufacturer',
+  );
+  @override
+  late final GeneratedColumn<String> manufacturer = GeneratedColumn<String>(
+    'manufacturer',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _modelMeta = const VerificationMeta('model');
+  @override
+  late final GeneratedColumn<String> model = GeneratedColumn<String>(
+    'model',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _productLineMeta = const VerificationMeta(
+    'productLine',
+  );
+  @override
+  late final GeneratedColumn<String> productLine = GeneratedColumn<String>(
+    'product_line',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _attributesJsonMeta = const VerificationMeta(
+    'attributesJson',
+  );
+  @override
+  late final GeneratedColumn<String> attributesJson = GeneratedColumn<String>(
+    'attributes_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('{}'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    kind,
+    manufacturer,
+    model,
+    productLine,
+    notes,
+    attributesJson,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'firearm_components';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<FirearmComponentRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('manufacturer')) {
+      context.handle(
+        _manufacturerMeta,
+        manufacturer.isAcceptableOrUnknown(
+          data['manufacturer']!,
+          _manufacturerMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_manufacturerMeta);
+    }
+    if (data.containsKey('model')) {
+      context.handle(
+        _modelMeta,
+        model.isAcceptableOrUnknown(data['model']!, _modelMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_modelMeta);
+    }
+    if (data.containsKey('product_line')) {
+      context.handle(
+        _productLineMeta,
+        productLine.isAcceptableOrUnknown(
+          data['product_line']!,
+          _productLineMeta,
+        ),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('attributes_json')) {
+      context.handle(
+        _attributesJsonMeta,
+        attributesJson.isAcceptableOrUnknown(
+          data['attributes_json']!,
+          _attributesJsonMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  FirearmComponentRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return FirearmComponentRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      manufacturer: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}manufacturer'],
+      )!,
+      model: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}model'],
+      )!,
+      productLine: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}product_line'],
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      attributesJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}attributes_json'],
+      )!,
+    );
+  }
+
+  @override
+  $FirearmComponentsTable createAlias(String alias) {
+    return $FirearmComponentsTable(attachedDatabase, alias);
+  }
+}
+
+class FirearmComponentRow extends DataClass
+    implements Insertable<FirearmComponentRow> {
+  final int id;
+
+  /// One of the seven `kind` values listed in the class doc-comment.
+  /// Stored as a plain text discriminator rather than an enum for the
+  /// same reason every other discriminator on this schema is text:
+  /// drift's enum support is limited and a text column is forgiving
+  /// at the seed-loader boundary.
+  final String kind;
+
+  /// Display-canonical manufacturer name ("MDT", not "Mdt"; "TriggerTech",
+  /// not "Trigger Tech"). Sourced from the JSON seed file under
+  /// `assets/seed_data/components/`.
+  final String manufacturer;
+
+  /// Manufacturer's own model name, verbatim ("ACC Elite Chassis System",
+  /// "Diamond Pro Curved", "Hellfire Self-Timing Match").
+  final String model;
+
+  /// Optional family / line grouping ("ACC", "Diamond", "Hellfire",
+  /// "Omega"). Lets the picker collapse multiple sub-models under one
+  /// header in a future polish pass.
+  final String? productLine;
+
+  /// Short prose description shown in the picker subtitle and in the
+  /// component summary card on the firearm detail screen.
+  final String? notes;
+
+  /// JSON-encoded category-specific attributes. Each `kind` defines
+  /// its own shape (chassis: `actionFootprints[]`, `weightOz`; barrel:
+  /// `material`, `contour[]`, `twistRateOptions[]`; trigger: `stage`,
+  /// `pullRangeOz`, `inletAction[]`; buttstock: `style`, `material`,
+  /// `actionFootprints[]`; muzzleBrake: `caliberRange`, `threadCommon[]`,
+  /// `selfTiming`; suppressor: `caliberMax`, `mountStyle`, `weightOz`,
+  /// `lengthIn`, `dbReductionDb`; bipod: `mounting[]`, `legType`,
+  /// `pivotType`, `minHeightIn`, `maxHeightIn`, `weightOz`). Decoded
+  /// at the repository boundary into typed Dart objects.
+  final String attributesJson;
+  const FirearmComponentRow({
+    required this.id,
+    required this.kind,
+    required this.manufacturer,
+    required this.model,
+    this.productLine,
+    this.notes,
+    required this.attributesJson,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['kind'] = Variable<String>(kind);
+    map['manufacturer'] = Variable<String>(manufacturer);
+    map['model'] = Variable<String>(model);
+    if (!nullToAbsent || productLine != null) {
+      map['product_line'] = Variable<String>(productLine);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['attributes_json'] = Variable<String>(attributesJson);
+    return map;
+  }
+
+  FirearmComponentsCompanion toCompanion(bool nullToAbsent) {
+    return FirearmComponentsCompanion(
+      id: Value(id),
+      kind: Value(kind),
+      manufacturer: Value(manufacturer),
+      model: Value(model),
+      productLine: productLine == null && nullToAbsent
+          ? const Value.absent()
+          : Value(productLine),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      attributesJson: Value(attributesJson),
+    );
+  }
+
+  factory FirearmComponentRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return FirearmComponentRow(
+      id: serializer.fromJson<int>(json['id']),
+      kind: serializer.fromJson<String>(json['kind']),
+      manufacturer: serializer.fromJson<String>(json['manufacturer']),
+      model: serializer.fromJson<String>(json['model']),
+      productLine: serializer.fromJson<String?>(json['productLine']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      attributesJson: serializer.fromJson<String>(json['attributesJson']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'kind': serializer.toJson<String>(kind),
+      'manufacturer': serializer.toJson<String>(manufacturer),
+      'model': serializer.toJson<String>(model),
+      'productLine': serializer.toJson<String?>(productLine),
+      'notes': serializer.toJson<String?>(notes),
+      'attributesJson': serializer.toJson<String>(attributesJson),
+    };
+  }
+
+  FirearmComponentRow copyWith({
+    int? id,
+    String? kind,
+    String? manufacturer,
+    String? model,
+    Value<String?> productLine = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
+    String? attributesJson,
+  }) => FirearmComponentRow(
+    id: id ?? this.id,
+    kind: kind ?? this.kind,
+    manufacturer: manufacturer ?? this.manufacturer,
+    model: model ?? this.model,
+    productLine: productLine.present ? productLine.value : this.productLine,
+    notes: notes.present ? notes.value : this.notes,
+    attributesJson: attributesJson ?? this.attributesJson,
+  );
+  FirearmComponentRow copyWithCompanion(FirearmComponentsCompanion data) {
+    return FirearmComponentRow(
+      id: data.id.present ? data.id.value : this.id,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      manufacturer: data.manufacturer.present
+          ? data.manufacturer.value
+          : this.manufacturer,
+      model: data.model.present ? data.model.value : this.model,
+      productLine: data.productLine.present
+          ? data.productLine.value
+          : this.productLine,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      attributesJson: data.attributesJson.present
+          ? data.attributesJson.value
+          : this.attributesJson,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FirearmComponentRow(')
+          ..write('id: $id, ')
+          ..write('kind: $kind, ')
+          ..write('manufacturer: $manufacturer, ')
+          ..write('model: $model, ')
+          ..write('productLine: $productLine, ')
+          ..write('notes: $notes, ')
+          ..write('attributesJson: $attributesJson')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    kind,
+    manufacturer,
+    model,
+    productLine,
+    notes,
+    attributesJson,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FirearmComponentRow &&
+          other.id == this.id &&
+          other.kind == this.kind &&
+          other.manufacturer == this.manufacturer &&
+          other.model == this.model &&
+          other.productLine == this.productLine &&
+          other.notes == this.notes &&
+          other.attributesJson == this.attributesJson);
+}
+
+class FirearmComponentsCompanion extends UpdateCompanion<FirearmComponentRow> {
+  final Value<int> id;
+  final Value<String> kind;
+  final Value<String> manufacturer;
+  final Value<String> model;
+  final Value<String?> productLine;
+  final Value<String?> notes;
+  final Value<String> attributesJson;
+  const FirearmComponentsCompanion({
+    this.id = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.manufacturer = const Value.absent(),
+    this.model = const Value.absent(),
+    this.productLine = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.attributesJson = const Value.absent(),
+  });
+  FirearmComponentsCompanion.insert({
+    this.id = const Value.absent(),
+    required String kind,
+    required String manufacturer,
+    required String model,
+    this.productLine = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.attributesJson = const Value.absent(),
+  }) : kind = Value(kind),
+       manufacturer = Value(manufacturer),
+       model = Value(model);
+  static Insertable<FirearmComponentRow> custom({
+    Expression<int>? id,
+    Expression<String>? kind,
+    Expression<String>? manufacturer,
+    Expression<String>? model,
+    Expression<String>? productLine,
+    Expression<String>? notes,
+    Expression<String>? attributesJson,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (kind != null) 'kind': kind,
+      if (manufacturer != null) 'manufacturer': manufacturer,
+      if (model != null) 'model': model,
+      if (productLine != null) 'product_line': productLine,
+      if (notes != null) 'notes': notes,
+      if (attributesJson != null) 'attributes_json': attributesJson,
+    });
+  }
+
+  FirearmComponentsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? kind,
+    Value<String>? manufacturer,
+    Value<String>? model,
+    Value<String?>? productLine,
+    Value<String?>? notes,
+    Value<String>? attributesJson,
+  }) {
+    return FirearmComponentsCompanion(
+      id: id ?? this.id,
+      kind: kind ?? this.kind,
+      manufacturer: manufacturer ?? this.manufacturer,
+      model: model ?? this.model,
+      productLine: productLine ?? this.productLine,
+      notes: notes ?? this.notes,
+      attributesJson: attributesJson ?? this.attributesJson,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (manufacturer.present) {
+      map['manufacturer'] = Variable<String>(manufacturer.value);
+    }
+    if (model.present) {
+      map['model'] = Variable<String>(model.value);
+    }
+    if (productLine.present) {
+      map['product_line'] = Variable<String>(productLine.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (attributesJson.present) {
+      map['attributes_json'] = Variable<String>(attributesJson.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FirearmComponentsCompanion(')
+          ..write('id: $id, ')
+          ..write('kind: $kind, ')
+          ..write('manufacturer: $manufacturer, ')
+          ..write('model: $model, ')
+          ..write('productLine: $productLine, ')
+          ..write('notes: $notes, ')
+          ..write('attributesJson: $attributesJson')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -35931,6 +36893,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $ComponentInventoryTable(this);
   late final $ComponentInventoryAdjustmentsTable componentInventoryAdjustments =
       $ComponentInventoryAdjustmentsTable(this);
+  late final $FirearmComponentsTable firearmComponents =
+      $FirearmComponentsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -35980,6 +36944,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     loadDevelopmentShots,
     componentInventory,
     componentInventoryAdjustments,
+    firearmComponents,
   ];
 }
 
@@ -44156,6 +45121,14 @@ typedef $$UserFirearmsTableCreateCompanionBuilder =
       Value<double?> zeroTemperatureF,
       Value<double?> zeroHumidityPct,
       Value<bool> isFavorite,
+      Value<bool> isCustomBuild,
+      Value<String?> chassisName,
+      Value<String?> barrelName,
+      Value<String?> triggerName,
+      Value<String?> buttstockName,
+      Value<String?> muzzleBrakeName,
+      Value<String?> suppressorName,
+      Value<String?> bipodName,
     });
 typedef $$UserFirearmsTableUpdateCompanionBuilder =
     UserFirearmsCompanion Function({
@@ -44191,6 +45164,14 @@ typedef $$UserFirearmsTableUpdateCompanionBuilder =
       Value<double?> zeroTemperatureF,
       Value<double?> zeroHumidityPct,
       Value<bool> isFavorite,
+      Value<bool> isCustomBuild,
+      Value<String?> chassisName,
+      Value<String?> barrelName,
+      Value<String?> triggerName,
+      Value<String?> buttstockName,
+      Value<String?> muzzleBrakeName,
+      Value<String?> suppressorName,
+      Value<String?> bipodName,
     });
 
 final class $$UserFirearmsTableReferences
@@ -44500,6 +45481,46 @@ class $$UserFirearmsTableFilterComposer
 
   ColumnFilters<bool> get isFavorite => $composableBuilder(
     column: $table.isFavorite,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isCustomBuild => $composableBuilder(
+    column: $table.isCustomBuild,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get chassisName => $composableBuilder(
+    column: $table.chassisName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get barrelName => $composableBuilder(
+    column: $table.barrelName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get triggerName => $composableBuilder(
+    column: $table.triggerName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get buttstockName => $composableBuilder(
+    column: $table.buttstockName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get muzzleBrakeName => $composableBuilder(
+    column: $table.muzzleBrakeName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get suppressorName => $composableBuilder(
+    column: $table.suppressorName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bipodName => $composableBuilder(
+    column: $table.bipodName,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -44823,6 +45844,46 @@ class $$UserFirearmsTableOrderingComposer
     column: $table.isFavorite,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get isCustomBuild => $composableBuilder(
+    column: $table.isCustomBuild,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get chassisName => $composableBuilder(
+    column: $table.chassisName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get barrelName => $composableBuilder(
+    column: $table.barrelName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get triggerName => $composableBuilder(
+    column: $table.triggerName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get buttstockName => $composableBuilder(
+    column: $table.buttstockName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get muzzleBrakeName => $composableBuilder(
+    column: $table.muzzleBrakeName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get suppressorName => $composableBuilder(
+    column: $table.suppressorName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bipodName => $composableBuilder(
+    column: $table.bipodName,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$UserFirearmsTableAnnotationComposer
@@ -44969,6 +46030,44 @@ class $$UserFirearmsTableAnnotationComposer
     column: $table.isFavorite,
     builder: (column) => column,
   );
+
+  GeneratedColumn<bool> get isCustomBuild => $composableBuilder(
+    column: $table.isCustomBuild,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get chassisName => $composableBuilder(
+    column: $table.chassisName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get barrelName => $composableBuilder(
+    column: $table.barrelName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get triggerName => $composableBuilder(
+    column: $table.triggerName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get buttstockName => $composableBuilder(
+    column: $table.buttstockName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get muzzleBrakeName => $composableBuilder(
+    column: $table.muzzleBrakeName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get suppressorName => $composableBuilder(
+    column: $table.suppressorName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get bipodName =>
+      $composableBuilder(column: $table.bipodName, builder: (column) => column);
 
   Expression<T> batchesRefs<T extends Object>(
     Expression<T> Function($$BatchesTableAnnotationComposer a) f,
@@ -45192,6 +46291,14 @@ class $$UserFirearmsTableTableManager
                 Value<double?> zeroTemperatureF = const Value.absent(),
                 Value<double?> zeroHumidityPct = const Value.absent(),
                 Value<bool> isFavorite = const Value.absent(),
+                Value<bool> isCustomBuild = const Value.absent(),
+                Value<String?> chassisName = const Value.absent(),
+                Value<String?> barrelName = const Value.absent(),
+                Value<String?> triggerName = const Value.absent(),
+                Value<String?> buttstockName = const Value.absent(),
+                Value<String?> muzzleBrakeName = const Value.absent(),
+                Value<String?> suppressorName = const Value.absent(),
+                Value<String?> bipodName = const Value.absent(),
               }) => UserFirearmsCompanion(
                 id: id,
                 name: name,
@@ -45225,6 +46332,14 @@ class $$UserFirearmsTableTableManager
                 zeroTemperatureF: zeroTemperatureF,
                 zeroHumidityPct: zeroHumidityPct,
                 isFavorite: isFavorite,
+                isCustomBuild: isCustomBuild,
+                chassisName: chassisName,
+                barrelName: barrelName,
+                triggerName: triggerName,
+                buttstockName: buttstockName,
+                muzzleBrakeName: muzzleBrakeName,
+                suppressorName: suppressorName,
+                bipodName: bipodName,
               ),
           createCompanionCallback:
               ({
@@ -45261,6 +46376,14 @@ class $$UserFirearmsTableTableManager
                 Value<double?> zeroTemperatureF = const Value.absent(),
                 Value<double?> zeroHumidityPct = const Value.absent(),
                 Value<bool> isFavorite = const Value.absent(),
+                Value<bool> isCustomBuild = const Value.absent(),
+                Value<String?> chassisName = const Value.absent(),
+                Value<String?> barrelName = const Value.absent(),
+                Value<String?> triggerName = const Value.absent(),
+                Value<String?> buttstockName = const Value.absent(),
+                Value<String?> muzzleBrakeName = const Value.absent(),
+                Value<String?> suppressorName = const Value.absent(),
+                Value<String?> bipodName = const Value.absent(),
               }) => UserFirearmsCompanion.insert(
                 id: id,
                 name: name,
@@ -45294,6 +46417,14 @@ class $$UserFirearmsTableTableManager
                 zeroTemperatureF: zeroTemperatureF,
                 zeroHumidityPct: zeroHumidityPct,
                 isFavorite: isFavorite,
+                isCustomBuild: isCustomBuild,
+                chassisName: chassisName,
+                barrelName: barrelName,
+                triggerName: triggerName,
+                buttstockName: buttstockName,
+                muzzleBrakeName: muzzleBrakeName,
+                suppressorName: suppressorName,
+                bipodName: bipodName,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -59759,6 +60890,257 @@ typedef $$ComponentInventoryAdjustmentsTableProcessedTableManager =
       ComponentInventoryAdjustmentRow,
       PrefetchHooks Function({bool inventoryId})
     >;
+typedef $$FirearmComponentsTableCreateCompanionBuilder =
+    FirearmComponentsCompanion Function({
+      Value<int> id,
+      required String kind,
+      required String manufacturer,
+      required String model,
+      Value<String?> productLine,
+      Value<String?> notes,
+      Value<String> attributesJson,
+    });
+typedef $$FirearmComponentsTableUpdateCompanionBuilder =
+    FirearmComponentsCompanion Function({
+      Value<int> id,
+      Value<String> kind,
+      Value<String> manufacturer,
+      Value<String> model,
+      Value<String?> productLine,
+      Value<String?> notes,
+      Value<String> attributesJson,
+    });
+
+class $$FirearmComponentsTableFilterComposer
+    extends Composer<_$AppDatabase, $FirearmComponentsTable> {
+  $$FirearmComponentsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get manufacturer => $composableBuilder(
+    column: $table.manufacturer,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get model => $composableBuilder(
+    column: $table.model,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get productLine => $composableBuilder(
+    column: $table.productLine,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get attributesJson => $composableBuilder(
+    column: $table.attributesJson,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$FirearmComponentsTableOrderingComposer
+    extends Composer<_$AppDatabase, $FirearmComponentsTable> {
+  $$FirearmComponentsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get manufacturer => $composableBuilder(
+    column: $table.manufacturer,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get model => $composableBuilder(
+    column: $table.model,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get productLine => $composableBuilder(
+    column: $table.productLine,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get attributesJson => $composableBuilder(
+    column: $table.attributesJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$FirearmComponentsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FirearmComponentsTable> {
+  $$FirearmComponentsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get manufacturer => $composableBuilder(
+    column: $table.manufacturer,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get model =>
+      $composableBuilder(column: $table.model, builder: (column) => column);
+
+  GeneratedColumn<String> get productLine => $composableBuilder(
+    column: $table.productLine,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<String> get attributesJson => $composableBuilder(
+    column: $table.attributesJson,
+    builder: (column) => column,
+  );
+}
+
+class $$FirearmComponentsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $FirearmComponentsTable,
+          FirearmComponentRow,
+          $$FirearmComponentsTableFilterComposer,
+          $$FirearmComponentsTableOrderingComposer,
+          $$FirearmComponentsTableAnnotationComposer,
+          $$FirearmComponentsTableCreateCompanionBuilder,
+          $$FirearmComponentsTableUpdateCompanionBuilder,
+          (
+            FirearmComponentRow,
+            BaseReferences<
+              _$AppDatabase,
+              $FirearmComponentsTable,
+              FirearmComponentRow
+            >,
+          ),
+          FirearmComponentRow,
+          PrefetchHooks Function()
+        > {
+  $$FirearmComponentsTableTableManager(
+    _$AppDatabase db,
+    $FirearmComponentsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FirearmComponentsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FirearmComponentsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FirearmComponentsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> manufacturer = const Value.absent(),
+                Value<String> model = const Value.absent(),
+                Value<String?> productLine = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<String> attributesJson = const Value.absent(),
+              }) => FirearmComponentsCompanion(
+                id: id,
+                kind: kind,
+                manufacturer: manufacturer,
+                model: model,
+                productLine: productLine,
+                notes: notes,
+                attributesJson: attributesJson,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String kind,
+                required String manufacturer,
+                required String model,
+                Value<String?> productLine = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<String> attributesJson = const Value.absent(),
+              }) => FirearmComponentsCompanion.insert(
+                id: id,
+                kind: kind,
+                manufacturer: manufacturer,
+                model: model,
+                productLine: productLine,
+                notes: notes,
+                attributesJson: attributesJson,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$FirearmComponentsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $FirearmComponentsTable,
+      FirearmComponentRow,
+      $$FirearmComponentsTableFilterComposer,
+      $$FirearmComponentsTableOrderingComposer,
+      $$FirearmComponentsTableAnnotationComposer,
+      $$FirearmComponentsTableCreateCompanionBuilder,
+      $$FirearmComponentsTableUpdateCompanionBuilder,
+      (
+        FirearmComponentRow,
+        BaseReferences<
+          _$AppDatabase,
+          $FirearmComponentsTable,
+          FirearmComponentRow
+        >,
+      ),
+      FirearmComponentRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -59861,4 +61243,6 @@ class $AppDatabaseManager {
         _db,
         _db.componentInventoryAdjustments,
       );
+  $$FirearmComponentsTableTableManager get firearmComponents =>
+      $$FirearmComponentsTableTableManager(_db, _db.firearmComponents);
 }

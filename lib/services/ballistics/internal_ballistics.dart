@@ -6,10 +6,13 @@
 // Predicts MUZZLE VELOCITY (fps) and PEAK CHAMBER PRESSURE (psi) for a
 // hypothetical reloading recipe — `cartridge case capacity + powder +
 // charge weight + bullet weight + bullet diameter + COAL + barrel
-// length + bore diameter`. Implements Homer Powley's interior-ballistics
-// method (1962, revised 1980), the same simplified model that backed the
-// original Sierra and Lyman desktop programs in the 1980s and that's
-// recreated in countless spreadsheets on shooter's-forum threads.
+// length + bore diameter`. Implements a published 1962-derived (revised
+// 1980) interior-ballistics estimation method — the same simplified
+// model that backed the original Sierra and Lyman desktop programs in
+// the 1980s and that's recreated in countless spreadsheets on
+// shooter's-forum threads. The method uses an empirical efficiency
+// curve fitted to published manual data; see THE PHYSICS / MATH
+// section below for the derivation.
 //
 // Public API:
 //
@@ -30,7 +33,7 @@
 //       - `expansionRatio`             — bore volume / case volume,
 //                                          dimensionless. ~5–8 for
 //                                          typical rifle cartridges.
-//       - `burnCompletionPct`          — Powley's estimate of what
+//       - `burnCompletionPct`          — the model's estimate of what
 //                                          fraction of the powder
 //                                          fully burned before the
 //                                          bullet exits the muzzle
@@ -48,7 +51,7 @@
 //       - the powder is not in the burn-rate table (`lookupPowder()`
 //         returns null);
 //       - the loading density falls outside [10%, 110%] — outside
-//         that band Powley's curve fit is undefined and we'd be
+//         that band the model's curve fit is undefined and we'd be
 //         extrapolating into nonsense numbers.
 //     The caller should treat null as "we cannot model this load —
 //     show the user an empty-state explanation, don't render numbers."
@@ -63,7 +66,7 @@
 // THE PHYSICS / MATH
 // ============================================================================
 // ----------------------------------------------------------------------------
-// THE POWLEY MODEL — A 30-SECOND OVERVIEW
+// THE INTERIOR-BALLISTICS MODEL — A 30-SECOND OVERVIEW
 // ----------------------------------------------------------------------------
 // Interior ballistics is the physics inside the gun barrel from primer
 // strike to muzzle exit (~1 millisecond for a typical rifle). A first-
@@ -73,10 +76,10 @@
 // covolume, specific impetus, granule geometry, burn-rate-vs-pressure
 // curve — that the manufacturer doesn't publish for proprietary reasons.
 //
-// Homer Powley (a Hercules Powder Company engineer turned author) built
-// a practical SHORTCUT: he correlated published manual data across
-// hundreds of loads to produce a small handful of empirical curves that
-// take just SEVEN inputs:
+// The model used here is an empirical SHORTCUT first published in 1962
+// (revised 1980): correlate published reloading-manual data across
+// hundreds of loads to produce a small handful of fit curves that take
+// just SEVEN inputs:
 //
 //   1. Case capacity  Vc      [grains H₂O]   = volume of an empty fired
 //                                                case in grains of water
@@ -93,7 +96,7 @@
 //                                                shrink Vc for deep-seated
 //                                                bullets.
 //
-// The two outputs Powley defines are:
+// The two outputs the model defines are:
 //
 //   MV  =  fmv(LD, ER, Q, Wp/C)      [fps]
 //   Pmax = fp(LD, Q, Wp/C)            [psi]
@@ -101,7 +104,7 @@
 // where LD = C / Vc (loading density, dimensionless) and ER = (Vc + Vb)
 // / Vc (expansion ratio, dimensionless).
 //
-// The actual functional form Powley fits is a power-law combination
+// The actual functional form the model fits is a power-law combination
 // derived from the energy-balance equation
 //
 //     ½ Wp v² = η · C · F
@@ -110,7 +113,7 @@
 // charge mass × specific-impetus F), with η a learned function of
 // expansion ratio and quickness. Fitting against published data (the
 // 1962 Sierra reloading manual and the IMR / Hercules data sheets of
-// that era) gave Powley:
+// that era) yields:
 //
 //     η = 1 − (1 + (2·Q·LD/Wp)·(ER−1))^(−γ)         [dimensionless]
 //
@@ -126,7 +129,7 @@
 // (IMR 4350). This is the empirical bit — see `kSpecificImpetusJPerKg`
 // in the constants.
 //
-// Pressure is the harder fit. Powley's pressure formula is:
+// Pressure is the harder fit. The model's pressure formula is:
 //
 //     Pmax = K_p · Q · LD^α · (Wp/C)^β               [psi]
 //
@@ -156,7 +159,7 @@
 // BURN COMPLETION HEURISTIC
 // ----------------------------------------------------------------------------
 // We surface a "burn completion %" so the user can spot loads where the
-// barrel is too short for the powder. It's a side-effect of Powley's
+// barrel is too short for the powder. It's a side-effect of the
 // efficiency formula — when η is below ~85% the powder is still burning
 // at muzzle exit, which means muzzle flash, lower MV, and higher
 // shot-to-shot velocity SD. We compute it as `100 × η` and let the UI
@@ -165,29 +168,59 @@
 // ----------------------------------------------------------------------------
 // VALIDATION RESULTS
 // ----------------------------------------------------------------------------
-// All numbers are from publicly-browseable Hodgdon Reloading Data Center
-// (HRDC) loads, retrieved 2026 from https://hodgdon.com. "Predicted" =
-// what `predictLoad()` returns; "Manual" = HRDC published value.
+// Anchors are drawn from publicly-browseable Hodgdon Reloading Data
+// Center (HRDC, https://hodgdon.com), Hornady 11th Edition, Sierra
+// 2024, Berger 2024, Vihtavuori 2024, Alliant 2023, IMR 2024 (all
+// retrieved 2026). The complete validation table lives in
+// `docs/internal_ballistics_validation.md`; the regression test
+// generates a subset in `test/internal_ballistics_test.dart`.
 //
-// | Load                                | Manual MV | Pred MV | Δ%   | Manual P  | Pred P    | Δ%    |
-// |-------------------------------------|-----------|---------|------|-----------|-----------|-------|
-// | .308 Win, 168gr SMK, 44.0gr Varget  | 2700 fps  | 2608    | -3.4 | 60900 psi | 68047     | +11.7 |
-// | .30-06, 165gr SST, 56.0gr IMR 4350  | 2820 fps  | 2844    | +0.8 | 58800 psi | 56500     |  -3.9 |
-// | 6.5 CM, 140gr ELD-M, 41.5gr H4350   | 2710 fps  | 2550    | -5.9 | 60100 psi | 53866     | -10.4 |
-// | .223 Rem, 55gr FMJ, 26.0gr H335     | 3240 fps  | 3450    | +6.5 | 54300 psi | 55307     |  +1.9 |
+// Headline accuracy by cartridge family (n=33 rifle anchors):
 //
-// Velocity predictions land within ±10% of published values across the
-// validation set (mean absolute error 4.2%). Pressure predictions are
-// within ±15% (mean absolute error 7.0%). The 6.5 CM / H4350 row is
-// the worst MV case — the model under-predicts MV on the modern
-// temp-stable extruded powders by ~6% because their burn-rate-vs-
-// pressure profile is flatter than the 1962-era stick powders the
-// Powley method was calibrated against. The .308 / Varget row is the
-// worst pressure case — over-predicts by ~12% because the SAAMI
-// piezo-electric measurement on .308 is conservative relative to the
-// physical peak Powley computes. Both within the ±15% disclaimer
-// band the screen surfaces. Treat predicted pressures as a gut-
-// check, NEVER as a publishable max.
+// | Family         | n  | MV bias | MV MAE | MV p95 | P bias | P MAE | P p95 |
+// |----------------|----|---------|--------|--------|--------|-------|-------|
+// | rifle_small    |  5 |  +7.6%  |  7.6%  | 10.4%  |  +8.7% |  9.6% | 20.2% |
+// | rifle_medium   | 19 |  -5.2%  |  6.2%  | 17.8%  |  -8.5% | 14.5% | 34.4% |
+// | rifle_magnum   |  9 | -18.3%  | 18.3%  | 26.3%  | -32.5% | 32.5% | 40.4% |
+//
+// Mid-rifle (rifle_small + rifle_medium, n=24) — MV MAE 6.5%, P MAE
+// 13.5%. This matches the model's claimed ±10% MV / ±15% P band on
+// most loads; the .308 / 178gr ELD-X / Varget row is the worst
+// pressure outlier at +25.2% (the model over-predicts on heavy /
+// long VLD bullets because the bullet-length approximation
+// `1.5 × diameter` underestimates seating-depth shrinkage and the
+// pressure scale exponent compounds). Rifle_small has a slight bias
+// toward over-prediction on heavy bullets (.223 / 77gr SMK lands at
+// P +20%) — the CR penalty was tuned for low-charge-ratio loads
+// and slightly over-predicts pressure when CR drops below 0.30.
+//
+// Rifle_magnum (n=9, slow / very-slow Hodgdon Extreme + Reloder
+// powders in .300 Win Mag, .300 PRC, .338 Lapua, 6.5 PRC, 7mm Rem
+// Mag) systematically UNDER-predicts both MV (-18% mean) and pressure
+// (-32% mean). Root cause is structural: the underlying fit was
+// calibrated against 1960s-era stick powders in mid-rifle cases. The
+// modern temp-stable progressive-burning powders (H1000, Reloder 22,
+// Retumbo, Reloder 26) burn flatter under pressure than the
+// burn-completion saturation `tanh(2.23 · C · Q / W)` predicts. The
+// model gets the ORDERING right (heavier bullet = slower; more
+// powder = faster) but the MAGNITUDE is biased low. We document
+// this regime as ±25% accuracy in the validation report rather than
+// claiming the original ±15% band.
+//
+// Pistol cartridges return null. The model's fit produces MV errors
+// of -45% to -50% and pressure errors of +300% to +400% on .45 ACP /
+// 9mm Luger anchors — the very low expansion ratio (~2-3x) and very
+// fast pistol powders are outside the calibration corpus and the
+// model produces dangerously wrong numbers. `predictLoad` rejects
+// any input whose looked-up powder has `category == pistol` so the
+// UI shows the "load outside calibration band" empty state rather
+// than rendering a pressure number that's catastrophically high.
+// Shotgun powders are rejected for the same reason. See the
+// "PISTOL / SHOTGUN REJECTION" guard below.
+//
+// Treat predicted pressures as a gut-check, NEVER as a publishable
+// max. The persistent yellow disclaimer banner on the screen
+// reflects this; the validation document goes deeper.
 //
 // ============================================================================
 // WHY IT EXISTS IN THE ARCHITECTURE
@@ -214,16 +247,17 @@
 // ============================================================================
 // WHY THIS IS HARDER THAN IT LOOKS
 // ============================================================================
-//   * POWLEY IS A FIT TO PUBLISHED DATA, NOT FIRST-PRINCIPLES PHYSICS.
-//     Every coefficient (η formula, pressure exponents, scale
-//     constants) is calibrated against a corpus of known loads from a
-//     specific era. Loads outside that corpus — modern temperature-
-//     stable powders (Reloder 16/26, Hodgdon Extreme), straight-
-//     walled pistol cartridges, very-high-pressure (≥65 kpsi) modern
-//     designs — drift further from the predictions. The validation
-//     table in the file header says how far. CALLERS MUST NOT
-//     interpret a Powley prediction as "this load is safe." It's a
-//     gut-check, not a substitute for a published manual.
+//   * THE MODEL IS A FIT TO PUBLISHED DATA, NOT FIRST-PRINCIPLES
+//     PHYSICS. Every coefficient (η formula, pressure exponents,
+//     scale constants) is calibrated against a corpus of known
+//     loads from a specific era. Loads outside that corpus — modern
+//     temperature-stable powders (Reloder 16/26, Hodgdon Extreme),
+//     straight-walled pistol cartridges, very-high-pressure
+//     (≥65 kpsi) modern designs — drift further from the
+//     predictions. The validation table in the file header says how
+//     far. CALLERS MUST NOT interpret a model prediction as "this
+//     load is safe." It's a gut-check, not a substitute for a
+//     published manual.
 //
 //   * PRESSURE IS HARDER TO PREDICT THAN MV. MV depends on the total
 //     energy released; it averages out over the burn cycle and is
@@ -236,13 +270,14 @@
 //
 //   * THE LOADING-DENSITY BAND IS HARD-CAPPED. Below 10% the powder
 //     is so loose in the case that the burn becomes irregular
-//     (Powley's formula assumes a near-uniform bulk burn; below 10%
-//     LD the granules clump at the back of the case and the burn
-//     stage-fires). Above 110% LD the load is "compressed" — the
-//     bullet is being pushed against the powder column on seating —
-//     and Powley's volumetric assumptions stop applying. We refuse
-//     to render a number outside [10%, 110%] and the screen
-//     surfaces "loading density out of range" as the empty state.
+//     (the model's formula assumes a near-uniform bulk burn; below
+//     10% LD the granules clump at the back of the case and the
+//     burn stage-fires). Above 110% LD the load is "compressed" —
+//     the bullet is being pushed against the powder column on
+//     seating — and the model's volumetric assumptions stop
+//     applying. We refuse to render a number outside [10%, 110%]
+//     and the screen surfaces "loading density out of range" as the
+//     empty state.
 //
 //   * SEATING DEPTH IS APPROXIMATED. Without an explicit
 //     `bulletLengthIn` field on the form, we estimate `bulletLen ≈
@@ -261,14 +296,15 @@
 //     predictions of peak pressure (which happens before the
 //     bullet has travelled meaningfully).
 //
-//   * SHOTSHELL / MUZZLELOADER LOADS ARE NOT MODELLED. Powley was
-//     calibrated for cased centerfire ammunition. Shotshell loads
-//     have a wad / cup that absorbs energy in deformation; muzzle
-//     loaders have an open-breech geometry. Both produce wildly
-//     wrong predictions through this model. We don't have a way
-//     to reject those loads at the input layer beyond "the powder
-//     is in a non-shotshell-only category", which is not perfect.
-//     The disclaimer on the screen warns the user.
+//   * SHOTSHELL / MUZZLELOADER LOADS ARE NOT MODELLED. The
+//     calibration corpus was cased centerfire ammunition only.
+//     Shotshell loads have a wad / cup that absorbs energy in
+//     deformation; muzzle loaders have an open-breech geometry.
+//     Both produce wildly wrong predictions through this model. We
+//     don't have a way to reject those loads at the input layer
+//     beyond "the powder is in a non-shotshell-only category",
+//     which is not perfect. The disclaimer on the screen warns the
+//     user.
 //
 // ============================================================================
 // WHO CONSUMES THIS FILE
@@ -289,6 +325,12 @@
 import 'dart:math' as math;
 
 import 'powder_burn_rates.dart';
+
+/// True only when `v` is a finite positive double (excludes zero,
+/// negatives, NaN, and ±infinity). Used by the predictor's input
+/// guard so that NaN / infinity from upstream parse errors fail
+/// closed rather than poisoning the math.
+bool _isFinitePositive(double v) => v.isFinite && v > 0;
 
 // ─────────────────────────────────────────────────────────────────────
 // Constants
@@ -444,7 +486,7 @@ class InternalBallisticsLimits {
   const InternalBallisticsLimits._();
 
   /// Loading density (charge / case capacity) must be 10%–110% to be
-  /// in Powley's calibrated band. Below 10% the powder layer is too
+  /// inside the calibrated band. Below 10% the powder layer is too
   /// thin for the bulk-burn assumption; above 110% the load is
   /// "compressed" beyond the calibration corpus.
   static const double minLoadingDensityPct = 10.0;
@@ -452,7 +494,7 @@ class InternalBallisticsLimits {
 
   /// Charge weight in grains. Below 1 gr is a primer-only blank
   /// (not modelled); above 300 gr is .50 BMG / black-powder cannon
-  /// territory, well outside Powley's calibration.
+  /// territory, well outside the calibration corpus.
   static const double minChargeGr = 1.0;
   static const double maxChargeGr = 300.0;
 
@@ -462,8 +504,8 @@ class InternalBallisticsLimits {
   static const double maxBulletGr = 1000.0;
 
   /// Barrel length in inches. Below 4" is pistol-only territory and
-  /// expansion ratios become so small that Powley's polynomial fit
-  /// blows up; above 50" is artillery.
+  /// expansion ratios become so small that the model's polynomial
+  /// fit blows up; above 50" is artillery.
   static const double minBarrelLengthIn = 4.0;
   static const double maxBarrelLengthIn = 50.0;
 
@@ -488,7 +530,7 @@ class InternalBallisticsLimits {
 // Input bundle
 // ─────────────────────────────────────────────────────────────────────
 
-/// Immutable bundle of every parameter the Powley predictor reads.
+/// Immutable bundle of every parameter the predictor reads.
 ///
 /// Constructed via the `InternalBallisticsInput.imperial` named
 /// constructor — the only constructor — so the unit conventions are
@@ -549,6 +591,141 @@ class InternalBallisticsInput {
 }
 
 // ─────────────────────────────────────────────────────────────────────
+// Bias-zone advisory (Pass 2 deep-dive)
+// ─────────────────────────────────────────────────────────────────────
+//
+// The 59-anchor Pass 2 corpus identified two independent factors driving
+// the magnum-rifle under-prediction:
+//
+//   * `magnumCase`  — case capacity > 75 grH₂O. Drives PRESSURE bias
+//                     (typical -25 to -35%) regardless of powder choice.
+//                     Cause: large cases sit at LD 70-80%, where the
+//                     `LD^1.5` pressure exponent geometrically reduces
+//                     the prediction by ~25% vs the LD 85-95% mid-rifle
+//                     band.
+//   * `slowPowder`  — relative quickness < 70 (H1000 / N560 / Retumbo /
+//                     Reloder 22 / 25 / N570 / H50BMG class). Drives MV
+//                     bias (typical -10 to -25%). Cause: the burn-
+//                     completion saturation curve was calibrated against
+//                     1960s-era stick powders; modern temp-stable
+//                     progressive powders burn cleaner than the curve
+//                     assumes.
+//   * `combined`    — both. Errors stack: typical -25 to -40% MV AND
+//                     -30 to -45% pressure. The .338 Lapua / 285gr /
+//                     N570 row is the worst case at MV -33% / P -36%.
+enum BiasZoneCause {
+  magnumCase,
+  slowPowder,
+  combined,
+}
+
+/// User-facing advisory surfaced when a prediction falls into a
+/// known high-bias regime of the underlying interior-ballistics fit.
+/// The screen renders a per-prediction yellow note under the result
+/// card; the persistent "Estimation Tool — Not a Load-Data
+/// Substitute" banner at the top stays as it was. This advisory is
+/// ADDITIONAL information, telling the user "specifically, this load
+/// type tends to underpredict by the following amounts."
+///
+/// Values are immutable; equality is by `(cause)`.
+class BiasZoneAdvisory {
+  const BiasZoneAdvisory({
+    required this.cause,
+    required this.headline,
+    required this.detail,
+  });
+
+  /// Which bias regime triggered the advisory. See [BiasZoneCause]
+  /// for the discriminator definitions.
+  final BiasZoneCause cause;
+
+  /// Short Title-Case headline, suitable for a card title or chip.
+  /// Examples: "Magnum-Class Cartridge", "Very Slow Powder",
+  /// "Magnum + Slow Powder — Combined Bias".
+  final String headline;
+
+  /// Sentence-case body copy explaining what the user should expect
+  /// and how to interpret the numbers. Always ends with the practical
+  /// advice: "Treat the prediction as a floor, not a ceiling."
+  final String detail;
+
+  @override
+  bool operator ==(Object other) =>
+      other is BiasZoneAdvisory && other.cause == cause;
+
+  @override
+  int get hashCode => cause.hashCode;
+}
+
+/// Compute the bias advisory for a load. Returns null when the load
+/// is in the well-calibrated band. Pure-functional; called from
+/// `predictLoad` after a successful prediction.
+///
+/// Discriminator thresholds:
+///   * Magnum case: `caseCapacityGrH2o > 75`
+///   * Slow powder: `relativeQuickness < 70` (H1000 / N560 / Retumbo
+///                  / Reloder 22 / 25 / N570 / H50BMG)
+///
+/// Both true → `combined`. Either one → the matching single cause.
+/// Neither → null (no advisory needed).
+BiasZoneAdvisory? _computeBiasAdvisory({
+  required double caseCapacityGrH2o,
+  required double powderRelativeQuickness,
+}) {
+  final magnumCase = caseCapacityGrH2o > 75.0;
+  final slowPowder = powderRelativeQuickness < 70.0;
+
+  if (magnumCase && slowPowder) {
+    return const BiasZoneAdvisory(
+      cause: BiasZoneCause.combined,
+      headline: 'Magnum + Slow Powder — Combined Bias',
+      detail:
+          'This load combines a magnum-class case (large internal '
+          'volume) with a slow-burning powder (H1000 / Retumbo / '
+          'Reloder 22 class). The interior-ballistics estimator '
+          'under-predicts BOTH muzzle velocity (typically by 15-25%) '
+          'AND peak pressure (typically by 25-40%) for this regime. '
+          'Cross-check against a published manual; treat the predicted '
+          'pressure as a floor, not a ceiling.',
+    );
+  }
+
+  if (magnumCase) {
+    return const BiasZoneAdvisory(
+      cause: BiasZoneCause.magnumCase,
+      headline: 'Magnum-Class Cartridge',
+      detail:
+          'This cartridge has a large case capacity (greater than 75 '
+          'grH₂O). The pressure formula systematically under-predicts '
+          'peak pressure for magnum cartridges by approximately 25-35%, '
+          'because the loading density (charge / case capacity) sits in '
+          'the 70-80% range and the model\'s pressure curve is steepest '
+          'at higher loading densities. Treat the predicted pressure '
+          'as a floor, not a ceiling — your actual pressure is likely '
+          '25-35% higher than shown.',
+    );
+  }
+
+  if (slowPowder) {
+    return const BiasZoneAdvisory(
+      cause: BiasZoneCause.slowPowder,
+      headline: 'Very Slow Powder',
+      detail:
+          'This powder sits in the slow / very-slow band (relative '
+          'quickness below 70 — H1000 / N560 / Retumbo / Reloder 22 / '
+          '25 / N570 / H50BMG class). The burn-completion saturation '
+          'curve was calibrated against 1960s-era stick powders; '
+          'modern temp-stable progressive powders burn more completely '
+          'than the curve assumes, so muzzle velocity predictions run '
+          '10-20% LOW for these powders. Cross-check against a '
+          'published manual.',
+    );
+  }
+
+  return null;
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // Result bundle
 // ─────────────────────────────────────────────────────────────────────
 
@@ -561,6 +738,7 @@ class InternalBallisticsResult {
     required this.expansionRatio,
     required this.burnCompletionPct,
     required this.caseCapacityGrH2o,
+    this.biasAdvisory,
   });
 
   /// Predicted muzzle velocity in fps. Compare against the
@@ -602,72 +780,120 @@ class InternalBallisticsResult {
   /// Surfaced so the UI can show "Used 53.0 grH₂O (table default)"
   /// next to the result.
   final double caseCapacityGrH2o;
+
+  /// Per-prediction advisory surfaced when the load falls into a
+  /// known high-bias regime of the underlying fit (magnum-class case
+  /// or very slow powder). Null when the load is in the well-
+  /// calibrated band. The screen renders this as an additional
+  /// yellow note under the result card; the persistent disclaimer
+  /// banner at the top stays as it is. See [BiasZoneAdvisory] and
+  /// [BiasZoneCause] for details.
+  final BiasZoneAdvisory? biasAdvisory;
 }
 
 // ─────────────────────────────────────────────────────────────────────
 // The predictor
 // ─────────────────────────────────────────────────────────────────────
 
-/// Runs the Powley method on the supplied input bundle and returns
-/// either a fully-populated `InternalBallisticsResult` or null when
-/// the load can't be modelled.
+/// Runs the interior-ballistics estimator on the supplied input
+/// bundle and returns either a fully-populated
+/// `InternalBallisticsResult` or null when the load can't be
+/// modelled.
 ///
 /// Returns null when:
-///   * Any required field is missing, zero, or negative.
+///   * Any required field is missing, zero, negative, NaN, or
+///     infinite.
 ///   * `powderName` isn't in the burn-rate table.
+///   * The powder's category is `pistol` or `shotgun` — the model's
+///     fit was calibrated for centerfire rifle cartridges and
+///     produces dangerously wrong predictions (e.g. +400% on pistol
+///     pressure) for fast pistol powders in short-barrel
+///     low-expansion-ratio loads. We refuse to model these rather
+///     than render misleading numbers.
 ///   * Any input falls outside the `InternalBallisticsLimits` band.
 ///   * Loading density falls outside [10%, 110%].
 ///   * Expansion ratio is non-physical (≤1.0).
+///   * Optional bullet length is provided but is not finite, ≤0, or
+///     longer than COAL.
 ///
 /// The caller MUST treat null as "show empty state, don't render
 /// numbers." This is the same anti-fake-data discipline the rest of
 /// the ballistics surface follows (CLAUDE.md § 0).
 InternalBallisticsResult? predictLoad(InternalBallisticsInput input) {
+  // ─── Finite-input guard ───
+  //
+  // NaN / infinity sneaks in from `double.parse('nan')`, divisions
+  // by zero in caller code, or sensor input. All math below assumes
+  // ordinary finite doubles; reject anything that isn't.
+  if (!_isFinitePositive(input.caseCapacityGrH2o) ||
+      !_isFinitePositive(input.chargeWeightGr) ||
+      !_isFinitePositive(input.bulletWeightGr) ||
+      !_isFinitePositive(input.bulletDiameterIn) ||
+      !_isFinitePositive(input.coalIn) ||
+      !_isFinitePositive(input.caseLengthIn) ||
+      !_isFinitePositive(input.barrelLengthIn) ||
+      !_isFinitePositive(input.boreDiameterIn)) {
+    return null;
+  }
+  if (input.bulletLengthIn != null) {
+    final bl = input.bulletLengthIn!;
+    if (!bl.isFinite || bl <= 0 || bl >= input.coalIn) return null;
+  }
+
   // ─── Powder lookup ───
   final powder = lookupPowder(input.powderName);
   if (powder == null) return null;
 
+  // ─── Pistol / shotgun rejection ───
+  //
+  // The calibration corpus was the IMR / Hercules data sheets of
+  // the 1960s, all centerfire rifle. Pistol powders in short barrels
+  // produce expansion ratios of ~2-3 (vs ~6-8 for rifle), which is
+  // outside the model's polynomial fit. The `dual` category powders
+  // (H110 / W296 / Lil'Gun / 2400) get through this guard — they're
+  // legitimately used in small-bore rifle loads (.30 Carbine,
+  // .22 Hornet) where the rifle calibration still applies.
+  // Pistol-only and shotgun-only powders return null with no
+  // fallback.
+  if (powder.category == PowderCategory.pistol ||
+      powder.category == PowderCategory.shotgun) {
+    return null;
+  }
+
   // ─── Hard sanity bounds ───
-  if (input.chargeWeightGr <= 0 ||
-      input.chargeWeightGr < InternalBallisticsLimits.minChargeGr ||
+  if (input.chargeWeightGr < InternalBallisticsLimits.minChargeGr ||
       input.chargeWeightGr > InternalBallisticsLimits.maxChargeGr) {
     return null;
   }
-  if (input.bulletWeightGr <= 0 ||
-      input.bulletWeightGr < InternalBallisticsLimits.minBulletGr ||
+  if (input.bulletWeightGr < InternalBallisticsLimits.minBulletGr ||
       input.bulletWeightGr > InternalBallisticsLimits.maxBulletGr) {
     return null;
   }
-  if (input.bulletDiameterIn <= 0 ||
-      input.bulletDiameterIn < InternalBallisticsLimits.minBulletDiameterIn ||
+  if (input.bulletDiameterIn < InternalBallisticsLimits.minBulletDiameterIn ||
       input.bulletDiameterIn > InternalBallisticsLimits.maxBulletDiameterIn) {
     return null;
   }
-  if (input.barrelLengthIn <= 0 ||
-      input.barrelLengthIn < InternalBallisticsLimits.minBarrelLengthIn ||
+  if (input.barrelLengthIn < InternalBallisticsLimits.minBarrelLengthIn ||
       input.barrelLengthIn > InternalBallisticsLimits.maxBarrelLengthIn) {
     return null;
   }
-  if (input.boreDiameterIn <= 0 ||
-      input.boreDiameterIn > input.bulletDiameterIn) {
+  if (input.boreDiameterIn > input.bulletDiameterIn) {
     // Bore is always SMALLER than the bullet (bullet engages the
     // grooves, which are deeper than the bore). Same-or-larger bore
     // is a data-entry error.
     return null;
   }
-  if (input.caseCapacityGrH2o <= 0 ||
-      input.caseCapacityGrH2o < InternalBallisticsLimits.minCaseCapacityGrH2o ||
+  if (input.caseCapacityGrH2o < InternalBallisticsLimits.minCaseCapacityGrH2o ||
       input.caseCapacityGrH2o > InternalBallisticsLimits.maxCaseCapacityGrH2o) {
     return null;
   }
-  if (input.coalIn <= 0 ||
-      input.coalIn < InternalBallisticsLimits.minCoalIn ||
+  if (input.coalIn < InternalBallisticsLimits.minCoalIn ||
       input.coalIn > InternalBallisticsLimits.maxCoalIn) {
     return null;
   }
-  if (input.caseLengthIn <= 0 || input.caseLengthIn >= input.coalIn) {
-    // Case length must be POSITIVE and STRICTLY LESS than COAL —
-    // otherwise the bullet doesn't extend past the case mouth at all.
+  if (input.caseLengthIn >= input.coalIn) {
+    // Case length must be STRICTLY LESS than COAL — otherwise the
+    // bullet doesn't extend past the case mouth at all.
     return null;
   }
 
@@ -821,6 +1047,19 @@ InternalBallisticsResult? predictLoad(InternalBallisticsInput input) {
       math.pow(loadingDensityRatio, _kPressureLoadingDensityExp).toDouble() *
       math.pow(bulletToChargeRatio, _kPressureBulletRatioExp).toDouble();
 
+  // ─── Bias-zone advisory (Pass 2 deep-dive) ───
+  //
+  // Compute whether this load falls into a known high-bias regime of
+  // the interior-ballistics fit — magnum-class case, very slow
+  // powder, or both. The screen surfaces the advisory as a per-
+  // prediction yellow note under the result card. See
+  // `_computeBiasAdvisory` for the discriminator logic and
+  // `BiasZoneAdvisory` for the surfaced copy.
+  final biasAdvisory = _computeBiasAdvisory(
+    caseCapacityGrH2o: input.caseCapacityGrH2o,
+    powderRelativeQuickness: powder.relativeQuickness,
+  );
+
   return InternalBallisticsResult(
     predictedMuzzleVelocityFps: velocityFps,
     predictedPeakPressurePsi: pressurePsi,
@@ -828,5 +1067,6 @@ InternalBallisticsResult? predictLoad(InternalBallisticsInput input) {
     expansionRatio: expansionRatio,
     burnCompletionPct: efficiency * 100.0,
     caseCapacityGrH2o: input.caseCapacityGrH2o,
+    biasAdvisory: biasAdvisory,
   );
 }

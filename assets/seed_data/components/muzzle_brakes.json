@@ -1,0 +1,241 @@
+[
+  {
+    "manufacturer": "Area 419",
+    "model": "Hellfire Self-Timing Match",
+    "productLine": "Hellfire",
+    "caliberRange": ".224 to .338 cal, threaded inserts allow caliber swap",
+    "threadCommon": ["5/8-24", "3/4-24", "M18x1"],
+    "selfTiming": true,
+    "weightOz": 4.0,
+    "notes": "Self-timing radial-port brake using a locking nut and replaceable caliber-specific inserts. Install and remove without re-shimming. PRS / NRL Hunter standard, available in stainless and titanium."
+  },
+  {
+    "manufacturer": "Area 419",
+    "model": "Sidewinder",
+    "productLine": "Sidewinder",
+    "caliberRange": ".224 to .338 cal via interchangeable inserts",
+    "threadCommon": ["5/8-24", "3/4-24", "M18x1"],
+    "selfTiming": true,
+    "weightOz": 4.5,
+    "notes": "Side-port competition brake derived from the Hellfire platform. Side-discharge gas redirection to keep dust signature off-axis from the shooter and spotter; uses the same self-timing locking-nut interface as Hellfire."
+  },
+  {
+    "manufacturer": "Area 419",
+    "model": "Hellfire MAXIMUS",
+    "productLine": "Hellfire",
+    "caliberRange": ".338 cal up through .50 BMG",
+    "threadCommon": ["3/4-24", "M18x1.5", "1-14"],
+    "selfTiming": true,
+    "weightOz": 9.0,
+    "notes": "Oversized Hellfire variant for heavy magnums and .50-cal applications. Same self-timing locking-nut design scaled up for higher gas volume. Used on ELR rifles and large-bore hunting builds."
+  },
+  {
+    "manufacturer": "American Precision Arms",
+    "model": "Little Bastard Gen 3",
+    "productLine": "Bastard",
+    "caliberRange": ".224 to .338 cal",
+    "threadCommon": ["5/8-24", "3/4-24", "M18x1"],
+    "selfTiming": false,
+    "weightOz": 3.4,
+    "notes": "Three-port radial brake, longstanding PRS favorite. Gen 3 revision tightened port geometry for reduced muzzle rise. Requires shim timing on install."
+  },
+  {
+    "manufacturer": "American Precision Arms",
+    "model": "Fat Bastard",
+    "productLine": "Bastard",
+    "caliberRange": ".30 cal to .375 cal magnums",
+    "threadCommon": ["3/4-24", "M18x1"],
+    "selfTiming": false,
+    "weightOz": 5.2,
+    "notes": "Larger-bore sibling of the Little Bastard for magnum rifles. Same three-port radial design with expanded gas-volume sizing for heavy-recoil cartridges."
+  },
+  {
+    "manufacturer": "American Precision Arms",
+    "model": "MicroBastard",
+    "productLine": "Bastard",
+    "caliberRange": ".224 to .264 cal",
+    "threadCommon": ["1/2-28", "5/8-24"],
+    "selfTiming": false,
+    "weightOz": 2.1,
+    "notes": "Compact Bastard variant for small-frame rifles, lightweight hunting builds, and smaller-bore competition rifles where weight at the muzzle matters."
+  },
+  {
+    "manufacturer": "American Precision Arms",
+    "model": "Answer 419",
+    "productLine": "Answer",
+    "caliberRange": ".224 to .338 cal via inserts",
+    "threadCommon": ["5/8-24", "3/4-24", "M18x1"],
+    "selfTiming": true,
+    "weightOz": 3.9,
+    "notes": "APA collaboration with Area 419 using the Hellfire self-timing locking-nut interface. Cross-compatible with Hellfire inserts. Removes APA's traditional shim-timing step."
+  },
+  {
+    "manufacturer": "Insite Arms",
+    "model": "Heathen",
+    "productLine": "Heathen",
+    "caliberRange": ".224 to .338 cal",
+    "threadCommon": ["5/8-24", "3/4-24", "M18x1"],
+    "selfTiming": false,
+    "weightOz": 4.2,
+    "notes": "Three-chamber radial-port brake with aggressive recoil mitigation. Popular on PRS gas guns and bolt rifles. Stainless and Cerakote finishes; shim-timed install."
+  },
+  {
+    "manufacturer": "TBR Arms",
+    "model": "Ridgeline Self-Timing Brake",
+    "productLine": "Ridgeline",
+    "caliberRange": ".224 to .338 cal via inserts",
+    "threadCommon": ["5/8-24", "3/4-24", "M18x1"],
+    "selfTiming": true,
+    "weightOz": 4.0,
+    "notes": "Self-timing brake using a locking jam nut, designed for hunters and PRS competitors who swap barrels. Caliber-specific inserts swap without re-timing the body."
+  },
+  {
+    "manufacturer": "MDT",
+    "model": "Elite Muzzle Brake",
+    "productLine": "Elite",
+    "caliberRange": ".224 to .338 cal",
+    "threadCommon": ["5/8-24", "3/4-24"],
+    "selfTiming": false,
+    "weightOz": 3.8,
+    "notes": "Three-port radial brake matched aesthetically to MDT chassis systems. Stainless construction, shim-timed install. Aimed at the chassis-rifle PRS and hunting market."
+  },
+  {
+    "manufacturer": "Cross Machine Tool",
+    "model": "CMT Tactical Brake",
+    "productLine": "CMT",
+    "caliberRange": ".224 to .308 cal",
+    "threadCommon": ["1/2-28", "5/8-24"],
+    "selfTiming": false,
+    "weightOz": 3.0,
+    "notes": "Multi-port competition brake from CMT's precision machining shop. Used on AR-platform precision builds and bolt rifles in the 5.56 to .308 class."
+  },
+  {
+    "manufacturer": "Erathr3",
+    "model": "Bandit",
+    "productLine": "Bandit",
+    "caliberRange": ".224 to .338 cal",
+    "threadCommon": ["5/8-24", "3/4-24", "M18x1"],
+    "selfTiming": false,
+    "weightOz": 3.6,
+    "notes": "Multi-port radial brake from Erathr3's precision-machining catalog. Available in stainless and titanium with multiple Cerakote color options. Shim-timed install."
+  },
+  {
+    "manufacturer": "Patriot Valley Arms",
+    "model": "Jet Blast",
+    "productLine": "Jet Blast",
+    "caliberRange": ".224 to .338 cal via insert",
+    "threadCommon": ["5/8-24", "3/4-24", "M18x1"],
+    "selfTiming": true,
+    "weightOz": 4.1,
+    "notes": "Self-timing competition brake with a replaceable bore insert and a locking-nut interface. Aimed at PRS and NRL Hunter shooters; allows caliber swaps without re-shimming."
+  },
+  {
+    "manufacturer": "Center Shot Sports",
+    "model": "CSS Comp Brake",
+    "productLine": "CSS",
+    "caliberRange": ".224 to .338 cal",
+    "threadCommon": ["5/8-24", "3/4-24"],
+    "selfTiming": false,
+    "weightOz": 3.7,
+    "notes": "Multi-chamber radial brake designed for PRS shooters. Stainless construction, shim-timed install."
+  },
+  {
+    "manufacturer": "SureFire",
+    "model": "SF4P-762",
+    "productLine": "ProComp",
+    "caliberRange": ".308 / 7.62mm",
+    "threadCommon": ["5/8-24"],
+    "selfTiming": false,
+    "weightOz": 3.4,
+    "notes": "Four-prong ProComp muzzle brake commonly used on .308 / 7.62 precision rifles. Doubles as the indexing surface for SureFire SOCOM-series suppressors."
+  },
+  {
+    "manufacturer": "SureFire",
+    "model": "MB762-RC2",
+    "productLine": "MB",
+    "caliberRange": ".308 / 7.62mm",
+    "threadCommon": ["5/8-24"],
+    "selfTiming": false,
+    "weightOz": 6.4,
+    "notes": "Closed-tine high-efficiency brake. Heavier than the SF4P but shaves additional recoil; suppressor-compatible mount for SureFire SOCOM RC2 suppressors."
+  },
+  {
+    "manufacturer": "Precision Armament",
+    "model": "M11 Severe-Duty",
+    "productLine": "M11",
+    "caliberRange": ".224 to .338 cal",
+    "threadCommon": ["1/2-28", "5/8-24", "3/4-24", "M18x1"],
+    "selfTiming": false,
+    "weightOz": 3.6,
+    "notes": "Three-chamber severe-duty brake. Heat-treated stainless body, available across a wide thread-pitch range. Reputation for surviving high round counts on magnum rifles."
+  },
+  {
+    "manufacturer": "Precision Armament",
+    "model": "AFAB-556 Hybrid",
+    "productLine": "AFAB",
+    "caliberRange": "5.56 / .223",
+    "threadCommon": ["1/2-28"],
+    "selfTiming": false,
+    "weightOz": 3.0,
+    "notes": "Advanced Flash-Arresting Brake hybrid. Combines open-tine flash hider geometry with brake porting. Common on AR-15 precision and 3-gun builds."
+  },
+  {
+    "manufacturer": "Precision Armament",
+    "model": "EFAB Hybrid",
+    "productLine": "EFAB",
+    "caliberRange": ".308 / 7.62mm and 6.5 Creedmoor",
+    "threadCommon": ["5/8-24"],
+    "selfTiming": false,
+    "weightOz": 3.8,
+    "notes": "Enhanced Flash-Arresting Brake. Same hybrid concept as AFAB scaled for .30-cal precision rifles. Reduces flash signature while retaining most of a dedicated brake's recoil mitigation."
+  },
+  {
+    "manufacturer": "Badger Ordnance",
+    "model": "FTE Muzzle Brake",
+    "productLine": "FTE",
+    "caliberRange": ".224 to .338 cal",
+    "threadCommon": ["5/8-24", "3/4-24"],
+    "selfTiming": false,
+    "weightOz": 4.0,
+    "notes": "Badger's Forward Tactical Element brake. Three-chamber radial design used on Badger-built precision rifles and aftermarket installs. Shim-timed."
+  },
+  {
+    "manufacturer": "JEC Customs",
+    "model": "EBC Brake",
+    "productLine": "EBC",
+    "caliberRange": ".224 to .338 cal",
+    "threadCommon": ["5/8-24", "3/4-24", "M18x1"],
+    "selfTiming": false,
+    "weightOz": 3.5,
+    "notes": "Effective Brake Compensator from JEC Customs. Multi-port radial design favored on PRS rifles. Stainless construction with multiple finish options."
+  },
+  {
+    "manufacturer": "Holland's Gunsmithing",
+    "model": "Quick Discharge Brake",
+    "productLine": "QD",
+    "caliberRange": ".224 to .375 cal magnums",
+    "threadCommon": ["5/8-24", "3/4-24", "M18x1"],
+    "selfTiming": false,
+    "notes": "Holland's signature radial-port brake, longstanding favorite among magnum hunters and ELR shooters. Effective at taming heavy recoil; shim-timed install."
+  },
+  {
+    "manufacturer": "JP Enterprises",
+    "model": "Cooley Compensator",
+    "productLine": "Cooley",
+    "caliberRange": ".224 to .308 cal",
+    "threadCommon": ["1/2-28", "5/8-24"],
+    "selfTiming": false,
+    "weightOz": 2.7,
+    "notes": "Cooley-design comp from JP. Tuned-port brake favored on AR-platform competition rifles. Reduces muzzle rise on rapid follow-ups in 3-gun and PRS gas-gun divisions."
+  },
+  {
+    "manufacturer": "JP Enterprises",
+    "model": "Tactical Compensator (Tank)",
+    "productLine": "Tank",
+    "caliberRange": ".224 to .308 cal",
+    "threadCommon": ["1/2-28", "5/8-24"],
+    "selfTiming": false,
+    "weightOz": 3.4,
+    "notes": "JP Tactical Compensator, nicknamed the Tank for its blocky profile. Heavy-duty multi-chamber brake for precision gas guns and sustained-fire applications."
+  }
+]

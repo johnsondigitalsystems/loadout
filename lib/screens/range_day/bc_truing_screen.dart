@@ -139,16 +139,21 @@ class _BcTruingScreenState extends State<BcTruingScreen> {
         }
       }
       if (found != null && mounted) {
+        // Capture into a local so the closure passed to setState
+        // doesn't lose Dart's non-null promotion across the boundary.
+        final firearm = found;
         setState(() {
-          _selectedFirearm = found;
-          if (found!.defaultMuzzleVelocityFps != null) {
-            _muzzleVelocityFps = found.defaultMuzzleVelocityFps!;
+          _selectedFirearm = firearm;
+          // MV used to be pulled from `firearm.defaultMuzzleVelocityFps`
+          // here. Removed because BC truing requires a measured
+          // chrono MV — the user types it directly. The DB column
+          // stays for downstream consumers (Range Day, Ballistics)
+          // but BC truing skips it.
+          if (firearm.sightHeightIn != null) {
+            _sightHeightIn = firearm.sightHeightIn!;
           }
-          if (found.sightHeightIn != null) {
-            _sightHeightIn = found.sightHeightIn!;
-          }
-          if (found.defaultZeroRangeYd != null) {
-            _zeroRangeYd = found.defaultZeroRangeYd!.toDouble();
+          if (firearm.defaultZeroRangeYd != null) {
+            _zeroRangeYd = firearm.defaultZeroRangeYd!.toDouble();
           }
         });
       }
@@ -452,9 +457,9 @@ class _BcTruingScreenState extends State<BcTruingScreen> {
                   onChanged: (v) {
                     setState(() {
                       _selectedFirearm = v;
-                      if (v?.defaultMuzzleVelocityFps != null) {
-                        _muzzleVelocityFps = v!.defaultMuzzleVelocityFps!;
-                      }
+                      // MV no longer pre-filled from firearm — column
+                      // dropped at schema v33. User types it manually
+                      // (BC truing wants a measured chrono MV).
                       if (v?.sightHeightIn != null) {
                         _sightHeightIn = v!.sightHeightIn!;
                       }

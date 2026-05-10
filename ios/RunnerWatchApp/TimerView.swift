@@ -18,11 +18,12 @@
 // ============================================================================
 // WHY IT EXISTS IN THE ARCHITECTURE
 // ============================================================================
-// One of three feature views hosted by `ContentView`'s `TabView`. The
-// view is the user-facing surface of `TimerEngine` — keeping them
-// separated lets the engine be unit-testable without a SwiftUI host
-// and lets the view be swapped out (different layouts for round vs
-// rectangular watch faces, e.g.) without touching timing logic.
+// One of four pages hosted by `ContentView`'s vertical `TabView`
+// (page 2: Stage Log / Timer / DOPE / About). The view is the
+// user-facing surface of `TimerEngine` — keeping them separated lets
+// the engine be unit-testable without a SwiftUI host and lets the
+// view be swapped out (different layouts for round vs rectangular
+// watch faces, e.g.) without touching timing logic.
 //
 // ============================================================================
 // WHY THIS IS HARDER THAN IT LOOKS
@@ -53,8 +54,8 @@
 // ============================================================================
 // WHO CONSUMES THIS FILE
 // ============================================================================
-// - `ContentView.swift` — hosts this as the first page in the
-//   horizontal `TabView`.
+// - `ContentView.swift` — hosts this as page 2 of the vertical
+//   `TabView` (Stage Log / Timer / DOPE / About).
 // - `TimerEngine.swift` — read via `@EnvironmentObject`.
 //   `LoadOutWatchApp` injects it.
 //

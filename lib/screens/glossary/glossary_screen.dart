@@ -1184,6 +1184,97 @@ const List<GlossaryTerm> kGlossaryTerms = [
     definition:
         'Bullet weight (grains) × muzzle velocity (fps) ÷ 1000. Used by competition rules (USPSA, IDPA, Steel Challenge) to define minor / major / no-score thresholds. Reloaders pick a charge that comfortably exceeds the floor without overloading the case.',
   ),
+  GlossaryTerm(
+    term: 'Optimal Charge Weight',
+    acronym: 'OCW',
+    category: _catLoadDev,
+    definition:
+        "Dan Newberry's load development method. Fire three rounds at each of an evenly-stepped charge ladder, plot the vertical impact at the target, and look for a 'flat spot' — a span of consecutive charges whose group centers barely move up or down. The charge in the middle of that flat spot is the OCW node, theoretically the most tolerant of small charge / temperature variation.",
+    example:
+        'Step 0.3 gr from 39.5 to 41.6 gr (8 charges, 3 shots each = 24 rounds). Vertical centers: 39.5 → 41.0 = -2.1 in, 41.0 → 41.3 = -0.1 in, 41.3 → 41.6 = -0.2 in. Flat spot is 41.0–41.6, OCW node ≈ 41.3 gr.',
+    exampleNumbers: '0.3 gr step, 3 shots/charge, 100 yd',
+  ),
+  GlossaryTerm(
+    term: 'Audette Ladder',
+    category: _catLoadDev,
+    definition:
+        "Creighton Audette's load development method (Precision Shooting magazine, late 1970s). Fire one round per charge, stepping the charge through the safe range, at long distance (typically 300+ yards). Look for vertical 'stacking' where consecutive charges land near each other on the target — that span is the accuracy node. Differs from OCW in that it uses one shot per charge at distance instead of three at 100 yards.",
+    example:
+        'Step 0.3 gr from 41.0 to 43.7 gr (10 charges, 1 shot each) at 300 yd. Three consecutive shots at 41.6, 41.9, and 42.2 land within 0.4 mil vertically of each other; the rest spread by 0.8+ mil. The 41.6–42.2 span is the node.',
+    exampleNumbers: '0.3 gr step, 1 shot/charge, 300 yd',
+  ),
+  GlossaryTerm(
+    term: 'Satterlee 10-shot',
+    category: _catLoadDev,
+    definition:
+        "Scott Satterlee's chronograph-driven load development method. Fire 10 rounds, stepping the charge by 0.1–0.2 grains across the safe range, with a chronograph on every shot. Plot mean velocity vs charge and look for a 'plateau' — a span of consecutive charges where the velocity barely climbs (≤ ~12 fps per step). The plateau is the velocity-stable node and is theoretically the least sensitive to small charge variation. Widely used in PRS and long-range rifle shooting.",
+    example:
+        'Step 0.2 gr from 40.0 to 41.8 gr (10 shots). Velocities: 2580, 2598, 2618, 2641, 2655, 2660, 2664, 2682, 2701, 2718 fps. Steps 5–7 (2655 → 2664 fps) climb only ~5 fps each — that is the plateau. Recommended charge: 41.0 gr (mid-plateau).',
+    exampleNumbers: '0.2 gr step, 1 shot/charge, 100 yd',
+  ),
+  GlossaryTerm(
+    term: 'Seating depth ladder',
+    category: _catLoadDev,
+    definition:
+        'Variant of charge-ladder load development that holds the charge constant and steps the cartridge base-to-ogive (CBTO) seating depth. Fire a small group at each depth and look for the seating depth that produces the smallest groups or lowest vertical. Tunes the bullet jump (or jam) into the lands. Often run AFTER a charge node has been chosen — first you find the powder, then you tune the seating.',
+    example:
+        '6.5 CM 140gr ELD-M, 41.5 gr H4350 fixed. Step CBTO from 2.250 to 2.270 in 0.005 in increments (5 depths, 5 shots each). Group sizes: 0.55 / 0.42 / 0.31 / 0.38 / 0.49 in. Best CBTO 2.260 in.',
+    exampleNumbers: '0.005 in step, 5 shots/depth',
+  ),
+  GlossaryTerm(
+    term: 'Interior-Ballistics Estimator',
+    category: _catLoadDev,
+    definition:
+        'A simplified interior-ballistics computational method first published in 1962 (revised 1980). Predicts muzzle velocity and peak chamber pressure from a small set of inputs (case capacity, powder relative quickness, charge weight, bullet weight + diameter + COAL, barrel length). The same simplified model that backed the original Sierra and Lyman desktop programs in the 1980s. Less accurate than full Lagrange-treatment simulators (GRT, QuickLOAD) but ships in LoadOut\'s mobile Internal Ballistics Calculator with ±10% MV / ±15% pressure across the test corpus.',
+  ),
+  GlossaryTerm(
+    term: 'Internal Ballistics',
+    category: _catLoadDev,
+    definition:
+        'The science of what happens to the bullet WHILE IT IS STILL IN THE BARREL — pressure rising as powder burns, gas expansion accelerating the bullet, peak pressure typically reached within the first inch or two of travel. Distinct from external ballistics (trajectory once the bullet exits the muzzle). Internal-ballistics simulators (the empirical 1962-era estimator LoadOut ships, plus Lagrange-method GRT and QuickLOAD on desktop) predict muzzle velocity and peak chamber pressure from a hypothetical recipe.',
+  ),
+  GlossaryTerm(
+    term: 'Loading Density',
+    category: _catLoadDev,
+    definition:
+        'The percentage of the case capacity that the powder charge occupies, by volume. Computed as charge weight ÷ (case capacity × powder bulk density). The estimator applies cleanly in the [10%, 110%] band; below 10% (very low fill) you risk inconsistent ignition, above 110% (compressed loads) the predicted pressure curve breaks down. Modern long-range rifle loads typically run 90–105% loading density.',
+    example:
+        '6.5 CM, 41.5 gr H4350, ~52.5 gr H₂O case capacity. H4350 bulk density ≈ 0.95 g/cc (extruded stick). Loading density ≈ 41.5 / (52.5 × 0.95) ≈ 83% — comfortably inside the calibrated band, mildly below "fill the case" territory.',
+    exampleNumbers: '6.5 CM, 41.5 gr H4350 → ~83% LD',
+  ),
+  GlossaryTerm(
+    term: 'Burn-Completion',
+    category: _catLoadDev,
+    definition:
+        'Fraction of the powder charge that has been consumed (turned from solid grains into gas) by the time the bullet exits the muzzle. Internal-ballistics models compute it as part of the pressure / velocity prediction. A fast powder in a long barrel may reach 100% burn completion well before muzzle exit; a slow powder in a short barrel may exit at only 80% — the unburned powder ejects out the muzzle as visible flash. Useful diagnostic for matching powder burn rate to barrel length.',
+  ),
+  GlossaryTerm(
+    term: 'Relative Quickness',
+    acronym: 'RQ',
+    category: _catPowder,
+    definition:
+        "A powder's burn rate expressed as a single number, relative to a reference powder. Different sources use different references and different scales — Western Powders' chart uses Reloder 7 = 100; LoadOut's Internal Ballistics Calculator normalizes to IMR 4350 = 100. Higher RQ means faster (early peak pressure, lower MV in long barrels); lower RQ means slower (late peak, higher MV in long barrels). Used by the interior-ballistics estimator as the headline powder input.",
+    example:
+        'IMR 4350 = 100 (reference). H4350 = 102 (very slightly faster). Varget = 124 (notably faster — for shorter barrels and smaller cases). Reloder 26 = 65 (slower — magnum cases, long barrels).',
+    exampleNumbers: 'IMR 4350 = 100, H4350 = 102, Varget = 124',
+  ),
+  GlossaryTerm(
+    term: 'Mean Radius',
+    acronym: 'MR',
+    category: _catLoadDev,
+    definition:
+        "The average distance from each shot in a group to the group's centroid (geometric center). More forgiving than extreme spread (which is dominated by the worst single shot) and more statistically meaningful at small sample sizes (N=3, N=5). Reported in inches or mil at the target. LoadOut's Load Development per-charge stats table renders MR alongside extreme spread.",
+    example:
+        'Five-shot group, impacts at (0.0, 0.0), (0.4, 0.2), (-0.3, 0.1), (0.1, -0.4), (0.2, -0.1) inches. Centroid (0.08, -0.04). Distances 0.09, 0.40, 0.40, 0.36, 0.13. Mean radius = 0.276 in.',
+    exampleNumbers: '5-shot group, MR 0.276 in',
+  ),
+  GlossaryTerm(
+    term: 'Group Extreme Spread',
+    acronym: 'Group ES',
+    category: _catLoadDev,
+    definition:
+        'The largest center-to-center distance between any two impacts in a group. The classic "group size" number, in inches or MOA. Easy to measure and easy to communicate, but volatile at small sample sizes — one flier dominates. Pair with mean radius for a more stable picture of the group. Distinct from MV ES (the velocity equivalent across a chronographed string).',
+  ),
 ];
 
 class GlossaryScreen extends StatefulWidget {

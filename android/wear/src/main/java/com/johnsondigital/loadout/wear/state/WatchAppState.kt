@@ -12,12 +12,18 @@
 //     payload from the phone, or null until the first arrives.
 //   * `val activeLoad: StateFlow<ActiveLoadSnapshot?>` — latest active
 //     recipe summary.
+//   * `val firearmGlance: StateFlow<FirearmGlanceSnapshot?>` — latest
+//     firearm + barrel-life summary.
 //   * `val rowCursor: StateFlow<Int>` — 0-based index into
 //     `dopeSnapshot.rows`; advanced by `nextRow()` / `previousRow()`,
 //     clamped when a new snapshot lands.
 //   * `val shotCount: StateFlow<Int>` — per-stage shot count.
-//   * `fun setDope(snap)`, `setActiveLoad(snap)` — called from the
-//     listener service.
+//   * `val shotCaptureSensitivity: StateFlow<String?>` — wire form of
+//     the user's currently-selected sensitivity preset, or null until
+//     the first phone push arrives. Read by the Stage Log composable;
+//     also surfaced on the Settings screen as a read-only diagnostic.
+//   * `fun setDope(snap)`, `setActiveLoad(snap)`,
+//     `setFirearmGlance(snap)` — called from the listener service.
 //   * `fun nextRow()`, `previousRow()`, `currentRow()` — DOPE cursor
 //     navigation.
 //   * `fun incrementShotCount()`, `clearShotCount()` — Stage Log
@@ -76,15 +82,19 @@
 // ============================================================================
 // WHO CONSUMES THIS FILE
 // ============================================================================
-// - `bridge/PhoneDataLayerListener.kt` — calls `setDope` and
-//   `setActiveLoad` on every received payload.
-// - `screens/DopeScreen.kt` — reads `dopeSnapshot` and `rowCursor`
-//   via `collectAsState()`; calls `nextRow()` / `previousRow()`
-//   from arrow buttons.
+// - `bridge/PhoneDataLayerListener.kt` — calls `setDope`,
+//   `setActiveLoad`, `setFirearmGlance`, and
+//   `setShotCaptureSensitivity` on every received payload.
+// - `screens/DopeScreen.kt` — reads `dopeSnapshot`, `activeLoad`,
+//   and `rowCursor` via `collectAsState()`; calls `nextRow()` /
+//   `previousRow()` from arrow buttons.
 // - `screens/StageLogScreen.kt` — reads `shotCount`, `rowCursor`,
-//   and `dopeSnapshot`; calls `incrementShotCount()` after every
-//   logged shot, `clearShotCount()` from the Clr button, and
-//   `nextRow()` to advance DOPE after a shot.
+//   `dopeSnapshot`, and `shotCaptureSensitivity`; calls
+//   `incrementShotCount()` after every logged shot,
+//   `clearShotCount()` from the Clr button, and `nextRow()` to
+//   advance DOPE after a shot.
+// - `screens/FirearmGlanceScreen.kt` — reads `firearmGlance` via
+//   `collectAsState()`. Pure render; no mutations.
 //
 // This file ships on a separate Gradle sub-project (`:wear`), not in
 // the main `:app` module.
@@ -99,6 +109,7 @@ package com.johnsondigital.loadout.wear.state
 import com.johnsondigital.loadout.wear.bridge.ActiveLoadSnapshot
 import com.johnsondigital.loadout.wear.bridge.DopeRow
 import com.johnsondigital.loadout.wear.bridge.DopeSnapshot
+import com.johnsondigital.loadout.wear.bridge.FirearmGlanceSnapshot
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -122,6 +133,9 @@ object WatchAppState {
 
     private val _activeLoad = MutableStateFlow<ActiveLoadSnapshot?>(null)
     val activeLoad: StateFlow<ActiveLoadSnapshot?> = _activeLoad.asStateFlow()
+
+    private val _firearmGlance = MutableStateFlow<FirearmGlanceSnapshot?>(null)
+    val firearmGlance: StateFlow<FirearmGlanceSnapshot?> = _firearmGlance.asStateFlow()
 
     private val _rowCursor = MutableStateFlow(0)
     val rowCursor: StateFlow<Int> = _rowCursor.asStateFlow()
@@ -148,6 +162,10 @@ object WatchAppState {
 
     fun setActiveLoad(snap: ActiveLoadSnapshot) {
         _activeLoad.value = snap
+    }
+
+    fun setFirearmGlance(snap: FirearmGlanceSnapshot) {
+        _firearmGlance.value = snap
     }
 
     fun nextRow() {

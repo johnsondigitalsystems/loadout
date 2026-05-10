@@ -212,6 +212,13 @@ class SeedLoader {
     final manufacturedAmmoReseed = firstRun ||
         await db.manufacturedAmmoAreEmpty ||
         flag('manufactured_ammo');
+    // Custom-build component catalog (added schema v33). Seven JSON
+    // files under `assets/seed_data/components/` covering chassis /
+    // barrels / triggers / buttstocks / muzzle brakes / suppressors /
+    // bipods. The form's "Custom Build" mode pickers query these.
+    final firearmComponentsReseed = firstRun ||
+        await db.firearmComponentsAreEmpty ||
+        flag('firearm_components');
 
     final any = cartridgesReseed ||
         powdersReseed ||
@@ -226,7 +233,8 @@ class SeedLoader {
         dragCurvesReseed ||
         targetRacksReseed ||
         verifiedScopesReseed ||
-        manufacturedAmmoReseed;
+        manufacturedAmmoReseed ||
+        firearmComponentsReseed;
     if (!any) return;
 
     await db.transaction(() async {
@@ -382,6 +390,17 @@ class SeedLoader {
         }
         await _seedManufacturedAmmo();
       }
+      if (firearmComponentsReseed) {
+        // Custom-build component catalog. Same free-form-manufacturer
+        // pattern as `manufacturedAmmo` — no `Manufacturers` FK, just
+        // a string column on each row. Wipe + reinsert so a refreshed
+        // JSON cleanly replaces the previous corpus on the next
+        // launch.
+        if (!firstRun) {
+          await db.delete(db.firearmComponents).go();
+        }
+        await _seedFirearmComponents();
+      }
       // Re-seed primers if they're missing — the v3 migration intentionally
       // clears them so the new productLine field gets populated for
       // upgrading users without nuking the rest of the DB. The forced
@@ -423,6 +442,7 @@ class SeedLoader {
     await clearIf(targetRacksReseed, 'target_racks');
     await clearIf(verifiedScopesReseed, 'scopes_v2');
     await clearIf(manufacturedAmmoReseed, 'manufactured_ammo');
+    await clearIf(firearmComponentsReseed, 'firearm_components');
   }
 
   Future<int> _manufacturerId(
@@ -696,6 +716,60 @@ class SeedLoader {
         );
       }).toList();
       await db.batch((b) => b.insertAll(db.firearmParts, batch));
+    }
+  }
+
+  /// Seed the [FirearmComponents] catalog from the seven JSON files
+  /// under `assets/seed_data/components/`. Each file is a flat array
+  /// of product objects (`{manufacturer, model, productLine?, notes,
+  /// ...category-specific...}`). Canonical columns are extracted; the
+  /// rest of each object is JSON-encoded into `attributesJson` for
+  /// future surfaces that want to show, e.g. action footprints under
+  /// each chassis or pull-range under each trigger.
+  ///
+  /// Added schema v33 — see CLAUDE.md § 27 (Custom-build firearm
+  /// components catalog). The discriminator strings stored here
+  /// (`'chassis'` / `'barrel'` / `'trigger'` / `'buttstock'` /
+  /// `'muzzleBrake'` / `'suppressor'` / `'bipod'`) are the same ones
+  /// the firearm form's autocomplete pickers query for, and the same
+  /// ones [FirearmComponentRepository] expects.
+  Future<void> _seedFirearmComponents() async {
+    const sources = <String, String>{
+      'chassis': 'components/chassis.json',
+      'barrel': 'components/barrels.json',
+      'trigger': 'components/triggers.json',
+      'buttstock': 'components/buttstocks.json',
+      'muzzleBrake': 'components/muzzle_brakes.json',
+      'suppressor': 'components/suppressors.json',
+      'bipod': 'components/bipods.json',
+    };
+    // Canonical column names — every other key in a product object
+    // flows into the `attributesJson` blob so per-category fields
+    // (actionFootprints, material, pullRangeOz, mounting, etc.)
+    // remain accessible to the UI without bloating the table schema
+    // with seven category-specific column sets.
+    const canonicalKeys = {'manufacturer', 'model', 'productLine', 'notes'};
+    for (final entry in sources.entries) {
+      final kind = entry.key;
+      final filename = entry.value;
+      final raw = await _readSeedString(filename);
+      final data = json.decode(raw) as List<dynamic>;
+      final batch = data.map((p) {
+        final prod = p as Map<String, dynamic>;
+        final attributes = <String, dynamic>{
+          for (final e in prod.entries)
+            if (!canonicalKeys.contains(e.key)) e.key: e.value,
+        };
+        return FirearmComponentsCompanion.insert(
+          kind: kind,
+          manufacturer: prod['manufacturer'] as String,
+          model: prod['model'] as String,
+          productLine: Value(prod['productLine'] as String?),
+          notes: Value(prod['notes'] as String?),
+          attributesJson: Value(json.encode(attributes)),
+        );
+      }).toList();
+      await db.batch((b) => b.insertAll(db.firearmComponents, batch));
     }
   }
 

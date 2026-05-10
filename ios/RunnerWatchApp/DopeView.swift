@@ -3,11 +3,19 @@
 // ============================================================================
 // WHAT THIS FILE DOES
 // ============================================================================
-// SwiftUI view for the DOPE tab on the watch (Feature 2). Reads a
+// SwiftUI view for the DOPE page on the watch (page 3 of the v1
+// `TabView` — Stage Log / Timer / DOPE / About). Reads a
 // `DopeViewModel` from the SwiftUI environment and renders, when a
 // snapshot is available, a glanceable card with:
 //
-//   * Header: cartridge + bullet identity (e.g. "6.5 Creedmoor · 140 ELD-M").
+//   * Top: `ActiveLoadHeader` (cartridge / powder / bullet summary,
+//     pulled from the `active_load` payload — self-hides when no
+//     load has been pushed).
+//   * Below that: `FirearmGlanceBanner` (firearm name + barrel-life
+//     percent gauge from the `firearm_glance` payload — collapses to
+//     `EmptyView` when no firearm has been pushed).
+//   * Bullet/cartridge sub-header from the DOPE payload itself
+//     (e.g. "6.5 Creedmoor · 140 ELD-M").
 //   * Big rounded numerals for the current range in yards.
 //   * Two columns: vertical "UP" hold in mils and horizontal "WIND"
 //     hold in mils.
@@ -18,17 +26,18 @@
 // one row, capped at 3 rows per fired event so a quick spin doesn't
 // blow past the end of the ladder.
 //
-// When the view-model has no snapshot yet, a fallback "Waiting for
-// DOPE — open Ballistics on your iPhone" view renders.
+// Empty state (no DOPE rows yet) still surfaces the active-load /
+// firearm-glance banners on top so the user sees "what's loaded?"
+// even before they open the iPhone Ballistics screen.
 //
 // ============================================================================
 // WHY IT EXISTS IN THE ARCHITECTURE
 // ============================================================================
-// One of three feature views hosted by `ContentView`'s `TabView`.
-// The DOPE card is the user's at-a-glance reference at the line —
-// "what dial do I turn for this range?". Keeping the view stateless
-// (state lives in `DopeViewModel`) lets us preview the populated
-// state with a mock model and unit-test the model independently.
+// One of four pages hosted by `ContentView`'s `TabView`. The DOPE
+// card is the user's at-a-glance reference at the line — "what dial
+// do I turn for this range?". Keeping the view stateless (state
+// lives in `DopeViewModel`) lets us preview the populated state
+// with a mock model and unit-test the model independently.
 //
 // ============================================================================
 // WHY THIS IS HARDER THAN IT LOOKS
@@ -60,11 +69,14 @@
 // ============================================================================
 // WHO CONSUMES THIS FILE
 // ============================================================================
-// - `ContentView.swift` — hosts this as the second page in the
-//   horizontal `TabView`.
+// - `ContentView.swift` — hosts this as page 3 of the vertical
+//   `TabView` (Stage Log / Timer / DOPE / About).
 // - `DopeViewModel.swift` — read via `@EnvironmentObject`. Receives
-//   `dope` and `active_load` payloads from the phone and exposes
-//   them as `snapshot`.
+//   `dope`, `active_load`, and `firearm_glance` payloads from the
+//   phone and exposes them as `snapshot`, `activeLoad`,
+//   `firearmGlance`.
+// - `ActiveLoadHeader.swift`, `FirearmGlanceBanner.swift` — embedded
+//   at the top of both populated and empty states.
 // - `StageLogView.swift` — also reads the DOPE model to advance
 //   the cursor after each logged shot.
 //
@@ -96,10 +108,17 @@ struct DopeView: View {
     // MARK: - Populated state
 
     private func populated(snap: DopeSnapshot, row: DopeRow) -> some View {
-        VStack(spacing: 4) {
-            // Header — load identity. Truncates with mid-ellipsis so
-            // long names ("300 Norma Mag 230 Berger Hybrid OTM") still
-            // show the cartridge and bullet line.
+        VStack(spacing: 3) {
+            // Active-load + firearm-glance banners. Either or both can
+            // self-hide depending on what the phone has pushed; the
+            // populated DOPE table never depends on them rendering.
+            ActiveLoadHeader()
+            FirearmGlanceBanner()
+
+            // Header — load identity from the DOPE payload itself.
+            // Truncates with mid-ellipsis so long names ("300 Norma
+            // Mag 230 Berger Hybrid OTM") still show the cartridge
+            // and bullet line.
             Text(headerText(snap))
                 .font(.caption2)
                 .foregroundStyle(.secondary)
@@ -109,21 +128,19 @@ struct DopeView: View {
             // through. Big numerals.
             VStack(spacing: 2) {
                 Text("\(row.rangeYd)")
-                    .font(.system(size: 36, weight: .bold, design: .rounded))
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
                     .monospacedDigit()
                 Text("YARDS")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.system(size: 9, weight: .semibold))
                     .foregroundStyle(.secondary)
                     .tracking(1.5)
             }
-            .padding(.top, 2)
 
             // Solution.
             HStack(spacing: 12) {
                 holdColumn(label: "UP", value: row.dropMil)
                 holdColumn(label: "WIND", value: row.windMil)
             }
-            .padding(.top, 2)
 
             // Range scroll controls.
             HStack(spacing: 8) {
@@ -140,7 +157,6 @@ struct DopeView: View {
                 .buttonStyle(.bordered)
             }
             .font(.caption2)
-            .padding(.top, 2)
         }
         .padding(.horizontal, 6)
         .focusable(true)
@@ -158,8 +174,15 @@ struct DopeView: View {
         }
     }
 
+    /// Empty state — no DOPE rows have arrived yet. The active-load /
+    /// firearm-glance banners still surface if the phone pushed those
+    /// independently (the user picked a load but didn't open the
+    /// Ballistics screen yet, e.g.).
     private var empty: some View {
         VStack(spacing: 6) {
+            ActiveLoadHeader()
+            FirearmGlanceBanner()
+            Spacer(minLength: 4)
             Image(systemName: "antenna.radiowaves.left.and.right.slash")
                 .imageScale(.medium)
                 .foregroundStyle(.secondary)
@@ -169,8 +192,9 @@ struct DopeView: View {
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
+            Spacer(minLength: 4)
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 8)
     }
 
     // MARK: - Helpers

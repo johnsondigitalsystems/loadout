@@ -188,6 +188,10 @@
     "@onboardingPrivacyBullet3": {
         "description": "Privacy-slide bullet — no-server promise."
     },
+    "onboardingPrivacyBullet4": "Some Pro features (Bluetooth devices, watch companion, motion sensors) require Android 11 or newer.",
+    "@onboardingPrivacyBullet4": {
+        "description": "Privacy-slide bullet — Pattern C device-compatibility disclosure. Pre-purchase honesty about which Pro features are gated by OS version on Android. The bracketed list names the gated features so the user knows exactly what's affected. iOS users on iOS 15+ are unaffected; the bullet still appears in their flow because the Bluetooth devices line is meaningful for them too (e.g. an older iPad running iOS 15)."
+    },
 
     "onboardingGetStarted": "Get started",
     "@onboardingGetStarted": {

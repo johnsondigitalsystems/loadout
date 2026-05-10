@@ -252,9 +252,10 @@ class _HitProbabilityMapScreenState extends State<HitProbabilityMapScreen> {
   void _onFirearmChanged(UserFirearmRow? firearm) {
     setState(() {
       _selectedFirearm = firearm;
-      if (firearm?.defaultMuzzleVelocityFps != null) {
-        _muzzleVelocityFps = firearm!.defaultMuzzleVelocityFps!;
-      }
+      // MV no longer pre-filled from firearm — column dropped at
+      // schema v33. The hit-probability calculation needs an MV; the
+      // user provides it via the External Ballistics tab's Garmin /
+      // Photo capture or types it.
     });
     _scheduleCompute();
   }

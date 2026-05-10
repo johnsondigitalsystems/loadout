@@ -7,7 +7,7 @@
 // common smokeless rifle and pistol powders sold in North America. The
 // internal-ballistics calculator (`internal_ballistics.dart`) needs a
 // per-powder burn-rate index to predict muzzle velocity and peak
-// pressure for a hypothetical load via the Powley method; this file
+// pressure for a hypothetical load via the interior-ballistics estimation method; this file
 // is the ground-truth lookup.
 //
 // Public API:
@@ -22,9 +22,9 @@
 //                                so `IMR 4350 == 100`. Faster powders
 //                                have HIGHER numbers (the slope of
 //                                pressure vs time at peak burn is
-//                                steeper). Powley's pressure / MV
-//                                equations use this scaled to the
-//                                load. Range across the table runs
+//                                steeper). The estimator's pressure
+//                                and MV equations use this scaled to
+//                                the load. Range across the table runs
 //                                ~25 (very slow magnum powders) to
 //                                ~360 (very fast pistol powders).
 //       - `category`          — `pistol` | `shotgun` | `rifle` |
@@ -56,12 +56,13 @@
 // ============================================================================
 // WHY IT EXISTS IN THE ARCHITECTURE
 // ============================================================================
-// The Powley method (see `internal_ballistics.dart`) requires three
+// The interior-ballistics estimation method (see `internal_ballistics.dart`) requires three
 // load-specific numbers per powder beyond the user's typed-in charge
 // weight: a relative-quickness index (drives both peak pressure and
-// muzzle velocity), and an "energy per grain" coefficient (Powley's
-// "specific impetus", which we collapse into the quickness number for
-// the simplified treatment). The relative-quickness number is the
+// muzzle velocity), and an "energy per grain" coefficient (the
+// "specific impetus" term, which we collapse into the quickness
+// number for the simplified treatment). The relative-quickness number
+// is the
 // industry-standard way reloading manuals tabulate burn rate; using
 // it directly lets a reloader cross-check our predictions against
 // the burn-rate chart on the back of any Hodgdon, Alliant, IMR, or
@@ -91,8 +92,8 @@
 //     is slower than 4064 — that's reliable). It's NOT good enough
 //     to compare a pistol powder vs a shotgun powder vs a rifle
 //     powder by raw number — the numbers look comparable but the
-//     underlying chemistry is different. Powley's formulas only
-//     work meaningfully WITHIN a category.
+//     underlying chemistry is different. The estimator's formulas
+//     only work meaningfully WITHIN a category.
 //
 //   * NORMALISATION CHOICE. We picked IMR 4350 = 100 because it's
 //     the canonical mid-range rifle powder (most common .30-06 /
@@ -122,7 +123,7 @@
 // ============================================================================
 // WHO CONSUMES THIS FILE
 // ============================================================================
-//   - lib/services/ballistics/internal_ballistics.dart — the Powley
+//   - lib/services/ballistics/internal_ballistics.dart — the
 //     calculator looks up `relativeQuickness` for every prediction.
 //   - lib/screens/ballistics/internal_ballistics_screen.dart — the
 //     UI renders the powder picker as a `DropdownButton` populated
@@ -270,20 +271,10 @@ const List<PowderEntry> kPowderBurnRates = [
   // ═══════════════════════════════════════════════════════════════════
   // MEDIUM PISTOL POWDERS — 9mm major, .357 Magnum, .40 S&W, .44 Spl
   // ═══════════════════════════════════════════════════════════════════
-  PowderEntry(
-    name: 'Power Pistol',
-    manufacturer: 'Alliant',
-    relativeQuickness: 290,
-    category: PowderCategory.pistol,
-    notes: '9mm major / 10mm — high-velocity pistol. [src: A2023]',
-  ),
-  PowderEntry(
-    name: 'CFE Pistol',
-    manufacturer: 'Hodgdon',
-    relativeQuickness: 285,
-    category: PowderCategory.pistol,
-    notes: 'Copper-fouling-eraser pistol; broad cartridge applicability. [src: HC2024]',
-  ),
+  // Ordered fastest-first by relativeQuickness, matching the table-
+  // wide convention. HP-38 / W231 (Q=305) sit ahead of Power Pistol
+  // (Q=290) and CFE Pistol (Q=285) — the Pass 2 audit caught an
+  // ordering drift here and re-sorted.
   PowderEntry(
     name: 'HP-38',
     manufacturer: 'Hodgdon',
@@ -297,6 +288,20 @@ const List<PowderEntry> kPowderBurnRates = [
     relativeQuickness: 305,
     category: PowderCategory.pistol,
     notes: 'Same powder as HP-38 (Hodgdon-distributed). [src: HC2024]',
+  ),
+  PowderEntry(
+    name: 'Power Pistol',
+    manufacturer: 'Alliant',
+    relativeQuickness: 290,
+    category: PowderCategory.pistol,
+    notes: '9mm major / 10mm — high-velocity pistol. [src: A2023]',
+  ),
+  PowderEntry(
+    name: 'CFE Pistol',
+    manufacturer: 'Hodgdon',
+    relativeQuickness: 285,
+    category: PowderCategory.pistol,
+    notes: 'Copper-fouling-eraser pistol; broad cartridge applicability. [src: HC2024]',
   ),
   PowderEntry(
     name: 'AutoComp',
@@ -383,6 +388,16 @@ const List<PowderEntry> kPowderBurnRates = [
     category: PowderCategory.rifle,
     notes: 'Benchrest .222 / .223 / 6mm PPC. [src: HC2024]',
   ),
+  // Pass 2 audit: N133 (Q=142) was originally placed after H4895
+  // (Q=125), out of the table-wide descending order. Moved here
+  // between H322 (Q=145) and Benchmark (Q=140) to restore the sort.
+  PowderEntry(
+    name: 'N133',
+    manufacturer: 'Vihtavuori',
+    relativeQuickness: 142,
+    category: PowderCategory.rifle,
+    notes: 'Benchrest .222 / .223 / 6mm PPC; very consistent. [src: VV2024]',
+  ),
   PowderEntry(
     name: 'Benchmark',
     manufacturer: 'Hodgdon',
@@ -432,13 +447,6 @@ const List<PowderEntry> kPowderBurnRates = [
     category: PowderCategory.rifle,
     notes: 'Slightly slower than IMR 4895; reduced-load capable. [src: HC2024]',
   ),
-  PowderEntry(
-    name: 'N133',
-    manufacturer: 'Vihtavuori',
-    relativeQuickness: 142,
-    category: PowderCategory.rifle,
-    notes: 'Benchrest .222 / .223 / 6mm PPC; very consistent. [src: VV2024]',
-  ),
 
   // ═══════════════════════════════════════════════════════════════════
   // MID-RIFLE — .308 Win, 6.5 Creedmoor, .30-06, .243 Win
@@ -456,6 +464,16 @@ const List<PowderEntry> kPowderBurnRates = [
     relativeQuickness: 118,
     category: PowderCategory.rifle,
     notes: '.30-06 / .308 / .25-06 mid-range; slight metering challenge (long stick). [src: IMR2024]',
+  ),
+  // IMR Enduron temp-stable .308 / 6.5 CM workhorse — the post-2017
+  // replacement for IMR 4895 in mid-rifle factory-data publications.
+  // Added per the popular-powders target list (rank #13 essential).
+  PowderEntry(
+    name: 'IMR 4166',
+    manufacturer: 'IMR',
+    relativeQuickness: 117,
+    category: PowderCategory.rifle,
+    notes: 'Enduron temp-stable .308 / 6.5 CM mid-rifle (replaces IMR 4895 in many recipes). [src: IMR2024]',
   ),
   PowderEntry(
     name: 'N140',
@@ -534,6 +552,18 @@ const List<PowderEntry> kPowderBurnRates = [
     category: PowderCategory.rifle,
     notes: '.270 Win / .25-06 / 7mm Mag — short-cut SC version is more compact. [src: HC2024]',
   ),
+  // Short-cut variant of H4831 — measurably more compact / better
+  // metering in modern progressive presses, slightly slower than
+  // standard H4831 in published Hodgdon RDC data. Added per the
+  // popular-powders target list (rank #6 essential — "the .270 Win /
+  // 7mm Mag standard for hunters who use auto-throwers").
+  PowderEntry(
+    name: 'H4831SC',
+    manufacturer: 'Hodgdon',
+    relativeQuickness: 78,
+    category: PowderCategory.rifle,
+    notes: 'Short-cut variant of H4831 — better metering, marginally slower. [src: HC2024]',
+  ),
 
   // ═══════════════════════════════════════════════════════════════════
   // SLOW RIFLE / MAGNUM — 7mm Rem Mag, .300 Win Mag, .338 LM, .50 BMG
@@ -558,6 +588,16 @@ const List<PowderEntry> kPowderBurnRates = [
     relativeQuickness: 62,
     category: PowderCategory.rifle,
     notes: '.300 Win Mag / 6.5x47 Lapua heavy. [src: VV2024]',
+  ),
+  // Modern temp-stable progressive — very-slow band. Top-5 popularity
+  // in PRS / NRL-Hunter heavy-magnum brackets. Added per the popular-
+  // powders target list (rank #5 essential).
+  PowderEntry(
+    name: 'Reloder 26',
+    manufacturer: 'Alliant',
+    relativeQuickness: 56,
+    category: PowderCategory.rifle,
+    notes: 'Temp-stable magnum powder — .300 PRC / .300 Win Mag / 7mm PRC / .338 Lapua. Burns flatter than 1960s-era stick powders, so the model under-predicts MV; see the bias advisory. [src: A2023]',
   ),
   PowderEntry(
     name: 'Retumbo',
@@ -590,9 +630,9 @@ const List<PowderEntry> kPowderBurnRates = [
 ];
 
 /// Case-insensitive lookup by canonical name. Returns null when the
-/// powder is not in the table — used by the Powley solver as a hard
-/// signal that we cannot model the load (rather than guessing a
-/// burn-rate number).
+/// powder is not in the table — used by the interior-ballistics
+/// solver as a hard signal that we cannot model the load (rather
+/// than guessing a burn-rate number).
 PowderEntry? lookupPowder(String name) {
   if (name.trim().isEmpty) return null;
   final needle = name.trim().toLowerCase();

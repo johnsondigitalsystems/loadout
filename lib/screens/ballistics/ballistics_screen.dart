@@ -1591,16 +1591,15 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
       } else {
         _twistMissingFromFirearm = true;
       }
-      // MV / zero range / sight height — only overwrite when the firearm
+      // Zero range / sight height — only overwrite when the firearm
       // has a value, so we never blow away whatever the user typed
       // manually. Firearm columns store canonical imperial values; the
       // controllers display values in the user's chosen unit, so each
-      // line below converts before assigning.
-      if (f.defaultMuzzleVelocityFps != null) {
-        _muzzleVelCtrl.text = _formatNumber(_velocityFromCanonical(
-            f.defaultMuzzleVelocityFps!,
-            units.unitFor(UnitCategory.velocity)));
-      }
+      // line below converts before assigning. MV used to live on the
+      // firearm too — dropped at schema v33 because MV changes
+      // per-load. The user pulls MV via the External Ballistics
+      // calculator's Garmin Xero / Photo OCR capture buttons or types
+      // it manually.
       if (f.defaultZeroRangeYd != null) {
         _zeroRangeCtrl.text = _formatNumber(_rangeFromCanonical(
             f.defaultZeroRangeYd!.toDouble(),

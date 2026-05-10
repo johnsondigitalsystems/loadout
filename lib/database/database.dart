@@ -307,6 +307,70 @@ class FirearmParts extends Table {
   TextColumn get notes => text().nullable()();
 }
 
+/// Reference catalog of real, currently-shipping rifle COMPONENTS used
+/// by the "Custom Build" path on the firearm form (added schema v33).
+/// Discriminated by [kind]:
+///
+///   * `'chassis'`        — MDT, KRG, MPA, Foundation, etc.
+///   * `'barrel'`         — Bartlein, Krieger, Brux, Proof Research,
+///                          Hawk Hill, etc.
+///   * `'trigger'`        — TriggerTech, Timney, Jewell, Bix'n Andy.
+///   * `'buttstock'`      — McMillan, Manners, Magpul, KRG, Boyd's.
+///   * `'muzzleBrake'`    — Area 419, APA, Insite Arms, Patriot Valley.
+///   * `'suppressor'`     — SilencerCo, Thunder Beast Arms, Dead Air,
+///                          Surefire, Sig, HUXWRX.
+///   * `'bipod'`          — MDT Ckye-Pod, Atlas, Harris, Accu-Tac.
+///
+/// Distinct from [FirearmParts] (which is the legacy generic-parts
+/// catalog with a free-form `category` field — kept for backwards
+/// compatibility but not used by the custom-build form). This table
+/// has the structure the form needs: a clean discriminator, a
+/// product-line grouping field, and a JSON blob for category-specific
+/// attributes (action footprints, material, pull range, mounting
+/// types, etc.) without forcing the schema to model every category-
+/// specific shape.
+///
+/// User selections write back to [UserFirearms.chassisName] /
+/// [UserFirearms.barrelName] / etc. as `"<Manufacturer> <Model>"`
+/// strings. We intentionally do NOT store FK ids on the user row —
+/// the catalog will evolve and product names persist even when a
+/// catalog row gets renamed or removed.
+@DataClassName('FirearmComponentRow')
+class FirearmComponents extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  /// One of the seven `kind` values listed in the class doc-comment.
+  /// Stored as a plain text discriminator rather than an enum for the
+  /// same reason every other discriminator on this schema is text:
+  /// drift's enum support is limited and a text column is forgiving
+  /// at the seed-loader boundary.
+  TextColumn get kind => text()();
+  /// Display-canonical manufacturer name ("MDT", not "Mdt"; "TriggerTech",
+  /// not "Trigger Tech"). Sourced from the JSON seed file under
+  /// `assets/seed_data/components/`.
+  TextColumn get manufacturer => text()();
+  /// Manufacturer's own model name, verbatim ("ACC Elite Chassis System",
+  /// "Diamond Pro Curved", "Hellfire Self-Timing Match").
+  TextColumn get model => text()();
+  /// Optional family / line grouping ("ACC", "Diamond", "Hellfire",
+  /// "Omega"). Lets the picker collapse multiple sub-models under one
+  /// header in a future polish pass.
+  TextColumn get productLine => text().nullable()();
+  /// Short prose description shown in the picker subtitle and in the
+  /// component summary card on the firearm detail screen.
+  TextColumn get notes => text().nullable()();
+  /// JSON-encoded category-specific attributes. Each `kind` defines
+  /// its own shape (chassis: `actionFootprints[]`, `weightOz`; barrel:
+  /// `material`, `contour[]`, `twistRateOptions[]`; trigger: `stage`,
+  /// `pullRangeOz`, `inletAction[]`; buttstock: `style`, `material`,
+  /// `actionFootprints[]`; muzzleBrake: `caliberRange`, `threadCommon[]`,
+  /// `selfTiming`; suppressor: `caliberMax`, `mountStyle`, `weightOz`,
+  /// `lengthIn`, `dbReductionDb`; bipod: `mounting[]`, `legType`,
+  /// `pivotType`, `minHeightIn`, `maxHeightIn`, `weightOz`). Decoded
+  /// at the repository boundary into typed Dart objects.
+  TextColumn get attributesJson =>
+      text().withDefault(const Constant('{}'))();
+}
+
 /// User-saved ballistic profile (added schema v8). A "profile" is a
 /// named, reusable bundle of inputs to the ballistics calculator
 /// (projectile, MV/zero, environment defaults, range output prefs) so
@@ -1066,6 +1130,18 @@ class UserFirearms extends Table {
   // ── Ballistics defaults (added schema v6) ──
   /// Last-measured / preferred muzzle velocity for this firearm.
   /// Used by the ballistics calculator's rifle picker to pre-fill MV.
+  ///
+  /// As of the v33 UI pass the firearm CREATION / EDIT form no
+  /// longer surfaces an input for this field — MV changes per-load,
+  /// so asking the user to pin one value to a rifle was the wrong
+  /// affordance. The column stays in the schema so any existing
+  /// row's saved value continues to feed downstream consumers
+  /// (Range Day's `_applyFirearmDefaults`, the Ballistics calculator's
+  /// rifle picker, BC Truing, Hit Probability Map). The Garmin Xero
+  /// `.fit` import + Photo OCR MV-capture affordances also moved off
+  /// the firearm form into the reusable `MvCaptureButtons` widget,
+  /// which now lives next to the MV input on the External Ballistics
+  /// calculator and the Ballistic Profile form.
   RealColumn get defaultMuzzleVelocityFps => real().nullable()();
   /// Typical zero range in yards (e.g. 100 or 200).
   IntColumn get defaultZeroRangeYd => integer().nullable()();
@@ -1125,6 +1201,42 @@ class UserFirearms extends Table {
   /// `FirearmRepository.toggleFavorite(id)`.
   BoolColumn get isFavorite =>
       boolean().withDefault(const Constant(false))();
+
+  // ── Custom build (added schema v33) ──
+  /// `true` when the row represents a user-assembled custom rifle
+  /// (chassis + barrel + trigger + buttstock + muzzle brake +
+  /// suppressor + bipod selections rather than a factory model).
+  /// Drives the firearm form's mode toggle: `false` = "Factory Rifle"
+  /// (existing manufacturer/model + optional `referenceFirearmId`
+  /// path), `true` = "Custom Build" (the seven component fields
+  /// below).
+  ///
+  /// `referenceFirearmId` is forced null when this is true — a custom
+  /// build by definition has no factory-catalog parent. Existing
+  /// firearm rows migrate with `isCustomBuild = false` so the form
+  /// reads them back as factory rifles.
+  BoolColumn get isCustomBuild =>
+      boolean().withDefault(const Constant(false))();
+
+  /// User-picked chassis. Free-form text — typically the
+  /// `"Manufacturer Model"` form populated by the firearm form's
+  /// autocomplete from the [FirearmComponents] catalog (kind =
+  /// 'chassis'), but the user can override with any string so
+  /// products outside the catalog are still usable. Only meaningful
+  /// when [isCustomBuild] is true.
+  TextColumn get chassisName => text().nullable()();
+  /// Same shape as [chassisName] for the barrel selection. Distinct
+  /// from [barrelManufacturer] (which has lived on this row since v4
+  /// for free-form barrel-maker entry on factory rifles) — for custom
+  /// builds the catalog-backed picker writes through to this field
+  /// instead so the autocomplete and the saved value are wired
+  /// together.
+  TextColumn get barrelName => text().nullable()();
+  TextColumn get triggerName => text().nullable()();
+  TextColumn get buttstockName => text().nullable()();
+  TextColumn get muzzleBrakeName => text().nullable()();
+  TextColumn get suppressorName => text().nullable()();
+  TextColumn get bipodName => text().nullable()();
 }
 
 // ─────────────────────── Batches (user, schema v4, feature #12) ───────────────────────
@@ -2086,6 +2198,13 @@ class ComponentInventoryAdjustments extends Table {
     // — see CLAUDE.md § 26 for the placement rationale.
     ComponentInventory,
     ComponentInventoryAdjustments,
+    // Schema v33 additions (Custom-build rifle components catalog —
+    // chassis / barrel / trigger / buttstock / muzzle brake /
+    // suppressor / bipod, sourced from real shipping products and
+    // seeded from `assets/seed_data/components/`. Plus 8 new columns
+    // on UserFirearms — the `isCustomBuild` flag and 7 free-form
+    // component-name strings).
+    FirearmComponents,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -2094,7 +2213,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 32;
+  int get schemaVersion => 33;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -2710,6 +2829,28 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(componentInventory);
             await m.createTable(componentInventoryAdjustments);
           }
+          if (from < 33) {
+            // v33 — Custom-build firearms. New `FirearmComponents`
+            // reference table holds the chassis / barrel / trigger /
+            // buttstock / muzzle brake / suppressor / bipod catalog
+            // (seeded from `assets/seed_data/components/*.json` on
+            // the next launch — `SeedLoader.seedIfNeeded` checks for
+            // an empty table and seeds the JSON corpus). The new
+            // columns on `UserFirearms` carry the user's selections
+            // when `isCustomBuild` is true. All eight columns on
+            // `UserFirearms` default to `false` / `null`, so existing
+            // firearm rows continue to render as factory rifles
+            // without any data churn.
+            await m.createTable(firearmComponents);
+            await m.addColumn(userFirearms, userFirearms.isCustomBuild);
+            await m.addColumn(userFirearms, userFirearms.chassisName);
+            await m.addColumn(userFirearms, userFirearms.barrelName);
+            await m.addColumn(userFirearms, userFirearms.triggerName);
+            await m.addColumn(userFirearms, userFirearms.buttstockName);
+            await m.addColumn(userFirearms, userFirearms.muzzleBrakeName);
+            await m.addColumn(userFirearms, userFirearms.suppressorName);
+            await m.addColumn(userFirearms, userFirearms.bipodName);
+          }
         },
       );
 
@@ -2954,6 +3095,19 @@ class AppDatabase extends _$AppDatabase {
     final count = await (selectOnly(firearmParts)
           ..addColumns([firearmParts.id.count()]))
         .map((row) => row.read(firearmParts.id.count()) ?? 0)
+        .getSingle();
+    return count == 0;
+  }
+
+  /// True when the custom-build component catalog (chassis, barrels,
+  /// triggers, buttstocks, muzzle brakes, suppressors, bipods —
+  /// schema v33) is empty. Used by `SeedLoader.seedIfNeeded` to
+  /// trigger a one-time seed on the first launch after the v33
+  /// migration runs.
+  Future<bool> get firearmComponentsAreEmpty async {
+    final count = await (selectOnly(firearmComponents)
+          ..addColumns([firearmComponents.id.count()]))
+        .map((row) => row.read(firearmComponents.id.count()) ?? 0)
         .getSingle();
     return count == 0;
   }

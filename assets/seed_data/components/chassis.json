@@ -1,0 +1,236 @@
+[
+  {
+    "manufacturer": "MDT",
+    "model": "ACC Elite Chassis System",
+    "productLine": "ACC",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3", "Tikka T3x", "Howa 1500", "Bergara B-14"],
+    "weightOz": 88,
+    "msrpUsd": 1899.95,
+    "notes": "Top-tier PRS / NRL Hunter chassis with full-length monolithic Picatinny forend, integrated ARCA dovetail bottom rail, and the M-LOK + ARCA-equipped weight system. Buyers pick this when they want one chassis that does competitive PRS, ELR, and tactical match work without compromise."
+  },
+  {
+    "manufacturer": "MDT",
+    "model": "ACC Premier Chassis System",
+    "productLine": "ACC",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3", "Tikka T3x", "Howa 1500"],
+    "weightOz": 86,
+    "msrpUsd": 1499.95,
+    "notes": "Step down from the ACC Elite that keeps the ARCA forend and weighted barricade-stop system but ships without the upgraded folder and skeletonized buttstock. The chassis serious club-level PRS shooters buy when the Elite's price tag is too rich."
+  },
+  {
+    "manufacturer": "MDT",
+    "model": "XRS Chassis System",
+    "productLine": "XRS",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3", "Tikka T3x", "Howa 1500", "Savage 10/110", "Bergara B-14"],
+    "weightOz": 64,
+    "msrpUsd": 749.95,
+    "notes": "Hunter-weight crossover chassis with M-LOK forend slots and a folding adjustable stock, sized for backcountry hunters who still want chassis-level fit and accessory mounting. Popular NRL Hunter pick because it lands well under the discipline's weight ceiling."
+  },
+  {
+    "manufacturer": "MDT",
+    "model": "HS3 Chassis System",
+    "productLine": "HS3",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3", "Tikka T3x", "Howa 1500", "Savage 10/110"],
+    "weightOz": 90,
+    "msrpUsd": 599.95,
+    "notes": "Solid one-piece aluminum chassis aimed at the budget-conscious match shooter, pairing an M-LOK forend with a fixed buttstock that takes MDT skeleton add-ons. Used as a starter platform for shooters building their first dedicated bolt-gun match rifle."
+  },
+  {
+    "manufacturer": "MDT",
+    "model": "ESS Chassis System",
+    "productLine": "ESS",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3", "Tikka T3x", "Howa 1500", "Savage 10/110"],
+    "weightOz": 56,
+    "msrpUsd": 499.95,
+    "notes": "Modular two-piece chassis built around an AR-style buffer-tube interface so users can run any AR pistol grip and aftermarket buttstock. The cheapest path into the MDT ecosystem and a common upgrade for a factory Savage or Tikka hunting rifle."
+  },
+  {
+    "manufacturer": "MDT",
+    "model": "LSS-XL Gen 2 Chassis System",
+    "productLine": "LSS",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3", "Tikka T3x", "Howa 1500", "Savage 10/110", "Winchester Model 70"],
+    "weightOz": 38,
+    "msrpUsd": 399.95,
+    "notes": "Drop-in V-block chassis with a free-float M-LOK forend that bolts under a factory barreled action with no gunsmithing. The de facto upgrade for shooters who want to convert a hunting rifle to a chassis without buying a new action."
+  },
+  {
+    "manufacturer": "KRG",
+    "model": "Bravo Chassis",
+    "productLine": "Bravo",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3", "Tikka T3x", "Howa 1500", "Savage 10/110", "Bergara B-14"],
+    "weightOz": 56,
+    "msrpUsd": 399.95,
+    "notes": "Polymer-and-aluminum chassis with a vertical pistol grip, adjustable cheek riser, and AICS-pattern magazine well — the unofficial benchmark sub-$500 chassis. New PRS shooters and tactical-class hunters buy this as their first upgrade off a factory stock."
+  },
+  {
+    "manufacturer": "KRG",
+    "model": "Whiskey-3 Chassis",
+    "productLine": "Whiskey-3",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3", "Tikka T3x", "Howa 1500", "Savage 10/110"],
+    "weightOz": 80,
+    "msrpUsd": 1295.0,
+    "notes": "KRG's flagship modular chassis, with the W3 folding adjustable buttstock, Spigot Mount forend tubes, and full inlet for AICS magazines. Long-time staple in PRS Tactical class and military training programs."
+  },
+  {
+    "manufacturer": "KRG",
+    "model": "X-Ray Chassis",
+    "productLine": "X-Ray",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3", "Tikka T3x", "Howa 1500"],
+    "weightOz": 54,
+    "msrpUsd": 599.95,
+    "notes": "Hunter-targeted chassis that keeps the Bravo's polymer feel but adds an M-LOK aluminum forend and adjustable folder to hit a backcountry-friendly weight. A common pick for NRL Hunter and Western big-game rigs."
+  },
+  {
+    "manufacturer": "MPA",
+    "model": "BA Competition Chassis",
+    "productLine": "BA",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3", "Tikka T3x", "Howa 1500", "MPA BA Action", "Curtis Custom Axiom", "Defiance Tenacity"],
+    "weightOz": 88,
+    "msrpUsd": 1399.0,
+    "notes": "Long-running aluminum chassis that put MPA on the PRS map, machined from 6061 with a vibration-dampening core and a deep barricade-friendly forend. The reference 'aluminum brick' chassis a generation of top PRS finishers ran."
+  },
+  {
+    "manufacturer": "MPA",
+    "model": "Matrix Pro Chassis",
+    "productLine": "Matrix",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3x", "MPA BA Action", "Defiance Tenacity"],
+    "weightOz": 96,
+    "msrpUsd": 1899.0,
+    "notes": "MPA's modular flagship: composite-walled chassis with a solid-aluminum core, ARCA forend, and the company's Enhanced Vertical Grip. Top PRS Open shooters use this as the no-compromise platform when weight rules don't bite."
+  },
+  {
+    "manufacturer": "MPA",
+    "model": "Hybrid Chassis",
+    "productLine": "Hybrid",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3x", "MPA BA Action"],
+    "weightOz": 76,
+    "msrpUsd": 1499.0,
+    "notes": "Lighter-weight MPA chassis that keeps the Matrix-style ARCA forend and adjustable folder while shedding mass for hunters and run-and-gun NRL Hunter shooters. Sized for a 22 to 24-inch barrel without nosing into PRS Open weights."
+  },
+  {
+    "manufacturer": "Foundation",
+    "model": "Centurion",
+    "productLine": "Centurion",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3x", "Defiance Tenacity", "Curtis Custom Axiom", "BAT Machine"],
+    "weightOz": 96,
+    "msrpUsd": 1395.0,
+    "notes": "Hand-laid fiberglass chassis stock with an aluminum bedding block and integral barricade stop, the dominant 'wood-feel' platform in PRS Open at the moment. Picked by shooters who want a stock-feel chassis with the rigidity of a true skeleton."
+  },
+  {
+    "manufacturer": "Foundation",
+    "model": "Genesis II",
+    "productLine": "Genesis",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3x", "Defiance Tenacity", "BAT Machine"],
+    "weightOz": 72,
+    "msrpUsd": 1295.0,
+    "notes": "Hunter-weight version of the Foundation aesthetic, with a slimmer forend and lighter buttstock layup so it can build into a sub-10-pound complete rig. NRL Hunter and Western mountain shooters choose this when they want Foundation feel under weight rules."
+  },
+  {
+    "manufacturer": "XLR Industries",
+    "model": "Element 4.0 Chassis",
+    "productLine": "Element",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3", "Tikka T3x", "Howa 1500", "Savage 10/110", "Bergara B-14"],
+    "weightOz": 78,
+    "msrpUsd": 999.0,
+    "notes": "Modular aluminum chassis with a tool-less adjustable buttstock and M-LOK forend, the workhorse XLR offering for club PRS, NRL Hunter, and dedicated trainers. Common upgrade once a shooter outgrows the entry-tier chassis."
+  },
+  {
+    "manufacturer": "XLR Industries",
+    "model": "Envy Pro Chassis",
+    "productLine": "Envy",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3x", "Defiance Tenacity"],
+    "weightOz": 96,
+    "msrpUsd": 1599.0,
+    "notes": "XLR's competition-tier chassis with a wide ARCA forend, integrated bag-rider buttstock, and adjustable balance weights. Built for shooters running a heavy match rifle in PRS Open."
+  },
+  {
+    "manufacturer": "Manners Composite Stocks",
+    "model": "EH4",
+    "productLine": "Elite Hunter",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3x", "Defiance Tenacity", "Bighorn TL3", "Curtis Custom Axiom"],
+    "weightOz": 36,
+    "msrpUsd": 945.0,
+    "notes": "Hand-laid carbon-fiber-shelled hunting stock with a mini-chassis-like aluminum bedding block, sub-3-pound bare weight. The benchmark hunter stock for shooters building a backcountry custom rifle who don't want a full chassis."
+  },
+  {
+    "manufacturer": "Manners Composite Stocks",
+    "model": "PRS1 Mini Chassis",
+    "productLine": "PRS",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3x", "Defiance Tenacity", "Bighorn TL3"],
+    "weightOz": 76,
+    "msrpUsd": 1295.0,
+    "notes": "Carbon-shelled PRS-pattern chassis stock with an integral aluminum mini-chassis, vertical grip, adjustable cheek and LOP, and barricade-friendly forend. PRS Open shooters who like a stock feel pick this over a pure-aluminum chassis."
+  },
+  {
+    "manufacturer": "Grayboe",
+    "model": "Ridgeback",
+    "productLine": "Ridgeback",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3x", "Howa 1500", "Savage 10/110"],
+    "weightOz": 64,
+    "msrpUsd": 469.0,
+    "notes": "Fiberglass-reinforced PRS-style stock with an aluminum bedding pillar, vertical grip, and adjustable cheek piece. The de facto sub-$500 PRS-pattern stock for shooters who want a competition-shape stock without a chassis budget."
+  },
+  {
+    "manufacturer": "Grayboe",
+    "model": "Renegade",
+    "productLine": "Renegade",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3x", "Howa 1500", "Savage 10/110"],
+    "weightOz": 52,
+    "msrpUsd": 399.0,
+    "notes": "Hunter-weight Grayboe in the same fiberglass-reinforced layup as the Ridgeback, sized for a backcountry hunting rifle. Common upgrade for a Tikka T3x or Howa 1500 hunter that needs better ergonomics than the factory stock."
+  },
+  {
+    "manufacturer": "Kelbly's",
+    "model": "Atlas Tactical Chassis",
+    "productLine": "Atlas Tactical",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3x", "Defiance Tenacity", "BAT Machine", "Bighorn TL3"],
+    "weightOz": 92,
+    "msrpUsd": 1495.0,
+    "notes": "Skeletonized aluminum chassis built by a benchrest-pedigreed shop, with an ARCA forend and a folding buttstock. Picked by accuracy-first PRS Open shooters and serious benchrest crossovers."
+  },
+  {
+    "manufacturer": "Cadex Defence",
+    "model": "CDX-MC Kraken Chassis",
+    "productLine": "CDX-MC",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3x", "Defiance Tenacity", "Cadex Tremor"],
+    "weightOz": 100,
+    "msrpUsd": 2495.0,
+    "notes": "Premium Canadian-machined aluminum chassis with full Picatinny / M-LOK forend, integrated ARCA, and Cadex's adjustable folding stock. Used by precision-rifle shooters who want a near-defense-grade chassis without the export-controlled programmatic kit."
+  },
+  {
+    "manufacturer": "Cadex Defence",
+    "model": "Falcon Lite Chassis",
+    "productLine": "Falcon",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3x"],
+    "weightOz": 64,
+    "msrpUsd": 1795.0,
+    "notes": "Lighter-weight Cadex chassis aimed at hunters and tactical shooters who want Cadex fit and finish under a backcountry weight budget. Clearly hunter-shape forend with M-LOK slots and an adjustable folder."
+  },
+  {
+    "manufacturer": "Spuhr",
+    "model": "SICS Chassis System",
+    "productLine": "SICS",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3x", "Sako TRG-22", "Sako TRG-42", "Accuracy International AT"],
+    "weightOz": 96,
+    "msrpUsd": 2895.0,
+    "notes": "Swedish-made Spuhr Ideal Chassis System with a one-piece machined aluminum body and integrated Picatinny rails along the forend. ELR and tactical-match shooters who want Spuhr's mounting precision build on this."
+  },
+  {
+    "manufacturer": "JP Enterprises",
+    "model": "JP Modular Rifle System Chassis",
+    "productLine": "MRS",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA"],
+    "weightOz": 92,
+    "msrpUsd": 1799.0,
+    "notes": "Rem 700-footprint chassis from the JP precision-rifle ecosystem, built around an AR-style lower interface so any AR pistol grip and buffer-tube stock fits. Picked by shooters cross-pollinating AR ergonomics into a bolt gun."
+  },
+  {
+    "manufacturer": "Modular Driven Technologies",
+    "model": "TAC21 Gen 2 Chassis",
+    "productLine": "TAC21",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Howa 1500", "Savage 10/110"],
+    "weightOz": 60,
+    "msrpUsd": 599.95,
+    "notes": "Long-running MDT chassis with an AR pistol-grip and buffer-tube interface, full free-float forend, and AICS magazine well. Still the value pick for shooters wanting an AR-ergonomic bolt gun on a budget — kept in the lineup alongside the newer ESS for the AR15-buttstock crowd."
+  }
+]

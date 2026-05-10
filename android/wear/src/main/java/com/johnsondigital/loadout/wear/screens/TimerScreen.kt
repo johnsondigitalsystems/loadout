@@ -30,7 +30,7 @@
 // ============================================================================
 // WHY IT EXISTS IN THE ARCHITECTURE
 // ============================================================================
-// One of three feature screens hosted by `MainActivity.AppPager`.
+// One of five feature screens hosted by `MainActivity.LoadOutWearRoot`.
 // Mirrors iOS `TimerView.swift`. Keeping the layout separate from
 // `TimerEngine` lets the engine be unit-testable without a Compose
 // host and lets the screen be redesigned without touching timing
@@ -68,7 +68,7 @@
 // ============================================================================
 // WHO CONSUMES THIS FILE
 // ============================================================================
-// - `MainActivity.kt` — hosts as the first page in `AppPager`.
+// - `MainActivity.kt` — hosts as the Timer page in `LoadOutWearRoot`.
 // - `timer/TimerEngine.kt` — passed in as the argument; the screen
 //   calls `start`, `pause`, `resume`, `reset`, `adjust`, and
 //   `toggleQuietMode`.

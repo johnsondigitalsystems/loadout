@@ -56,6 +56,8 @@
     "onboardingPrivacyBullet1": "Tutte le ricariche, armi e bossoli vivono nel database del tuo telefono.",
     "onboardingPrivacyBullet2": "I backup sono crittografati end-to-end verso il tuo iCloud o Google Drive.",
     "onboardingPrivacyBullet3": "Non gestiamo un backend che memorizza i tuoi dati di ricarica — per scelta progettuale.",
+    "// TRANSLATOR-REVIEW onboardingPrivacyBullet4": "Pattern C device-compatibility disclosure. Native-speaker review needed before launch — this string was machine-translated.",
+    "onboardingPrivacyBullet4": "Alcune funzioni Pro (dispositivi Bluetooth, companion per smartwatch, sensori di movimento) richiedono Android 11 o più recente.",
 
     "onboardingGetStarted": "Inizia",
     "onboardingAppBarTitle": "Benvenuto in LoadOut"

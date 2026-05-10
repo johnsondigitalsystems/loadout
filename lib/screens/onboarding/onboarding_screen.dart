@@ -212,6 +212,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           l.onboardingPrivacyBullet1,
           l.onboardingPrivacyBullet2,
           l.onboardingPrivacyBullet3,
+          // Pattern C device-compatibility disclosure. Pre-launch
+          // honesty: the user learns BEFORE they install + buy that
+          // some Pro features (Bluetooth devices, Wear OS pairing,
+          // watch motion sensors) need Android 11+. The full list
+          // lives on the Settings → Device Compatibility screen.
+          l.onboardingPrivacyBullet4,
         ],
         actionLabel: l.onboardingGetStarted,
         actionType: _PageActionType.finish,

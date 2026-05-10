@@ -153,10 +153,12 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
+import '../../services/device_compatibility_service.dart';
 import '../../services/entitlement_notifier.dart';
 import '../../services/purchases_service.dart';
 import '../../services/revenue_cat_config.dart';
 import '../../theme/app_theme.dart';
+import '../settings/device_compatibility_screen.dart';
 
 /// Full-screen paywall presented from the home screen and from any
 /// `ensurePro` gate. Loads offerings from RevenueCat lazily and shows
@@ -305,6 +307,15 @@ class _PaywallScreenState extends State<PaywallScreen> {
                     onPressed: _isWorking ? null : _onRestore,
                     child: const Text('Restore Purchases'),
                   ),
+                  const SizedBox(height: 8),
+                  // Device-compatibility disclosure footer. Calm, single
+                  // line — non-alarming for modern users (their device
+                  // supports everything; the tap-through reads "All
+                  // features run on this device") and informative for
+                  // older users (the screen lists which features are
+                  // gated by their OS version BEFORE they decide to
+                  // upgrade). See `lib/screens/settings/device_compatibility_screen.dart`.
+                  _DeviceCompatibilityFooter(working: _isWorking),
                   const SizedBox(height: 16),
                   Text(
                     'Subscriptions auto-renew. Cancel anytime in your device '
@@ -757,6 +768,77 @@ class _ErrorState extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Footer disclosure on the paywall — "Some Pro features depend on your
+/// device's OS version" + a tappable "What does my device support?"
+/// link. Calm tone for modern devices; informative for older ones.
+///
+/// Two presentations:
+///
+///   * **Modern devices (no gates active)** — single subtle line:
+///     "All Pro features run on your device." No tap target. The user
+///     reads it as a quiet reassurance, not an upsell.
+///   * **Older devices (one or more gates active)** — explicit text +
+///     a TextButton "What Does My Device Support?" that pushes the
+///     [DeviceCompatibilityScreen]. Phrased so the user learns BEFORE
+///     they buy that some features won't be available on their phone.
+///
+/// Disabled while the paywall is in a working state (mid-purchase /
+/// mid-restore) so the user can't accidentally navigate away.
+class _DeviceCompatibilityFooter extends StatelessWidget {
+  const _DeviceCompatibilityFooter({required this.working});
+  final bool working;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final compat = context.watch<DeviceCompatibilityService>();
+    final hasGates = compat.hasAnyGates;
+
+    if (!hasGates) {
+      // Modern device — quiet reassurance line. No tap.
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Text(
+          'All Pro features run on your device.',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontStyle: FontStyle.italic,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
+
+    // Older device — informative line + explicit screen entry.
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            "Some Pro features depend on your device's OS version.",
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        TextButton(
+          onPressed: working
+              ? null
+              : () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const DeviceCompatibilityScreen(),
+                    ),
+                  );
+                },
+          child: const Text('What Does My Device Support?'),
+        ),
+      ],
     );
   }
 }

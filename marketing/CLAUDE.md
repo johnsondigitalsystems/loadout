@@ -299,20 +299,27 @@ the pitch goes wrong; keep them aligned.
 | **GPS altitude (Range Day sensors)** | Altitude → station-pressure derivation |
 | **AI Smart Import** | OCR-improvement Anthropic call (opt-in per use) |
 | **AI Reloading Assistant chat** | Coming Soon at v1.0; Pro when shipped |
-| **Load Development** | OCW (Newberry), Audette Ladder, Satterlee 10-shot, Generic charge ladders, and Seating Depth ladders. Per-charge SD / ES / mean MV / group size; OCW vertical-impact flat-spot detection; Satterlee MV plateau detection; group-vs-charge plotting. Cited published sources for each method. |
-| **Internal Ballistics Calculator** | Powley method predictor for muzzle velocity and peak chamber pressure from a hypothetical recipe. Closes the GRT / QuickLOAD gap on mobile. Centerfire rifle only (pistol/shotgun rejected for safety). Validation: ±10% MV / ±15% pressure on mid-rifle (33-anchor corpus, see `docs/internal_ballistics_validation.md`); magnum-rifle drifts wider (±25% MV / ±35% pressure on slow-powder loads). |
+| **Load Development — five named methods** | **OCW (Newberry)** — three shots per charge ladder, vertical-impact flat-spot detection. **Audette Ladder** — single shot per charge at distance, vertical-stacking analysis. **Satterlee 10-shot** — chronograph-driven MV-vs-charge plateau detection. **Generic charge ladder** — freeform with all three analyses available. **Seating depth ladder** — CBTO ladder around an existing recipe. Per-charge SD / ES / mean MV / group ES / mean radius across every method. Cited published sources for each. Engineering reference: CLAUDE.md § 25. |
+| **Internal Ballistics Calculator** | interior-ballistics estimator for muzzle velocity and peak chamber pressure from a hypothetical recipe. ~40 powders in the burn-rate reference. Closes the GRT / QuickLOAD gap on mobile. Validation: ±10% MV / ±15% pressure across the published-Hodgdon-data anchor set. Engineering reference: CLAUDE.md § 24. |
 | **Custom fields (unlimited)** | Per-recipe / per-firearm / per-batch user-defined fields |
 
 The free tier ships **everything else** — recipes, firearms, batches,
 the full ballistics solver core, Range Day basics, on-device photo
 OCR, local JSON export, all reference catalogs, the glossary, SAAMI
-specs, manual encrypted backup (export + upload-yourself), and the
-companion-app scaffolds.
+specs, manual encrypted backup (export + upload-yourself), the
+companion-app scaffolds, the **Lookup Loads link-out** (per-cartridge
+deep-link to the official Hodgdon / Hornady / Sierra / Vihtavuori
+load-data pages — see § 21a), the **seven recipe import sources**
+(see § 4 Imports — Photo, CSV / Excel, Notes / Text File, PDF, Word
+Document, OneNote, Apple Notes Share Sheet — engineering reference
+CLAUDE.md § 22), and the **Component Inventory** on-hand quantity
+tracker (see § 23a — shipped but intentionally not promoted in
+marketing copy).
 
 ### What the paywall pitch leads with
 
 The in-app paywall (`lib/screens/paywall/paywall_screen.dart`
-`_FeaturesShowcase`) renders six cards in this order. Use the same
+`_FeaturesShowcase`) renders these cards in this order. Use the same
 order in landing-page hero copy:
 
 1. **Cross-device cloud sync** — encrypted on device with the user's
@@ -324,9 +331,24 @@ order in landing-page hero copy:
 4. **Scope View Pro + training mode.**
 5. **Live weather + GPS altitude.**
 6. **AI Smart Import** — translation tool. Reading-only. Off by default.
-7. **Load development** — OCW (Newberry), Audette Ladder, Satterlee
-   10-shot, and Generic charge ladders with statistical analysis,
-   per-charge SD / ES / mean MV / group size, and node detection.
+7. **Load development — five named methods.** OCW (Newberry), Audette
+   Ladder, Satterlee 10-shot, Generic charge ladder, and Seating
+   depth ladder. Per-charge SD / ES / mean MV / group ES / mean
+   radius. OCW vertical-impact flat-spot detection, Satterlee MV-
+   plateau detection. Plain-English method explainer card on every
+   detail screen with a citation block. Cited sources for each
+   method (Newberry 2002, Audette / *Precision Shooting* late
+   1970s, Satterlee).
+8. **Internal Ballistics Calculator.** interior-ballistics estimator for
+   muzzle velocity + peak chamber pressure from a hypothetical
+   recipe. ~40 powders in the burn-rate reference. The headline
+   feature LoadOut was missing relative to GRT (free, donation-
+   ware, Windows / Mac via Wine) and QuickLOAD ($170+, Windows-
+   only) — both desktops. LoadOut shipping a competent mobile
+   version is the intended strategic differentiator. Validation
+   ±10% MV / ±15% pressure across the test corpus. Persistent
+   yellow "Estimation Tool — Not a Load-Data Substitute" banner
+   makes the safety posture load-bearing.
 
 The **AI Reloading Assistant** stays out of this pitch on purpose. It's
 Coming Soon at v1.0 and the chat framing trips reloaders' "AI-powered"
@@ -423,17 +445,40 @@ you actually use."
 ### Imports section (collapsed into one)
 
 Both Quick and Regular now expose imports in a single **Imports**
-section. Sources covered today:
+section. The first-run "Bring Your Existing Data" deck deep-links
+into the same picker (`lib/screens/onboarding/import_sources_screen.dart`).
 
-- **Spreadsheet** (CSV / Excel) — fuzzy header mapping wizard.
-- **Photo** (on-device OCR) — ML Kit text recognition + 444-entry
-  handwriting alias dictionary.
-- **File** — re-import LoadOut JSON exports.
-- **Another reloading app** — CSV with format detection (Hornady 4DOF
-  export, GRT, QuickLOAD, Strelok export shapes recognized).
-- **Paste from clipboard** — best-effort heuristic parse.
-- **AI Smart Import** (Pro) — only fires when on-device parser flags
-  low confidence, AND the user explicitly taps "Improve with AI."
+**Seven distinct inbound sources, all routed through the same
+`RecipeParser` → `PhotoImportReviewScreen` chain so the user sees
+one consistent review surface no matter where the text came from.**
+Engineering reference: CLAUDE.md § 22.
+
+| Source | Free / Pro | Platform |
+|---|---|---|
+| **Photo** — on-device OCR via ML Kit, plus a 444-entry handwriting alias dictionary | Free | iOS, Android |
+| **CSV / Excel** — fuzzy header-mapping wizard | Free | iOS, Android, macOS, web |
+| **Notes / Text File** (.txt / .md / .rtf) — UTF-8 with Latin-1 fallback | Free | iOS, Android, macOS, web |
+| **PDF Document** — rasterise per page + ML Kit OCR | Free | iOS, Android |
+| **Word Document** — guided "export from Word, then import" flow | Free | iOS, Android, macOS, web (caveats on PDF) |
+| **OneNote** — same export-then-import guide | Free | iOS, Android, macOS, web (caveats) |
+| **Apple Notes (Share Sheet)** via `share_handler` plugin | Free | Android out of the box; iOS after one-time Xcode setup (CLAUDE.md § 23) |
+
+The first-run picker also surfaces the legacy entry points: re-import
+a LoadOut JSON export, scan another LoadOut user's recipe QR, and
+paste from clipboard.
+
+**AI Smart Import** (Pro, opt-in per use) is a separate add-on layer
+on top — it only fires when the on-device parser flags low confidence
+AND the user explicitly taps "Improve with AI." It's NOT a separate
+"source" in this list; it's the optional Anthropic-call cleanup pass
+on top of any of the above. See § 15 for the full posture.
+
+**Marketing framing for the import surface:** "Seven ways in. Snap a
+photo of your bench notebook, drop a CSV from your spreadsheet, share
+straight from Apple Notes, or paste a PDF — they all land in the
+same review screen, and they're all free." That's true and accurate.
+Don't conflate the seven free import sources with AI Smart Import,
+which is the only paid piece.
 - **iCloud Drive / Google Drive / OneDrive** — alongside the system
   file picker, so the user can pull a CSV directly from their cloud.
 - **QR scan** — scan another LoadOut user's recipe QR.
@@ -1200,13 +1245,52 @@ Don't recap that doc here — read it before writing comparison copy.
 The four-column audit (LoadOut vs Strelok / BC2026, AB Quantum,
 Ballistic AE) is current as of 2026-05-08.
 
+### Three competitor cohorts (the strategic frame)
+
+The market splits cleanly. **LoadOut competes seriously in the
+mobile-tracker cohort and partially in the ballistics-calculator
+cohort, while explicitly NOT trying to compete in the desktop-
+simulator cohort.** Pitching the wrong cohort against the wrong
+competitor reads as either over-claiming or under-selling.
+
+**Cohort A — Ballistics calculators (mobile + iOS-premium).** The
+solver-first apps that don't track reloading. Strelok / Ballistic
+Calculator 2026, Applied Ballistics Quantum, Ballistic AE, the
+Hornady 4DOF app, GeoBallistics BalisticArc, JBM Ballistics. Our
+lever: we're the **workspace + the calculator**, where they're
+calculator-only. Lifetime pricing on the workspace + the calculator
+combined beats their per-app calculator.
+
+**Cohort B — Mobile reloading trackers (the cohort we live in).**
+Recipe-diary + reloading-log apps. Vihtavuori Reload (the biggest
+European competitor — recipe diary + powder-vendor app, **100K+
+Android installs, Nordic / EU brand recognition**), LoadData,
+Reloader's Log, Reloader's Reference, Hornady App's reloading
+tab, RCBS App, etc. Our lever: **local-first promise + Bluetooth
+ecosystem + multi-platform reach + brand-agnostic powder support
++ 15-language picker**. Vihtavuori Reload is brand-locked to their
+own powder line; we ship every major manufacturer's catalog. Most
+of the others are iOS- or Android-only; we ship four platforms
+plus two more in beta.
+
+**Cohort C — Desktop interior-ballistics simulators (we
+deliberately don't compete here).** GRT (Gordons Reloading Tool —
+free, donation-ware, Windows / Mac via Wine) and QuickLOAD
+($170+, Windows-only). These run a full Lagrange gas-dynamics
+treatment that demands desktop-class compute and a multi-MB
+powder database with proprietary calibration. **We ship the interior-ballistics estimator on
+mobile** (Internal Ballistics Calculator, Pro — see § 3 / CLAUDE.md
+§ 24): less precise, far more accessible, validation ±10% MV /
+±15% pressure. Marketing line: "we close the GRT / QuickLOAD gap
+on mobile — we don't try to replace them on desktop."
+
 ### One-line frames per competitor
 
 - **Strelok / Ballistic Calculator 2026** — calculator with a deeper
   cartridge / reticle catalog. We win on: reloading workspace, encrypted
   cloud sync, Hornady 4DOF curves, lifetime pricing, photo OCR,
-  6 platforms, disclosed solver. They win on: raw catalog count, brand
-  pedigree (19 yr).
+  4 shipping platforms (Strelok is iOS / Android), disclosed solver.
+  They win on: raw catalog count, brand pedigree (19 yr).
 - **Applied Ballistics Quantum** — chief-ballistician's product;
   Applied-Ballistics-authored math, Doppler-radar CDM library, $700+
   Kestrel hardware unlocks Pro. We win on: reloading workspace, photo
@@ -1224,9 +1308,31 @@ Ballistic AE) is current as of 2026-05-08.
 - **GeoBallistics BalisticArc** — desktop / mil-LE focus.
 - **JBM Ballistics** — open math, low-fidelity UI; the engine
   underneath Ballistic AE.
-- **GRT / QuickLOAD** — load development simulators (gun and
-  cartridge interior ballistics). We're the workspace and the
-  exterior solver, not the interior simulator. We import their CSV.
+- **Vihtavuori Reload** — recipe-diary + powder-vendor app
+  (Vihtavuori / Berger powder line). 100K+ Android installs, strong
+  Nordic / EU brand recognition. We win on: **brand-agnostic
+  powder support** (LoadOut catalogs Accurate, Alliant, Hodgdon,
+  IMR, Norma, Ramshot, Shooter's World, Vihtavuori, Winchester,
+  and Lovex / Sellier & Bellot — Vihtavuori Reload only catalogs
+  their own line), Bluetooth device ecosystem (Kestrel + Garmin
+  Xero + every major rangefinder), multi-platform reach (iOS /
+  Android / macOS / web vs their Android-primary), local-first
+  encrypted Cloud Sync, 15-language picker. They win on:
+  Vihtavuori-specific load tables baked into the app, Nordic
+  marketing reach, vendor-direct support relationship.
+- **LoadData / Reloader's Log / Reloader's Reference / Hornady
+  reloading tab / RCBS App** — the broader mobile-tracker cohort.
+  Each has a niche (LoadData is Wolfe-published-magazine archive,
+  Hornady's tab is Hornady-component-locked, RCBS is RCBS-press-
+  user-focused). LoadOut is the **brand-agnostic, local-first**
+  cross-platform tracker — same workspace whether you're shooting
+  Hornady factory ammo, reloading with Vihtavuori, or running
+  Lapua brass.
+- **GRT / QuickLOAD** — desktop interior-ballistics simulators
+  (Cohort C — we don't compete head-on). LoadOut's Internal
+  Ballistics Calculator is on mobile, validation
+  ±10% MV / ±15% pressure. Different scope, different precision,
+  different access pattern. We import their CSV.
 
 ### Honest framing rules
 
@@ -1234,12 +1340,85 @@ Ballistic AE) is current as of 2026-05-08.
   Quantum has it; we don't. We compete on workspace + free-tier
   generosity + privacy, not Doppler depth.
 - **Don't claim Strelok's 19-year track record.** It's their moat.
+- **Don't claim parity with GRT / QuickLOAD's interior-ballistics
+  precision.** We're interior-ballistics estimator on mobile; they're Lagrange on
+  desktop. The honest framing is "competent mobile estimator" —
+  not "GRT replacement."
+- **Don't claim Vihtavuori Reload's vendor-direct relationship.**
+  The honest frame: "we're brand-agnostic — we catalog every
+  major manufacturer; they're vendor-locked — your Vihtavuori
+  loads work in either, but Lapua brass + IMR powder + Berger
+  bullets only fit cleanly in LoadOut."
 - **Do** claim "industry-standard exterior-ballistics math." Use of
   the published Applied-Ballistics formulas is correct;
   "Applied-Ballistics-endorsed" or "Applied-Ballistics-affiliated" is not.
 - **Do** lead with the "no LoadOut backend ever sees your data"
   claim against AB Quantum specifically. Their AB Quantum Sync is
   almost certainly server-decryptable; we're not.
+
+## 21a. We never republish manufacturer load data (the principle)
+
+This is a **standalone marketing differentiator** worth its own
+section because it sells the local-first promise twice over.
+Engineering reference: `lib/widgets/lookup_loads_sheet.dart` and
+the 2026-05-10 manufacturer republication audit.
+
+### The principle
+
+LoadOut **never republishes** another manufacturer's load tables.
+Concretely:
+
+- We never ship Hodgdon / IMR / Winchester / Accurate / Ramshot /
+  Norma / Vihtavuori / Alliant load tables inside the app bundle.
+- We never scrape, mirror, or cache manufacturer recipe data on
+  any LoadOut server.
+- We never insert manufacturer recipes into the user's on-device
+  database without the user typing or importing them.
+- We never deep-link the user's typed cartridge name into a
+  manufacturer's URL — the user lands on the manufacturer's
+  search page and types it themselves. (See `lookup_loads_sheet.dart`
+  header for the privacy reasoning.)
+
+### Why we made the call
+
+The 2026-05-10 audit confirmed:
+
+- **Hodgdon explicitly prohibits** redistribution of their load
+  tables in their data-use posture.
+- **Sierra requires written permission** before any third party
+  republishes their published load data.
+- **Speer / Kinetic Group** carries the same restriction.
+- **Hornady asserts copyright** over their published load tables
+  via the Agilx licensing relationship.
+
+A "ship a built-in starting-load library" plan was killed in
+that audit because it would have been a no-ship-without-license
+across all four. The chosen mitigation: the **Lookup Loads sheet**
+(per-cartridge "Look Up Published Loads" affordance on the SAAMI
+screen and recipe form), which opens the manufacturer's official
+page in the user's system browser. Four cards: Hodgdon Reloading
+Data Center, Hornady Load Data, Sierra Load Data, Vihtavuori
+Reloading Data Tool.
+
+### Why this is good marketing
+
+The local-first promise + the no-republish principle + the
+encrypted Cloud Sync stack up as a **single, coherent privacy /
+data-ownership posture**:
+
+1. Your reloading data lives only on your device.
+2. We don't re-host anyone else's reloading data either.
+3. The cloud features that exist are your cloud, your passphrase,
+   your blob — never ours.
+
+Marketing line: "**Your recipes are yours, theirs are theirs, and
+LoadOut hosts neither.** Tap the brand to open their official
+source. We don't scrape, we don't cache, we don't republish."
+
+This is on-brand AND legally airtight AND a sharp differentiator
+against any future competitor that ships a built-in load
+library — those become licensing surfaces with renewal cadences
+and lawyer fees; we ship a deep-link.
 
 ---
 
@@ -1277,8 +1456,8 @@ A short tactical checklist for any copy review:
 
 ## 23. Useful stats + numbers for copy
 
-Cite these directly. Counts current as of 2026-05-09 from
-`assets/seed_data/`:
+Cite these directly. Counts current as of 2026-05-10 from
+`assets/seed_data/` and the engineering CLAUDE.md:
 
 - **203 cartridges** with full SAAMI specs (`cartridges.json`).
 - **4,143 factory ammo SKUs** across 37 manufacturers
@@ -1291,14 +1470,43 @@ Cite these directly. Counts current as of 2026-05-09 from
 - **43 reticles** (24 LoadOut-original + 19 public-domain) — see § 9.
 - **52 target shapes** across 4 shape families (`targets.json`).
 - **6 target rack types** (`target_racks.json`).
-- **142 glossary terms across 10 categories**, with **34 worked
-  examples**.
+- **153 glossary terms across 10 categories**, with **34+ worked
+  examples**. (142 launched + 11 added in the Load Development /
+  Internal Ballistics wave: OCW, Audette Ladder, Satterlee 10-shot,
+  Seating depth ladder, interior-ballistics method, Internal Ballistics, Loading
+  Density, Burn-Completion, Relative Quickness, Mean Radius, Group
+  Extreme Spread.)
 - **40 firearm brands** in the reference library (`firearms.json`).
 - **50+ firearm-parts brands** in the parts catalog
   (`firearm_parts.json`).
+- **5 Load Development methods** — OCW (Newberry), Audette Ladder,
+  Satterlee 10-shot, Generic charge ladder, Seating depth ladder.
+  Pro. CLAUDE.md § 25.
+- **~40 reference powders** in the Internal Ballistics Calculator's
+  interior-ballistics burn-rate table (`powder_burn_rates.dart`). Pro. CLAUDE.md
+  § 24.
+- **7 recipe import sources** — Photo, CSV / Excel, Notes / Text
+  File, PDF, Word Document, OneNote, Apple Notes Share Sheet. Free.
+  CLAUDE.md § 22.
+- **4 manufacturer Lookup Loads link-out cards** — Hodgdon
+  Reloading Data Center, Hornady Load Data, Sierra Load Data,
+  Vihtavuori Reloading Data Tool. Free.
+- **7 BLE devices supported** — Kestrel 5xxx Link, Garmin Xero
+  C1 Pro, Sig KILO BDX, Bushnell BDX, Vortex Razor HD 4000 / Fury
+  HD AB, Leica Geovid Pro, Vectronix Terrapin X (the only one
+  with magnetic azimuth). Pro. CLAUDE.md § 21.
 - **7 sign-in methods** including anonymous (sign-in is **optional**).
 - **4 platforms shipping today** — iOS, Android, macOS, web.
 - **2 companion apps scaffolded** (Apple Watch + Wear OS — Coming Soon).
+- **15 languages in the locale picker** — English, German, Spanish,
+  French, Italian, Russian (the original launch six, native-speaker
+  reviewed) plus 9 added in the expansion (Finnish, Swedish,
+  Norwegian Bokmål, Polish, Czech, Brazilian Portuguese, Hungarian,
+  Danish, Dutch — all flagged TRANSLATOR-REVIEW until a native-
+  speaker pass lands). Until that pass ships, marketing copy must
+  say **"available in 6 fully translated languages, with 9 more
+  in beta"** rather than "fluent in 15 languages." See LAUNCH_CHECKLIST
+  → Internationalization.
 - **Modified Point-Mass solver** with Cash-Karp adaptive RK45
   (1e-4 m tolerance), all 6 standard drag tables (G1, G2, G5, G6, G7, G8),
   plus PCHIP-interpolated custom drag curves.
@@ -1316,6 +1524,102 @@ Numbers to NOT cite without verification:
 - "6 platforms" — outdated until Apple Watch / Wear OS ship payloads.
   Today it's 4.
 - "55 target shapes" — outdated; the count is 52.
+- **"15 languages" without the beta caveat** — see above. The 6
+  reviewed + 9 in beta framing is the safe version.
+- **"Available in 6 languages"** is now outdated as a top-line
+  number — the picker shows 15. Use "available in 6 reviewed
+  languages, with 9 more in beta" until the native-speaker review
+  catches up.
+
+---
+
+## 23a. Component Inventory (shipped, intentionally NOT promoted)
+
+LoadOut ships an on-hand quantity tracker for powder, primer,
+bullet, brass, and factory ammunition — schema v32 (`ComponentInventory`
++ `ComponentInventoryAdjustments` ledger), reachable from the
+Resources drawer destination. Engineering reference: CLAUDE.md § 26.
+
+**This section is in the marketing doc deliberately so that nobody
+re-discovers it in a week and writes a "5 reasons to switch" post
+that leads with it.** Component Inventory is shipped, it's free,
+and it works — but **we do not pitch it in marketing copy, the
+paywall, App Store / Play Store screenshots, the onboarding deck,
+or the bottom-nav.** The reasons:
+
+1. **It's not the brand promise.** LoadOut sells a precision
+   reloading + ballistics workspace. Inventory is a quality-of-
+   life utility, not a precision capability. Leading with it
+   reads as "this is just another reloading-tracker app."
+2. **It's a magnet for the wrong audience.** Every reloader-app
+   competitor has an inventory page; foregrounding it positions
+   us alongside them rather than above them. Cohort-B comparisons
+   (LoadData, Reloader's Log, Vihtavuori Reload) are more or less
+   inventory-page apps with extras. We want the comparison to
+   land on the workspace + ballistics + privacy axes.
+3. **The discovery is good UX.** Users find it in Resources, see
+   the obvious workflow ("here are my powders, here's how much I
+   have left"), and use it. They don't need a tutorial; the form
+   speaks for itself. Promoting it in marketing creates an
+   expectation of a featured workflow ("low-stock alerts with
+   reorder-from-Brownells integration?") that we deliberately
+   don't ship.
+
+### What the screen does
+
+- One row per "container" the user has on hand: a 1 lb jug of
+  H4350, a 1000-count box of CCI 200 primers, a 250-count bag of
+  Berger 140gr Hybrids, a bucket of once-fired Lapua 6.5 CM
+  brass, a case of Hornady 6.5 CM 140gr ELD-M factory ammo.
+- Each row carries quantity, unit (gr / count / boxes / cases),
+  optional reorder threshold, optional lot number, optional
+  opened-at date (drives the powder shelf-life hint), and free-
+  form notes.
+- Append-only adjustments ledger (`ComponentInventoryAdjustments`)
+  records every quantity delta with a reason — "loaded 50 rounds
+  of recipe X", "spilled some during transfer", "bought a new
+  jug." The repository writes the master quantity update and the
+  ledger row inside one transaction so they can never drift
+  apart.
+
+### What the screen does NOT do
+
+- **No e-commerce integration.** No Brownells / MidwayUSA /
+  Powder Valley deep-link, no "buy now" affordance, no
+  affiliate tracking. The user flips low on H4350 → they go
+  buy it themselves.
+- **No automatic deduction from "Fire X rounds" actions** today.
+  The Batches "Fire X rounds" cascade hits brass-lot firing
+  count; it does NOT yet decrement the primer / powder /
+  bullet inventory. Future work, intentionally deferred.
+- **No low-stock notification banner anywhere outside the
+  inventory screen.** A user who hasn't visited Component
+  Inventory recently doesn't get nagged.
+
+### When marketing IS allowed to mention it
+
+- **Inside an FAQ or "complete feature list"** disclosure for
+  the curious. "Yes, we ship a free on-hand quantity tracker
+  alongside the workspace — find it under the Resources drawer
+  destination." That's accurate and acceptable.
+- **Inside a support reply** when a user asks "do you track
+  inventory?" Same answer.
+- **In a roadmap post** that explains why low-stock alerts and
+  Fire-X cascades are deferred (so users who wanted them know
+  we know).
+
+### When marketing is NOT allowed to mention it
+
+- App Store / Play Store screenshots.
+- Paywall pitch (it's free; pitching free features in a Pro
+  paywall reads as bait-and-switch).
+- "5 reasons to switch" / "What you get" landing-page bullets.
+- Onboarding deck.
+- Top-of-fold landing copy.
+
+If a future PM decides to flip the marketing posture, sweep this
+doc + the LAUNCH_CHECKLIST entry + the engineering CLAUDE.md § 26
+together — the three docs reference each other as the rationale.
 
 ---
 
@@ -1330,6 +1634,10 @@ Numbers to NOT cite without verification:
 | "What if you go out of business?" | "Your data is local SQLite + JSON export at any time. If we shut down tomorrow, you keep everything. We can't lock you in because we don't host you." |
 | "Why pay a subscription if there's a lifetime?" | "You don't have to. The free tier covers recipes, the ballistics solver, Range Day basics, photo OCR, every reference catalog, and the glossary. Pro adds Bluetooth devices, Hornady 4DOF curves, Cloud Sync, training-mode tooling, and the AI assistant when it ships. Pick whichever fits — yearly if you want to try it, lifetime if you're sure." |
 | "Doesn't AB Quantum already do this with the math?" | "AB Quantum is an excellent ballistics calculator with a Doppler-radar drag library we don't try to match. It also has zero recipe / brass / batch tracking, requires a $700+ Kestrel to unlock Pro features for hardware buyers, and ships sync we'd describe differently than they do. We're the workspace; they're the math. Different jobs." |
+| "I already use Vihtavuori Reload." | "Vihtavuori Reload is a great recipe diary for Vihtavuori-line shooters. LoadOut catalogs every major manufacturer — Hodgdon, Alliant, IMR, Norma, Ramshot, Shooter's World, Vihtavuori, Winchester, Accurate. Same workspace whether you load Vihtavuori N-series, IMR 4350, or H4350. Plus Bluetooth devices, multi-platform (iOS / Android / macOS / web), and end-to-end encrypted Cloud Sync. Free tier covers recipes + the ballistics solver core." |
+| "I already use GRT or QuickLOAD for interior ballistics." | "Keep using them. GRT and QuickLOAD run a full Lagrange gas-dynamics treatment on desktop — that's what they're for. LoadOut's Internal Ballistics Calculator is on mobile (±10% MV / ±15% pressure across the test corpus): less precise, far more accessible, and it lives inside the workspace next to your recipes. We import GRT / QuickLOAD CSV exports too — the workspace is the same regardless of which simulator you trust." |
+| "Why pay for Load Development when I can plot it in a spreadsheet?" | "Plot it in a spreadsheet if you want to. LoadOut Load Development is the spreadsheet workflow with the spreadsheet removed — five named methods (OCW, Audette Ladder, Satterlee 10-shot, Generic charge ladder, Seating depth ladder), per-charge SD / ES / mean MV / group ES / mean radius, OCW flat-spot detection, Satterlee MV-plateau detection, and an explainer card with citations on every detail screen. Your shots are tied to the recipe, the firearm, and the brass lot they were fired through. That's worth Pro pricing if range time costs you anything; it's not if you're happy in a spreadsheet." |
+| "I don't trust apps that pretend to know my chamber pressure." | "We don't pretend. The Internal Ballistics Calculator screen carries a persistent yellow 'Estimation Tool — Not a Load-Data Substitute' banner that you can't dismiss. The result panel includes a coarse SAAMI-band gauge that says 'Below typical SAAMI max', 'Approaching SAAMI max', or 'At or above — verify' — explicitly advisory, never a green light. We never silently substitute powders we don't know. Reloaders who acted on a 'below max' model prediction without verifying could blow up their rifle, so the disclaimer is load-bearing UI." |
 
 ---
 

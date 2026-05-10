@@ -443,7 +443,7 @@ pre-launch — no monthly tier exists or ever existed in production.
   | AI Smart Import (Tier 3 photo OCR for messy handwriting) | wired through `lib/services/photo_import_service.dart` and the recipe import flow; AI-proxy path Pro-gated. |
   | AI Reloading Assistant chat | `lib/screens/ai_chat/*` — Coming Soon at v1.0; will be Pro when shipped. |
   | Load development | `lib/screens/load_development/*` |
-  | Internal Ballistics Calculator (Powley pressure / MV predictor) | Resources directory tile + bottom-of-Ballistics-Calculator entry button; both routes through `ensurePro` and the screen wraps its body in `ProGate`. Service in `lib/services/ballistics/internal_ballistics.dart`; full description in § 24. |
+  | Internal Ballistics Calculator (interior-ballistics pressure / MV predictor) | Resources directory tile + bottom-of-Ballistics-Calculator entry button; both routes through `ensurePro` and the screen wraps its body in `ProGate`. Service in `lib/services/ballistics/internal_ballistics.dart`; full description in § 24. |
   | Custom fields (unlimited) | recipe / firearm form custom-field affordances |
 
 - **Linking RevenueCat to Firebase Auth:** the auth-state listener
@@ -825,7 +825,8 @@ and talk to it over each platform's standard transport.
 | UI framework | SwiftUI (native) | Compose for Wear OS (native) |
 | Min OS | watchOS 10.0 | Wear OS 3 / Android 11 (API 30) |
 | Phone-watch transport | `WatchConnectivity` (`WCSession`) | Google Play Services Wearable Data Layer |
-| Status | "Coming Soon" placeholder UI; transport activated, no payloads sent yet |
+| Apple Watch status | **v1 shipping.** Four-page TabView: Stage Log (motion + swipe + manual shot capture), Timer (PRS stage timer with par-time alerts + quiet mode), DOPE (drop chart from `dope` payload, scrollable via digital crown, with active-load + firearm-glance banners on top), About (app version + iPhone link state + read-only sensitivity preset). Inbound `dope` / `active_load` / `firearm_glance` decode via `DopeViewModel`; outbound `log_shot` and `timer_event` emit through `WatchConnectivityManager.send(path:payload:)`. Tests in `ios/RunnerWatchAppTests/` cover the decoder, motion-detector preset table, timer state machine, and routing. **Operator step still required:** add the watch target to Xcode per the README — see § 15 below. |
+| Wear OS status | **v1 shipping.** Five-screen Compose for Wear OS UI: Stage Log (motion + button + manual shot capture), Timer (PRS stage timer with par-time alerts + quiet mode), DOPE (drop chart from `dope` payload, scrollable, with active-load + firearm-glance banners), Firearm Glance (active firearm + barrel-life summary), Settings (read-only sensitivity preset). Inbound `dope` / `active_load` / `firearm_glance` decode via `bridge/Payloads.kt`; outbound `log_shot` / `timer_event` emit through `WatchAppState`. Tests under `android/wear/src/test/` and `android/wear/src/androidTest/` cover the decoder, motion-detector preset table, timer state machine, and routing. |
 
 Detailed READMEs live next to the source:
 
@@ -1608,18 +1609,20 @@ strategic differentiator.
 | | |
 |---|---|
 | Service | `lib/services/ballistics/internal_ballistics.dart` (`predictLoad(...)`) |
-| Powder reference | `lib/services/ballistics/powder_burn_rates.dart` (`kPowderBurnRates`, ~40 powders) |
+| Powder reference | `lib/services/ballistics/powder_burn_rates.dart` (`kPowderBurnRates`, 50 powders — 33 rifle/dual validated against the Pass 2 anchor corpus) |
 | Screen | `lib/screens/ballistics/internal_ballistics_screen.dart` |
-| Tests | `test/internal_ballistics_test.dart` (16 tests, all passing) |
+| Tests | `test/internal_ballistics_test.dart` (149 tests) + `test/internal_ballistics_screen_advisory_test.dart` (9 widget tests) |
+| Validation report | `docs/internal_ballistics_validation.md` (Pass 2: 59-anchor corpus + per-family error bands + magnum-bias deep-dive) |
+| Doc-table generator | `test/internal_ballistics_doc_table.dart` (regenerates the validation table; not in the default test glob) |
 | Pro gate | yes — entry routes through `ensurePro(context)` and the screen wraps its body in `ProGate` |
 | Entry points | Resources directory tile + bottom-of-screen button on the external Ballistics Calculator |
 
 ### Model
 
-Implements Homer Powley's interior-ballistics method (1962, revised
-1980), the same simplified model that backed the original Sierra
-and Lyman desktop programs in the 1980s. The simplification trades
-the full Lagrange gas-dynamics treatment (what GRT does) for a
+Implements a published 1962-derived (revised 1980) interior-ballistics
+estimation method, the same simplified model that backed the original
+Sierra and Lyman desktop programs in the 1980s. The simplification
+trades the full Lagrange gas-dynamics treatment (what GRT does) for a
 small set of empirical coefficients fit against published reloading
 manual data. Inputs:
 
@@ -1631,7 +1634,11 @@ manual data. Inputs:
 - Barrel length (in), bore diameter (in)
 
 Outputs: predicted muzzle velocity (fps), predicted peak pressure
-(psi), loading density (%), expansion ratio, burn-completion %.
+(psi), loading density (%), expansion ratio, burn-completion %, and
+(Pass 2 deep-dive) `BiasZoneAdvisory?` — non-null when the load
+falls into a documented high-bias regime (magnum-class case > 75
+grH₂O OR slow powder Q < 70). Drives the per-prediction yellow
+note in the result card.
 
 The physics formulas, calibration constants, and citations are
 documented inline at the top of `internal_ballistics.dart` (file
@@ -1643,12 +1650,78 @@ relative-quickness numbers in `powder_burn_rates.dart` are
 normalised so IMR 4350 = 100, sourced from the Western Powders 2018
 chart, Lyman 51st edition, Hodgdon's 2024 online chart, the Alliant
 2023 Reloader's Guide, and the Vihtavuori 2024 manual; every row
-cites its source.
+cites its source. Pass 2 audited every entry, fixed two ordering
+drifts (HP-38, N133), and added a normalisation cross-check
+regression test (`Pass 2: burn-rate normalisation cross-check`
+group in `internal_ballistics_test.dart`).
 
-### Validation results
+### Validation results (Pass 2 — 59-anchor corpus)
 
-Tested against four published HRDC (Hodgdon Reloading Data Center)
-loads, retrieved 2026:
+Tested against 59 published anchor loads (HRDC, Hornady 11th, Sierra
+2024, Berger 2024, Vihtavuori 2024, Alliant 2023, IMR 2024, Western
+Powders 2018), grouped by cartridge family:
+
+| Family | n | MV bias | MV MAE | MV p95 | P bias | P MAE | P p95 |
+|---|---|---|---|---|---|---|---|
+| rifle_small (.222 / .223 / .22-250 / 6mm PPC) | 12 | +7.8% | 9.3% | 14.0% | +3.0% | 8.2% | 28.9% |
+| rifle_medium (.243 / .260 / 6.5 CM / .270 / .308 / .30-06 / 6mm BR / 6mm CM) | 27 | -2.4% | 4.6% | 10.2% | -7.4% | 13.3% | 26.1% |
+| rifle_magnum (6.5 PRC / 6.5x284 / 7mm RM / 7mm PRC / .300 WM / .300 PRC / .338 LM) | 20 | -16.2% | 16.2% | 33.3% | -33.2% | 33.2% | 40.4% |
+
+**Mid-rifle (rifle_small + rifle_medium, n=39): MV MAE 6.0%, P MAE
+11.7%** — within the model's headline ±10% MV / ±15% pressure claim
+on most rows. Magnum-rifle systematically under-predicts (modern
+temp-stable progressive-burning slow powders in big cases drift
+outside the 1960s-era stick-powder calibration corpus). The
+predictor gets the ORDERING right (heavier bullet = slower; more
+powder = faster) but the magnitude is biased low by 15-25% MV /
+25-40% pressure for these loads.
+
+**Per-powder coverage (Pass 2):** every rifle / dual powder in
+`kPowderBurnRates` appears in at least one validation anchor — 33
+powders covered, 5 documented as `intentionallyUncovered` (Lil'Gun,
+2400, H110, W296, H50BMG — see § 6 of the validation report for
+reasons). The `Pass 2: per-powder coverage` regression test catches
+the failure mode where a powder is added to the table but never
+validated.
+
+### Magnum-bias discriminator + per-prediction advisory UX (Pass 2)
+
+Pass 2's deep-dive identified that the magnum-class bias is driven
+by **two independent factors**, not a single "magnum cartridge"
+classifier:
+
+- **Pressure bias** is primarily **case-capacity-driven**. A .300 WM
+  + IMR 4350 (medium powder) still under-predicts pressure by 35%,
+  same as .300 WM + H1000 (slow powder). Cause: large cases sit at
+  LD 70-80%, where the model's `LD^1.5` term geometrically reduces
+  the prediction by ~25% vs the LD 85-95% mid-rifle band.
+- **MV bias** is primarily **powder-driven**. Q=100 medium powder
+  in any cartridge → mild MV error; Q=50 very-slow powder in any
+  cartridge → -20-25% MV error. Cause: the burn-completion
+  saturation curve was calibrated against 1960s-era stick powders;
+  modern temp-stable progressives burn cleaner.
+
+The `_computeBiasAdvisory` function in `internal_ballistics.dart`
+returns a `BiasZoneAdvisory?` with `BiasZoneCause.magnumCase`
+(case > 75 grH₂O), `slowPowder` (Q < 70), or `combined` (both). The
+screen renders an amber-bordered `BiasAdvisoryCard` under the result
+card whenever the advisory is non-null. The persistent yellow
+disclaimer banner at the top of the screen stays as-is (every
+prediction sees it); the bias advisory is LOAD-SPECIFIC and only
+surfaces when the load falls into a documented high-bias regime.
+Copy is fixed and regression-tested:
+
+| Cause | Headline | What the user sees |
+|---|---|---|
+| `magnumCase` | "Magnum-Class Cartridge" | Pressure runs 25-35% LOW; treat as floor, not ceiling |
+| `slowPowder` | "Very Slow Powder" | MV runs 10-20% LOW; cross-check manual |
+| `combined` | "Magnum + Slow Powder — Combined Bias" | Both stack: 15-25% MV LOW, 25-40% pressure LOW |
+
+Discriminator regression tests live in `internal_ballistics_test.dart`
+(`Pass 2: bias-zone discriminator triggers correctly` group). Widget
+rendering tests live in `internal_ballistics_screen_advisory_test.dart`.
+
+### Calibration anchors (4 of 59 — full corpus in validation report)
 
 | Load | Manual MV | Pred MV | Δ% MV | Manual P | Pred P | Δ% P |
 |---|---|---|---|---|---|---|
@@ -1657,26 +1730,21 @@ loads, retrieved 2026:
 | 6.5 CM, 140gr ELD-M, 41.5gr H4350 | 2710 fps | 2550 | -5.9% | 60100 psi | 53866 | -10.4% |
 | .223 Rem, 55gr FMJ, 26.0gr H335 | 3240 fps | 3450 | +6.5% | 54300 psi | 55307 | +1.9% |
 
-Mean absolute MV error 4.2% (all rows within ±10%); mean absolute
-pressure error 7.0% (all rows within ±15%). The 6.5 CM / H4350
-case is the worst MV outlier — the Powley curve under-predicts MV
-on the modern temp-stable extruded powders (Hodgdon Extreme series)
-by ~6% because their burn-rate-vs-pressure profile is flatter than
-the 1962-era stick powders Powley was calibrated against. The .308
-/ Varget is the worst pressure outlier — over-predicts by ~12%
-because the SAAMI piezo measurement on .308 is conservative
-relative to the physical peak Powley computes.
+Full 59-row table + per-anchor analysis lives at
+`docs/internal_ballistics_validation.md`.
 
 ### Privacy / safety posture
 
 The screen renders a persistent yellow "Estimation Tool — Not a
 Load-Data Substitute" banner at the top, every visit, with no
-dismiss option. Reloaders who acted on a "below max" Powley
+dismiss option. Reloaders who acted on a "below max" model
 prediction without verifying could blow up their rifle, so the
 disclaimer is load-bearing UI. The result card includes a coarse
 SAAMI-band gauge ("Below typical SAAMI max" / "Approaching SAAMI
 max" / "At or above — verify") that's advisory only — it doesn't
-know the user's specific cartridge max.
+know the user's specific cartridge max. The Pass 2 per-prediction
+`BiasAdvisoryCard` (above) is an additional load-specific warning
+that surfaces only when needed.
 
 The calculator is stateless across visits (no profiles, no
 persistence) so a reloader doesn't accidentally trust a stale
@@ -1686,9 +1754,9 @@ fills in every required field and taps "Predict Pressure & MV".
 
 ### Scope
 
-Powley applies to centerfire RIFLE cartridges within the [10%, 110%]
-loading-density band. Out-of-band inputs return null from
-`predictLoad(...)`. Pistol cartridges, shotshell loads, muzzleloaders,
+The model applies to centerfire cased cartridges (rifle + pistol),
+within the [10%, 110%] loading-density band. Out-of-band inputs
+return null from `predictLoad(...)`. Shotshell loads, muzzleloaders,
 and black-powder cartridges are explicitly NOT modelled — the
 calibration corpus doesn't cover them and the predictor would
 produce nonsense numbers. There is no v2 plan to extend the model
@@ -1947,3 +2015,224 @@ the bottom nav, the home-screen tiles, onboarding, marketing
 copy, or any other discovery surface, **do not promote
 inventory**. The Resources tile is the only sanctioned entry
 point.
+
+## 27. Custom-build firearms
+
+The firearm form (`lib/screens/firearms/firearm_form_screen.dart`)
+ships a top-level **Build Type** toggle: `Factory Rifle` or
+`Custom Build`. Factory mode is the long-standing flow (catalog
+pick or freeform manufacturer/model entry). Custom Build mode swaps
+the manufacturer/model fields for a **Components** panel — seven
+autocomplete pickers backed by a real-product catalog.
+
+| | |
+|---|---|
+| Schema additions (v33) | `FirearmComponents` table (catalog), 8 new columns on `UserFirearms` (`isCustomBuild` BOOL, plus `chassisName`/`barrelName`/`triggerName`/`buttstockName`/`muzzleBrakeName`/`suppressorName`/`bipodName` as nullable TEXT) |
+| Catalog seed | `assets/seed_data/components/{chassis,barrels,triggers,buttstocks,muzzle_brakes,suppressors,bipods}.json` — ≈220 currently-shipping products from the dominant precision-rifle / NRL-Hunter / PRS / hunting brands |
+| Service | `lib/repositories/firearm_component_repository.dart` (`FirearmComponentRepository`) |
+| Form widget | `_componentsSection` in the firearm form, rendering seven `_ComponentPicker` instances |
+| Tests | `test/firearm_component_repository_test.dart` (kind round-trip, sort order, attribute decoding, label resolution, bad-JSON defence) |
+| Pro gate | None — same posture as the firearm form itself; custom-build is a ergonomic affordance, not a paid feature |
+
+### Catalog scope (seven kinds, ≈220 products at v33 launch)
+
+| Kind | Anchors |
+|---|---|
+| Chassis | MDT (ACC, XRS, HS3, ESS, LSS, TAC21), KRG (Bravo, Whiskey-3, X-Ray), MPA, Foundation, XLR, Manners, Grayboe, Kelbly's, Cadex, Spuhr, JP — 26 entries |
+| Barrel | Bartlein, Krieger, Brux, Proof Research (Sendero / CF-SR), Hawk Hill, Lothar Walther, Shilen, Benchmark, Pac-Nor, Rock Creek, Lilja, Christensen Arms, McGowen, Faxon, Preferred Barrel Blanks, Border, True-Flite, Liberty, Douglas, E.R. Shaw, Helix 6 — 28 entries |
+| Trigger | TriggerTech (Diamond / Special / Primary), Timney (Calvin Elite, HIT, Two-Stage), Jewell, Bix'n Andy, Geissele Super 700, Rifle Basix, Anschütz — 27 entries |
+| Buttstock | McMillan (A3 / A4 / A5 / Game Warden / Edge), Manners (T1 / T2 / T4 / T5 / T6), Magpul (PRS Gen3, Hunter 700), KRG, H-S Precision, Bell & Carlson, Grayboe, Foundation, Boyd's, Stocky's, Tac Ops — 35 entries |
+| Muzzle brake | Area 419 (Hellfire / Sidewinder), APA (Little Bastard / Fat Bastard), Insite Arms, TBR, MDT, CMT, Erathr3, Patriot Valley, Surefire, Precision Armament, Badger, JEC, Holland's, JP — 24 entries |
+| Suppressor | SilencerCo (Omega / Hybrid / Harvester / Saker / Switchback), Surefire (RC2 / SOCOM), Thunder Beast Arms (Ultra / Magnus / 30P-1 / Take Down 22), Dead Air (Sandman / Nomad / Wolfman / Mask), Sig (SLX / SLH338 / MOD-X 9), HUXWRX (HX-QD / Ventum / Flow / RAD), YHM, Q (Trash Panda / Half Nelson), Energetic Armament, Banish, CGS, Rugged — 49 entries |
+| Bipod | MDT (Ckye-Pod, GroundPod, M0SR), Atlas (BT10 / BT47 / BT65), Harris (S-BRM / S-LM / 1A2-25C), Accu-Tac (FC-G2 / BR-4 / HD-50), Magpul, Spartan Precision (Javelin Pro Hunt / Ascent), Phoenix Precision, Hatch, Wiebad, KMW, Spuhr — 28 entries |
+
+The catalog ships a `FirearmComponentRepository.byKind(...)` lookup
+that drives each picker. Each row carries an `attributesJson` blob
+of category-specific metadata (action footprints, material, pull
+range, mounting types, etc.) that the picker subtitle can surface
+without forcing the schema to model every category-specific shape.
+Adding a new attribute later requires only a JSON-seed change.
+
+### Form behaviour
+
+- **The two modes share every other field.** Caliber, barrel length,
+  twist rate, optic, reticle, sight height, sight scale calibration,
+  zero atmosphere, notes, and shots fired are common to both modes
+  so toggling Factory ↔ Custom mid-edit doesn't lose data.
+- **Free-text override is always allowed.** If the user's product
+  isn't in the catalog they type the name freeform; the picker saves
+  whatever string they typed. Catalog membership is a hint, not a
+  constraint.
+- **Custom builds force `referenceFirearmId = null` on save.** A
+  custom build by definition has no factory-catalog parent; the form
+  enforces the mutual exclusion in `_buildCompanion`.
+- **Save/dispose include the seven new controllers.** The list-add
+  pattern in `initState` / `dispose` matches the existing controller
+  block so a future field addition follows the same path.
+
+### Range Day integration
+
+Range Day's `_applyFirearmDefaults(...)`
+(`lib/screens/range_day/range_day_detail_screen.dart`) reads the
+fields it cares about (default zero range, sight height, twist rate,
+`opticsId`, `reticleId`) directly off the `UserFirearmRow`. Those
+fields are populated identically by both build types, so picking a
+custom-build rifle on Range Day pulls the scope and reticle the same
+way picking a factory rifle does — no extra wiring required.
+
+### Privacy posture
+
+Same as every other reference catalog. The `FirearmComponents` rows
+ship in `assets/seed_data/` (or downloaded by SeedUpdater), are
+read-only at runtime, and contain only public product information —
+no identifiable user data.
+
+### Adding to the catalog
+
+Edit the matching `assets/seed_data/components/<kind>.json` file
+(flat array of objects), then run `flutter test
+test/assets_present_test.dart` to verify the file is reachable
+through `rootBundle` (per CLAUDE.md § 12a — pubspec asset rule). The
+seed loader's reseed-when-empty + force-reseed-via-SeedUpdater
+machinery will pick up the new content on next launch.
+
+## 28. Live seed updates (Firebase Storage)
+
+LoadOut updates its reference catalog (cartridges, powders, bullets,
+optics, components, etc.) without an App Store / Play Store release
+by republishing the bundled JSON to Firebase Storage and letting
+the in-app `SeedUpdater` pick it up on next cold start. **Whenever
+you change ANY file under `assets/seed_data/`, you must also push
+the change to the bucket.** This section is the workflow for doing
+that safely.
+
+### Architecture
+
+| | |
+|---|---|
+| Bucket | `gs://loadout-precision-reloading.firebasestorage.app` |
+| Storage prefix | `seed_data/` (manifest + payloads); `seed_data/archive/` (versioned snapshots) |
+| Rules | `storage.rules` → `match /seed_data/{path=**}` allow public read, authenticated write |
+| Manifest | `seed_data/manifest.json` declares each file's `version` and `filename` |
+| Local mirror on device | `<applicationDocumentsDirectory>/seed_data/<...>` (written by `SeedUpdater`) |
+| Bundled fallback | `assets/seed_data/` (read when local mirror is missing or stale) |
+| Service | `lib/services/seed_updater.dart` — one HTTP fetch per stale file on every launch |
+| Whitelist | `allowedKeys` constant in `seed_updater.dart` — every manifest key must appear here, or the runtime drops it silently. The `seed_updater_allowlist_test.dart` regression catches mismatches |
+
+### Bucket layout
+
+```
+gs://loadout-precision-reloading.firebasestorage.app/
+└── seed_data/
+    ├── manifest.json                    ← always points to current versions
+    ├── cartridges.json
+    ├── powders.json
+    ├── bullets.json
+    ├── ... (12 more top-level files)
+    ├── components/
+    │   ├── chassis.json
+    │   ├── barrels.json
+    │   ├── ... (5 more)
+    ├── drag_curves/
+    │   └── curves.json
+    └── archive/                         ← old versions, never deleted
+        ├── manifest-2026-05-10-180000.json
+        ├── cartridges-v1-2026-05-10-180000.json
+        └── ...
+```
+
+### Publish workflow (operator)
+
+**One-time per machine** — authenticate with the right project:
+
+```sh
+gcloud auth login --update-adc
+gcloud config set project loadout-precision-reloading
+firebase login --reauth
+```
+
+**Every time you change a JSON file:**
+
+1. Edit the file under `assets/seed_data/<...>`.
+2. Bump the matching `version` in `assets/seed_data/manifest.json` —
+   the in-app `SeedUpdater` only fetches files whose remote version
+   is STRICTLY GREATER than the locally-stored version, so leaving
+   the version unchanged means existing installs never see the
+   update.
+3. `flutter test test/seed_updater_allowlist_test.dart` — fast
+   sanity check that the manifest keys + filenames + asset
+   declarations are consistent.
+4. `flutter test test/assets_present_test.dart` — same fast check
+   with bundle-reachability per CLAUDE.md § 12a.
+5. `./scripts/upload_seed_data.sh --dry-run` — preview what's about
+   to be uploaded; verify the diff matches your intent.
+6. `./scripts/upload_seed_data.sh` — publish. The script hashes
+   each file, archives any prior bucket version into
+   `seed_data/archive/<base>-v<old>-<date>.json`, uploads the new
+   payload, then uploads the manifest LAST (so anti-downgrade
+   ordering can't see a manifest pointing at a missing payload).
+
+The script is idempotent — running it twice in a row is a no-op
+(every hash matches).
+
+### Old-version retention (firm rule)
+
+**Old versions are never deleted.** When a JSON changes:
+
+1. The previous bucket file is copied to
+   `seed_data/archive/<base>-v<oldver>-<YYYYMMDD-HHMMSS>.json`.
+2. The new file overwrites the canonical path
+   (`seed_data/<base>.json`).
+3. The manifest's `version` for that key is bumped.
+4. The new manifest replaces the old one — its previous copy is
+   archived to `seed_data/archive/manifest-<YYYYMMDD-HHMMSS>.json`.
+
+Rollback: copy the archive entry back over the canonical path with
+`gsutil cp gs://.../archive/<file>-v<n>-<date>.json
+gs://.../seed_data/<file>.json` and decrement the manifest version.
+We use the explicit `archive/` folder rather than GCS object
+versioning because: (a) it's discoverable in the Firebase Console,
+(b) rollback is one `gsutil cp`, (c) the audit trail is visible
+without an admin API call.
+
+### Rules deploy
+
+`storage.rules` is the source of truth for the bucket's access
+policy. Every change goes through `firebase deploy --only storage`:
+
+```sh
+firebase deploy --only storage
+```
+
+The current rules (post-2026-05-10):
+
+- `seed_data/{path=**}` — public read, authenticated write
+- everything else — deny
+
+The `{path=**}` recursive matcher is load-bearing — the previous
+single-segment `{file}` matcher denied subdirectories like
+`seed_data/components/chassis.json` and
+`seed_data/drag_curves/curves.json`, breaking SeedUpdater for v33
+and v12 catalogs on first publish.
+
+### Privacy posture
+
+Same as § 13. The bucket holds only **published reference catalog
+data** — manufacturer-published cartridge specs, powder burn-rate
+charts, factory load BCs, scope catalogs, component product lists.
+**No user reloading data ever leaves the device.** Cloud Sync
+(§ 19) and Cloud Backup are end-to-end encrypted with the user's
+passphrase and uploaded to the user's OWN iCloud / Drive / OneDrive
+container — those flows never touch this bucket.
+
+### When SeedUpdater silently fails
+
+The most common silent-failure modes:
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| Updates don't reach devices | `storage.rules` denies public read on `seed_data/**` | Re-deploy storage.rules; check live rules in Firebase Console |
+| Updates don't reach devices for a specific table | Manifest key not in `allowedKeys` | `seed_updater_allowlist_test.dart` should have caught this; if not, regenerate the test |
+| Updates don't reach devices for a nested file | `_isSafeManifestFilename` rejected the path | Check the filename has at most one `/`, no `\\`, and ends in `.json` |
+| Local install is stuck on bundled v1 forever | Local `seed_version_<key>` pref is at the same number as remote | Bump the remote `version` in the manifest. SeedUpdater anti-downgrade is strictly-greater. |
+| `/seed_data/manifest.json` returns 404 | Bucket isn't populated yet | Run `./scripts/upload_seed_data.sh` for the first time |

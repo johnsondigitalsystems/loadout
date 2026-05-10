@@ -56,6 +56,8 @@
     "onboardingPrivacyBullet1": "Alle Ladungen, Waffen und Hülsen liegen in der Datenbank Ihres Smartphones.",
     "onboardingPrivacyBullet2": "Sicherungen sind Ende-zu-Ende-verschlüsselt auf Ihr eigenes iCloud oder Google Drive.",
     "onboardingPrivacyBullet3": "Wir betreiben kein Backend, das Ihre Wiederladedaten speichert — bewusst.",
+    "// TRANSLATOR-REVIEW onboardingPrivacyBullet4": "Pattern C device-compatibility disclosure. Native-speaker review needed before launch — this string was machine-translated.",
+    "onboardingPrivacyBullet4": "Einige Pro-Funktionen (Bluetooth-Geräte, Smartwatch-Begleiter, Bewegungssensoren) erfordern Android 11 oder neuer.",
 
     "onboardingGetStarted": "Loslegen",
     "onboardingAppBarTitle": "Willkommen bei LoadOut"

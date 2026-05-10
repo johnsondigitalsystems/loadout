@@ -112,6 +112,7 @@ import 'data/reticle_seed_defaults.dart';
 import 'database/database.dart';
 import 'database/seed_loader.dart';
 import 'firebase_options.dart';
+import 'services/device_compatibility_service.dart';
 import 'services/purchases_service.dart';
 import 'services/seed_updater.dart';
 
@@ -175,7 +176,20 @@ Future<void> main() async {
   // `lib/services/seed_updater.dart` for the full flow.
   unawaited(SeedUpdater(db).checkForUpdates());
 
-  runApp(LoadOutApp(database: db, purchases: purchases));
+  // Snapshot the device's OS version BEFORE runApp so the
+  // DeviceCompatibilityService is provided with a fully-resolved
+  // profile to the widget tree. The detection itself is one platform-
+  // channel hop (~1ms on Android, similar on iOS) and the value
+  // never changes for the lifetime of the process. Failing detection
+  // returns DeviceProfile.unknown — the service still works and
+  // simply reports "no gates" for that device.
+  final compatibility = await DeviceCompatibilityService.detect();
+
+  runApp(LoadOutApp(
+    database: db,
+    purchases: purchases,
+    compatibility: compatibility,
+  ));
 }
 
 /// True when `purchases_flutter` has bindings for the current platform.

@@ -1,6 +1,6 @@
 {
-  "manifest_version": 1,
-  "generated_at": "2026-05-09T00:00:00Z",
+  "manifest_version": 2,
+  "generated_at": "2026-05-10T00:00:00Z",
   "files": {
     "cartridges": {
       "version": 1,
@@ -46,6 +46,14 @@
       "version": 1,
       "filename": "drag_curves/curves.json"
     },
+    "factory_loads": {
+      "version": 1,
+      "filename": "factory_loads.json"
+    },
+    "target_racks": {
+      "version": 1,
+      "filename": "target_racks.json"
+    },
     "scopes_v2": {
       "version": 4,
       "filename": "scopes.json"
@@ -61,6 +69,34 @@
     "manufactured_ammo": {
       "version": 1,
       "filename": "manufactured_ammo.json"
+    },
+    "firearm_components_chassis": {
+      "version": 1,
+      "filename": "components/chassis.json"
+    },
+    "firearm_components_barrels": {
+      "version": 1,
+      "filename": "components/barrels.json"
+    },
+    "firearm_components_triggers": {
+      "version": 1,
+      "filename": "components/triggers.json"
+    },
+    "firearm_components_buttstocks": {
+      "version": 1,
+      "filename": "components/buttstocks.json"
+    },
+    "firearm_components_muzzle_brakes": {
+      "version": 1,
+      "filename": "components/muzzle_brakes.json"
+    },
+    "firearm_components_suppressors": {
+      "version": 1,
+      "filename": "components/suppressors.json"
+    },
+    "firearm_components_bipods": {
+      "version": 1,
+      "filename": "components/bipods.json"
     }
   }
 }

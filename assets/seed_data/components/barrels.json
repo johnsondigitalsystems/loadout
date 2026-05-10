@@ -1,0 +1,254 @@
+[
+  {
+    "manufacturer": "Bartlein Barrels",
+    "model": "Cut-Rifled Stainless Match Blank",
+    "productLine": null,
+    "material": "stainless",
+    "contour": ["Heavy Palma", "MTU", "M24", "Sendero", "#5", "#7", "#13", "Light Varmint", "Heavy Varmint", "Straight 1.250"],
+    "twistRateOptions": ["1:6.5", "1:7", "1:7.5", "1:8", "1:8.5", "1:9", "1:10", "1:11.25", "1:12", "1:14"],
+    "notes": "Industry-standard cut-rifled match blank from 416R stainless. Bartlein is the highest-volume cut-rifled maker in the US and is ubiquitous on PRS / F-class / NRA Long Range rifles. Available in 5R and conventional rifling. Wisconsin-based."
+  },
+  {
+    "manufacturer": "Krieger Barrels",
+    "model": "Cut-Rifled Stainless Match Blank",
+    "productLine": null,
+    "material": "stainless",
+    "contour": ["Palma", "MTU", "M24", "Heavy Varmint", "Light Varmint", "Bull", "#3", "#5", "#7", "Straight 1.250"],
+    "twistRateOptions": ["1:6.5", "1:7", "1:7.7", "1:8", "1:8.5", "1:9", "1:10", "1:11", "1:12", "1:13", "1:14"],
+    "notes": "Single-point cut-rifled blanks; long-time benchrest and high-power favorite. 416R stainless. Wisconsin-based, owned by John Krieger. Known for very tight bore tolerances and conventional or 4-groove canted-land rifling."
+  },
+  {
+    "manufacturer": "Brux Barrels",
+    "model": "Cut-Rifled Stainless Match Blank",
+    "productLine": null,
+    "material": "stainless",
+    "contour": ["Heavy Palma", "MTU", "M24", "#5", "#7", "Light Varmint", "Heavy Varmint", "Straight 1.250"],
+    "twistRateOptions": ["1:7", "1:7.5", "1:8", "1:8.5", "1:9", "1:10", "1:11.25", "1:12"],
+    "notes": "Cut-rifled 416R stainless match blanks. Founded by former Krieger employees; Wisconsin-based. Strong reputation in PRS and F-class circles for accuracy and consistency."
+  },
+  {
+    "manufacturer": "Proof Research",
+    "model": "Sendero Light Carbon-Wrapped",
+    "productLine": "Sendero Light",
+    "material": "carbon-wrapped",
+    "contour": ["Sendero Light"],
+    "twistRateOptions": ["1:7", "1:7.5", "1:8", "1:9", "1:10", "1:11.25", "1:12"],
+    "notes": "Carbon-fiber-wrapped stainless match barrel; Sendero contour optimized for hunting / tactical weight. The carbon wrap dramatically reduces weight versus an equivalent steel contour while maintaining stiffness and adding heat dissipation."
+  },
+  {
+    "manufacturer": "Proof Research",
+    "model": "Heavy Sendero Carbon-Wrapped",
+    "productLine": "Heavy Sendero",
+    "material": "carbon-wrapped",
+    "contour": ["Heavy Sendero"],
+    "twistRateOptions": ["1:7", "1:7.5", "1:8", "1:9", "1:10", "1:11.25", "1:12"],
+    "notes": "Heavier-profile carbon-wrapped barrel for precision rifle / PRS work where added rigidity outweighs weight savings. Same carbon-wrap technology as Sendero Light."
+  },
+  {
+    "manufacturer": "Proof Research",
+    "model": "CF-SR Carbon-Wrapped",
+    "productLine": "CF-SR",
+    "material": "carbon-wrapped",
+    "contour": ["CF-SR"],
+    "twistRateOptions": ["1:7", "1:7.5", "1:8", "1:9", "1:10"],
+    "notes": "Short-range / semi-auto-optimized carbon-wrapped contour. Common on AR-10 / AR-15 precision builds."
+  },
+  {
+    "manufacturer": "Proof Research",
+    "model": "Pre-Fit Stainless Match",
+    "productLine": "Stainless",
+    "material": "stainless",
+    "contour": ["Sendero", "M24", "MTU", "Heavy Varmint"],
+    "twistRateOptions": ["1:7", "1:7.5", "1:8", "1:9", "1:10", "1:11.25", "1:12"],
+    "notes": "Steel-only Proof Research barrel for buyers who want their cut-rifled match accuracy without the carbon wrap. Same chambering and rifling process as the carbon-wrapped line."
+  },
+  {
+    "manufacturer": "Hawk Hill Custom",
+    "model": "Cut-Rifled Stainless Match Blank",
+    "productLine": null,
+    "material": "stainless",
+    "contour": ["Heavy Palma", "MTU", "M24", "Sendero", "#5", "#7", "Straight 1.250"],
+    "twistRateOptions": ["1:7", "1:7.5", "1:8", "1:9", "1:10", "1:11.25", "1:12"],
+    "notes": "Cut-rifled 416R stainless match blanks. Based in Caldwell, Idaho. Widely used in PRS and tactical rifle builds; reputation built on consistent bore dimensions and quick-shipping cycles."
+  },
+  {
+    "manufacturer": "Lothar Walther",
+    "model": "Match LW50",
+    "productLine": "Match LW50",
+    "material": "stainless",
+    "contour": ["Heavy Match", "Light Varmint", "Heavy Varmint", "Bull"],
+    "twistRateOptions": ["1:7", "1:8", "1:9", "1:10", "1:11", "1:12", "1:14"],
+    "notes": "German-made polygonal-rifled stainless match barrel; LW50 alloy is Lothar Walther's proprietary chrome-moly stainless. Widely used in ISSF smallbore, Olympic-style air rifle, and benchrest. Also offered in conventional rifling."
+  },
+  {
+    "manufacturer": "Lothar Walther",
+    "model": "Standard Chromoly Sporter Blank",
+    "productLine": "Standard",
+    "material": "chromoly",
+    "contour": ["Sporter", "Heavy Sporter", "Bull"],
+    "twistRateOptions": ["1:8", "1:9", "1:10", "1:12", "1:14"],
+    "notes": "Lower-cost chrome-moly hammer-forged barrel from Lothar Walther's Germany works. Common OEM choice for European hunting rifles."
+  },
+  {
+    "manufacturer": "Shilen Rifles",
+    "model": "Select Match Stainless",
+    "productLine": "Select Match",
+    "material": "stainless",
+    "contour": ["Heavy Varmint", "Light Varmint", "Sporter", "Bull", "Straight 1.250"],
+    "twistRateOptions": ["1:7", "1:8", "1:9", "1:10", "1:11", "1:12", "1:14"],
+    "notes": "Button-rifled 416R stainless match blank; Shilen's flagship grade. Texas-based maker with deep benchrest history dating to the 1970s. Available in conventional and ratchet (5R-style) rifling."
+  },
+  {
+    "manufacturer": "Shilen Rifles",
+    "model": "Match Grade Chromoly",
+    "productLine": "Match Grade",
+    "material": "chromoly",
+    "contour": ["Sporter", "Heavy Varmint", "Bull"],
+    "twistRateOptions": ["1:8", "1:9", "1:10", "1:12"],
+    "notes": "Button-rifled chrome-moly steel barrel for hunting and varmint rifles. Less expensive than Select Match stainless but same rifling process."
+  },
+  {
+    "manufacturer": "Benchmark Barrels",
+    "model": "Cut-Rifled Stainless Match Blank",
+    "productLine": null,
+    "material": "stainless",
+    "contour": ["Heavy Palma", "MTU", "M24", "#5", "#7", "Straight 1.250"],
+    "twistRateOptions": ["1:7", "1:7.5", "1:8", "1:9", "1:10", "1:11.25", "1:12"],
+    "notes": "Cut-rifled 416R stainless match blanks. Arlington, Washington-based; family-run since 1990s. Common in F-class and PRS builds."
+  },
+  {
+    "manufacturer": "Pac-Nor",
+    "model": "Super Match Stainless",
+    "productLine": "Super Match",
+    "material": "stainless",
+    "contour": ["Sporter", "Varmint", "Heavy Varmint", "Bull", "Palma", "MTU", "Sendero"],
+    "twistRateOptions": ["1:7", "1:8", "1:9", "1:10", "1:11", "1:12", "1:14"],
+    "notes": "Button-rifled 416R stainless match barrel. Brookings, Oregon-based. Pac-Nor pioneered hand-lapping of button-rifled barrels and is a long-time custom-rifle staple."
+  },
+  {
+    "manufacturer": "Pac-Nor",
+    "model": "Premium Chromoly",
+    "productLine": "Premium",
+    "material": "chromoly",
+    "contour": ["Sporter", "Varmint", "Heavy Varmint", "Bull"],
+    "twistRateOptions": ["1:8", "1:9", "1:10", "1:12"],
+    "notes": "Button-rifled 4140 chrome-moly steel for hunting and tactical rifles. Same rifling and lapping process as Super Match stainless."
+  },
+  {
+    "manufacturer": "Rock Creek Barrels",
+    "model": "Cut-Rifled Stainless Match Blank",
+    "productLine": null,
+    "material": "stainless",
+    "contour": ["Heavy Palma", "MTU", "M24", "Sendero", "#5", "#7", "Straight 1.250"],
+    "twistRateOptions": ["1:7", "1:7.5", "1:8", "1:9", "1:10", "1:11.25", "1:12"],
+    "notes": "Cut-rifled 416R stainless match blanks. Albany, Oregon-based. Strong following in benchrest and PRS; known for very straight bores and tight tolerances."
+  },
+  {
+    "manufacturer": "Lilja Precision Rifle Barrels",
+    "model": "Cut-Rifled Stainless Match Blank",
+    "productLine": null,
+    "material": "stainless",
+    "contour": ["Sporter", "Varmint", "Heavy Varmint", "Bull", "Palma", "MTU", "Sendero"],
+    "twistRateOptions": ["1:7", "1:7.5", "1:8", "1:9", "1:10", "1:11.25", "1:12", "1:14"],
+    "notes": "Cut-rifled 416R stainless match blanks. Plains, Montana-based. Lilja makes both conventional and 3-groove rifling and is a common choice for ELR and benchrest. Founded by Dan Lilja."
+  },
+  {
+    "manufacturer": "Christensen Arms",
+    "model": "Carbon Fiber Wrapped Sporter",
+    "productLine": "Carbon Fiber Wrapped",
+    "material": "carbon-wrapped",
+    "contour": ["Sporter", "Sendero"],
+    "twistRateOptions": ["1:8", "1:9", "1:10", "1:11.25", "1:12"],
+    "notes": "Match-grade 416R stainless core with carbon-fiber wrap. Christensen pioneered carbon-wrapped barrels in the late 1990s. Sold both as factory-rifle barrels and as drop-in / pre-fit blanks for Remington 700 and other actions."
+  },
+  {
+    "manufacturer": "McGowen Precision Barrels",
+    "model": "Stainless Match Pre-Fit",
+    "productLine": "Match Stainless",
+    "material": "stainless",
+    "contour": ["Sporter", "Varmint", "Heavy Varmint", "Bull", "Sendero", "MTU"],
+    "twistRateOptions": ["1:7", "1:8", "1:9", "1:10", "1:11.25", "1:12"],
+    "notes": "Button-rifled 416R stainless match barrel. Kalispell, Montana-based. McGowen offers both blank and pre-fit (Savage / Remington / Tikka shouldered) configurations and is popular in mid-budget precision builds."
+  },
+  {
+    "manufacturer": "Faxon Firearms",
+    "model": "Match Series Stainless",
+    "productLine": "Match Series",
+    "material": "stainless",
+    "contour": ["Heavy Fluted", "Pencil", "Government", "Gunner"],
+    "twistRateOptions": ["1:7", "1:8", "1:10"],
+    "notes": "Button-rifled 416R stainless. Faxon is the largest AR-platform precision barrel supplier in the US; also offers bolt-action match blanks. Cincinnati, Ohio-based."
+  },
+  {
+    "manufacturer": "Preferred Barrel Blanks",
+    "model": "Cut-Rifled Stainless Match Blank",
+    "productLine": null,
+    "material": "stainless",
+    "contour": ["Heavy Palma", "MTU", "M24", "Sendero", "#5", "#7", "Straight 1.250"],
+    "twistRateOptions": ["1:7", "1:7.5", "1:8", "1:9", "1:10", "1:11.25", "1:12"],
+    "notes": "Cut-rifled 416R stainless match blanks. Founded by former Bartlein machinists. Known for fast lead-times and tight tolerances; growing reputation in PRS circles."
+  },
+  {
+    "manufacturer": "Border Barrels",
+    "model": "Cut-Rifled Match Blank",
+    "productLine": null,
+    "material": "stainless",
+    "contour": ["Match Heavy", "Sporter", "Varmint", "Palma", "Straight 1.250"],
+    "twistRateOptions": ["1:7", "1:8", "1:9", "1:10", "1:12", "1:14"],
+    "notes": "UK-based cut-rifled barrel maker (Newcastleton, Scotland). Founded by Geoff Kolbe. Highly regarded in F-class and Palma circles internationally; one of the few European cut-rifled match makers."
+  },
+  {
+    "manufacturer": "True-Flite",
+    "model": "Cut-Rifled Stainless Match Blank",
+    "productLine": null,
+    "material": "stainless",
+    "contour": ["Match Heavy", "Sporter", "Varmint", "Bull", "Palma", "MTU"],
+    "twistRateOptions": ["1:7", "1:8", "1:9", "1:10", "1:11", "1:12", "1:14"],
+    "notes": "New Zealand-based cut-rifled match barrel maker. 416R stainless. Strong following in the Australasian F-class and benchrest community; growing US distribution."
+  },
+  {
+    "manufacturer": "Liberty Barrels",
+    "model": "Cut-Rifled Stainless Match Blank",
+    "productLine": null,
+    "material": "stainless",
+    "contour": ["Heavy Palma", "MTU", "M24", "Sendero", "#5", "#7"],
+    "twistRateOptions": ["1:7", "1:7.5", "1:8", "1:9", "1:10", "1:11.25", "1:12"],
+    "notes": "Cut-rifled 416R stainless match blanks. Run by Frank Green (formerly of Bartlein); Wisconsin-based. Smaller-volume custom shop with a reputation for handpicked tolerances."
+  },
+  {
+    "manufacturer": "Douglas Barrels",
+    "model": "XX Premium Stainless",
+    "productLine": "XX Premium",
+    "material": "stainless",
+    "contour": ["Sporter", "Varmint", "Heavy Varmint", "Bull"],
+    "twistRateOptions": ["1:8", "1:9", "1:10", "1:12", "1:14"],
+    "notes": "Button-rifled and air-gauged 416R stainless. Charleston, West Virginia. One of the oldest custom barrel makers in the US (founded 1947); the XX grade is air-gauged for tighter tolerances. Also offered in chrome-moly."
+  },
+  {
+    "manufacturer": "Douglas Barrels",
+    "model": "XX Premium Chromoly",
+    "productLine": "XX Premium",
+    "material": "chromoly",
+    "contour": ["Sporter", "Varmint", "Heavy Varmint", "Bull"],
+    "twistRateOptions": ["1:8", "1:9", "1:10", "1:12", "1:14"],
+    "notes": "Button-rifled, air-gauged 4140 chrome-moly. Same XX premium grading as the stainless line."
+  },
+  {
+    "manufacturer": "E.R. Shaw",
+    "model": "Mk. X Stainless",
+    "productLine": "Mk. X",
+    "material": "stainless",
+    "contour": ["Sporter", "Varmint", "Heavy Varmint", "Bull", "Sendero"],
+    "twistRateOptions": ["1:8", "1:9", "1:10", "1:12"],
+    "notes": "E.R. Shaw button-rifled 416R stainless match barrel. Bridgeville, Pennsylvania-based, family-owned since 1915. Common OEM choice for budget-friendly precision builds and pre-fit barrels."
+  },
+  {
+    "manufacturer": "Helix 6 Precision",
+    "model": "Carbon Fiber Wrapped Match",
+    "productLine": "Helix 6",
+    "material": "carbon-wrapped",
+    "contour": ["Sendero", "Heavy Sendero", "M24"],
+    "twistRateOptions": ["1:7.5", "1:8", "1:9", "1:10"],
+    "notes": "Match-grade stainless core with carbon-fiber wrap. Newer carbon-wrap entrant (founded 2018) competing directly with Proof Research. Known for proprietary heat-management lay-up."
+  }
+]

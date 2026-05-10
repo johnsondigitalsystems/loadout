@@ -17,6 +17,12 @@
 //   * `data class ActiveLoadSnapshot` — current recipe summary. Wire
 //     keys: `n` (name), `cart` (cartridge), `p` (powder), `pgr` (powder
 //     grains), `b` (bullet), `bgr` (bullet grains).
+//   * `data class FirearmGlanceSnapshot` — currently-selected firearm
+//     summary plus barrel-life telemetry. Wire keys: `n` (name), `m`
+//     (manufacturer + model, optional), `c` (caliber, optional), `s`
+//     (shots fired, optional), `bl` (barrel-life total, optional), `r`
+//     (remaining = bl - s, optional, derived on the phone), `g`
+//     (generated-at ms, optional).
 //
 // Each `fromJson` returns null on any decode failure rather than
 // throwing — the listener treats null as "ignore this payload" and
@@ -195,6 +201,47 @@ data class ActiveLoadSnapshot(
                     powderChargeGr = if (obj.has("pgr")) obj.optDouble("pgr") else null,
                     bulletName = obj.optString("b", "").ifEmpty { null },
                     bulletWeightGr = if (obj.has("bgr")) obj.optDouble("bgr") else null,
+                )
+            } catch (e: JSONException) {
+                null
+            }
+        }
+    }
+}
+
+/**
+ * Active firearm summary plus barrel-life telemetry pushed to the
+ * watch. Mirrors the iOS `FirearmGlanceSnapshot` and Dart
+ * `lib/models/watch_payloads.dart`. Every numeric field is optional —
+ * a freshly-saved firearm without a barrel-life budget set still
+ * produces a valid payload; the watch UI hides what it doesn't have.
+ *
+ * `remainingShots`, when present, is the phone-computed
+ * `barrelLifeShots - shotsFired` value. We don't recompute on the
+ * watch because the phone might be using a custom barrel-life
+ * heuristic the watch doesn't know about (e.g. "burnout shifts the
+ * effective ceiling down 5%").
+ */
+data class FirearmGlanceSnapshot(
+    val name: String,
+    val manufacturerModel: String? = null,
+    val caliber: String? = null,
+    val shotsFired: Int? = null,
+    val barrelLifeShots: Int? = null,
+    val remainingShots: Int? = null,
+    val generatedAtMs: Long = 0L,
+) {
+    companion object {
+        fun fromJson(obj: JSONObject): FirearmGlanceSnapshot? {
+            return try {
+                FirearmGlanceSnapshot(
+                    name = obj.getString("n"),
+                    manufacturerModel = obj.optString("m", "").ifEmpty { null },
+                    caliber = obj.optString("c", "").ifEmpty { null },
+                    shotsFired = if (obj.has("s")) obj.optInt("s") else null,
+                    barrelLifeShots = if (obj.has("bl")) obj.optInt("bl") else null,
+                    remainingShots = if (obj.has("r")) obj.optInt("r") else null,
+                    generatedAtMs = obj.optLong("g", System.currentTimeMillis()),
                 )
             } catch (e: JSONException) {
                 null

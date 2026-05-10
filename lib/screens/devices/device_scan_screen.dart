@@ -54,6 +54,7 @@ import '../../services/ble/leica_geovid_service.dart';
 import '../../services/ble/sig_kilo_service.dart';
 import '../../services/ble/vectronix_terrapin_service.dart';
 import '../../services/ble/vortex_rangefinder_service.dart';
+import '../../widgets/ble_android_legacy_explainer.dart';
 
 /// What kind of device this scan-and-connect flow is for. Each kind
 /// carries its own service UUID, friendly title, and connect handler.
@@ -248,6 +249,19 @@ class _DeviceScanScreenState extends State<DeviceScanScreen> {
       final stream = await ble.startScan(
         timeout: const Duration(seconds: 12),
         withServices: widget.kind.scanFilters,
+        // Android 10/11 explainer dialog. Fires ONCE per device-lifetime
+        // before the OS location-permission prompt so the user
+        // understands why a Bluetooth scan needs location permission
+        // (it doesn't in our app — it's a pre-Android-12 platform
+        // requirement). On Android 12+, modern devices, iOS, and the
+        // Web build, this callback is never invoked.
+        androidLegacyLocationExplainer: () async {
+          // Capture the current widget context BEFORE the awaited
+          // permission request so the dialog has a live tree to push
+          // into — `context` after `await` could be deactivated.
+          if (!mounted) return false;
+          return showBleAndroidLegacyExplainer(context);
+        },
       );
       _sub = stream.listen((batch) {
         for (final r in batch) {

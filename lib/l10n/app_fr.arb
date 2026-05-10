@@ -56,6 +56,8 @@
     "onboardingPrivacyBullet1": "Toutes les charges, armes et douilles vivent dans la base de données de votre téléphone.",
     "onboardingPrivacyBullet2": "Les sauvegardes sont chiffrées de bout en bout vers votre propre iCloud ou Google Drive.",
     "onboardingPrivacyBullet3": "Nous n'exploitons pas de backend qui stockerait vos données de rechargement — par conception.",
+    "// TRANSLATOR-REVIEW onboardingPrivacyBullet4": "Pattern C device-compatibility disclosure. Native-speaker review needed before launch — this string was machine-translated.",
+    "onboardingPrivacyBullet4": "Certaines fonctionnalités Pro (appareils Bluetooth, compagnon montre, capteurs de mouvement) nécessitent Android 11 ou plus récent.",
 
     "onboardingGetStarted": "Commencer",
     "onboardingAppBarTitle": "Bienvenue sur LoadOut"

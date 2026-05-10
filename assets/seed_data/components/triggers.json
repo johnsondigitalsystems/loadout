@@ -1,0 +1,277 @@
+[
+  {
+    "manufacturer": "TriggerTech",
+    "model": "Diamond Pro Curved",
+    "productLine": "Diamond",
+    "stage": "single",
+    "pullRangeOz": "4-32",
+    "inletAction": ["Remington 700", "Remington 700 clones", "Bighorn TL3", "Bighorn Origin", "Defiance", "Stiller", "Bat", "Kelbly", "Impact Precision"],
+    "notes": "Premium single-stage drop-in. Frictionless Release Technology, zero creep, sub-0.010 in overtravel. The Diamond family is TriggerTech's flagship for PRS / NRL-Hunter. Pro Curved lever is a flat-faced curved profile for cleaner straight-back pulls.",
+    "safety": "manual",
+    "bottomBoltRelease": false
+  },
+  {
+    "manufacturer": "TriggerTech",
+    "model": "Diamond Flat",
+    "productLine": "Diamond",
+    "stage": "single",
+    "pullRangeOz": "4-32",
+    "inletAction": ["Remington 700", "Remington 700 clones", "Bighorn TL3", "Bighorn Origin", "Defiance", "Stiller", "Bat", "Kelbly", "Impact Precision"],
+    "notes": "Same Diamond internals as the Pro Curved variant; flat trigger shoe preferred by competitive PRS shooters who index off a vertical face. Frictionless Release Technology, zero creep.",
+    "safety": "manual"
+  },
+  {
+    "manufacturer": "TriggerTech",
+    "model": "Diamond Two-Stage",
+    "productLine": "Diamond",
+    "stage": "two-stage",
+    "pullRangeOz": "8-44",
+    "inletAction": ["Remington 700", "Remington 700 clones", "Bighorn TL3", "Bighorn Origin", "Defiance", "Stiller", "Impact Precision"],
+    "notes": "Two-stage Diamond. 1st stage 4-20 oz, 2nd stage 4-24 oz. Available in Pro Curved and Flat. First-stage lockout, sub-0.010 in overtravel. Popular among ELR and F-Class shooters who want a defined wall.",
+    "safety": "manual"
+  },
+  {
+    "manufacturer": "TriggerTech",
+    "model": "Special",
+    "productLine": "Special",
+    "stage": "single",
+    "pullRangeOz": "16-56",
+    "inletAction": ["Remington 700", "Remington 700 clones", "Tikka T3", "Tikka T3x", "Tikka T1x", "Bergara B-14", "Ruger American", "Savage Axis", "Mossberg Patriot"],
+    "notes": "Mid-tier single-stage. 1.0-3.5 lb (16-56 oz) adjusted in 1-oz increments via external set screw. Frictionless Release Technology. Most popular drop-in for hunters and entry-level PRS builds.",
+    "safety": "manual"
+  },
+  {
+    "manufacturer": "TriggerTech",
+    "model": "Special Two-Stage",
+    "productLine": "Special",
+    "stage": "two-stage",
+    "pullRangeOz": "16-56",
+    "inletAction": ["Remington 700", "Remington 700 clones", "Bighorn TL3", "Bighorn Origin", "Defiance"],
+    "notes": "Two-stage Special. 1st stage 8-24 oz, 2nd stage 8-32 oz. Pro Curved or Flat shoe. First-stage lockout, sub-0.010 in overtravel. A more affordable two-stage than the Diamond.",
+    "safety": "manual"
+  },
+  {
+    "manufacturer": "TriggerTech",
+    "model": "Primary",
+    "productLine": "Primary",
+    "stage": "single",
+    "pullRangeOz": "24-56",
+    "inletAction": ["Remington 700", "Remington 700 clones", "Tikka T3", "Tikka T3x", "Tikka T1x", "Bergara B-14", "Ruger American", "Savage Axis", "Mossberg Patriot", "Howa 1500"],
+    "notes": "Entry-level TriggerTech. 1.5-4.0 lb (24-64 oz). Frictionless Release Technology shared with the higher tiers but lower-cost finish package. Hunting / general-purpose drop-in.",
+    "safety": "manual"
+  },
+  {
+    "manufacturer": "TriggerTech",
+    "model": "Adaptable AR Bolt-Action Two-Stage",
+    "productLine": "Adaptable",
+    "stage": "two-stage",
+    "pullRangeOz": "28-80",
+    "inletAction": ["AR-15 bolt-action", "AR-style precision bolt rifles"],
+    "notes": "Two-stage drop-in cassette for AR-platform bolt-action rifles. Pull weight adjusts independently of hammer force, so primer strikes stay reliable across the range. 1.75-4.25 lb total. Pro Curved or Flat lever, mil-spec 0.154 in pins.",
+    "safety": "none"
+  },
+  {
+    "manufacturer": "TriggerTech",
+    "model": "Diamond (Tikka)",
+    "productLine": "Diamond",
+    "stage": "single",
+    "pullRangeOz": "4-32",
+    "inletAction": ["Tikka T3", "Tikka T3x", "Tikka T1x"],
+    "notes": "Diamond-tier drop-in for Tikka T3/T3x/T1x. Same Frictionless Release Technology as the Rem 700 Diamond, machined for the Tikka pin spacing. Popular CTR / Tac A1 upgrade.",
+    "safety": "manual"
+  },
+  {
+    "manufacturer": "TriggerTech",
+    "model": "Special (Tikka)",
+    "productLine": "Special",
+    "stage": "single",
+    "pullRangeOz": "16-56",
+    "inletAction": ["Tikka T3", "Tikka T3x", "Tikka T1x"],
+    "notes": "Special-tier drop-in for Tikka. 1.0-3.5 lb. The most common Tikka T1x rimfire trainer trigger upgrade.",
+    "safety": "manual"
+  },
+  {
+    "manufacturer": "Timney",
+    "model": "Calvin Elite",
+    "productLine": "Calvin Elite",
+    "stage": "single",
+    "pullRangeOz": "8-32",
+    "inletAction": ["Remington 700", "Remington 700 clones"],
+    "notes": "Premium single-stage with the four interchangeable trigger shoes (curved, straight, knurled, traditional). Adjustable 8 oz to 2.0 lb. Polished sears, designed by long-range shooter Calvin Motley.",
+    "safety": "manual"
+  },
+  {
+    "manufacturer": "Timney",
+    "model": "Calvin Elite Two-Stage",
+    "productLine": "Calvin Elite",
+    "stage": "two-stage",
+    "pullRangeOz": "16-40",
+    "inletAction": ["Remington 700", "Remington 700 clones"],
+    "notes": "Two-stage Calvin Elite (model 532CE). 1st stage 8-24 oz, 2nd stage 8-32 oz. Double-sear design with side safety. Drop-in self-contained.",
+    "safety": "manual"
+  },
+  {
+    "manufacturer": "Timney",
+    "model": "HIT",
+    "productLine": "HIT",
+    "stage": "single",
+    "pullRangeOz": "8-32",
+    "inletAction": ["Remington 700", "Remington 700 clones"],
+    "notes": "Designed for long-range and competition. Adjustable 8 oz to 2.0 lb. Sear Engagement Adjustment Lock (SEAL'd) design, NP-3 plated sear, 56 Rockwell heat-treat. Two-position trigger-blocking side safety.",
+    "safety": "manual"
+  },
+  {
+    "manufacturer": "Timney",
+    "model": "Elite Hunter",
+    "productLine": "Elite Hunter",
+    "stage": "single",
+    "pullRangeOz": "32-64",
+    "inletAction": ["Remington 700", "Remington 700 clones"],
+    "notes": "Model 510-V2. 2-4 lb single-stage. Heat-treated steel trigger in 6061-T6 aluminum housing. Wide 3/8 in textured shoe. Trigger-blocking safety. Hunting-focused drop-in.",
+    "safety": "manual"
+  },
+  {
+    "manufacturer": "Timney",
+    "model": "Two-Stage 533",
+    "productLine": "Two-Stage",
+    "stage": "two-stage",
+    "pullRangeOz": "24-64",
+    "inletAction": ["Remington 700", "Remington 700 clones"],
+    "notes": "Model 533. Calibrated 8 oz first stage, 1.5 lb second stage; adjustable 1.5-3 lb on 2nd stage. A2 tool-steel work surfaces, Teflon-nickel-coated sears. Curved or straight shoe.",
+    "safety": "manual"
+  },
+  {
+    "manufacturer": "Timney",
+    "model": "Impact 700",
+    "productLine": "Impact",
+    "stage": "single",
+    "pullRangeOz": "48-64",
+    "inletAction": ["Remington 700", "Remington 700 clones"],
+    "notes": "Factory-set 3-4 lb (non-adjustable). SEAL'd geometry. Entry-level Timney drop-in built from machined billet steel. Curved profile.",
+    "safety": "manual"
+  },
+  {
+    "manufacturer": "Timney",
+    "model": "Tikka T3 Two-Stage",
+    "productLine": "Tikka",
+    "stage": "two-stage",
+    "pullRangeOz": "24-56",
+    "inletAction": ["Tikka T3", "Tikka T3x"],
+    "notes": "Two-stage drop-in for Tikka T3/T3x. 1st stage 8 oz to 1 lb, 2nd stage 1 lb to 2.5 lb. Fully adjustable for sear engagement, overtravel, and both pull-weight stages.",
+    "safety": "manual"
+  },
+  {
+    "manufacturer": "Timney",
+    "model": "Howa 1500",
+    "productLine": "Howa",
+    "stage": "single",
+    "pullRangeOz": "48-80",
+    "inletAction": ["Howa 1500", "Weatherby Vanguard"],
+    "notes": "Drop-in single-stage for Howa 1500 / Weatherby Vanguard. Adjustable from 3 lb minimum, fully adjustable for pull weight, creep, follow-through. With Howa-specific safety.",
+    "safety": "manual"
+  },
+  {
+    "manufacturer": "Jewell",
+    "model": "HVR",
+    "productLine": "HVR",
+    "stage": "single",
+    "pullRangeOz": "1.5-56",
+    "inletAction": ["Remington 700", "Remington 40X", "Winchester Model 70"],
+    "notes": "Hunting/Varmint Rifle. Three interchangeable spring options: A 8-56 oz, B 2-16 oz, C 1.5-3 oz. Factory preset around 1 lb. The benchrest-community standard for decades. Top-right safety variants ship with bolt release.",
+    "safety": "manual",
+    "bottomBoltRelease": false
+  },
+  {
+    "manufacturer": "Jewell",
+    "model": "BR",
+    "productLine": "BR",
+    "stage": "single",
+    "pullRangeOz": "1.5-3",
+    "inletAction": ["Remington 700", "Remington 40X"],
+    "notes": "Light-Pull Competition / Benchrest. Adjustable 1.5-3 oz. No safety on most variants. Used at the top tier of short-range benchrest. Not appropriate for hunting use given the pull weight.",
+    "safety": "none"
+  },
+  {
+    "manufacturer": "Bix'n Andy",
+    "model": "TacSport Pro-X",
+    "productLine": "TacSport",
+    "stage": "single",
+    "pullRangeOz": "3.5-35",
+    "inletAction": ["Remington 700", "Remington 700 clones", "BAT", "Defiance", "Impact Precision", "Kelbly", "Stiller", "Bighorn"],
+    "notes": "Single-stage with patented ball-bearing trigger mechanism. Adjustable 3.5 oz to 2.2 lb via single screw. Extra CNC polishing over previous TacSport Pro. Multiple shoe options (Gator, 90-degree, wide smooth). Weatherproof.",
+    "safety": "manual",
+    "bottomBoltRelease": true
+  },
+  {
+    "manufacturer": "Bix'n Andy",
+    "model": "TacSport Pro-X Two-Stage",
+    "productLine": "TacSport",
+    "stage": "two-stage",
+    "pullRangeOz": "5.7-48",
+    "inletAction": ["Remington 700", "Remington 700 clones", "BAT", "Defiance", "Impact Precision", "Kelbly", "Stiller", "Bighorn"],
+    "notes": "Two-stage TacSport Pro-X. 1st stage 3.2 oz to 2 lb, 2nd stage 2.5 oz to 1 lb. Ball-bearing internals. Top-right safety with bolt release common.",
+    "safety": "manual",
+    "bottomBoltRelease": true
+  },
+  {
+    "manufacturer": "Bix'n Andy",
+    "model": "Dakota",
+    "productLine": "Dakota",
+    "stage": "single",
+    "pullRangeOz": "16-72",
+    "inletAction": ["Remington 700", "Remington 700 clones", "Tikka T3", "Tikka T3x"],
+    "notes": "Searless ball-trigger design, fewer moving parts than the TacSport. 1.0-4.5 lb (450-2000 g) via single screw. Weatherproof, designed for hunting and field use. Top-left, top-right, and bottom safety variants.",
+    "safety": "manual",
+    "bottomBoltRelease": true
+  },
+  {
+    "manufacturer": "Bix'n Andy",
+    "model": "Competition",
+    "productLine": "Competition",
+    "stage": "single",
+    "pullRangeOz": "1-25",
+    "inletAction": ["Remington 700", "Remington 40X", "Tikka T3", "Tikka T3x"],
+    "notes": "Benchrest / F-Class trigger. Adjustable 1-25 oz (~30-700 g) using included spring set. Break consistency measured within 0.03 oz. No-safety and bolt-release variants for benchrest actions. Patented ball-trigger.",
+    "safety": "none"
+  },
+  {
+    "manufacturer": "Anschütz",
+    "model": "5018",
+    "productLine": "Match",
+    "stage": "two-stage",
+    "pullRangeOz": "2.4-18",
+    "inletAction": ["Anschütz 1800-series", "Anschütz 1900-series", "Anschütz 54.18 Match", "Anschütz 1907", "Anschütz 1827 Biathlon"],
+    "notes": "Match two-stage trigger configurable as single-stage. Standard range 2.4-7.0 oz (68-198 g); optional springs extend to 8.82-17.64 oz (250-500 g). Cam in low position gives lowest break weight. The reference small-bore match trigger; ships on the 54-action match rifles.",
+    "safety": "manual"
+  },
+  {
+    "manufacturer": "Geissele",
+    "model": "Super 700",
+    "productLine": "Super 700",
+    "stage": "two-stage",
+    "pullRangeOz": "12-56",
+    "inletAction": ["Remington 700", "Remington 700 clones"],
+    "notes": "Convertible single-stage / two-stage drop-in based on Geissele's MK13 mil-spec sniper trigger. Total pull 1.5-3.5 lb (factory 2.5 lb); two-stage default 1.75 lb / 2.5 lb. Currently shipping at $360 MSRP from Geissele direct.",
+    "safety": "manual"
+  },
+  {
+    "manufacturer": "Rifle Basix",
+    "model": "SAV-1",
+    "productLine": "SAV",
+    "stage": "single",
+    "pullRangeOz": "14-48",
+    "inletAction": ["Savage 110", "Savage Axis", "Savage Edge", "Savage 10/110 short-action", "Savage 10/110 long-action"],
+    "notes": "Hunting-weight Savage drop-in. 14 oz to 3 lb. Adjustable for sear engagement, safety engagement, overtravel, and pull weight. Replaces the AccuTrigger on factory Savage rifles for hunters who don't want the blade safety.",
+    "safety": "manual"
+  },
+  {
+    "manufacturer": "Rifle Basix",
+    "model": "SAV-2",
+    "productLine": "SAV",
+    "stage": "single",
+    "pullRangeOz": "4-48",
+    "inletAction": ["Savage 110", "Savage Axis", "Savage 10/110 short-action", "Savage 10/110 long-action"],
+    "notes": "Match / target weight Savage drop-in. 4 oz to 3 lb. Adjustable take-up, overtravel, and pull weight. Lower minimum pull than SAV-1, intended for varmint and target work.",
+    "safety": "manual"
+  }
+]

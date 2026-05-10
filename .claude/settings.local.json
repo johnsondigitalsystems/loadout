@@ -307,7 +307,21 @@
       "Bash(/usr/local/bin/pod --version)",
       "Bash(/opt/homebrew/opt/ruby@3.3/bin/gem env *)",
       "Bash(/opt/homebrew/opt/ruby@3.3/bin/gem install *)",
-      "Bash(bash -lc 'pod install 2>&1 | tail -15')"
+      "Bash(bash -lc 'pod install 2>&1 | tail -15')",
+      "Bash(awk 'NR==514{print \"DELETE_FROM_HERE\"} NR==734{print \"DELETE_TO_HERE\"}' lib/screens/firearms/firearm_form_screen.dart)",
+      "Bash(sed -i '' '514,733d' lib/screens/firearms/firearm_form_screen.dart)",
+      "Bash(sed -n '511,520p' lib/screens/firearms/firearm_form_screen.dart)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(cp -R ios/RunnerWatchApp/. /Users/general/Development/Applications/LoadOut/ios/RunnerWatchApp/)",
+      "Bash(cp -R ios/RunnerWatchAppTests/. /Users/general/Development/Applications/LoadOut/ios/RunnerWatchAppTests/)",
+      "Bash(grep -n \"void _applyFirearmDefaults\\\\|_scheduleSolve\\(\\);\\\\s*$\" /Users/general/Development/Applications/LoadOut/lib/screens/range_day/range_day_detail_screen.dart)",
+      "Bash(chmod +x /Users/general/Development/Applications/LoadOut/scripts/upload_seed_data.sh)",
+      "Bash(gsutil ls *)",
+      "Bash(firebase projects:list)",
+      "Bash(gcloud auth *)",
+      "Bash(./scripts/upload_seed_data.sh --dry-run)",
+      "Bash(grep -n \"^done$\\\\|^for line in\" /Users/general/Development/Applications/LoadOut/scripts/upload_seed_data.sh)",
+      "Bash(./scripts/upload_seed_data.sh)"
     ]
   }
 }

@@ -116,6 +116,7 @@
 import 'dart:async';
 
 import 'package:app_links/app_links.dart';
+import 'package:drift/drift.dart' as drift;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -123,6 +124,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'database/database.dart';
 import 'l10n/app_localizations.dart';
+import 'models/watch_payloads.dart';
 import 'repositories/atmosphere_preset_repository.dart';
 import 'repositories/ballistic_profile_repository.dart';
 import 'repositories/batch_repository.dart';
@@ -131,6 +133,7 @@ import 'repositories/component_inventory_repository.dart';
 import 'repositories/component_repository.dart';
 import 'repositories/drag_curve_repository.dart';
 import 'repositories/favorites_repository.dart';
+import 'repositories/firearm_component_repository.dart';
 import 'repositories/firearm_repository.dart';
 import 'repositories/load_development_repository.dart';
 import 'repositories/manufactured_ammo_repository.dart';
@@ -144,9 +147,11 @@ import 'screens/auth/biometric_lock_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/disclaimer/disclaimer_screen.dart';
 import 'screens/home/home_screen.dart';
+import 'services/active_range_day_session.dart';
 import 'services/ai_smart_import_service.dart';
 import 'services/auth_service.dart';
 import 'services/auto_save_service.dart';
+import 'services/device_compatibility_service.dart';
 import 'services/beginner_mode_service.dart';
 import 'services/biometric_service.dart';
 import 'services/ble/ble_service.dart';
@@ -192,10 +197,18 @@ class LoadOutApp extends StatelessWidget {
     super.key,
     required this.database,
     required this.purchases,
+    required this.compatibility,
   });
 
   final AppDatabase database;
   final PurchasesService purchases;
+
+  /// Pre-resolved device-compatibility snapshot (OS version + which
+  /// hardware-linked features are gated on this device). Detected at
+  /// startup in `main.dart` so the widget tree gets a synchronous
+  /// instance rather than having to await a platform-channel call
+  /// during build. See `lib/services/device_compatibility_service.dart`.
+  final DeviceCompatibilityService compatibility;
 
   /// App-wide navigator key. Used by the share-intent listener
   /// (`ShareHandlerService`) to push the recipe-review screen when
@@ -212,9 +225,21 @@ class LoadOutApp extends StatelessWidget {
       providers: [
         Provider<AppDatabase>.value(value: database),
         Provider<PurchasesService>.value(value: purchases),
+        // Pre-resolved device-compatibility snapshot. Read from
+        // `lib/screens/settings/device_compatibility_screen.dart`,
+        // `lib/screens/settings/settings_screen.dart` (gates the
+        // tile visibility), and the paywall footer link.
+        Provider<DeviceCompatibilityService>.value(value: compatibility),
         Provider<AuthService>(create: (_) => AuthService()),
         Provider<RecipeRepository>(create: (_) => RecipeRepository(database)),
         Provider<FirearmRepository>(create: (_) => FirearmRepository(database)),
+        // Custom-build component catalog (chassis / barrel / trigger /
+        // buttstock / muzzle brake / suppressor / bipod) — schema v33.
+        // Read-only; the seed loader populates the table on first
+        // launch.
+        Provider<FirearmComponentRepository>(
+          create: (_) => FirearmComponentRepository(database),
+        ),
         Provider<ComponentRepository>(
           create: (_) => ComponentRepository(database),
         ),
@@ -575,12 +600,14 @@ class _AuthGate extends StatefulWidget {
 class _AuthGateState extends State<_AuthGate> {
   StreamSubscription<Uri>? _linkSub;
   StreamSubscription<User?>? _authSub;
+  StreamSubscription<ShotLogged>? _watchShotSub;
 
   @override
   void initState() {
     super.initState();
     _initDeepLinks();
     _initPurchasesUserSync();
+    _wireWatchShotIngest();
     _maybePullCloudSyncOnLaunch();
   }
 
@@ -672,10 +699,93 @@ class _AuthGateState extends State<_AuthGate> {
     });
   }
 
+  /// Subscribe to `log_shot` payloads from the watch. When one
+  /// arrives:
+  ///   * resolve the active Range Day session id from
+  ///     [ActiveRangeDaySession];
+  ///   * write a shot row to that session at center (0, 0) — the
+  ///     watch can't tell us where on the target the round landed,
+  ///     and the user fixes the impact afterward by dragging the dot
+  ///     on the Target Plot;
+  ///   * surface a small in-app SnackBar so the user knows the watch
+  ///     shot landed on the phone (helpful when the phone is in a
+  ///     pocket / on a tripod).
+  ///
+  /// When no Range Day session is active the shot is dropped with a
+  /// debug log line. The watch transport queues messages while the
+  /// phone is asleep, so a shot fired before the user opened a
+  /// session may still be re-delivered later — at that point we
+  /// don't have the right session to attribute it to anyway, so
+  /// dropping is correct. This is the conservative behaviour;
+  /// see CLAUDE.md §15.
+  void _wireWatchShotIngest() {
+    final bridge = context.read<WatchBridgeService>();
+    if (!bridge.isSupported) return;
+    _watchShotSub = bridge.incomingShots.listen(_onWatchShotLogged);
+  }
+
+  /// Handler for `incomingShots`. Pulled out of the listener body so
+  /// it can be tested by pumping `ShotLogged` events through a fake
+  /// channel without spinning up the full app.
+  Future<void> _onWatchShotLogged(ShotLogged shot) async {
+    if (!mounted) return;
+    final sessionId = ActiveRangeDaySession.id;
+    if (sessionId == null) {
+      debugPrint(
+        '[watch] log_shot received but no Range Day session active; '
+        'dropping (peakG=${shot.peakG} src=${shot.source}).',
+      );
+      return;
+    }
+    final repo = context.read<RangeDayRepository>();
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    try {
+      final shotNumber = await repo.nextShotNumberForSession(sessionId);
+      // The watch can't tell us where on the target the round landed.
+      // Drop the impact dot at center (0, 0) and let the user drag it
+      // afterward on the Target Plot. The note records the source and
+      // peak G so the user can tell watch shots from finger-tap shots
+      // when reviewing the session later.
+      final note = _formatWatchShotNote(shot);
+      await repo.insertShot(ShotImpactsCompanion.insert(
+        rangeDaySessionId: sessionId,
+        shotNumber: shotNumber,
+        impactX: 0,
+        impactY: 0,
+        notes: drift.Value(note),
+      ));
+      if (!mounted) return;
+      messenger?.showSnackBar(
+        SnackBar(
+          content: Text('Watch shot $shotNumber logged.'),
+          duration: const Duration(milliseconds: 1200),
+        ),
+      );
+    } catch (e, stack) {
+      debugPrint('[watch] failed to write log_shot: $e');
+      debugPrintStack(stackTrace: stack, label: '_onWatchShotLogged');
+    }
+  }
+
+  /// Format the watch-shot context as a free-form note that the user
+  /// will see in the per-shot dialog. Examples:
+  ///   "Watch shot (motion, 6.4 g)"
+  ///   "Watch shot (swipe)"
+  ///   "Watch shot (manual)"
+  static String _formatWatchShotNote(ShotLogged shot) {
+    final src = shot.source;
+    final peak = shot.peakG;
+    if (src == ShotSource.motion && peak != null) {
+      return 'Watch shot ($src, ${peak.toStringAsFixed(1)} g)';
+    }
+    return 'Watch shot ($src)';
+  }
+
   @override
   void dispose() {
     _linkSub?.cancel();
     _authSub?.cancel();
+    _watchShotSub?.cancel();
     super.dispose();
   }
 

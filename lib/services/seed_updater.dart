@@ -138,7 +138,13 @@ const seedNeedsReseedPrefix = 'seed_needs_reseed_';
 /// Logical keys we recognize in a manifest. Anything outside this set is
 /// ignored — keeps a malicious or future-shape manifest from writing
 /// arbitrary files into the documents directory.
-const _allowedKeys = <String>{
+///
+/// Every entry here MUST line up with a `seed_loader.dart` reseed
+/// branch and (for non-trivial new shapes) a `_validateShape` case
+/// below. The `seed_updater_allowlist_test.dart` regression test
+/// asserts the bundled manifest's keys are a subset of this set.
+const allowedKeys = <String>{
+  // Bundled-since-v1 reference tables.
   'cartridges',
   'powders',
   'bullets',
@@ -147,6 +153,34 @@ const _allowedKeys = <String>{
   'firearms',
   'firearm_parts',
   'optics',
+  // v8 onwards.
+  'targets',
+  'reticles',
+  // v12 — Hornady 4DOF / Berger / Sierra measured drag curves.
+  'drag_curves',
+  // v14 — factory loads supplement.
+  'factory_loads',
+  // v19 — target racks reference catalog.
+  'target_racks',
+  // v22 — verified scope + reticle catalog.
+  'scopes_v2',
+  'reticles_v2',
+  'scope_reticle_options',
+  // v23 — curated manufactured-ammo catalog feeding the Range Day
+  // common-load picker.
+  'manufactured_ammo',
+  // v33 — custom-build component catalog (chassis / barrel / trigger
+  // / buttstock / muzzle brake / suppressor / bipod). Each kind ships
+  // as its own file under `seed_data/components/<kind>.json`. The
+  // seed loader's reseed flag (`firearm_components`) covers all seven
+  // sub-files together — see `seed_loader.dart`.
+  'firearm_components_chassis',
+  'firearm_components_barrels',
+  'firearm_components_triggers',
+  'firearm_components_buttstocks',
+  'firearm_components_muzzle_brakes',
+  'firearm_components_suppressors',
+  'firearm_components_bipods',
 };
 
 /// Pulls fresh reference-catalog JSON from Firebase Storage and caches it
@@ -182,7 +216,7 @@ class SeedUpdater {
 
       for (final entry in files.entries) {
         final key = entry.key;
-        if (!_allowedKeys.contains(key)) continue;
+        if (!allowedKeys.contains(key)) continue;
 
         final spec = entry.value;
         if (spec is! Map<String, dynamic>) continue;
@@ -193,9 +227,18 @@ class SeedUpdater {
           continue;
         }
 
-        // Don't trust the manifest's filename to navigate out of the
-        // seed_data directory — only allow simple basenames.
-        if (filename.contains('/') || filename.contains('\\')) {
+        // Filename safety: allow at most ONE level of subdirectory
+        // (e.g. `components/chassis.json`, `drag_curves/curves.json`)
+        // so the v33 component catalogs and the v12 drag-curves
+        // bundle can update over the air. Reject backslashes,
+        // absolute paths, parent-traversal, deeper nesting, and any
+        // filename that doesn't look like a JSON document. This is
+        // defence-in-depth — the manifest itself is signed by the
+        // bucket's write rules, but an attacker who somehow got
+        // write access shouldn't be able to escape the seed_data
+        // directory and overwrite arbitrary files in the documents
+        // directory.
+        if (!_isSafeManifestFilename(filename)) {
           debugPrint(
             'SeedUpdater: rejecting suspicious filename "$filename" for $key.',
           );
@@ -211,7 +254,14 @@ class SeedUpdater {
         final downloaded = await _downloadAndValidate(key, filename);
         if (downloaded == null) continue;
 
+        // Mirror the bucket layout under <docs>/seed_data/. For nested
+        // filenames we have to ensure the subdirectory exists before
+        // writing the file.
         final outFile = File(p.join(docsDir.path, filename));
+        final outParent = outFile.parent;
+        if (!await outParent.exists()) {
+          await outParent.create(recursive: true);
+        }
         await outFile.writeAsString(downloaded);
 
         await prefs.setInt('$seedVersionPrefix$key', remoteVersion);
@@ -294,16 +344,77 @@ class SeedUpdater {
     }
   }
 
-  /// Returns true when the parsed JSON matches the expected top-level shape
-  /// for `key`. `cartridges` is a flat list; everything else is an object
-  /// with a `manufacturers` list.
+  /// Returns true when the parsed JSON matches the expected top-level
+  /// shape for `key`. Different keys have different shapes:
+  ///
+  /// - **Flat array of objects** (`cartridges`, `targets`, `reticles`,
+  ///   `drag_curves`, `factory_loads`, `target_racks`, `scopes_v2`,
+  ///   `reticles_v2`, `scope_reticle_options`, `manufactured_ammo`,
+  ///   plus all seven `firearm_components_*` files): the JSON is
+  ///   `[ { ... }, { ... } ]`.
+  /// - **`{manufacturers: [...]}`** (`powders`, `bullets`, `primers`,
+  ///   `brass`, `firearms`, `firearm_parts`, `optics`): the legacy
+  ///   manufacturer-grouped shape.
+  ///
+  /// We don't enforce the per-row schema here — that's the seed
+  /// loader's job — only the top-level structure. The seed loader
+  /// rejects malformed individual rows on its own; this guard is a
+  /// cheap filter that catches "the manifest pointed at totally the
+  /// wrong file."
   bool _validateShape(String key, Object? decoded) {
-    if (key == 'cartridges') {
+    if (_flatArrayKeys.contains(key) ||
+        key.startsWith('firearm_components_')) {
       return decoded is List;
     }
     if (decoded is! Map<String, dynamic>) return false;
     final manufacturers = decoded['manufacturers'];
     return manufacturers is List;
+  }
+
+  /// Manifest keys whose payload is a flat JSON array of row objects
+  /// (rather than the legacy `{manufacturers: [...]}` shape). Includes
+  /// every catalog added since schema v8 — newer tables ship as flat
+  /// arrays because the manufacturer-grouped wrapper added
+  /// indirection without buying anything.
+  static const _flatArrayKeys = <String>{
+    'cartridges',
+    'targets',
+    'reticles',
+    'drag_curves',
+    'factory_loads',
+    'target_racks',
+    'scopes_v2',
+    'reticles_v2',
+    'scope_reticle_options',
+    'manufactured_ammo',
+  };
+
+  /// Whether the manifest-supplied filename is safe to write under
+  /// `<docs>/seed_data/`. Allows simple basenames and one level of
+  /// subdirectory (`components/chassis.json`,
+  /// `drag_curves/curves.json`); rejects backslashes, parent-traversal
+  /// (`..`), absolute paths, deeper nesting, hidden files, and
+  /// anything that doesn't end in `.json`.
+  ///
+  /// Defence-in-depth: the bucket's `storage.rules` should be the
+  /// primary guard against malicious uploads, but we don't trust the
+  /// network end of the pipe to be perfect.
+  static bool _isSafeManifestFilename(String filename) {
+    if (filename.isEmpty) return false;
+    if (filename.contains('\\')) return false;
+    if (filename.startsWith('/')) return false;
+    if (!filename.endsWith('.json')) return false;
+    final parts = filename.split('/');
+    // At most one subdirectory level.
+    if (parts.length > 2) return false;
+    for (final part in parts) {
+      if (part.isEmpty) return false;
+      if (part == '.' || part == '..') return false;
+      // No hidden files, no whitespace, no shell metacharacters.
+      if (part.startsWith('.')) return false;
+      if (part.contains(RegExp(r'[\s\x00\$`;<>]'))) return false;
+    }
+    return true;
   }
 
   /// Ensures `<applicationDocumentsDirectory>/seed_data/` exists and

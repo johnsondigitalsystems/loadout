@@ -78,7 +78,7 @@
 //    even once (e.g. "case capacity in cm³") would silently break
 //    the predictor.
 //
-// 2. DISCLAIMER VISIBILITY. Powley predicts pressure within ±15% on
+// 2. DISCLAIMER VISIBILITY. The model predicts pressure within ±15% on
 //    the validation set. A reloader who acts on a "below max"
 //    prediction without verifying could blow up their rifle. The
 //    disclaimer copy and the persistent yellow banner are
@@ -881,6 +881,25 @@ class _InternalBallisticsScreenState extends State<InternalBallisticsScreen> {
                   ? 'Low — Powder May Be Too Slow For Barrel'
                   : null,
             ),
+            // ────────────────────────────────────────────────────
+            // Bias-zone advisory (Pass 2 deep-dive). Renders only
+            // when the load falls into a documented high-bias regime
+            // (magnum-class case > 75 grH₂O, or slow powder Q < 70,
+            // or both). Independent of the persistent yellow banner
+            // at the top of the screen — that banner reminds the
+            // user every prediction is an estimate; this card calls
+            // out THIS prediction's specific under-prediction
+            // direction and magnitude.
+            //
+            // See `_computeBiasAdvisory` in
+            // `lib/services/ballistics/internal_ballistics.dart`
+            // for the discriminator logic and the validation
+            // numbers that justify the thresholds.
+            // ────────────────────────────────────────────────────
+            if (r.biasAdvisory != null) ...[
+              const SizedBox(height: 14),
+              BiasAdvisoryCard(advisory: r.biasAdvisory!),
+            ],
             const SizedBox(height: 14),
             Container(
               padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
@@ -1097,6 +1116,87 @@ class _ResultRow extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+/// Per-prediction bias-zone advisory card. Surfaces when the load
+/// falls into a documented high-bias regime of the underlying
+/// interior-ballistics fit (`InternalBallisticsResult.biasAdvisory !=
+/// null`). Visually distinct from the persistent yellow disclaimer
+/// banner at the top of the screen — this card is amber-bordered,
+/// contains the load-specific headline + detail, and only renders
+/// when there's something to say.
+///
+/// Pass 2 deep-dive UX: independent of the page-level disclaimer,
+/// this tells the user "your specific load type tends to underpredict
+/// MV / pressure by THIS amount." See
+/// `lib/services/ballistics/internal_ballistics.dart` `BiasZoneAdvisory`
+/// for the model side.
+///
+/// PUBLIC (not `_`-prefixed) so the widget can be exercised
+/// directly in `test/internal_ballistics_screen_advisory_test.dart`
+/// without having to drive the full screen. Treat as an internal-
+/// use UI component nonetheless — only the screen above instantiates
+/// it.
+class BiasAdvisoryCard extends StatelessWidget {
+  const BiasAdvisoryCard({super.key, required this.advisory});
+
+  final BiasZoneAdvisory advisory;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    // Amber colour scheme matches the safety-warning convention used
+    // by the persistent disclaimer banner at the top of the screen.
+    // Slightly different shade (warmer) so the two distinct cards
+    // read as related but separate.
+    final amber = theme.brightness == Brightness.dark
+        ? const Color(0xFFFFCA70)
+        : const Color(0xFFFFA000);
+    final amberBg = theme.brightness == Brightness.dark
+        ? const Color(0xFF3B2F1F)
+        : const Color(0xFFFFF8E1);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+      decoration: BoxDecoration(
+        color: amberBg,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: amber, width: 1.0),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.warning_amber_rounded,
+            size: 20,
+            color: amber,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  advisory.headline,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  advisory.detail,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

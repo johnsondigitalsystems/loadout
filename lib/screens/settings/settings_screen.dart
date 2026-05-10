@@ -62,13 +62,16 @@
 //   navigation from this directory.
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../services/device_compatibility_service.dart';
 import '../devices/devices_screen.dart';
 import '../disclaimers/data_sources_screen.dart';
 import '../sync/cloud_sync_screen.dart';
 import 'account_settings_screen.dart';
 import 'ai_settings_screen.dart';
 import 'app_preferences_screen.dart';
+import 'device_compatibility_screen.dart';
 import 'help_support_screen.dart';
 import 'privacy_data_screen.dart';
 import 'watch_settings_screen.dart';
@@ -95,7 +98,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   /// Tile catalog. Lifting the rows out of `build()` so the filter
   /// pass operates on data instead of rebuilt widgets.
-  List<_SettingsTileSpec> _allTiles() {
+  ///
+  /// Reads `DeviceCompatibilityService` so the conditional
+  /// "Device Compatibility" tile only appears on devices with active
+  /// gates (e.g. an Android 10 phone). Modern devices never see the
+  /// tile — there's nothing to disclose.
+  List<_SettingsTileSpec> _allTiles(BuildContext context) {
+    final compat = context.read<DeviceCompatibilityService>();
     return [
       _SettingsTileSpec(
         icon: Icons.account_circle_outlined,
@@ -164,13 +173,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
             'Email support, print notebook page, restore backup.',
         destinationBuilder: (_) => const HelpSupportScreen(),
       ),
+      // Device Compatibility tile — only present when at least one
+      // hardware-linked feature is gated by the OS version on this
+      // device. Modern devices (Android 12+, iOS 15+) have no gates
+      // active and never see this row; the user reads "everything
+      // works" as the silent default.
+      if (compat.hasAnyGates)
+        _SettingsTileSpec(
+          icon: Icons.smartphone_outlined,
+          title: 'Device Compatibility',
+          subtitle:
+              "What's gated by your OS version (${compat.profile.osDisplay}).",
+          destinationBuilder: (_) => const DeviceCompatibilityScreen(),
+        ),
     ];
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final all = _allTiles();
+    final all = _allTiles(context);
     final q = _query.toLowerCase();
     final filtered = q.isEmpty
         ? all

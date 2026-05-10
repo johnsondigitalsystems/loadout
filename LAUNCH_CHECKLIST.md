@@ -128,15 +128,23 @@ ship JSON corrections without a store release. See
 ## Local data store (drift / SQLite)
 
 - [x] **Migrated from Firestore to local SQLite via `drift`.** User reload
-  data (loads, firearms, custom components) lives only on the device.
-  Firebase Auth still handles identity. `cloud_firestore` removed.
-- [ ] Database migrations — `schemaVersion` is 1. Bumping requires writing
-  migration steps in `MigrationStrategy`. Test on a real device before
-  shipping any schema change.
-- [ ] Optional: Cloud backup / multi-device sync as an opt-in feature
-  (would need new privacy disclosure). Currently not on the roadmap.
-- [ ] Optional: export-to-CSV / JSON so users can back up their loads
-  manually.
+  data (loads, firearms, brass lots, batches, custom components,
+  ballistic profiles, range-day sessions, load-development tests,
+  component inventory) lives only on the device. Firebase Auth still
+  handles identity. `cloud_firestore` removed.
+- [x] Database migrations — `schemaVersion` is now **32**. Every bump
+  has a corresponding `MigrationStrategy.onUpgrade` block. Latest
+  bumps: v31 (Load Development per-shot model + session enrichment),
+  v32 (ComponentInventory + ComponentInventoryAdjustments). Always
+  test on a real device before shipping any schema change — fresh
+  installs go through `onCreate`, only existing installs exercise
+  `onUpgrade`.
+- [x] **Cloud backup + Cloud Sync** — both shipped (Pro). End-to-end
+  encrypted with the user's passphrase, stored in user's own iCloud
+  Drive / Google Drive / OneDrive. LoadOut runs no backend that
+  receives the encrypted blob. See CLAUDE.md §§ 13, 19.
+- [x] **Local JSON export** — shipped (free). Plain JSON via the system
+  share sheet. See `lib/services/export_service.dart`.
 - [ ] Firestore rules / hosting / database — `firestore.rules` and the
   `(default)` Firestore database are still provisioned but unused. We
   could either delete them or keep them dormant in case the privacy
@@ -221,17 +229,41 @@ ship JSON corrections without a store release. See
 
 ## App functionality
 
-- [ ] Load development tracking (range data) — schema for batches +
-  individual firings (velocity, ES, SD, group size, temperature, date)
-  matching the user's existing Excel workflow. Tables not yet created;
-  start with `LoadBatches` + `LoadFirings` linked to `UserLoads`.
-- [ ] Inventory tracking — quantity-on-hand for powder (gr), bullets
-  (count), primers (count), brass (count). Decrement on a "loaded N
-  rounds" action.
+- [x] **Load development tracking** — shipped at schema v31 with five
+  named methods (OCW / Newberry, Audette Ladder, Satterlee 10-shot,
+  Generic charge ladder, Seating depth ladder). Per-charge SD / ES /
+  mean MV / group ES / mean radius. OCW vertical-impact flat-spot
+  detection, Satterlee MV-plateau detection, "lowest-SD charge"
+  fallback. Schema additions: `LoadDevelopmentSessions.methodKind /
+  distanceYd / shotsPerCharge` columns plus the new
+  `LoadDevelopmentShots` per-shot table. Pro-gated. See CLAUDE.md
+  § 25.
+- [x] **Component inventory tracking** — shipped at schema v32 (free,
+  intentionally NOT promoted in marketing). On-hand quantity for
+  powder / primer / bullet / brass / factory ammo via the
+  `ComponentInventory` + `ComponentInventoryAdjustments` ledger
+  tables. Reachable from Resources only — NOT bottom nav, NOT
+  onboarding. See CLAUDE.md § 26.
+- [x] **Internal Ballistics Calculator (Pro)** — shipped. interior-ballistics method
+  predictor for muzzle velocity + peak chamber pressure from a
+  hypothetical recipe. Validation ±10% MV / ±15% pressure across the
+  4-row anchor set. ~40 powders in the burn-rate table. Reached from
+  the Resources tile + bottom-of-screen button on the external
+  Ballistics Calculator. Closes the GRT / QuickLOAD gap on mobile.
+  See CLAUDE.md § 24.
+- [x] **Lookup Loads link-out** — shipped (free). Per-cartridge "Look
+  Up Published Loads" sheet that opens Hodgdon RDC / Hornady / Sierra
+  / Vihtavuori official load-data pages in the system browser. Lives
+  on the SAAMI screen and the recipe form's Caliber field. The
+  principle: LoadOut never republishes manufacturer data. Driven by
+  the 2026-05-10 manufacturer republication audit.
 - [ ] Loading log — record when a recipe was loaded, how many, and which
-  brass batch was used.
+  brass batch was used. Partially covered by Batches today; explicit
+  "Loaded N on date X" log entry still pending.
 - [ ] Cost tracking — optional per-component cost so the app can show
-  cost-per-round.
+  cost-per-round. (Component Inventory ships without a cost field
+  today; would slot naturally onto `ComponentInventory.lotNumber` row
+  alongside `openedAt`.)
 
 ## Cloud Sync / OneDrive
 
@@ -415,3 +447,68 @@ manuals, dealer relationships) which I can't do programmatically.
 - [ ] **Smoke-test rate limiting** on the AI Smart Import worker —
   fire-hose 30+ requests in a minute and confirm 429 with `Retry-After`
   header. Optional but useful before scaling. (See § AI Smart Import.)
+- [ ] **Real-device QA pass for Load Development (Pro)** — walk all
+  five methods (OCW / Audette / Satterlee / Generic / Seating)
+  through the new-test wizard, log shots, exercise the per-charge
+  stats table + chart cycler, and confirm the OCW flat-spot
+  detection and Satterlee plateau detection surface the right
+  recommended charge against a hand-verified test fixture. See
+  CLAUDE.md § 25.
+- [ ] **Real-device QA pass for the Internal Ballistics Calculator
+  (Pro)** — verify the Pro gate routes correctly, the persistent
+  yellow "Estimation Tool — Not a Load-Data Substitute" banner is
+  un-dismissible, all required input fields start EMPTY (CLAUDE.md
+  § 0), the result panel only renders after Predict, and the
+  unknown-powder path returns a clear "powder not in catalog"
+  message rather than silently substituting a similar burn rate.
+  See CLAUDE.md § 24.
+- [ ] **Real-device QA pass for the Lookup Loads sheet** — tap the
+  "Look Up Published Loads" affordance from the SAAMI screen and
+  the recipe form; confirm each of the four manufacturer cards
+  (Hodgdon, Hornady, Sierra, Vihtavuori) opens the correct page
+  in the system browser (NOT an in-app webview — the marketing
+  promise is that the user lands on the manufacturer's own
+  surface). Confirm cartridge name is rendered for the user but
+  NEVER passed to the destination URL. See `lib/widgets/lookup_loads_sheet.dart`.
+
+## Internationalization
+
+- [ ] **Native-speaker review pass for the 9 new language packs.** The
+  15-language expansion (Finnish, Swedish, Norwegian Bokmål, Polish,
+  Czech, Brazilian Portuguese, Hungarian, Danish, Dutch) was machine-
+  drafted from the English source. Every value is flagged
+  `// TRANSLATOR-REVIEW` in the ARB header. Until a native-speaker
+  pass lands, marketing copy must say **"available in 6 fully
+  translated languages, with 9 more in beta"** rather than "fluent in
+  15 languages." The 6 launched-pack languages (English, German,
+  Spanish, French, Italian, Russian) themselves still need a
+  technical-vocabulary review for reloading-specific terms — the DE /
+  IT / RU packs in particular were drafted from a non-native base.
+  Source: CLAUDE.md § 16.
+
+## Component Inventory (free, intentionally not marketed)
+
+- [ ] **Marketing posture confirmation.** Component Inventory is
+  shipped (schema v32, Resources tile + drawer) but intentionally
+  NOT promoted in App Store / Play Store copy, the paywall pitch,
+  the marketing CLAUDE.md feature grid, or onboarding. The rationale
+  (CLAUDE.md § 26) is that on-hand quantity tracking is a quality-
+  of-life utility, not a flagship reloader-pitch capability — the
+  workflow speaks for itself once a user finds it. Confirm pre-
+  launch that no app-store screenshot accidentally features the
+  Component Inventory screen, and that no marketing copy describes
+  it as a reason to download.
+
+## Documentation surface alignment
+
+- [ ] **Marketing screenshots regenerate** to reflect the new
+  Internal Ballistics Calculator screen, the five Load Development
+  method screens, the Lookup Loads sheet, and the Resources drawer
+  destination. Don't show the Component Inventory screen (see
+  above).
+- [ ] **App Store / Play Store copy refresh** to lead with: 5
+  Load Development methods, the Internal Ballistics Calculator,
+  the 7 import sources, and the Lookup Loads link-out as the
+  "we never republish manufacturer data" differentiator. Cross-
+  check against `marketing/CLAUDE.md` § 3 (Pro pitch) and § 23
+  (stats and counts).

@@ -56,6 +56,8 @@
     "onboardingPrivacyBullet1": "Все патроны, оружие и гильзы хранятся в базе данных вашего телефона.",
     "onboardingPrivacyBullet2": "Резервные копии сквозно зашифрованы и сохраняются в вашем iCloud или Google Drive.",
     "onboardingPrivacyBullet3": "Мы не запускаем сервер, который хранит ваши данные о снаряжении — намеренно.",
+    "// TRANSLATOR-REVIEW onboardingPrivacyBullet4": "Pattern C device-compatibility disclosure. Native-speaker review needed before launch — this string was machine-translated.",
+    "onboardingPrivacyBullet4": "Некоторые Pro-функции (Bluetooth-устройства, компаньон для часов, датчики движения) требуют Android 11 или новее.",
 
     "onboardingGetStarted": "Начать",
     "onboardingAppBarTitle": "Добро пожаловать в LoadOut"

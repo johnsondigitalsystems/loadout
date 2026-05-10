@@ -99,6 +99,8 @@ import '../home/home_screen.dart';
 import '../onboarding/onboarding_screen.dart';
 import '../paywall/paywall_screen.dart';
 import '../privacy/privacy_screen.dart';
+import '../ballistics/internal_ballistics_screen.dart';
+import '../load_development/load_development_list_screen.dart';
 import '../resources/resources_screen.dart';
 import '../settings/settings_screen.dart';
 
@@ -201,8 +203,17 @@ enum _TopicId {
   brassLots,
   saami,
   glossary,
+  // Free, Resources-tile destination — never republishes manufacturer
+  // load data; deep-links to the official Hodgdon / Hornady / Sierra
+  // / Vihtavuori pages instead. See lookup_loads_sheet.dart.
+  lookupLoads,
   reloadingGuide,
   beginnerMode,
+  // Pro features added in the May 2026 wave. Each has its own
+  // engineering CLAUDE.md section (§§ 24, 25); the topic cards below
+  // are the user-facing explainers.
+  internalBallistics,
+  loadDevelopment,
   smartImport,
   cloudSync,
   companionApps,
@@ -529,6 +540,48 @@ const List<_Topic> _allTopics = [
     ],
     ctaLabel: 'Open Glossary',
   ),
+  _Topic(
+    id: _TopicId.lookupLoads,
+    section: _Section.basics,
+    icon: Icons.menu_book_outlined,
+    title: 'Look Up Published Loads',
+    tagline:
+        'One tap to the official Hodgdon / Hornady / Sierra / Vihtavuori pages. We never republish.',
+    body:
+        "LoadOut's principle: your recipes are yours, the "
+        "manufacturers' recipes are theirs, and we host neither. The "
+        '"Look Up Published Loads" sheet on the SAAMI screen and the '
+        'recipe form\'s caliber field opens four cards — Hodgdon '
+        'Reloading Data Center, Hornady Load Data, Sierra Load Data, '
+        'Vihtavuori Reloading Data Tool — and tapping any card hands '
+        'you off to the manufacturer\'s own page in your system '
+        'browser.\n\n'
+        'We never scrape, never cache, never republish. The cartridge '
+        'name you tapped is rendered in the sheet for your reference '
+        "but is NOT passed to the destination URL — your input doesn't "
+        'leak across the app boundary either.\n\n'
+        'Free for everyone.',
+    bullets: [
+      _TopicBullet(
+        Icons.shield_outlined,
+        "We never republish anyone else's load tables.",
+      ),
+      _TopicBullet(
+        Icons.open_in_new,
+        "Manufacturer's official page in your system browser.",
+      ),
+      _TopicBullet(
+        Icons.privacy_tip_outlined,
+        'Your tapped cartridge name never leaves the app.',
+      ),
+    ],
+    ctaLabel: 'Open SAAMI Specs',
+  ),
+  // (Component Inventory ships at schema v32 in main; the screen is
+  // not yet present in this worktree, so the How It Works topic for
+  // it is omitted here. Add it back once `lib/screens/inventory/`
+  // lands in this branch — see CLAUDE.md § 26 + marketing/CLAUDE.md
+  // § 23a for the user-facing copy.)
 
   // ─── GOING DEEPER ───
   _Topic(
@@ -714,6 +767,106 @@ const List<_Topic> _allTopics = [
   // detail of "stay signed in," not a user-facing capability we
   // pitch.)
   _Topic(
+    id: _TopicId.loadDevelopment,
+    section: _Section.goingDeeper,
+    icon: Icons.science_outlined,
+    title: 'Load Development (Pro)',
+    tagline:
+        'Five named methods. Per-charge SD / ES / mean MV / group ES / mean radius. Node detection.',
+    body:
+        'Pro-gated workspace for running structured load-development '
+        'tests. Five named methods, each with a tailored data-entry '
+        'workflow, analysis algorithm, and chart:\n\n'
+        '  • OCW (Newberry) — three shots per charge across an '
+        'evenly-stepped ladder. Vertical-impact flat-spot detection '
+        'finds the OCW node automatically.\n'
+        '  • Audette Ladder — single shot per charge fired at long '
+        'distance (300+ yd). Vertical-stacking analysis.\n'
+        '  • Satterlee 10-shot — chronograph-driven. Plot mean MV '
+        'vs charge; the plateau-detection algorithm finds the '
+        'velocity-stable node.\n'
+        '  • Generic charge ladder — freeform. The detail screen '
+        'surfaces all three analyses (OCW flat spot, Satterlee '
+        "plateau, lowest-SD charge) so you can pick whichever "
+        'matches your protocol.\n'
+        '  • Seating depth ladder — CBTO ladder around an existing '
+        'recipe; tunes seating depth for group / vertical.\n\n'
+        'Per-charge stats table on every method screen: mean MV, '
+        'SD, ES, mean impact (X / Y), group extreme spread, mean '
+        'radius. Cited published source for each method on an '
+        'expandable Method card.\n\n'
+        'Reachable from Resources, the Home drawer, the recipe '
+        'form\'s "Run Load Development" CTA, and the Range Day '
+        'active-load row.',
+    bullets: [
+      _TopicBullet(Icons.tune, 'OCW, Audette, Satterlee, Generic, Seating.'),
+      _TopicBullet(
+        Icons.show_chart,
+        'OCW flat-spot detection; Satterlee MV-plateau detection.',
+      ),
+      _TopicBullet(
+        Icons.table_chart_outlined,
+        'Per-charge SD / ES / mean MV / group ES / mean radius.',
+      ),
+      _TopicBullet(
+        Icons.format_quote,
+        'Plain-English method explainer with citation on every screen.',
+      ),
+    ],
+    ctaLabel: 'Open Load Development',
+  ),
+  _Topic(
+    id: _TopicId.internalBallistics,
+    section: _Section.goingDeeper,
+    icon: Icons.thermostat_outlined,
+    title: 'Internal Ballistics Calculator (Pro)',
+    tagline:
+        'Interior-ballistics MV + peak chamber pressure predictor. The mobile answer to GRT / QuickLOAD.',
+    body:
+        'Predicts muzzle velocity and peak chamber pressure for a '
+        'hypothetical reloading recipe — the headline feature LoadOut '
+        'was missing relative to GRT (Windows / Mac via Wine) and '
+        'QuickLOAD (\$170+, Windows-only). Both desktops; LoadOut '
+        'shipping a competent mobile version is the differentiator.\n\n'
+        'Implements a published 1962-derived (revised 1980) '
+        'interior-ballistics estimation method — the same simplified '
+        'model that backed the original Sierra and Lyman desktop programs. '
+        'Inputs: cartridge case capacity, powder (looked up in a '
+        '~40-powder reference table), charge weight, bullet weight '
+        '+ diameter + COAL, barrel length. Outputs: predicted muzzle '
+        'velocity (fps), predicted peak pressure (psi), loading '
+        'density, expansion ratio, burn-completion %.\n\n'
+        'Validation against four published Hodgdon RDC loads: ±10% '
+        'MV, ±15% pressure across the test corpus. Persistent yellow '
+        '"Estimation Tool — Not a Load-Data Substitute" banner is '
+        'un-dismissible. Coarse SAAMI-band gauge ("Below typical '
+        'SAAMI max" / "Approaching SAAMI max" / "At or above — '
+        'verify") is advisory only.\n\n'
+        "Reachable from the Resources tile and a bottom-of-screen "
+        'button on the external Ballistics Calculator. Stateless '
+        'across visits — no profiles, no persistence — so a stale '
+        'prediction can\'t mislead.',
+    bullets: [
+      _TopicBullet(
+        Icons.calculate_outlined,
+        'Interior-ballistics estimator on mobile (±10% MV / ±15% pressure).',
+      ),
+      _TopicBullet(
+        Icons.warning_amber,
+        'Persistent yellow "estimation tool" banner — un-dismissible.',
+      ),
+      _TopicBullet(
+        Icons.scale_outlined,
+        'Loading density, expansion ratio, burn-completion %.',
+      ),
+      _TopicBullet(
+        Icons.block,
+        'Unknown powders return "not in catalog" — never silently substituted.',
+      ),
+    ],
+    ctaLabel: 'Open Internal Ballistics',
+  ),
+  _Topic(
     id: _TopicId.pro,
     section: _Section.goingDeeper,
     icon: Icons.workspace_premium_outlined,
@@ -725,9 +878,12 @@ const List<_Topic> _allTopics = [
         'purchase. Restore prior purchases anytime from the paywall '
         'screen.\n\n'
         'What Pro unlocks today:\n\n'
-        '  • Ballistics calculator (Modified Point-Mass solver).\n'
         '  • Custom drag curves (Hornady 4DOF / DSF) on top of '
         'G1 / G7.\n'
+        '  • Internal Ballistics Calculator (interior-ballistics MV + '
+        'peak pressure predictor).\n'
+        '  • Load Development workspace — five named methods (OCW, '
+        'Audette, Satterlee, Generic, Seating).\n'
         '  • Cloud Backup + Cloud Sync (encrypted to your '
         'iCloud / Drive / OneDrive).\n'
         '  • Bluetooth devices: Kestrel weather meters, Garmin Xero '
@@ -736,7 +892,6 @@ const List<_Topic> _allTopics = [
         '  • Scope View Pro reticle visualization + training mode.\n'
         '  • Moving Target lead computation.\n'
         '  • Live weather pull from your current location.\n'
-        '  • Load Development sessions (charge / seating ladders).\n'
         '  • SAAMI cartridge + chamber technical drawings.\n'
         '  • AI Smart Import (per-import opt-in, 20 imports / month).\n'
         '  • Unlimited custom fields.\n\n'
@@ -1121,6 +1276,29 @@ class _TopicDetailScreen extends StatelessWidget {
         _popToHomeAndPush(
           context,
           MaterialPageRoute(builder: (_) => const GlossaryScreen()),
+        );
+        break;
+      case _TopicId.lookupLoads:
+        // The Lookup Loads sheet is invoked from a cartridge surface
+        // (SAAMI / recipe form) — there's no standalone screen. The
+        // most useful CTA from the explainer is to drop the user on
+        // the Resources directory where SAAMI Specs lives, since
+        // that's where they're most likely to want to use it.
+        _popToHomeAndPush(
+          context,
+          MaterialPageRoute(builder: (_) => const ResourcesScreen()),
+        );
+        break;
+      case _TopicId.internalBallistics:
+        _popToHomeAndPush(
+          context,
+          MaterialPageRoute(builder: (_) => const InternalBallisticsScreen()),
+        );
+        break;
+      case _TopicId.loadDevelopment:
+        _popToHomeAndPush(
+          context,
+          MaterialPageRoute(builder: (_) => const LoadDevelopmentListScreen()),
         );
         break;
       case _TopicId.reloadingGuide:

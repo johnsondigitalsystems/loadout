@@ -31,8 +31,9 @@
 // the line, the user fires multiple shots per minute. Combining
 // motion + swipe + manual tap into one view (rather than three
 // separate screens) means the user never has to navigate to log a
-// shot. The view sits in the third tab of `ContentView`'s `TabView`,
-// reachable by one swipe.
+// shot. The view sits in page 1 of `ContentView`'s vertical
+// `TabView` (Stage Log / Timer / DOPE / About) so it's the first
+// thing the user sees when raising their wrist.
 //
 // Bringing the logger, the motion detector, and the DOPE cursor
 // together in a single view is also why the side-effect ordering is
@@ -81,8 +82,8 @@
 // ============================================================================
 // WHO CONSUMES THIS FILE
 // ============================================================================
-// - `ContentView.swift` — hosts this as the third page in the
-//   horizontal `TabView`.
+// - `ContentView.swift` — hosts this as page 1 of the vertical
+//   `TabView` (Stage Log / Timer / DOPE / About).
 // - `ShotLogger.swift` — `@EnvironmentObject` reading. Each log call
 //   is a side-effect of a user gesture in this view.
 // - `DopeViewModel.swift` — `@EnvironmentObject` reading. Used to
@@ -350,4 +351,5 @@ struct StageLogView: View {
     StageLogView()
         .environmentObject(ShotLogger())
         .environmentObject(DopeViewModel())
+        .environmentObject(WatchConnectivityManager.preview)
 }

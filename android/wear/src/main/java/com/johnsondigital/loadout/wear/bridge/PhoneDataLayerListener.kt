@@ -163,15 +163,23 @@ class PhoneDataLayerListener : WearableListenerService() {
                 ActiveLoadSnapshot.fromJson(obj)?.let(WatchAppState::setActiveLoad)
             }
             WatchPaths.FIREARM_GLANCE -> {
-                // Reserved for future tab — not consumed yet.
+                FirearmGlanceSnapshot.fromJson(obj)?.let(WatchAppState::setFirearmGlance)
             }
             WatchPaths.SHOT_CAPTURE_SENSITIVITY -> {
                 // Shape: { "value": "off|low|medium|high" }. Push the
                 // raw wire string into WatchAppState so the Stage Log
                 // composable can forward it to its MotionDetector.
-                obj.optString("value", null)
-                    ?.takeIf { it.isNotEmpty() }
-                    ?.let(WatchAppState::setShotCaptureSensitivity)
+                //
+                // `org.json.optString` returns the literal string "null"
+                // (or the supplied fallback string verbatim) when the key
+                // is absent; the `.takeIf` chain converts that case back
+                // to a Kotlin null so the StateFlow doesn't end up holding
+                // a string spelt "null".
+                if (obj.has("value")) {
+                    obj.optString("value", "")
+                        .takeIf { it.isNotEmpty() && it != "null" }
+                        ?.let(WatchAppState::setShotCaptureSensitivity)
+                }
             }
             else -> {
                 // Unknown path — ignore. Keeps forward-compatibility

@@ -1,0 +1,317 @@
+[
+  {
+    "manufacturer": "McMillan",
+    "model": "A3",
+    "productLine": "Tactical",
+    "style": "full-length-stock",
+    "material": "fiberglass",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Winchester Model 70", "Bighorn TL3", "Surgeon", "Defiance"],
+    "notes": "Classic tactical / sniper stock with vertical pistol grip and adjustable cheekpiece. Long-standing duty / police marksman choice."
+  },
+  {
+    "manufacturer": "McMillan",
+    "model": "A4",
+    "productLine": "Tactical",
+    "style": "full-length-stock",
+    "material": "fiberglass",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Bighorn TL3", "Surgeon", "Defiance"],
+    "notes": "Tactical stock derived from the M40A3 / Mk13 program. Vertical grip, adjustable cheek and LOP, flat forend for bag riding."
+  },
+  {
+    "manufacturer": "McMillan",
+    "model": "A5",
+    "productLine": "Tactical",
+    "style": "full-length-stock",
+    "material": "fiberglass",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Bighorn TL3", "Surgeon", "Defiance", "Tikka T3"],
+    "notes": "Refined A4 with longer forend, deeper hook butt, and improved bag-rider geometry. Standard PRS / tactical-bolt stock for shooters who prefer fiberglass over chassis."
+  },
+  {
+    "manufacturer": "McMillan",
+    "model": "Game Warden 2.0",
+    "productLine": "Hunting",
+    "style": "full-length-stock",
+    "material": "fiberglass",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Winchester Model 70", "Tikka T3"],
+    "notes": "Lightweight hunting stock with classic sporter lines. Updated 2.0 generation with improved ergonomics and palm swell."
+  },
+  {
+    "manufacturer": "McMillan",
+    "model": "Edge",
+    "productLine": "Hunting",
+    "style": "full-length-stock",
+    "material": "fiberglass",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Winchester Model 70", "Tikka T3", "Kimber 84"],
+    "notes": "Carbon-and-fiberglass hybrid hunting stock. Ultra-lightweight build (~24 oz typical) for mountain rifles."
+  },
+  {
+    "manufacturer": "McMillan",
+    "model": "Adjustable Game Hunter",
+    "productLine": "Hunting",
+    "style": "full-length-stock",
+    "material": "fiberglass",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Winchester Model 70", "Tikka T3"],
+    "notes": "Hunting stock with adjustable cheekpiece and LOP for shooters running optics or who need a tunable fit on a hunting rifle."
+  },
+  {
+    "manufacturer": "Manners",
+    "model": "T1",
+    "productLine": "T-class",
+    "style": "full-length-stock",
+    "material": "carbon",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Bighorn TL3", "Tikka T3", "Defiance"],
+    "notes": "Sporter-profile carbon-fiber tactical stock. Lightest of the T-series, classic lines, fixed comb."
+  },
+  {
+    "manufacturer": "Manners",
+    "model": "T2",
+    "productLine": "T-class",
+    "style": "full-length-stock",
+    "material": "carbon",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Bighorn TL3", "Tikka T3", "Defiance"],
+    "notes": "Tactical hunter profile in carbon. Vertical-ish grip, slightly fuller forend than T1, popular hunting / DMR build."
+  },
+  {
+    "manufacturer": "Manners",
+    "model": "T4",
+    "productLine": "T-class",
+    "style": "full-length-stock",
+    "material": "carbon",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Bighorn TL3", "Tikka T3", "Defiance"],
+    "notes": "Carbon-wrapped tactical stock with vertical grip and adjustable cheekpiece. Standard PRS choice for shooters who prefer a traditional stock over chassis."
+  },
+  {
+    "manufacturer": "Manners",
+    "model": "T5",
+    "productLine": "T-class",
+    "style": "full-length-stock",
+    "material": "carbon",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Bighorn TL3", "Surgeon", "Defiance"],
+    "notes": "Heavy tactical stock with wide flat forend, vertical grip, hook butt. Used on the USMC M40A6 / Mk13 Mod 7 program."
+  },
+  {
+    "manufacturer": "Manners",
+    "model": "T6",
+    "productLine": "T-class",
+    "style": "full-length-stock",
+    "material": "carbon",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Bighorn TL3", "Surgeon", "Defiance"],
+    "notes": "Wide-bodied PRS / F-Class stock. Flat-bottom forend, fully adjustable cheek and LOP, designed for bag-supported precision."
+  },
+  {
+    "manufacturer": "Manners",
+    "model": "EH1",
+    "productLine": "Elite Hunter",
+    "style": "full-length-stock",
+    "material": "carbon",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Bighorn TL3", "Tikka T3", "Defiance"],
+    "notes": "Elite Hunter sporter-profile carbon stock. Classic hunting lines with modern ergonomics, lightweight."
+  },
+  {
+    "manufacturer": "Manners",
+    "model": "Carbon Hunter",
+    "productLine": "Hunting",
+    "style": "full-length-stock",
+    "material": "carbon",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3", "Defiance"],
+    "notes": "Lightweight all-carbon hunting stock. Mountain-rifle weight target with classic sporter geometry."
+  },
+  {
+    "manufacturer": "Magpul",
+    "model": "PRS Gen3",
+    "productLine": "PRS",
+    "style": "modular",
+    "material": "polymer",
+    "actionFootprints": ["AR-10", "AR-15", "Mil-Spec carbines"],
+    "notes": "Drop-in adjustable buttstock for AR / chassis platforms with QD swivels and tool-less adjustable comb / LOP."
+  },
+  {
+    "manufacturer": "Magpul",
+    "model": "Hunter 700",
+    "productLine": "Hunter",
+    "style": "full-length-stock",
+    "material": "polymer",
+    "actionFootprints": ["Remington 700 SA"],
+    "notes": "Drop-in polymer stock for Remington 700 short-action with M-LOK forend and adjustable LOP / comb spacers. Budget precision option."
+  },
+  {
+    "manufacturer": "Magpul",
+    "model": "Hunter 700L",
+    "productLine": "Hunter",
+    "style": "full-length-stock",
+    "material": "polymer",
+    "actionFootprints": ["Remington 700 LA"],
+    "notes": "Long-action variant of the Hunter 700 platform. Polymer stock with M-LOK and adjustable cheek / LOP."
+  },
+  {
+    "manufacturer": "KRG",
+    "model": "Bravo",
+    "productLine": "Bravo Chassis",
+    "style": "full-length-stock",
+    "material": "polymer",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3", "Howa 1500", "CZ 457", "Bergara B-14"],
+    "notes": "Polymer chassis-stock hybrid with vertical grip, M-LOK forend, adjustable cheek riser. Budget precision entry into PRS / tactical bolt builds."
+  },
+  {
+    "manufacturer": "KRG",
+    "model": "Whiskey-3",
+    "productLine": "Whiskey-3",
+    "style": "full-length-stock",
+    "material": "polymer",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3", "Howa 1500", "Bighorn TL3"],
+    "notes": "Mid-tier folding chassis-stock. Integrated aluminum bedding block, AICS magazine well, adjustable cheek riser and LOP, M-LOK forend."
+  },
+  {
+    "manufacturer": "H-S Precision",
+    "model": "Pro Series PST-025",
+    "productLine": "Pro Series",
+    "style": "full-length-stock",
+    "material": "fiberglass",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Winchester Model 70"],
+    "notes": "Tactical fiberglass stock with integral aluminum bedding block. Vertical pistol grip, adjustable cheek. Issued on FBI HRT and police precision rifles."
+  },
+  {
+    "manufacturer": "H-S Precision",
+    "model": "Pro 2000 PST-026",
+    "productLine": "Pro 2000",
+    "style": "full-length-stock",
+    "material": "fiberglass",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA"],
+    "notes": "Updated Pro Series tactical stock with refined ergonomics and full-length aluminum bedding block. Adjustable cheekpiece and LOP spacers."
+  },
+  {
+    "manufacturer": "Bell & Carlson",
+    "model": "Medalist",
+    "productLine": "Medalist",
+    "style": "full-length-stock",
+    "material": "fiberglass",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Winchester Model 70", "Savage 110", "Tikka T3"],
+    "notes": "Mid-priced fiberglass stock with full-length aluminum bedding block. Adjustable cheek / LOP variants available. Common upgrade for factory hunting rifles."
+  },
+  {
+    "manufacturer": "Bell & Carlson",
+    "model": "M40",
+    "productLine": "Tactical",
+    "style": "full-length-stock",
+    "material": "fiberglass",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Winchester Model 70"],
+    "notes": "Reproduction of the USMC M40 sniper rifle stock profile in modern fiberglass with aluminum bedding block. Classic tactical lines."
+  },
+  {
+    "manufacturer": "Grayboe",
+    "model": "Renegade",
+    "productLine": "Renegade",
+    "style": "full-length-stock",
+    "material": "fiberglass",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Bighorn TL3", "Tikka T3", "Defiance", "Howa 1500"],
+    "notes": "Affordable fiberglass tactical stock styled after the McMillan A5. Vertical grip, adjustable cheek, flat forend. Popular budget PRS / tactical option."
+  },
+  {
+    "manufacturer": "Grayboe",
+    "model": "Outlander",
+    "productLine": "Outlander",
+    "style": "full-length-stock",
+    "material": "fiberglass",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3", "Howa 1500"],
+    "notes": "Hunting-profile fiberglass stock. Sporter lines with palm swell and modern shadow-line cheekpiece, lighter than the Renegade."
+  },
+  {
+    "manufacturer": "Grayboe",
+    "model": "Trekker",
+    "productLine": "Trekker",
+    "style": "full-length-stock",
+    "material": "fiberglass",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3", "Howa 1500"],
+    "notes": "Lightweight fiberglass mountain-rifle stock. Classic sporter geometry, slimmer profile and lower weight than Outlander."
+  },
+  {
+    "manufacturer": "Grayboe",
+    "model": "Phoenix",
+    "productLine": "Phoenix",
+    "style": "full-length-stock",
+    "material": "fiberglass",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Bighorn TL3", "Defiance"],
+    "notes": "Fully adjustable PRS / competition fiberglass stock with adjustable cheek, LOP, and butthook. Wide flat forend for bag use."
+  },
+  {
+    "manufacturer": "Foundation Stocks",
+    "model": "Genesis",
+    "productLine": "Genesis",
+    "style": "full-length-stock",
+    "material": "fiberglass",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Bighorn TL3", "Tikka T3", "Defiance"],
+    "notes": "Custom-grade tactical fiberglass stock with vertical grip and adjustable cheek. Hand-laid solid-fill construction, popular high-end PRS / hunting build."
+  },
+  {
+    "manufacturer": "Foundation Stocks",
+    "model": "Centurion",
+    "productLine": "Centurion",
+    "style": "full-length-stock",
+    "material": "fiberglass",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Bighorn TL3", "Defiance"],
+    "notes": "Heavier PRS / competition variant with wider forend and deeper hook butt. Same hand-laid solid-fill construction as Genesis."
+  },
+  {
+    "manufacturer": "Boyd's",
+    "model": "At-One",
+    "productLine": "At-One",
+    "style": "thumbhole",
+    "material": "wood-laminate",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Savage 110", "Ruger American", "Tikka T3", "Howa 1500", "Mossberg Patriot", "Winchester Model 70"],
+    "notes": "Adjustable wood-laminate thumbhole stock with tool-less LOP and comb adjustment. Drop-in fit for dozens of factory rifle inlets."
+  },
+  {
+    "manufacturer": "Boyd's",
+    "model": "Pro Varmint",
+    "productLine": "Pro Varmint",
+    "style": "full-length-stock",
+    "material": "wood-laminate",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Savage 110", "Ruger American", "Howa 1500", "Tikka T3"],
+    "notes": "Heavy varmint / target wood-laminate stock with wide flat forend. Designed for benchrest and prone varmint shooting."
+  },
+  {
+    "manufacturer": "Boyd's",
+    "model": "Featherweight Thumbhole",
+    "productLine": "Featherweight",
+    "style": "thumbhole",
+    "material": "wood-laminate",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Savage 110", "Ruger American", "Howa 1500", "Tikka T3"],
+    "notes": "Lightweight sporter-profile thumbhole stock in wood laminate. Hunting weight with thumbhole ergonomics."
+  },
+  {
+    "manufacturer": "Stocky's",
+    "model": "M50",
+    "productLine": "Long Range",
+    "style": "full-length-stock",
+    "material": "fiberglass",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3", "Bergara B-14", "Howa 1500"],
+    "notes": "Long-range tactical fiberglass stock with vertical grip, adjustable cheek, and full-length aluminum bedding block. Mid-tier PRS / hunting option."
+  },
+  {
+    "manufacturer": "Stocky's",
+    "model": "Carbon Long Range",
+    "productLine": "Carbon",
+    "style": "full-length-stock",
+    "material": "carbon",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA", "Tikka T3", "Bergara B-14"],
+    "notes": "Carbon-fiber long-range stock with adjustable cheek and aluminum bedding block. Lighter than the M50 with similar geometry."
+  },
+  {
+    "manufacturer": "Tac Ops",
+    "model": "X-Ray",
+    "productLine": "X-Ray",
+    "style": "full-length-stock",
+    "material": "fiberglass",
+    "actionFootprints": ["Remington 700 SA", "Remington 700 LA"],
+    "notes": "Custom tactical stock used on Tac Ops Tango series rifles. Vertical grip, adjustable cheek and LOP, hand-laid fiberglass with bedding block."
+  },
+  {
+    "manufacturer": "Tac Ops",
+    "model": "Tango 51",
+    "productLine": "Tango",
+    "style": "full-length-stock",
+    "material": "fiberglass",
+    "actionFootprints": ["Remington 700 SA"],
+    "notes": "Signature Tac Ops Tango 51 stock profile. Tactical sniper geometry with vertical grip and adjustable cheek, used on the Tango 51 production rifle."
+  }
+]

@@ -82,6 +82,8 @@ import '../../services/ble/rangefinder_reading.dart';
 import '../../services/ble/sig_kilo_service.dart';
 import '../../services/ble/vectronix_terrapin_service.dart';
 import '../../services/ble/vortex_rangefinder_service.dart';
+import '../../models/watch_payloads.dart';
+import '../../services/active_range_day_session.dart';
 import '../../services/entitlement_notifier.dart';
 import '../../services/hit_probability_service.dart';
 import '../../screens/atmosphere/atmosphere_presets_screen.dart';
@@ -90,6 +92,8 @@ import '../../services/common_loads_catalog.dart';
 import '../../services/sensors/inclinometer_service.dart';
 import '../../services/sensors/magnetometer_service.dart';
 import '../../services/unit_service.dart';
+import '../../services/watch_bridge_service.dart';
+import '../../services/watch_payload_projection.dart';
 import '../../widgets/empty_state_card.dart';
 import '../../widgets/favorite_star_button.dart';
 import '../../widgets/range_day_safety.dart';
@@ -890,6 +894,10 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   }) async {
     final s = await rangeDayRepo.getById(id);
     if (s == null || !mounted) return;
+    // Mark this session as the active Range Day session so the watch
+    // bridge can route inbound `log_shot` payloads to it. See
+    // [ActiveRangeDaySession] for the lifecycle contract.
+    ActiveRangeDaySession.set(id);
     setState(() {
       _session = s;
       _shotsStream = rangeDayRepo.streamShotsForSession(id);
@@ -1062,6 +1070,11 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     _solveDebounce?.cancel();
     _hitProbDebounce?.cancel();
     _sensorsPulse?.cancel();
+    // Surrender ownership of the active Range Day session — the watch
+    // bridge's `log_shot` listener will drop inbound shots cleanly
+    // (rather than misroute them to a stale id) until the next
+    // hydrate.
+    ActiveRangeDaySession.clear();
     _phoneScrollCtrl.dispose();
     _wideLeftScrollCtrl.dispose();
     _wideRightScrollCtrl.dispose();
@@ -1152,6 +1165,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       // Auto-expand Solution (2026-05-09 reorg).
       _solutionExpanded = true;
     });
+    _pushActiveLoadToWatchFromProfile(p);
     _scheduleSolve();
   }
 
@@ -1169,6 +1183,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       // fresh session; this is the trigger that opens it.
       _solutionExpanded = true;
     });
+    _pushActiveLoadToWatchFromLoad(r);
     // Also pick up any trued BC override the user previously saved for
     // this (load, firearm, drag model) triple.
     // ignore: discarded_futures
@@ -1178,9 +1193,13 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
 
   void _applyFirearmDefaults(UserFirearmRow f) {
     setState(() {
-      if (f.defaultMuzzleVelocityFps != null) {
-        _muzzleVelCtrl.text = f.defaultMuzzleVelocityFps!.toStringAsFixed(0);
-      }
+      // MV used to be pulled from `f.defaultMuzzleVelocityFps` here.
+      // Removed at schema v33 — MV doesn't belong on the firearm row
+      // because it changes per-load (different powders / bullets /
+      // temperatures). MV now flows from ballistic-profile picks
+      // (`_applyProfile`) and common-load picks (`_applyCommonLoad`)
+      // only. Picking a firearm seeds zero range / sight height /
+      // twist; the user resolves MV via load pick or types it.
       if (f.defaultZeroRangeYd != null) {
         _zeroRangeCtrl.text = f.defaultZeroRangeYd!.toString();
       }
@@ -1190,6 +1209,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       final twist = _parseTwist(f.twistRate);
       if (twist != null) _twistCtrl.text = twist.toString();
     });
+    _pushFirearmGlanceToWatch(f);
     // Sight scale (DPC calibration) is consumed by the solver via
     // [ShotInputs] in `_solve()`, so a re-solve picks it up. The trued
     // BC override needs an active load too — try to pull it once both
@@ -1205,6 +1225,94 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     // ignore: discarded_futures
     _applyReticleFromFirearm(f);
     _scheduleSolve();
+  }
+
+  // ─────────────────────── Watch bridge push helpers ───────────────────────
+  //
+  // These helpers translate Range Day state changes into the typed
+  // payloads the watch glance card consumes. They are called from
+  // `_applyLoadDefaults`, `_applyProfile`, `_applyCommonLoad`,
+  // `_applyFirearmDefaults`, and the tail of `_solve()`. Every helper
+  // is silent on platforms where the watch bridge isn't supported
+  // (web, macOS, Linux, Windows) — `WatchBridgeService.isSupported`
+  // returns false there and the typed `send*` methods short-circuit.
+  //
+  // Privacy: these helpers do NOT hit the network. Payloads ride the
+  // platform's encrypted peer-to-peer channel only — same posture as
+  // every other call site in the bridge. See CLAUDE.md §13 / §15.
+
+  /// Push the picked recipe row to the watch as an [ActiveLoadSnapshot].
+  /// Called from `_applyLoadDefaults` whenever the user picks a saved
+  /// recipe in the Range Day Setup card.
+  void _pushActiveLoadToWatchFromLoad(UserLoadRow r) {
+    final snap = WatchPayloadProjection.activeLoadFromUserLoad(r);
+    // ignore: discarded_futures
+    context.read<WatchBridgeService>().sendActiveLoad(snap);
+  }
+
+  /// Push the picked ballistic profile to the watch as an
+  /// [ActiveLoadSnapshot]. Profiles don't carry a cartridge name —
+  /// the user's profile name is the closest analogue, so we surface
+  /// it as the title and leave the cartridge field empty.
+  void _pushActiveLoadToWatchFromProfile(BallisticProfileRow p) {
+    final snap = WatchPayloadProjection.activeLoadFromBallisticProfile(p);
+    // ignore: discarded_futures
+    context.read<WatchBridgeService>().sendActiveLoad(snap);
+  }
+
+  /// Push the picked common factory load to the watch as an
+  /// [ActiveLoadSnapshot]. Used by `_applyCommonLoad` so the user's
+  /// "Pick a Common Load" choice flows through to the wrist alongside
+  /// the saved-recipe path.
+  void _pushActiveLoadToWatchFromCommonLoad(CommonLoad load) {
+    final snap = WatchPayloadProjection.activeLoadFromCommonLoad(load);
+    // ignore: discarded_futures
+    context.read<WatchBridgeService>().sendActiveLoad(snap);
+  }
+
+  /// Push the picked firearm to the watch as a [FirearmGlanceSnapshot].
+  /// `barrelLifeRemainingPct` is null because LoadOut doesn't track
+  /// expected barrel life today — the watch glance card just shows the
+  /// running shotsFired count when no expected life is known. The
+  /// schema is ready for the field if/when we add it.
+  void _pushFirearmGlanceToWatch(UserFirearmRow f) {
+    final glance = WatchPayloadProjection.firearmGlanceFromUserFirearm(f);
+    // ignore: discarded_futures
+    context.read<WatchBridgeService>().sendFirearmGlance(glance);
+  }
+
+  /// Project the freshly-computed trajectory ladder into a
+  /// [DopeSnapshot] and push it. Called from `_solve()` after the
+  /// solver lands a result; suppressed when the solver bailed.
+  ///
+  /// The projection converts the solver's inches-of-drop /
+  /// inches-of-windage into mils on the wire. The watch decoder uses
+  /// the values verbatim — there is no further conversion on the
+  /// watch side, which is what keeps the wire payload small.
+  void _pushDopeToWatch({
+    required List<TrajectorySample> samples,
+    required Projectile projectile,
+    required ShotInputs shot,
+    required double windSpeedMph,
+    required double windFromDeg,
+  }) {
+    if (samples.isEmpty) return;
+    final cartridge = _selectedLoad?.caliber ??
+        (_appliedCommonLoadName == null ? '' : _appliedCommonLoadName!);
+    final snap = WatchPayloadProjection.dopeFromSolverOutput(
+      samples: samples,
+      projectile: projectile,
+      shot: shot,
+      windSpeedMph: windSpeedMph,
+      windFromDeg: windFromDeg,
+      generatedAtMs: DateTime.now().millisecondsSinceEpoch,
+      cartridgeName: cartridge,
+      bulletName: _selectedLoad?.bullet ?? '',
+      profileName: _selectedProfile?.name,
+      firearmName: _selectedFirearm?.name,
+    );
+    // ignore: discarded_futures
+    context.read<WatchBridgeService>().sendDope(snap);
   }
 
   /// Resolve the firearm's saved `reticleId` into a [ReticleRow] +
@@ -1584,6 +1692,19 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         _lastSolvedDistanceYd = distance;
         _lastSolvedWindMph = windSpeed;
       });
+      // Push the freshly-computed DOPE ladder to a paired watch (if
+      // any). Suppressed when the solver bailed (`primary == null`)
+      // because an empty payload would clear the watch's existing
+      // glance card. See `_pushDopeToWatch` for the projection logic.
+      if (primary != null) {
+        _pushDopeToWatch(
+          samples: samples,
+          projectile: projectile,
+          shot: shot,
+          windSpeedMph: windSpeed,
+          windFromDeg: windDir,
+        );
+      }
     } on FormatException catch (e) {
       setState(() {
         _solveError = e.message;
@@ -1694,6 +1815,11 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         final id = await repo.insertSession(_buildSessionCompanion());
         final fresh = await repo.getById(id);
         if (!mounted) return;
+        // Mark this newly-created session as the active Range Day
+        // session so the watch bridge can route inbound `log_shot`
+        // payloads to it. See [ActiveRangeDaySession] for the
+        // lifecycle contract.
+        ActiveRangeDaySession.set(id);
         setState(() {
           _session = fresh;
           _shotsStream = repo.streamShotsForSession(id);
@@ -6204,6 +6330,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       // Auto-expand the Solution section (2026-05-09 reorg).
       _solutionExpanded = true;
     });
+    _pushActiveLoadToWatchFromCommonLoad(load);
     _scheduleSolve();
     _scheduleAutoSave();
     ScaffoldMessenger.of(context).showSnackBar(

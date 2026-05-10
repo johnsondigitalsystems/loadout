@@ -46,7 +46,30 @@ android {
         applicationId = "com.johnsondigital.loadout"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        //
+        // minSdk = 29 (Android 10) — explicit floor.
+        // ----------------------------------------------------------------------
+        // Pinned to 29 so Android 10 phones can install LoadOut. Per Google's
+        // distribution dashboard (refresh date 2025-Q4) Android 10 still
+        // accounts for ~15% of in-the-wild Android handsets — locking it out
+        // would needlessly shrink the install base for what is otherwise a
+        // standard Flutter app. We deliberately don't use `flutter.minSdkVersion`
+        // because that default has drifted over Flutter releases (currently 24)
+        // and we want this number to be intentional, not implicit.
+        //
+        // Why not lower than 29?
+        //   * `flutter_blue_plus` requires API 21+, fine.
+        //   * `purchases_flutter` (RevenueCat) requires API 21+, fine.
+        //   * `firebase_auth` v6 series supports API 21+, fine.
+        //   * Some optional features (Wear OS pairing) require API 30+; we
+        //     hide those affordances on Android 10 via the Device
+        //     Compatibility screen rather than blocking install.
+        //   * BLE on API 29 needs `ACCESS_FINE_LOCATION` at runtime — handled
+        //     in `lib/services/ble/ble_service.dart` `ensurePermissions()`.
+        //
+        // See CLAUDE.md § 9 for the full Android-floor rationale and the
+        // Device Compatibility screen wiring.
+        minSdk = 29
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

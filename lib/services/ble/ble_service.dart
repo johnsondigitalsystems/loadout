@@ -68,9 +68,11 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// User-facing BLE failure. Thrown by [BleService] methods so the UI
 /// can present a friendly snackbar verbatim from [userMessage].
@@ -113,12 +115,59 @@ class BlePermissionResult {
   final bool permanentlyDenied;
 }
 
+/// SharedPreferences key for the "user has acknowledged the Android 10
+/// location-permission-for-BLE explainer" flag. The dialog only fires
+/// the first time the user starts a scan on Android 10/11; subsequent
+/// scans skip straight to the runtime permission request.
+const String kBleAndroidLegacyExplainerSeenPref =
+    'ble.android_legacy_location_explainer_seen';
+
+/// Callback signature the UI can pass to [BleService.startScan] so the
+/// service can show the one-time Android 10/11 location-permission
+/// explainer before the OS permission prompt fires. Returns true if the
+/// user acknowledged ("Continue"), false if they dismissed ("Cancel").
+typedef BleExplainerCallback = Future<bool> Function();
+
 /// Cross-platform BLE service. Single instance, provided once via
 /// `Provider<BleService>` at the app root. Stateless beyond what
 /// `flutter_blue_plus` already keeps internally, so creating two
 /// instances is harmless but pointless.
 class BleService extends ChangeNotifier {
-  BleService();
+  BleService()
+      : _androidSdkIntReaderForTest = null,
+        _explainerSeenReaderForTest = null,
+        _explainerSeenWriterForTest = null;
+
+  /// Test-only constructor. Lets unit tests inject a fake SDK-level
+  /// reader and explainer-seen reader/writer without crossing the
+  /// platform channel.
+  @visibleForTesting
+  BleService.forTesting({
+    required Future<int?> Function() androidSdkIntReader,
+    required Future<bool> Function() explainerSeenReader,
+    required Future<void> Function() explainerSeenWriter,
+  })  : _androidSdkIntReaderForTest = androidSdkIntReader,
+        _explainerSeenReaderForTest = explainerSeenReader,
+        _explainerSeenWriterForTest = explainerSeenWriter;
+
+  /// Test-only override for the platform-channel SDK-level read.
+  /// Production builds always go through [_readAndroidSdkInt].
+  final Future<int?> Function()? _androidSdkIntReaderForTest;
+
+  /// Test-only override for "has the user already seen the Android 10
+  /// explainer?" Production builds read SharedPreferences.
+  final Future<bool> Function()? _explainerSeenReaderForTest;
+
+  /// Test-only override for the explainer-seen write. Production
+  /// builds write SharedPreferences.
+  final Future<void> Function()? _explainerSeenWriterForTest;
+
+  /// Cached Android SDK level. Read once on first access; null on
+  /// non-Android platforms. Cached because the device-info plugin
+  /// crosses the platform channel and the value never changes for
+  /// the life of the process.
+  int? _cachedAndroidSdkInt;
+  bool _sdkIntFetched = false;
 
   /// Expose the package's adapter-state stream so the devices screen
   /// can listen and live-update its "Bluetooth is off" banner.
@@ -193,16 +242,90 @@ class BleService extends ChangeNotifier {
   /// Convenience boolean: Bluetooth radio currently powered on.
   bool get isAdapterOn => _adapterState == BluetoothAdapterState.on;
 
+  /// Returns the cached Android SDK level, fetching it from
+  /// `device_info_plus` on first call. Null on non-Android platforms.
+  ///
+  /// Cached because the lookup crosses the platform channel; the value
+  /// is immutable for the lifetime of the process.
+  Future<int?> readAndroidSdkInt() async {
+    if (!Platform.isAndroid && _androidSdkIntReaderForTest == null) {
+      return null;
+    }
+    if (_sdkIntFetched) return _cachedAndroidSdkInt;
+    _sdkIntFetched = true;
+    if (_androidSdkIntReaderForTest != null) {
+      _cachedAndroidSdkInt = await _androidSdkIntReaderForTest();
+      return _cachedAndroidSdkInt;
+    }
+    try {
+      final info = await DeviceInfoPlugin().androidInfo;
+      _cachedAndroidSdkInt = info.version.sdkInt;
+    } catch (_) {
+      _cachedAndroidSdkInt = null;
+    }
+    return _cachedAndroidSdkInt;
+  }
+
+  /// True iff this platform is Android AND the SDK level is below 31
+  /// (i.e. Android 10 or Android 11). On those API levels the BLE
+  /// scanner needs `ACCESS_FINE_LOCATION` rather than the modern
+  /// `BLUETOOTH_SCAN` permission, and we surface a one-time explainer
+  /// dialog before requesting it.
+  Future<bool> isAndroidLegacyBleStack() async {
+    if (!Platform.isAndroid && _androidSdkIntReaderForTest == null) {
+      return false;
+    }
+    final sdk = await readAndroidSdkInt();
+    return sdk != null && sdk < 31;
+  }
+
+  /// True iff the user has already acknowledged the Android 10/11
+  /// "we need location permission for BLE" explainer dialog. Reads
+  /// `SharedPreferences[kBleAndroidLegacyExplainerSeenPref]`.
+  Future<bool> hasSeenAndroidLegacyExplainer() async {
+    if (_explainerSeenReaderForTest != null) {
+      return _explainerSeenReaderForTest();
+    }
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(kBleAndroidLegacyExplainerSeenPref) ?? false;
+  }
+
+  /// Persist the "user has acknowledged the explainer" flag. Called
+  /// from [startScan] after the user taps "Continue" on the dialog.
+  Future<void> markAndroidLegacyExplainerSeen() async {
+    if (_explainerSeenWriterForTest != null) {
+      await _explainerSeenWriterForTest();
+      return;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(kBleAndroidLegacyExplainerSeenPref, true);
+  }
+
   /// Request the runtime permissions BLE scanning + connecting needs.
   ///
-  /// On iOS, the OS prompt fires automatically the first time we call
-  /// into the platform channel — `permission_handler` returns
-  /// `granted` for `Permission.bluetooth` immediately on iOS once the
-  /// system prompt has been answered, so this method is a no-op there
-  /// today. On Android 12+ (API 31+), we have to request
-  /// `Permission.bluetoothScan` and `Permission.bluetoothConnect`
-  /// separately. On older Android (≤30), the legacy
-  /// `Permission.bluetooth` covers both.
+  /// Platform behaviour:
+  ///
+  ///   * **iOS / macOS** — the OS prompts via
+  ///     `NSBluetoothAlwaysUsageDescription` automatically the first
+  ///     time we call into the platform channel; we return `ok`
+  ///     unconditionally so callers don't gate on a redundant check.
+  ///   * **Android 12+ (API 31+)** — we request
+  ///     `Permission.bluetoothScan` and `Permission.bluetoothConnect`
+  ///     separately. The manifest declares `neverForLocation` on
+  ///     `BLUETOOTH_SCAN` so the OS knows we are NOT trying to derive
+  ///     the user's location from BLE beacons.
+  ///   * **Android 10/11 (API 29-30)** — modern split permissions
+  ///     don't exist yet. The OS instead requires
+  ///     `ACCESS_FINE_LOCATION` to scan for BLE peripherals at all.
+  ///     We request that on this branch. The `BLUETOOTH` /
+  ///     `BLUETOOTH_ADMIN` install-time permissions are already in
+  ///     the manifest with `maxSdkVersion="30"`.
+  ///
+  /// CALLERS that want to show the one-time Android 10/11 explainer
+  /// dialog ("Android 10 needs location permission to discover BLE
+  /// peripherals — we don't actually use your location") should call
+  /// [startScan] with the `androidLegacyLocationExplainer` callback.
+  /// This method itself never shows UI.
   Future<BlePermissionResult> ensurePermissions() async {
     if (kIsWeb) {
       return const BlePermissionResult(
@@ -217,6 +340,19 @@ class BleService extends ChangeNotifier {
       return BlePermissionResult.ok;
     }
     if (Platform.isAndroid) {
+      // On Android 10/11 the modern split permissions DON'T exist
+      // (they're API 31+). Requesting them on the legacy branch is a
+      // no-op that returns `granted` immediately, but the OS would
+      // still refuse to scan without ACCESS_FINE_LOCATION. So on
+      // legacy we ask for fine location instead.
+      final isLegacy = await isAndroidLegacyBleStack();
+      if (isLegacy) {
+        final loc = await Permission.locationWhenInUse.request();
+        return BlePermissionResult(
+          granted: loc.isGranted,
+          permanentlyDenied: loc.isPermanentlyDenied,
+        );
+      }
       final scan = await Permission.bluetoothScan.request();
       final connect = await Permission.bluetoothConnect.request();
       final granted = scan.isGranted && connect.isGranted;
@@ -243,23 +379,61 @@ class BleService extends ChangeNotifier {
   /// service UUIDs in [withServices] to filter at the OS level — much
   /// faster on devices like Kestrel that advertise a known service.
   ///
-  /// Throws [BleException] if the radio is off or the permissions
-  /// haven't been granted.
+  /// On Android 10/11 (API 29-30) the platform requires
+  /// `ACCESS_FINE_LOCATION` to scan for BLE peripherals — modern
+  /// `BLUETOOTH_SCAN` doesn't exist on those API levels. To explain
+  /// that to the user before the OS prompt fires, the caller can pass
+  /// [androidLegacyLocationExplainer]: an async callback the service
+  /// will invoke ONCE per device-lifetime (the "seen" flag is stashed
+  /// in `SharedPreferences[kBleAndroidLegacyExplainerSeenPref]`)
+  /// before the runtime permission request. The callback should
+  /// resolve to `true` if the user tapped "Continue" and `false` if
+  /// they cancelled — on `false` we throw a `BleException` and abort
+  /// the scan.
+  ///
+  /// Throws [BleException] if the radio is off, permissions are
+  /// denied, or the user cancelled the Android 10/11 explainer.
   Future<Stream<List<ScanResult>>> startScan({
     Duration timeout = const Duration(seconds: 12),
     List<Guid>? withServices,
+    BleExplainerCallback? androidLegacyLocationExplainer,
   }) async {
     if (!await isAvailable()) {
       throw const BleException(
         'Bluetooth is not available on this device.',
       );
     }
+
+    // Android 10/11 explainer dialog. Surface BEFORE the OS permission
+    // prompt — the system prompt says "Allow LoadOut to access this
+    // device's location" with no context, which scares reloaders.
+    final isLegacy = await isAndroidLegacyBleStack();
+    if (isLegacy && androidLegacyLocationExplainer != null) {
+      final seen = await hasSeenAndroidLegacyExplainer();
+      if (!seen) {
+        final acknowledged = await androidLegacyLocationExplainer();
+        if (!acknowledged) {
+          throw const BleException(
+            'Bluetooth scanning needs location permission on Android 10. '
+            'You can try again any time.',
+          );
+        }
+        await markAndroidLegacyExplainerSeen();
+      }
+    }
+
     final perm = await ensurePermissions();
     if (!perm.granted) {
       throw BleException(
         perm.permanentlyDenied
-            ? 'Bluetooth permission is denied. Open Settings to enable.'
-            : 'Bluetooth permission is required to scan for devices.',
+            ? (isLegacy
+                ? 'Location permission is denied. Open Settings to enable '
+                    'Bluetooth scanning on Android 10.'
+                : 'Bluetooth permission is denied. Open Settings to enable.')
+            : (isLegacy
+                ? 'Location permission is required to scan for Bluetooth '
+                    'devices on Android 10.'
+                : 'Bluetooth permission is required to scan for devices.'),
       );
     }
     if (!isAdapterOn) {
@@ -271,7 +445,12 @@ class BleService extends ChangeNotifier {
       await FlutterBluePlus.startScan(
         timeout: timeout,
         withServices: withServices ?? const [],
-        androidUsesFineLocation: false,
+        // On the legacy branch the platform requires fine location to
+        // scan — flutter_blue_plus's option must agree with the
+        // permission we just asked for. On API 31+ we keep this off
+        // because the manifest declares `neverForLocation` on
+        // BLUETOOTH_SCAN.
+        androidUsesFineLocation: isLegacy,
       );
     } catch (e) {
       throw BleException(

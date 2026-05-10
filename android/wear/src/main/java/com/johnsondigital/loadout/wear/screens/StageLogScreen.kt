@@ -41,8 +41,9 @@
 // the line, the user fires multiple shots per minute. Combining
 // motion + swipe + manual tap into one screen (rather than three
 // separate screens) means the user never has to navigate to log a
-// shot. The screen sits as page 2 of `MainActivity.AppPager`,
-// reachable by one swipe.
+// shot. The screen sits as the Stage Log page in
+// `MainActivity.LoadOutWearRoot`, one swipe right of the cold-launch
+// DOPE landing page.
 //
 // (For Compose newcomers: `LaunchedEffect(key)` runs the block once
 // when the composable enters composition AND restarts it whenever
@@ -90,7 +91,8 @@
 // ============================================================================
 // WHO CONSUMES THIS FILE
 // ============================================================================
-// - `MainActivity.kt` — hosts as the third page in `AppPager`.
+// - `MainActivity.kt` — hosts as the Stage Log page in
+//   `LoadOutWearRoot`.
 // - `motion/MotionDetector.kt` — passed in. Lifecycle managed via
 //   `DisposableEffect`.
 // - `bridge/PhoneDataLayerSender.kt` — passed in. Used to send

@@ -14,9 +14,13 @@
 //     watch displays.
 //   * `struct ActiveLoadSnapshot` (Equatable) — the active recipe
 //     summary.
+//   * `struct FirearmGlanceSnapshot` (Equatable) — the active firearm
+//     summary (name, shots fired, optional caliber + barrel-life
+//     percent remaining).
 //   * `final class DopeViewModel: ObservableObject`:
 //     - `@Published var snapshot: DopeSnapshot?`
 //     - `@Published var activeLoad: ActiveLoadSnapshot?`
+//     - `@Published var firearmGlance: FirearmGlanceSnapshot?`
 //     - `@Published var rowCursor: Int` — the user's scroll
 //       position, modified by `nextRow()` / `previousRow()`.
 //     - `func handle(path:payload:)` — the dispatch entry point
@@ -27,6 +31,8 @@
 //   * DOPE row keys: `r/u/w/v/t` (range, up, wind, velocity, time-of-flight).
 //   * Snapshot keys: `cart`, `bgr`, `bn`, `mv`, `z`, `ws`, `wd`, `dm`,
 //     `bc`, `pn`, `fn`, `g`, `rows`.
+//   * Active-load keys: `n`, `cart`, `p`, `pgr`, `b`, `bgr`.
+//   * Firearm-glance keys: `n`, `s`, `c`, `l`.
 //
 // ============================================================================
 // WHY IT EXISTS IN THE ARCHITECTURE
@@ -70,11 +76,12 @@
 //    might point past the new end. We clamp to `rows.count - 1`
 //    (or 0 for empty) so the view never tries to read out of bounds.
 //
-// 4. **`firearm_glance` is intentionally a no-op for now.** The
-//    path is reserved (CLAUDE.md §15) but Feature 2 doesn't render
-//    a firearm tab. Leaving the case in the switch ensures payloads
-//    are absorbed rather than logged as errors when the phone
-//    eventually starts sending them.
+// 4. **`firearm_glance` decodes into a small banner.** The watch
+//    doesn't surface a full firearm tab — barrel-life is a chip
+//    above the DOPE rows, not a screen. Adding more fields here
+//    means extending `FirearmGlanceSnapshot` AND the decoder
+//    together; do not silently swallow new fields the way the
+//    pre-v1 stub did.
 //
 // 5. **`ActiveLoadSnapshot` ignores fields it doesn't display.**
 //    The wire format includes powder name, charge, primer, brass,
@@ -142,9 +149,20 @@ struct ActiveLoadSnapshot: Equatable {
     let bulletWeightGr: Double?
 }
 
+struct FirearmGlanceSnapshot: Equatable {
+    let name: String
+    let shotsFired: Int
+    let caliber: String?
+    /// 0.0 .. 1.0 — null when the user hasn't set an expected barrel
+    /// life on the phone. Watch banner only renders the gauge when
+    /// the value is present.
+    let barrelLifeRemainingPct: Double?
+}
+
 final class DopeViewModel: ObservableObject {
     @Published private(set) var snapshot: DopeSnapshot?
     @Published private(set) var activeLoad: ActiveLoadSnapshot?
+    @Published private(set) var firearmGlance: FirearmGlanceSnapshot?
 
     /// 0-based cursor into `snapshot.rows`. Persists as the user
     /// scrolls; clamped to row bounds when a new snapshot lands.
@@ -157,8 +175,7 @@ final class DopeViewModel: ObservableObject {
         case WatchPaths.activeLoad:
             ingestActiveLoad(payload: payload)
         case WatchPaths.firearmGlance:
-            // Reserved for future tab — not consumed by Feature 2 yet.
-            break
+            ingestFirearmGlance(payload: payload)
         default:
             break
         }
@@ -254,6 +271,26 @@ final class DopeViewModel: ObservableObject {
         )
         DispatchQueue.main.async { [weak self] in
             self?.activeLoad = snap
+        }
+    }
+
+    /// Decodes the `firearm_glance` payload (keys `n` / `s` / `c` /
+    /// `l`). Required keys are `n` (name) + `s` (shots fired). When
+    /// either is missing the payload is dropped — the watch's banner
+    /// has nothing to render without a name.
+    private func ingestFirearmGlance(payload: [String: Any]) {
+        guard let name = payload["n"] as? String,
+              let shots = (payload["s"] as? NSNumber)?.intValue else {
+            return
+        }
+        let snap = FirearmGlanceSnapshot(
+            name: name,
+            shotsFired: shots,
+            caliber: payload["c"] as? String,
+            barrelLifeRemainingPct: (payload["l"] as? NSNumber)?.doubleValue
+        )
+        DispatchQueue.main.async { [weak self] in
+            self?.firearmGlance = snap
         }
     }
 }

@@ -1,0 +1,502 @@
+[
+  {
+    "manufacturer": "Hodgdon",
+    "name": "H4350",
+    "category": "rifle",
+    "tier": "essential",
+    "popularity_rank": 1,
+    "common_uses": ["6.5 Creedmoor", "6.5 PRC", "6mm Creedmoor", "6mm GT", ".243 Win", ".260 Rem", "6.5x47 Lapua", ".280 Ackley Improved"],
+    "notes": "The single most-used precision rifle powder in North America. Annual PRS Series end-of-season equipment surveys consistently rank H4350 as the dominant 6.5 Creedmoor and 6mm Creedmoor powder among top-100 finishers, frequently cited at >40% share. Hodgdon Extreme line, temperature-stable.",
+    "sources": ["PRS Series 2023 equipment survey (rifle.precisionrifleseries.com)", "PRS Series 2022 powder survey", "Hodgdon 2024 Reloading Data Center", "Western Powders 2018 Burn Rate Chart", "Berger Bullets Reloading Manual 1st Ed online supplement 2024"]
+  },
+  {
+    "manufacturer": "Hodgdon",
+    "name": "Varget",
+    "category": "rifle",
+    "tier": "essential",
+    "popularity_rank": 2,
+    "common_uses": [".308 Win", ".223 Rem (heavy bullet)", ".22-250 Rem", "6mm BR", "6.5 Grendel", "7mm-08 Rem", ".30-06 (light bullets)"],
+    "notes": "Workhorse mid-burn-rate stick powder; the canonical .308 Win match powder for decades and the dominant heavy-bullet .223 Rem powder among service-rifle and PRS Gas-Gun shooters. Hodgdon Extreme, temperature-stable.",
+    "sources": ["Sierra Bullets Reloading Data 2024", "Hodgdon 2024 Reloading Data Center", "Western Powders 2018 Burn Rate Chart", "Hornady 11th Edition Reloading Manual", "PRS Gas-Gun 2023 powder breakdown"]
+  },
+  {
+    "manufacturer": "Alliant",
+    "name": "Reloder 16",
+    "category": "rifle",
+    "tier": "essential",
+    "popularity_rank": 3,
+    "common_uses": ["6.5 Creedmoor", "6mm Creedmoor", "6.5 PRC", ".308 Win", ".260 Rem", "6.5x47 Lapua", ".300 WSM"],
+    "notes": "TZ (temperature-stable) Bofors Nitrochemie powder; the top H4350 alternative cited in PRS Series surveys. Often cross-shopped with H4350 for 6.5 Creedmoor/6mm Creedmoor when H4350 is unavailable. Slightly faster burn than H4350.",
+    "sources": ["Alliant 2023 Reloader's Guide", "PRS Series 2024 powder survey", "Berger Bullets Reloading Manual online supplement 2024", "Sierra Bullets Reloading Data 2024"]
+  },
+  {
+    "manufacturer": "Hodgdon",
+    "name": "H1000",
+    "category": "rifle",
+    "tier": "essential",
+    "popularity_rank": 4,
+    "common_uses": ["7mm PRC", "7mm Rem Mag", ".300 Win Mag", ".300 PRC", "6.5-284 Norma", ".338 Lapua Mag (light bullets)", "28 Nosler"],
+    "notes": "Slow magnum-rifle powder; a top choice for 7mm and .300 magnums in long-range / NRL-Hunter / ELR competition. Hodgdon Extreme, temperature-stable. Frequently the dominant powder in 7mm PRC and .300 PRC builds.",
+    "sources": ["Hodgdon 2024 Reloading Data Center", "Berger Bullets Reloading Manual online supplement 2024", "Hornady 11th Edition Reloading Manual", "NRL-Hunter 2023 match round usage notes", "Western Powders 2018 Burn Rate Chart"]
+  },
+  {
+    "manufacturer": "Alliant",
+    "name": "Reloder 26",
+    "category": "rifle",
+    "tier": "essential",
+    "popularity_rank": 5,
+    "common_uses": ["6.5 PRC", "7mm PRC", ".300 PRC", ".300 Win Mag", "6.5-284 Norma", "28 Nosler", "7mm Rem Mag", ".300 Norma Mag"],
+    "notes": "Slow, high-energy temperature-stable powder; widely used by long-range hunters and ELR competitors for max-MV magnum loads. Often paired against H1000 for 7mm/.30-cal magnums; produces noticeably higher MVs at the cost of pressure margin.",
+    "sources": ["Alliant 2023 Reloader's Guide", "Berger Bullets Reloading Manual online supplement 2024", "Sierra Bullets Reloading Data 2024", "PRS Series 2024 powder survey"]
+  },
+  {
+    "manufacturer": "Hodgdon",
+    "name": "H4831SC",
+    "category": "rifle",
+    "tier": "essential",
+    "popularity_rank": 6,
+    "common_uses": [".270 Win", "7mm Rem Mag", ".30-06", "6.5-284 Norma", ".280 Ackley Improved", ".25-06 Rem"],
+    "notes": "Short-cut version of H4831; the canonical hunting-rifle slow powder for .270 Win and .30-06 class cartridges. Drops more uniformly through powder measures than the long-grain original. Hodgdon Extreme, temperature-stable.",
+    "sources": ["Hodgdon 2024 Reloading Data Center", "Hornady 11th Edition Reloading Manual", "Sierra Bullets Reloading Data 2024", "Western Powders 2018 Burn Rate Chart"]
+  },
+  {
+    "manufacturer": "Vihtavuori",
+    "name": "N150",
+    "category": "rifle",
+    "tier": "essential",
+    "popularity_rank": 7,
+    "common_uses": [".308 Win", "6.5 Creedmoor (light bullets)", ".30-06", "6mm BR", "7mm-08 Rem", ".223 Rem (heavy)"],
+    "notes": "Mid-burn Finnish stick powder; widely used in European F-Class and benchrest disciplines, increasingly common in North American precision .308 builds. Reputation for low ES/SD with appropriate primer choice.",
+    "sources": ["Vihtavuori 2024 Reloading Guide", "Berger Bullets Reloading Manual online supplement 2024", "Sierra Bullets Reloading Data 2024", "F-Class News 2023 ammunition surveys"]
+  },
+  {
+    "manufacturer": "Vihtavuori",
+    "name": "N570",
+    "category": "rifle",
+    "tier": "essential",
+    "popularity_rank": 8,
+    "common_uses": [".300 PRC", ".300 Win Mag", "7mm PRC", ".338 Lapua Mag", ".300 Norma Mag", "28 Nosler"],
+    "notes": "Very slow magnum powder, a primary competitor to Reloder 33 for ELR / .338 Lapua / .300 Norma Mag. Featured prominently in modern long-range / King of 2 Mile loads.",
+    "sources": ["Vihtavuori 2024 Reloading Guide", "Berger Bullets Reloading Manual online supplement 2024", "King of 2 Mile match equipment notes 2023-2024"]
+  },
+  {
+    "manufacturer": "Hodgdon",
+    "name": "H4895",
+    "category": "rifle",
+    "tier": "essential",
+    "popularity_rank": 9,
+    "common_uses": [".308 Win", ".30-06", ".223 Rem", ".22-250 Rem", ".30-30 Win", ".45-70 Govt (reduced)"],
+    "notes": "Faster-burning member of the Hodgdon Extreme family; reduced-load friendly (the Hodgdon 'Youth Loads' program uses it down to 60% of max). Strong .308 / .30-06 traditional hunting choice.",
+    "sources": ["Hodgdon 2024 Reloading Data Center", "Hornady 11th Edition Reloading Manual", "Sierra Bullets Reloading Data 2024", "Western Powders 2018 Burn Rate Chart"]
+  },
+  {
+    "manufacturer": "Hodgdon",
+    "name": "Retumbo",
+    "category": "rifle",
+    "tier": "essential",
+    "popularity_rank": 10,
+    "common_uses": [".300 PRC", ".300 Win Mag", "7mm PRC", "7mm Rem Mag", ".338 Lapua Mag", ".30-378 Wby", "28 Nosler"],
+    "notes": "Among the slowest Hodgdon Extreme powders. Heavily used in big-case magnums and ELR; known as a top-3 .338 Lapua Mag powder. Temperature-stable.",
+    "sources": ["Hodgdon 2024 Reloading Data Center", "Berger Bullets Reloading Manual online supplement 2024", "Hornady 11th Edition Reloading Manual", "ELR Central 2023 powder breakdowns"]
+  },
+  {
+    "manufacturer": "IMR",
+    "name": "IMR 4350",
+    "category": "rifle",
+    "tier": "essential",
+    "popularity_rank": 11,
+    "common_uses": [".30-06", ".270 Win", ".25-06 Rem", "7mm-08 Rem", "6mm Rem", ".280 Rem"],
+    "notes": "Classic medium-slow stick powder; the original .30-06 / .270 Win standard before Hodgdon Extreme launched. Still widely loaded by traditional hunting reloaders. Less temperature-stable than H4350.",
+    "sources": ["IMR / Hodgdon 2024 Reloading Data Center", "Hornady 11th Edition Reloading Manual", "Sierra Bullets Reloading Data 2024", "Western Powders 2018 Burn Rate Chart"]
+  },
+  {
+    "manufacturer": "IMR",
+    "name": "IMR 4064",
+    "category": "rifle",
+    "tier": "essential",
+    "popularity_rank": 12,
+    "common_uses": [".308 Win", ".30-06", ".223 Rem (heavy)", ".22-250 Rem", "7.62x39", "6.5 Creedmoor (light)"],
+    "notes": "Mid-burn stick powder; long-time match-rifle .308 Win choice (Sierra MatchKing data) before Varget rose to prominence. Still widely used in Service Rifle and CMP competition.",
+    "sources": ["IMR / Hodgdon 2024 Reloading Data Center", "Sierra Bullets Reloading Data 2024", "CMP/Service Rifle reloading guides", "Western Powders 2018 Burn Rate Chart"]
+  },
+  {
+    "manufacturer": "IMR",
+    "name": "IMR 4166",
+    "category": "rifle",
+    "tier": "essential",
+    "popularity_rank": 13,
+    "common_uses": [".308 Win", "6.5 Creedmoor", ".223 Rem", "6mm Creedmoor", ".30-06"],
+    "notes": "First IMR Enduron series powder; sold as a temperature-stable Varget alternative with copper-fouling reducer. Strong following among reloaders who couldn't get Varget during the 2020-2022 shortage.",
+    "sources": ["IMR / Hodgdon 2024 Reloading Data Center", "Hornady 11th Edition Reloading Manual", "Sierra Bullets Reloading Data 2024", "Western Powders 2018 Burn Rate Chart"]
+  },
+  {
+    "manufacturer": "Hodgdon",
+    "name": "H4198",
+    "category": "rifle",
+    "tier": "essential",
+    "popularity_rank": 14,
+    "common_uses": [".223 Rem", ".22 Hornet", ".300 Blackout (subsonic)", "6mm PPC", ".17 Rem", "7.62x39"],
+    "notes": "Fast rifle stick powder; heavily used in 6PPC benchrest, .223 Rem light-bullet varmint loads, and a primary subsonic .300 Blackout choice.",
+    "sources": ["Hodgdon 2024 Reloading Data Center", "Sierra Bullets Reloading Data 2024", "IBS Benchrest reloading notes", "Western Powders 2018 Burn Rate Chart"]
+  },
+  {
+    "manufacturer": "Hodgdon",
+    "name": "H322",
+    "category": "rifle",
+    "tier": "essential",
+    "popularity_rank": 15,
+    "common_uses": ["6mm PPC", "6mm BR", ".223 Rem", ".22 PPC", ".22-250 Rem (light)"],
+    "notes": "The historic 6PPC benchrest powder; still widely used in short-range benchrest where it shares the throne with N133. Hodgdon Extreme.",
+    "sources": ["Hodgdon 2024 Reloading Data Center", "IBS / NBRSA benchrest articles 2022-2024", "Sierra Bullets Reloading Data 2024", "Western Powders 2018 Burn Rate Chart"]
+  },
+  {
+    "manufacturer": "Vihtavuori",
+    "name": "N133",
+    "category": "rifle",
+    "tier": "common",
+    "popularity_rank": 16,
+    "common_uses": ["6mm PPC", "6mm BR", "22 PPC", ".223 Rem", "6mm Dasher (light)"],
+    "notes": "The benchrest world's reference 6PPC powder; arguably the single most-used powder in short-range group benchrest (IBS / NBRSA). Used worldwide for that discipline.",
+    "sources": ["Vihtavuori 2024 Reloading Guide", "IBS / NBRSA 6PPC equipment notes", "Berger Bullets Reloading Manual online supplement 2024"]
+  },
+  {
+    "manufacturer": "Vihtavuori",
+    "name": "N140",
+    "category": "rifle",
+    "tier": "common",
+    "popularity_rank": 17,
+    "common_uses": [".308 Win (light bullets)", ".223 Rem (heavy)", "6.5 Grendel", "7mm-08 Rem", "6mm BR"],
+    "notes": "Faster than N150; the European analog to Varget for many cartridges. Common in F-Class and 300m ISSF.",
+    "sources": ["Vihtavuori 2024 Reloading Guide", "Sierra Bullets Reloading Data 2024", "F-Class News 2023 ammunition surveys"]
+  },
+  {
+    "manufacturer": "Vihtavuori",
+    "name": "N160",
+    "category": "rifle",
+    "tier": "common",
+    "popularity_rank": 18,
+    "common_uses": [".30-06", "6.5 Creedmoor", ".270 Win", "6.5x55 Swedish", "7mm-08 Rem", ".280 Rem"],
+    "notes": "Slightly slower than N150; a frequent .30-06 / 6.5x55 choice in Europe. Used by long-range hunters as an H4350-class option.",
+    "sources": ["Vihtavuori 2024 Reloading Guide", "Berger Bullets Reloading Manual online supplement 2024", "Hornady 11th Edition Reloading Manual"]
+  },
+  {
+    "manufacturer": "Vihtavuori",
+    "name": "N165",
+    "category": "rifle",
+    "tier": "common",
+    "popularity_rank": 19,
+    "common_uses": [".300 Win Mag", "7mm Rem Mag", ".300 WSM", "6.5-284 Norma", ".280 Ackley Improved"],
+    "notes": "Slow rifle stick powder; covers the .300 Win Mag and 7mm Rem Mag space for European reloaders.",
+    "sources": ["Vihtavuori 2024 Reloading Guide", "Berger Bullets Reloading Manual online supplement 2024", "Sierra Bullets Reloading Data 2024"]
+  },
+  {
+    "manufacturer": "Vihtavuori",
+    "name": "N170",
+    "category": "rifle",
+    "tier": "common",
+    "popularity_rank": 20,
+    "common_uses": [".300 Win Mag", "7mm Rem Mag", ".300 PRC", ".338 Lapua Mag (lighter bullets)", "28 Nosler"],
+    "notes": "Slowest of the traditional N100-series; comparable to H1000. Used in big magnums where slower-burn temperature-stable powders are needed.",
+    "sources": ["Vihtavuori 2024 Reloading Guide", "Berger Bullets Reloading Manual online supplement 2024"]
+  },
+  {
+    "manufacturer": "Alliant",
+    "name": "Reloder 17",
+    "category": "rifle",
+    "tier": "common",
+    "popularity_rank": 21,
+    "common_uses": ["6.5 Creedmoor", "6.5x47 Lapua", ".284 Win", "7mm WSM", ".308 Win"],
+    "notes": "Bofors-made faster Reloder series powder; popular in mid-case 6.5mm and 7mm cartridges. Less temperature-stable than RL16/RL26.",
+    "sources": ["Alliant 2023 Reloader's Guide", "Berger Bullets Reloading Manual online supplement 2024", "Sierra Bullets Reloading Data 2024"]
+  },
+  {
+    "manufacturer": "Alliant",
+    "name": "Reloder 22",
+    "category": "rifle",
+    "tier": "common",
+    "popularity_rank": 22,
+    "common_uses": [".270 Win", ".300 Win Mag", "7mm Rem Mag", "6.5-284 Norma", ".280 Ackley Improved", ".30-06"],
+    "notes": "Slow magnum stick powder; long-time .270 Win / 7mm Rem Mag standard, especially among traditional hunters.",
+    "sources": ["Alliant 2023 Reloader's Guide", "Hornady 11th Edition Reloading Manual", "Sierra Bullets Reloading Data 2024", "Western Powders 2018 Burn Rate Chart"]
+  },
+  {
+    "manufacturer": "Alliant",
+    "name": "Reloder 23",
+    "category": "rifle",
+    "tier": "common",
+    "popularity_rank": 23,
+    "common_uses": [".300 Win Mag", "6.5-284 Norma", "7mm Rem Mag", ".30-06", ".300 PRC"],
+    "notes": "TZ (temperature-stable) sibling to RL22. Marketed for sniper/match use. Solid .300 Win Mag option for cold-weather hunting.",
+    "sources": ["Alliant 2023 Reloader's Guide", "Berger Bullets Reloading Manual online supplement 2024", "Sierra Bullets Reloading Data 2024"]
+  },
+  {
+    "manufacturer": "Alliant",
+    "name": "Reloder 25",
+    "category": "rifle",
+    "tier": "common",
+    "popularity_rank": 24,
+    "common_uses": [".300 Win Mag", ".338 Win Mag", ".338 Lapua Mag", ".30-378 Wby Mag", ".300 RUM", "7mm STW"],
+    "notes": "Slow magnum powder; a primary .338 Lapua / .300 Wby Mag choice for hunters and ELR shooters before Reloder 33 launched.",
+    "sources": ["Alliant 2023 Reloader's Guide", "Berger Bullets Reloading Manual online supplement 2024", "Hornady 11th Edition Reloading Manual"]
+  },
+  {
+    "manufacturer": "Alliant",
+    "name": "Reloder 33",
+    "category": "rifle",
+    "tier": "common",
+    "popularity_rank": 25,
+    "common_uses": [".338 Lapua Mag", ".300 Norma Mag", ".50 BMG", ".416 Barrett", ".408 CheyTac"],
+    "notes": "Very slow rifle powder; designed specifically for the .338 Lapua Mag and similar military / ELR cases. King of 2 Mile and Ko2M-class events feature this powder heavily.",
+    "sources": ["Alliant 2023 Reloader's Guide", "King of 2 Mile equipment notes 2023-2024", "ELR Central 2023 powder breakdowns"]
+  },
+  {
+    "manufacturer": "Hodgdon",
+    "name": "H50BMG",
+    "category": "rifle",
+    "tier": "common",
+    "popularity_rank": 26,
+    "common_uses": [".50 BMG", ".416 Barrett", ".338 Lapua Mag (heavy bullets)", ".408 CheyTac", ".50 DTC Europ"],
+    "notes": "Hodgdon Extreme line slow powder developed for .50 BMG match loads. The standard .50 BMG match powder. Used in some ELR rifle programs as well.",
+    "sources": ["Hodgdon 2024 Reloading Data Center", "Fifty Caliber Shooters Association equipment notes", "Western Powders 2018 Burn Rate Chart"]
+  },
+  {
+    "manufacturer": "IMR",
+    "name": "IMR 4895",
+    "category": "rifle",
+    "tier": "common",
+    "popularity_rank": 27,
+    "common_uses": [".308 Win", ".30-06", ".223 Rem", ".22-250 Rem", ".45-70 Govt (reduced)"],
+    "notes": "Original WW2-era stick powder, still currently shipping. Common surplus and traditional reloader choice. Less temp-stable than H4895; otherwise comparable.",
+    "sources": ["IMR / Hodgdon 2024 Reloading Data Center", "Hornady 11th Edition Reloading Manual", "Sierra Bullets Reloading Data 2024"]
+  },
+  {
+    "manufacturer": "IMR",
+    "name": "IMR 4198",
+    "category": "rifle",
+    "tier": "common",
+    "popularity_rank": 28,
+    "common_uses": [".223 Rem", ".22 Hornet", ".300 Blackout (subsonic)", "7.62x39", ".45-70 Govt (reduced)"],
+    "notes": "Fast stick powder; main competitor to H4198 in the .223 Rem light-bullet and subsonic .300 BLK roles.",
+    "sources": ["IMR / Hodgdon 2024 Reloading Data Center", "Sierra Bullets Reloading Data 2024", "Hornady 11th Edition Reloading Manual"]
+  },
+  {
+    "manufacturer": "IMR",
+    "name": "IMR 7828 SSC",
+    "category": "rifle",
+    "tier": "common",
+    "popularity_rank": 29,
+    "common_uses": [".300 Win Mag", "7mm Rem Mag", ".270 Wby Mag", ".300 Wby Mag", ".30-06", "6.5-284 Norma"],
+    "notes": "Short-cut version of IMR 7828; slow rifle powder for big-bore magnums. Flows uniformly through measures.",
+    "sources": ["IMR / Hodgdon 2024 Reloading Data Center", "Hornady 11th Edition Reloading Manual", "Western Powders 2018 Burn Rate Chart"]
+  },
+  {
+    "manufacturer": "IMR",
+    "name": "IMR 4451",
+    "category": "rifle",
+    "tier": "common",
+    "popularity_rank": 30,
+    "common_uses": ["6.5 Creedmoor", ".270 Win", ".30-06", ".280 Rem", "6.5x55 Swedish"],
+    "notes": "Enduron-series powder positioned as a temperature-stable IMR 4350 / H4350 alternative. Adoption growing among reloaders affected by H4350 shortages.",
+    "sources": ["IMR / Hodgdon 2024 Reloading Data Center", "Hornady 11th Edition Reloading Manual", "Sierra Bullets Reloading Data 2024"]
+  },
+  {
+    "manufacturer": "IMR",
+    "name": "IMR 7977",
+    "category": "rifle",
+    "tier": "specialty",
+    "popularity_rank": 31,
+    "common_uses": [".300 Win Mag", "7mm Rem Mag", ".300 PRC", "6.5-284 Norma", "7mm PRC"],
+    "notes": "Slowest IMR Enduron; a temperature-stable competitor to H1000 / Retumbo. Newer release with growing adoption.",
+    "sources": ["IMR / Hodgdon 2024 Reloading Data Center", "Hornady 11th Edition Reloading Manual", "Berger Bullets Reloading Manual online supplement 2024"]
+  },
+  {
+    "manufacturer": "IMR",
+    "name": "IMR 8133",
+    "category": "rifle",
+    "tier": "specialty",
+    "popularity_rank": 32,
+    "common_uses": [".50 BMG", ".338 Lapua Mag", ".416 Barrett", ".30-378 Wby Mag", ".300 RUM"],
+    "notes": "Very slowest Enduron-series powder; a Retumbo / H50BMG-class option. Adopted by ELR shooters with the largest cases.",
+    "sources": ["IMR / Hodgdon 2024 Reloading Data Center", "ELR Central 2023 powder breakdowns"]
+  },
+  {
+    "manufacturer": "Accurate",
+    "name": "A2520",
+    "category": "rifle",
+    "tier": "specialty",
+    "popularity_rank": 33,
+    "common_uses": [".308 Win", ".223 Rem (heavy)", ".30-06", "7.62x39", "6mm BR"],
+    "notes": "Western Powders extruded mid-burn analog of Varget / IMR 4064. Often sold under the Accurate brand for service-rifle reloaders.",
+    "sources": ["Western Powders 2018 Burn Rate Chart", "Hodgdon (Western Powders successor) 2024 catalog", "Sierra Bullets Reloading Data 2024"]
+  },
+  {
+    "manufacturer": "Accurate",
+    "name": "A2700",
+    "category": "rifle",
+    "tier": "specialty",
+    "popularity_rank": 34,
+    "common_uses": [".30-06", ".270 Win", ".25-06 Rem", "7mm-08 Rem", ".280 Rem"],
+    "notes": "Mid-slow ball powder in the H4350 burn class. Western Powders / Accurate brand offering.",
+    "sources": ["Western Powders 2018 Burn Rate Chart", "Hodgdon (Western Powders successor) 2024 catalog"]
+  },
+  {
+    "manufacturer": "Accurate",
+    "name": "A4350",
+    "category": "rifle",
+    "tier": "specialty",
+    "popularity_rank": 35,
+    "common_uses": [".30-06", ".270 Win", "6.5 Creedmoor", "7mm-08 Rem", ".25-06 Rem"],
+    "notes": "Western Powders mid-slow extruded; an H4350-class alternative branded under Accurate. Reloader's pick when H4350 is unavailable.",
+    "sources": ["Western Powders 2018 Burn Rate Chart", "Hodgdon (Western Powders successor) 2024 catalog", "Sierra Bullets Reloading Data 2024"]
+  },
+  {
+    "manufacturer": "Accurate",
+    "name": "MAGPRO",
+    "category": "rifle",
+    "tier": "specialty",
+    "popularity_rank": 36,
+    "common_uses": [".300 WSM", ".270 WSM", "7mm WSM", ".300 Win Mag", "7mm Rem Mag"],
+    "notes": "Western Powders / Accurate slow ball powder, marketed for short magnums. Strong following among WSM family reloaders.",
+    "sources": ["Western Powders 2018 Burn Rate Chart", "Hodgdon (Western Powders successor) 2024 catalog", "Hornady 11th Edition Reloading Manual"]
+  },
+  {
+    "manufacturer": "Accurate",
+    "name": "LT-32",
+    "category": "rifle",
+    "tier": "specialty",
+    "popularity_rank": 37,
+    "common_uses": ["6mm BR", "6mm Dasher", "6PPC", "30 BR", ".22 BR"],
+    "notes": "Lapua Test 32; Lovex-made fine-grain extruded powder developed for the 6BR / Dasher benchrest scene. Has displaced N133 for some 6BR shooters.",
+    "sources": ["Western Powders 2018 Burn Rate Chart", "Hodgdon (Western Powders successor) 2024 catalog", "IBS / NBRSA 6BR equipment notes 2022-2024", "Berger Bullets Reloading Manual online supplement 2024"]
+  },
+  {
+    "manufacturer": "Ramshot",
+    "name": "TAC",
+    "category": "rifle",
+    "tier": "specialty",
+    "popularity_rank": 38,
+    "common_uses": [".223 Rem", ".308 Win", "7.62x39", "6.5 Grendel", ".22-250 Rem"],
+    "notes": "Western Powders / Ramshot ball powder positioned for AR-15 / .223 Rem service rifle. Known for clean burning and uniform metering. Common AR-loader's pick.",
+    "sources": ["Western Powders 2018 Burn Rate Chart", "Hodgdon (Western Powders successor) 2024 catalog", "Sierra Bullets Reloading Data 2024"]
+  },
+  {
+    "manufacturer": "Ramshot",
+    "name": "BIG GAME",
+    "category": "rifle",
+    "tier": "specialty",
+    "popularity_rank": 39,
+    "common_uses": [".308 Win", ".30-06", "6.5 Creedmoor", ".270 Win", "7mm-08 Rem"],
+    "notes": "Ramshot mid-burn ball powder in the IMR 4350 / H4350 class for hunting cartridges. Western Powders/Hodgdon catalog.",
+    "sources": ["Western Powders 2018 Burn Rate Chart", "Hodgdon (Western Powders successor) 2024 catalog", "Hornady 11th Edition Reloading Manual"]
+  },
+  {
+    "manufacturer": "Ramshot",
+    "name": "MAGNUM",
+    "category": "rifle",
+    "tier": "specialty",
+    "popularity_rank": 40,
+    "common_uses": [".300 Win Mag", "7mm Rem Mag", ".338 Win Mag", ".300 Wby Mag", ".300 RUM"],
+    "notes": "Ramshot slow ball powder for magnum cartridges. Less common than Reloder 22/26 and H1000 but used by ball-powder fans.",
+    "sources": ["Western Powders 2018 Burn Rate Chart", "Hodgdon (Western Powders successor) 2024 catalog"]
+  },
+  {
+    "manufacturer": "Ramshot",
+    "name": "LRT",
+    "category": "rifle",
+    "tier": "specialty",
+    "popularity_rank": 41,
+    "common_uses": [".300 Win Mag", ".300 PRC", ".338 Lapua Mag", "7mm Rem Mag", ".300 Norma Mag"],
+    "notes": "Ramshot Long Range Tactical; slow temperature-stable ball powder developed for sniper / ELR applications.",
+    "sources": ["Western Powders 2018 Burn Rate Chart", "Hodgdon (Western Powders successor) 2024 catalog", "ELR Central 2023 powder breakdowns"]
+  },
+  {
+    "manufacturer": "Norma",
+    "name": "URP",
+    "category": "rifle",
+    "tier": "specialty",
+    "popularity_rank": 42,
+    "common_uses": [".30-06", ".270 Win", "6.5x55 Swedish", "7mm-08 Rem", ".280 Rem"],
+    "notes": "Universal Rifle Powder; medium-slow Norma stick powder roughly comparable to H4350 / N160. Common in European hunting reloads.",
+    "sources": ["Norma Reloading Data 2024", "Vihtavuori 2024 Reloading Guide cross-reference", "Sierra Bullets Reloading Data 2024"]
+  },
+  {
+    "manufacturer": "Norma",
+    "name": "MRP",
+    "category": "rifle",
+    "tier": "specialty",
+    "popularity_rank": 43,
+    "common_uses": [".300 Win Mag", "7mm Rem Mag", "6.5x55 Swedish", ".270 Wby Mag", ".30-06"],
+    "notes": "Magnum Rifle Powder; Norma's signature slow magnum extruded powder. Long history with European hunters; comparable to H4831.",
+    "sources": ["Norma Reloading Data 2024", "Vihtavuori 2024 Reloading Guide cross-reference"]
+  },
+  {
+    "manufacturer": "Norma",
+    "name": "203-B",
+    "category": "rifle",
+    "tier": "specialty",
+    "popularity_rank": 44,
+    "common_uses": [".308 Win", "6.5x55 Swedish", "6mm BR Norma", ".30-06", "6.5 Creedmoor"],
+    "notes": "Mid-burn Norma stick powder used widely in 300m ISSF and European F-Class. Comparable to N150 / Varget.",
+    "sources": ["Norma Reloading Data 2024", "Vihtavuori 2024 Reloading Guide cross-reference", "F-Class News 2023 ammunition surveys"]
+  },
+  {
+    "manufacturer": "Vihtavuori",
+    "name": "N555",
+    "category": "rifle",
+    "tier": "specialty",
+    "popularity_rank": 45,
+    "common_uses": [".308 Win", "6.5 Creedmoor", "6mm Creedmoor", "6.5x47 Lapua", "6mm BR"],
+    "notes": "Newer Vihtavuori 500-series high-energy mid-burn powder; positioned for modern PRS-style 6mm/6.5mm cartridges.",
+    "sources": ["Vihtavuori 2024 Reloading Guide", "Berger Bullets Reloading Manual online supplement 2024"]
+  },
+  {
+    "manufacturer": "Vihtavuori",
+    "name": "N565",
+    "category": "rifle",
+    "tier": "specialty",
+    "popularity_rank": 46,
+    "common_uses": ["6.5 PRC", "6.5-284 Norma", ".284 Win", "7mm Rem Mag (light bullets)", ".300 WSM"],
+    "notes": "Vihtavuori 500-series slow high-energy powder. Aimed at high-MV mid-magnum loads competing with Reloder 26.",
+    "sources": ["Vihtavuori 2024 Reloading Guide", "Berger Bullets Reloading Manual online supplement 2024"]
+  },
+  {
+    "manufacturer": "Vihtavuori",
+    "name": "N568",
+    "category": "rifle",
+    "tier": "specialty",
+    "popularity_rank": 47,
+    "common_uses": [".300 PRC", ".300 Win Mag", "7mm PRC", "28 Nosler", ".300 Norma Mag"],
+    "notes": "Newest Vihtavuori 500-series very-slow high-energy powder; targets the .300 PRC / 7mm PRC space against Reloder 26 / N570.",
+    "sources": ["Vihtavuori 2024 Reloading Guide"]
+  },
+  {
+    "manufacturer": "Hodgdon",
+    "name": "H110",
+    "category": "dual",
+    "tier": "specialty",
+    "popularity_rank": 48,
+    "common_uses": [".44 Mag", ".357 Mag", ".454 Casull", ".460 S&W Mag", ".500 S&W Mag", ".300 Blackout (supersonic)"],
+    "notes": "Spherical magnum-pistol / small-bore-rifle powder. Identical to Winchester 296. The standard heavy-charge magnum revolver and supersonic .300 BLK powder. Critical dual-use entry.",
+    "sources": ["Hodgdon 2024 Reloading Data Center", "Sierra Bullets Reloading Data 2024", "Hornady 11th Edition Reloading Manual", "Western Powders 2018 Burn Rate Chart"]
+  },
+  {
+    "manufacturer": "Hodgdon",
+    "name": "Lil'Gun",
+    "category": "dual",
+    "tier": "specialty",
+    "popularity_rank": 49,
+    "common_uses": [".22 Hornet", ".410 Bore", ".357 Mag", ".44 Mag", ".300 Blackout (supersonic)"],
+    "notes": "Designed specifically for .410 bore and .22 Hornet but heavily adopted as a top supersonic .300 Blackout powder. Very fast burn rate for its application class.",
+    "sources": ["Hodgdon 2024 Reloading Data Center", "Hornady 11th Edition Reloading Manual", "Western Powders 2018 Burn Rate Chart"]
+  },
+  {
+    "manufacturer": "Alliant",
+    "name": "Power Pro 2000-MR",
+    "category": "rifle",
+    "tier": "specialty",
+    "popularity_rank": 50,
+    "common_uses": [".223 Rem", "6mm BR", ".308 Win (light bullets)", "6mm Creedmoor (light)", "6.5 Grendel"],
+    "notes": "Alliant Power Pro mid-burn ball powder for medium-rifle cartridges. Less common than TAC/CFE 223 but used by ball-powder enthusiasts in PRS Gas Gun and AR-15 reloads.",
+    "sources": ["Alliant 2023 Reloader's Guide", "Sierra Bullets Reloading Data 2024", "Western Powders 2018 Burn Rate Chart"]
+  }
+]

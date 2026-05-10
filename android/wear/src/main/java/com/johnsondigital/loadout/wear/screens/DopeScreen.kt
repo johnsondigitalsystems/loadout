@@ -8,7 +8,11 @@
 // `.collectAsState()`) and renders, when a snapshot is available, a
 // glanceable card with:
 //
-//   * Header: cartridge + bullet identity, ellipsised on overflow.
+//   * Active-load banner: a single-line summary of the currently
+//     pushed `active_load` payload (cartridge + bullet weight). Falls
+//     back to "Pick a Load on Phone" when no active load has been
+//     pushed.
+//   * DOPE header: cartridge + bullet identity, ellipsised on overflow.
 //   * Big numerals showing the current range in yards.
 //   * Two columns: vertical "UP" hold and horizontal "WIND" hold,
 //     both in mils.
@@ -17,10 +21,12 @@
 //
 // Public surface:
 //   * `@Composable fun DopeScreen()` — the screen body. Hosted by
-//     `MainActivity.AppPager` as page 1.
+//     `MainActivity` as the second page in `LoadOutWearRoot`.
 //
 // Private composables:
-//   * `Populated(snap, row)` — populated state.
+//   * `ActiveLoadBanner(snap)` — top-of-screen badge summarising the
+//     pushed active recipe; hides itself when no payload is present.
+//   * `Populated(snap, row)` — populated DOPE state.
 //   * `HoldColumn(label, value)` — small two-line column for UP/WIND.
 //   * `EmptyState()` — "Waiting for DOPE — open Ballistics on your
 //     phone." fallback when no snapshot has arrived.
@@ -28,9 +34,12 @@
 // ============================================================================
 // WHY IT EXISTS IN THE ARCHITECTURE
 // ============================================================================
-// One of three feature screens hosted by `MainActivity.AppPager`. The
-// DOPE card is the user's at-a-glance reference at the line — "what
-// dial do I turn for this range?". Mirrors `ios/RunnerWatchApp/DopeView.swift`.
+// One of five feature screens hosted by `MainActivity.LoadOutWearRoot`.
+// The DOPE card is the user's at-a-glance reference at the line —
+// "what dial do I turn for this range?". Mirrors
+// `ios/RunnerWatchApp/DopeView.swift`. Sits as the second page of the
+// pager (the user's cold-launch landing page) because it's the screen
+// they look at most.
 //
 // Reading directly from `WatchAppState` (rather than through a
 // view-model) is appropriate here because the state is process-singleton
@@ -72,9 +81,10 @@
 // ============================================================================
 // WHO CONSUMES THIS FILE
 // ============================================================================
-// - `MainActivity.kt` — hosts as the second page in `AppPager`.
+// - `MainActivity.kt` — hosts as the DOPE page in `LoadOutWearRoot`.
 // - `state/WatchAppState.kt` — read via `collectAsState()`. The
-//   listener service writes to it; this composable reacts.
+//   listener service writes to it; this composable reacts. Both
+//   `dopeSnapshot` and `activeLoad` are observed.
 //
 // This file ships on a separate Gradle sub-project (`:wear`), not in
 // the main `:app` module.
@@ -90,8 +100,10 @@ package com.johnsondigital.loadout.wear.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -107,6 +119,7 @@ import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
+import com.johnsondigital.loadout.wear.bridge.ActiveLoadSnapshot
 import com.johnsondigital.loadout.wear.bridge.DopeRow
 import com.johnsondigital.loadout.wear.bridge.DopeSnapshot
 import com.johnsondigital.loadout.wear.state.WatchAppState
@@ -121,15 +134,82 @@ import com.johnsondigital.loadout.wear.state.WatchAppState
 @Composable
 fun DopeScreen() {
     val snapshot by WatchAppState.dopeSnapshot.collectAsState()
+    val activeLoad by WatchAppState.activeLoad.collectAsState()
     val cursor by WatchAppState.rowCursor.collectAsState()
 
-    val snap = snapshot
-    if (snap == null || snap.rows.isEmpty()) {
-        EmptyState()
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        // Active-load banner sits ABOVE the DOPE card so a glance at
+        // the watch tells the shooter both what they're shooting and
+        // where to dial it. Hides itself when no payload is present
+        // (per the project's no-placeholder rule — never invent a load
+        // name the user didn't pick).
+        ActiveLoadBanner(activeLoad)
+
+        val snap = snapshot
+        if (snap == null || snap.rows.isEmpty()) {
+            EmptyState()
+        } else {
+            val row = snap.rows.getOrNull(cursor) ?: snap.rows.first()
+            Populated(snap = snap, row = row)
+        }
+    }
+}
+
+@Composable
+private fun ActiveLoadBanner(snap: ActiveLoadSnapshot?) {
+    if (snap == null) {
+        // No active load — the user hasn't picked a recipe on the phone
+        // yet. Tell them where to fix it without faking any of the
+        // ballistics-affecting fields.
+        Text(
+            text = "Pick a Load on Phone",
+            fontSize = 9.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colors.onBackground,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 4.dp, bottom = 2.dp),
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
         return
     }
-    val row = snap.rows.getOrNull(cursor) ?: snap.rows.first()
-    Populated(snap = snap, row = row)
+    // Compose a one-line summary: "Cartridge · 140 gr Bullet · 41.5 gr
+    // Powder". Drop fields the phone didn't push so we don't render
+    // empty units.
+    val parts = mutableListOf<String>()
+    parts += snap.cartridgeName
+    val bulletGr = snap.bulletWeightGr
+    val bulletName = snap.bulletName
+    when {
+        bulletGr != null && bulletName != null ->
+            parts += "${"%.0f".format(bulletGr)} gr $bulletName"
+        bulletName != null -> parts += bulletName
+        bulletGr != null -> parts += "${"%.0f".format(bulletGr)} gr"
+    }
+    val powderGr = snap.powderChargeGr
+    if (powderGr != null) {
+        parts += "${"%.1f".format(powderGr)} gr ${snap.powderName ?: "powder"}"
+    } else if (snap.powderName != null) {
+        parts += snap.powderName
+    }
+    Text(
+        text = parts.joinToString(" · "),
+        fontSize = 9.sp,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colors.primary,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 4.dp, bottom = 2.dp),
+        textAlign = TextAlign.Center,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+    )
+    Spacer(modifier = Modifier.height(2.dp))
 }
 
 @Composable

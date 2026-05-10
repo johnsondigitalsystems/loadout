@@ -3,25 +3,36 @@ rules_version = '2';
 // LoadOut Firebase Storage rules.
 //
 // The only objects we serve out of Storage are reference catalog files
-// (cartridges, powders, bullets, primers, brass, firearms, parts) and the
-// manifest that describes their current version numbers. The app pulls
-// these on cold-start to refresh the on-device SQLite reference tables
-// without requiring an App Store / Play Store release.
+// (cartridges, powders, bullets, primers, brass, firearms, parts,
+// drag_curves, components, plus the manifest) and an `archive/` folder
+// of previous-version snapshots. The app pulls these on cold-start
+// (via `lib/services/seed_updater.dart`) to refresh on-device SQLite
+// reference tables without requiring an App Store / Play Store
+// release.
 //
-// `seed_data/*` is therefore PUBLIC READ — every install, signed in or
-// not, anonymous or anonymous-elevated, must be able to GET these files.
-// Writes are restricted to authenticated developers; in practice, uploads
-// are done from the Firebase Console or `gsutil` by a project member.
+// `seed_data/**` is PUBLIC READ — every install, signed in or not,
+// anonymous or anonymous-elevated, must be able to GET these files.
+// The previous version of this file used `match /seed_data/{file}`
+// which only matched a single path segment, so nested files like
+// `seed_data/components/chassis.json` and
+// `seed_data/drag_curves/curves.json` fell through to the default-
+// deny. The `{path=**}` syntax below matches recursively, including
+// the `seed_data/archive/...` snapshot directory we keep for rollback
+// (CLAUDE.md § 28).
+//
+// Writes are restricted to authenticated developers; in practice,
+// uploads are done from the Firebase Console or `gsutil` by a project
+// member running `scripts/upload_seed_data.sh`.
 service firebase.storage {
   match /b/{bucket}/o {
-    match /seed_data/{file} {
+    match /seed_data/{path=**} {
       allow read: if true;
       allow write: if request.auth != null;
     }
 
     // Default-deny everything else. Reference data is the only thing
     // LoadOut stores in Firebase Storage; user reloading data stays on
-    // the device.
+    // the device (CLAUDE.md § 13).
     match /{allPaths=**} {
       allow read, write: if false;
     }
