@@ -80,6 +80,19 @@
                       android:host="loadout-precision-reloading.firebaseapp.com"
                       android:pathPrefix="/auth/"/>
             </intent-filter>
+            <!-- Inbound share intent for plain text. When the user picks
+                 LoadOut from the Android share sheet (Notes, OneNote,
+                 Word, Bear, Drafts, Obsidian — any app that exports
+                 text via the system share menu) the OS launches the
+                 main activity with this intent, the share_handler
+                 plugin lifts the text out, and ShareHandlerService
+                 routes it through RecipeParser into the recipe-review
+                 screen. See lib/services/share_handler_service.dart. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="text/plain"/>
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

@@ -104,6 +104,7 @@ import '../paywall/paywall_screen.dart';
 import '../recipes/photo_import_screen.dart';
 import '../recipes/quick_add_recipe_screen.dart';
 import '../recipes/smart_import_screen.dart';
+import 'import_sources_screen.dart';
 import 'notebook_onboarding_screen.dart';
 
 /// Multi-page guided walkthrough that introduces LoadOut's features.
@@ -174,21 +175,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           l.onboardingQuickAddBullet3,
         ],
       ),
-      // Slide C — Bring your existing data. Spreadsheet routes to the
-      // Smart Import wizard (CSV / XLSX with auto-suggested column
-      // mapping); photo routes to Backup & Export, which is the home
-      // for the photo-import flow as it lands.
+      // Slide C — Bring your existing data. Single primary CTA opens
+      // the dedicated `ImportSourcesScreen` which carries every
+      // supported source (photo, CSV/Excel, plain text, PDF, Word
+      // export, OneNote export, Apple Notes share-sheet). The slide's
+      // bullets enumerate the formats so a user scanning the deck
+      // sees what's possible without opening the picker.
       _OnboardingPage(
         icon: Icons.input,
         title: l.onboardingImportTitle,
-        bullets: [
-          l.onboardingImportBullet1,
-          l.onboardingImportBullet2,
+        bullets: const [
+          'Already use Excel, paper, OneNote, Word, Notes, or a PDF '
+              'load-data sheet?',
+          'Pick the format and we\'ll line everything up. Photo, '
+              'CSV/Excel, PDF, plain text, Word, OneNote, and the '
+              'Apple Notes share sheet — all supported.',
         ],
-        actionLabel: l.onboardingImportSpreadsheetButton,
-        actionType: _PageActionType.openSpreadsheetImport,
-        secondaryActionLabel: l.onboardingImportPhotoButton,
-        secondaryActionType: _PageActionType.openPhotoImport,
+        actionLabel: 'Pick an Import Source',
+        actionType: _PageActionType.openImportSources,
       ),
       // Slide D — Grow as you go.
       _OnboardingPage(
@@ -318,12 +322,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         _openSpreadsheetImport();
       case _PageActionType.openPhotoImport:
         _openPhotoImport();
+      case _PageActionType.openImportSources:
+        _openImportSources();
       case _PageActionType.pickPath:
         // Path-picker cards each call their per-card handler directly
         // (see _PathPickerSlide). This branch exists so the switch is
         // exhaustive but is never reached.
         break;
     }
+  }
+
+  /// Pop the onboarding deck and push the consolidated
+  /// `ImportSourcesScreen`. Same back-stack pattern as
+  /// `_openSpreadsheetImport` / `_openPhotoImport` — pop first so
+  /// the user's "back" from the picker lands on Home, not back into
+  /// the half-completed onboarding deck.
+  void _openImportSources() {
+    _markSeenWithoutClosing();
+    final navigator = Navigator.of(context);
+    navigator.pop();
+    navigator.push(
+      MaterialPageRoute(builder: (_) => const ImportSourcesScreen()),
+    );
   }
 
   /// Notebook path: deep-link into the dedicated
@@ -457,6 +477,12 @@ enum _PageActionType {
   finish,
   openSpreadsheetImport,
   openPhotoImport,
+  /// New consolidated import-sources picker. Replaces the old
+  /// dual-button (spreadsheet + photo) layout on the "Bring your
+  /// existing data" slide so the four newly-supported formats
+  /// (PDF, plain text, Word-via-export, OneNote-via-export, Apple
+  /// Notes share) all have a home.
+  openImportSources,
   /// Path-picker slide: render persona-specific cards instead of a
   /// single CTA button. Each card has its own callback. Tapping a
   /// card pops onboarding and pushes the matching dedicated flow
@@ -612,6 +638,8 @@ class _OnboardingPageView extends StatelessWidget {
         return Icons.table_view_outlined;
       case _PageActionType.openPhotoImport:
         return Icons.photo_camera_outlined;
+      case _PageActionType.openImportSources:
+        return Icons.input;
       case _PageActionType.viewPro:
         return Icons.workspace_premium_outlined;
       case _PageActionType.finish:

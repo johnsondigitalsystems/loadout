@@ -1181,6 +1181,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.12.0"
+  pdf_widget_wrapper:
+    dependency: transitive
+    description:
+      name: pdf_widget_wrapper
+      sha256: c930860d987213a3d58c7ec3b7ecf8085c3897f773e8dc23da9cae60a5d6d0f5
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.4"
   permission_handler:
     dependency: "direct main"
     description:
@@ -1261,6 +1269,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.5.2"
+  printing:
+    dependency: "direct main"
+    description:
+      name: printing
+      sha256: "689170c9ddb1bda85826466ba80378aa8993486d3c959a71cd7d2d80cb606692"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.14.3"
   provider:
     dependency: "direct main"
     description:
@@ -1349,6 +1365,38 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.1"
+  share_handler:
+    dependency: "direct main"
+    description:
+      name: share_handler
+      sha256: "0a6d007f0e44fbee27164adcd159ecbc88238864313f4e5c58161cae2180328d"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.25"
+  share_handler_android:
+    dependency: transitive
+    description:
+      name: share_handler_android
+      sha256: caf555b933dc72783aa37fef75688c7b86bd6f7bc17d80fbf585bc42f123cc8d
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.11"
+  share_handler_ios:
+    dependency: transitive
+    description:
+      name: share_handler_ios
+      sha256: cdc21f88f336a944157a8e9ceb191525cee3b082d6eb6c2082488e4f09dc3ece
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.15"
+  share_handler_platform_interface:
+    dependency: transitive
+    description:
+      name: share_handler_platform_interface
+      sha256: "7a4df95a87b326b2f07458d937f2281874567c364b7b7ebe4e7d50efaae5f106"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.6"
   share_plus:
     dependency: "direct main"
     description:

@@ -172,6 +172,7 @@ import 'services/purchases_service.dart';
 import 'services/sensors/cant_service.dart';
 import 'services/sensors/inclinometer_service.dart';
 import 'services/sensors/magnetometer_service.dart';
+import 'services/share_handler_service.dart';
 import 'services/unit_service.dart';
 import 'services/watch_bridge_service.dart';
 import 'services/watch_settings_service.dart';
@@ -194,6 +195,15 @@ class LoadOutApp extends StatelessWidget {
 
   final AppDatabase database;
   final PurchasesService purchases;
+
+  /// App-wide navigator key. Used by the share-intent listener
+  /// (`ShareHandlerService`) to push the recipe-review screen when
+  /// inbound text arrives from the iOS / Android share sheet,
+  /// without needing to plumb a `BuildContext` from outside the
+  /// widget tree. Same pattern Flutter recommends for global
+  /// notification-tap handlers and deep-link routers.
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
 
   @override
   Widget build(BuildContext context) {
@@ -454,6 +464,7 @@ class LoadOutApp extends StatelessWidget {
           final code = localeService.languageCode;
           return MaterialApp(
             title: 'LoadOut',
+            navigatorKey: navigatorKey,
             theme: AppTheme.light,
             darkTheme: AppTheme.dark,
             themeMode: ThemeMode.dark, // Brand identity defaults to dark.
@@ -487,6 +498,17 @@ class _DisclaimerGateState extends State<_DisclaimerGate> {
   void initState() {
     super.initState();
     _loadAcceptance();
+    // Wire up the inbound-share listener (Apple Notes share sheet,
+    // OneNote-on-iOS share, generic Android `ACTION_SEND` text
+    // intents). Idempotent and platform-gated; safe to call from
+    // here every time `_DisclaimerGate` mounts. We deliberately
+    // start the listener BEFORE the disclaimer is accepted — the
+    // service drops cold-start payloads when the navigator isn't
+    // mounted yet, so a share that arrives during disclaimer-show
+    // gets re-delivered on the next launch rather than being
+    // pushed behind the disclaimer modal.
+    // ignore: discarded_futures
+    ShareHandlerService.instance.start();
   }
 
   Future<void> _loadAcceptance() async {

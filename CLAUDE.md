@@ -1480,3 +1480,62 @@ UUIDs and frame offsets for every reverse-engineered protocol are
 flagged with `// TODO(reverse-engineering): verify on device` or
 `// VERIFY-ON-DEVICE` in their service files. The BETA badge on
 the Devices card stays until real-device validation lands.
+
+## 22. Recipe import sources
+
+LoadOut accepts recipes from seven distinct sources, all routed
+through the same `RecipeParser` → `PhotoImportReviewScreen` chain so
+the user sees one consistent review surface regardless of where the
+text came from. The picker that surfaces these lives at
+`lib/screens/onboarding/import_sources_screen.dart`; the welcome
+deck's "Bring Your Existing Data" slide deep-links into it.
+
+| Source | Implementation | Platform |
+|---|---|---|
+| Photo | `PhotoImportScreen` (`google_mlkit_text_recognition` + camera/gallery picker) | iOS, Android |
+| CSV / Excel | `SmartImportScreen` (`file_picker` accepting `.csv`/`.xlsx`, column-mapping wizard) | iOS, Android, macOS, web |
+| Notes / Text File | `TextImportService.readTextFile` (file picker `.txt`/`.text`/`.md`/`.markdown`/`.rtf`, UTF-8 with Latin-1 fallback) → `RecipeParser` | iOS, Android, macOS, web |
+| PDF Document | `TextImportService.rasterizeAndOcrPdf` (`printing.Printing.raster` + ML Kit OCR per page) → `RecipeParser` | iOS, Android |
+| Word Document | Guide dialog → file picker accepting any export format (`.pdf`/`.txt`/etc.) → routes through PDF or text path | iOS, Android, macOS, web (with platform caveats on PDF) |
+| OneNote | Guide dialog → same generic file picker | iOS, Android, macOS, web (with caveats) |
+| Apple Notes (Share Sheet) | `share_handler` plugin: native iOS Share Extension + Android `ACTION_SEND` intent → `ShareHandlerService` → `RecipeParser` | iOS (after one-time Xcode setup — see § 23), Android (out of the box) |
+
+The shared text-input plumbing — building a parser from the live
+catalog, reading text files, rasterising + OCR-ing PDFs — lives in
+`lib/services/text_import_service.dart`. New import surfaces
+should reuse those helpers rather than re-implementing the
+catalog-load / OCR / parse dance.
+
+## 23. iOS Share Extension setup (operator step)
+
+The Apple Notes / generic-share inbound flow requires a one-time
+Xcode Share Extension target add — same operator-only pattern as
+the watch app (§ 15) and the OneDrive OAuth registration (§ 18).
+The Dart side, the Android intent filter, and the in-app picker
+are all wired up; iOS shows nothing in the share sheet until the
+extension target exists.
+
+Full step-by-step Xcode walkthrough lives at
+`ios/ShareExtension/README.md` (committed alongside this section).
+The summary:
+
+1. `File → New → Target → iOS → Share Extension`, name it
+   `ShareExtension`, bundle id
+   `com.johnsondigital.loadout.ShareExtension`.
+2. Replace the auto-generated `ShareViewController.swift` with a
+   minimal subclass of `ShareHandlerIosViewController` carrying
+   `appGroupId = "group.com.johnsondigital.loadout"` (the same
+   group provisioned for the watch app per § 15).
+3. Edit the extension's `Info.plist` so `NSExtensionActivationRule`
+   advertises text + URL.
+4. Enable the App Group capability on BOTH Runner and ShareExtension.
+5. Set `IPHONEOS_DEPLOYMENT_TARGET = 15.0` on the new target to
+   match Runner.
+6. Add a second target block to `ios/Podfile` that pulls in
+   `share_handler_ios`; run `pod install`.
+7. Test on a real iOS device (the simulator does not enumerate
+   third-party share extensions).
+
+Until the operator runs this once, the app builds and the
+ShareHandlerService starts cleanly — share-from-Notes simply does
+nothing on iOS while continuing to work on Android.

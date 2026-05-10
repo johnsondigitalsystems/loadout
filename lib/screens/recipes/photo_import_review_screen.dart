@@ -83,9 +83,15 @@ import '../settings/ai_settings_screen.dart' show kAiSmartImportEnabledPrefKey;
 
 enum _DimensionAxis { coal, cbto }
 
-/// Editable form pre-filled from a parsed photo-import draft. Saves a
-/// new recipe via `RecipeRepository.insert` then pops back twice
-/// (review + capture screens) so the user lands on the recipes list.
+/// Editable form pre-filled from a parsed import draft. Saves a new
+/// recipe via `RecipeRepository.insert` then pops back twice (review
+/// + capture screens) so the user lands on the recipes list.
+///
+/// Originally built for the photo-OCR flow (where [imagePath] is the
+/// captured / picked image). It's now also reused by the text / PDF /
+/// share-intent import paths, which have no image — they pass
+/// `imagePath: null` and the review screen skips the thumbnail row
+/// instead of rendering a broken-file placeholder.
 class PhotoImportReviewScreen extends StatefulWidget {
   const PhotoImportReviewScreen({
     super.key,
@@ -95,7 +101,7 @@ class PhotoImportReviewScreen extends StatefulWidget {
   });
 
   final RecipeDraft draft;
-  final String imagePath;
+  final String? imagePath;
   final String ocrText;
 
   @override
@@ -500,22 +506,28 @@ class _PhotoImportReviewScreenState extends State<PhotoImportReviewScreen> {
             children: [
               // Thumbnail of the captured image so the user can compare
               // the parsed values against the original at a glance.
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: AspectRatio(
-                  aspectRatio: 4 / 3,
-                  child: Image.file(
-                    File(widget.imagePath),
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => Container(
-                      color: theme.colorScheme.surfaceContainerHighest,
-                      alignment: Alignment.center,
-                      child: const Icon(Icons.image_not_supported_outlined),
+              // Skipped when `imagePath` is null — that's the case for
+              // text / PDF / share-intent import paths that don't have
+              // a source image.
+              if (widget.imagePath != null) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: AspectRatio(
+                    aspectRatio: 4 / 3,
+                    child: Image.file(
+                      File(widget.imagePath!),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => Container(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        alignment: Alignment.center,
+                        child:
+                            const Icon(Icons.image_not_supported_outlined),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
+                const SizedBox(height: 12),
+              ],
               // Privacy reassurance — older users want to see this
               // explicitly on the review screen, not just in the
               // welcome deck. Wording matches CLAUDE.md §13.

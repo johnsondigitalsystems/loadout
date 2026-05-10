@@ -254,6 +254,19 @@ dependencies:
   #                          is keyed per-provider so iCloud, Drive, and
   #                          OneDrive can each have their own.
   share_plus: ^10.1.4
+  # `share_handler` is the INBOUND counterpart to share_plus. When the
+  # user picks LoadOut in the iOS / Android share sheet (e.g. from
+  # Apple Notes, OneNote on iOS, or any text-share-capable app), this
+  # plugin delivers the shared content to Dart. Recipe-import flow:
+  # share-text → RecipeParser → PhotoImportReviewScreen (the existing
+  # review surface). MIT licensed, actively maintained.
+  #
+  # iOS requires a one-time manual Share Extension target add (similar
+  # to the watch-app setup in § 15 of CLAUDE.md) — see the
+  # `ios/ShareExtension/README.md` (added alongside the plugin) for
+  # the Xcode GUI steps. Android works out of the box via the
+  # AndroidManifest intent-filter additions in this same change.
+  share_handler: ^0.0.25
   cryptography: ^2.7.0
   icloud_storage: ^2.2.0
   googleapis: ^13.2.0
@@ -324,6 +337,15 @@ dependencies:
   # page needs a tabular layout that doesn't render reliably in plain
   # text across share-receiving apps.
   pdf: ^3.10.0
+  # `printing` exposes `Printing.raster(...)` which renders any PDF
+  # page-by-page to a `PdfRaster` (PNG-encoded image bytes). Used by
+  # the import flow (see `lib/services/text_import_service.dart`):
+  # rasterize each page → write to temp PNG → run ML Kit OCR →
+  # concatenate the recognised text → hand to RecipeParser. The same
+  # plugin also provides AirPrint / system-print on platforms where
+  # we want to print a recipe card; we use only the rasterise path
+  # today. Cross-platform (iOS, Android, macOS, Linux, Windows, web).
+  printing: ^5.13.4
 
   # Live device sensors for the Range Day Setup section.
   # `sensors_plus` exposes the OS accelerometer, gyroscope, and
