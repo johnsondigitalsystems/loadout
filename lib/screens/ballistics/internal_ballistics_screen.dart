@@ -131,11 +131,88 @@ import '../../services/ballistics/internal_ballistics.dart';
 import '../../services/ballistics/powder_burn_rates.dart';
 import '../../widgets/pro_gate.dart';
 
+/// Inputs the External Ballistics screen can hand to the Internal
+/// Ballistics calculator when the user taps "Don't Know Your MV?
+/// Predict It →" — overlap fields the two calculators share. Every
+/// field is a stringly-typed textual representation matching the
+/// shape of the External form's controllers, so the receiving side
+/// can drop them straight into its own controllers without parsing
+/// gymnastics. All fields nullable: caller fills only what it has.
+class InternalBallisticsPrefill {
+  const InternalBallisticsPrefill({
+    this.bulletWeightGr,
+    this.bulletDiameterIn,
+    this.coalIn,
+    this.bulletLengthIn,
+    this.barrelLengthIn,
+    this.boreDiameterIn,
+    this.chargeGr,
+    this.powderName,
+  });
+
+  final String? bulletWeightGr;
+  final String? bulletDiameterIn;
+  final String? coalIn;
+  final String? bulletLengthIn;
+  final String? barrelLengthIn;
+  final String? boreDiameterIn;
+  final String? chargeGr;
+
+  /// Free-form powder name (e.g. "H4350") matched against
+  /// [kPowderBurnRates] entries case-insensitively. When unmatched,
+  /// the field stays unset and the user picks manually.
+  final String? powderName;
+}
+
 /// Pro-gated calculator that predicts muzzle velocity and peak
-/// chamber pressure for a hypothetical reloading recipe via the
-/// Powley method.
+/// chamber pressure for a hypothetical reloading recipe.
+///
+/// Two consumption modes:
+///   * **Standalone** (default): wrapped in a Scaffold + AppBar,
+///     reached from Resources or as a route push. Title bar +
+///     close-button affordances are intact.
+///   * **Embedded** (`wrapInScaffold: false`): renders just the
+///     body. The External Ballistics screen uses this so the same
+///     calculator can live as a tab inside the existing screen
+///     without a nested Scaffold / AppBar.
+///
+/// Two pre-fill / handoff modes:
+///   * **No pre-fill** (default): blank form, user types every
+///     value (still the canonical entry from Resources).
+///   * **From External Ballistics** ([prefill] non-null): controllers
+///     seed from the External screen's matching fields the moment
+///     the user taps the inline "Don't Know Your MV?" link. When
+///     [onMvAccepted] is also non-null, the result card surfaces a
+///     primary "Use This MV" button that fires the callback (the
+///     External screen then writes the predicted velocity into its
+///     own MV field and pops back).
 class InternalBallisticsScreen extends StatefulWidget {
-  const InternalBallisticsScreen({super.key});
+  const InternalBallisticsScreen({
+    super.key,
+    this.wrapInScaffold = true,
+    this.prefill,
+    this.onMvAccepted,
+  });
+
+  /// When true (default), wraps the body in a Scaffold + AppBar so
+  /// the screen stands on its own. The External Ballistics screen
+  /// passes false to embed the calculator as a tab body.
+  final bool wrapInScaffold;
+
+  /// Optional one-shot pre-fill applied in [initState]. The
+  /// External Ballistics inline link populates this with whatever
+  /// fields the user has already typed on the trajectory side so the
+  /// reloader doesn't re-key bullet weight / charge / barrel length
+  /// just to predict an MV.
+  final InternalBallisticsPrefill? prefill;
+
+  /// Callback invoked when the user taps "Use This MV" on a fresh
+  /// prediction result. The argument is the predicted muzzle
+  /// velocity in fps (rounded to one decimal). When non-null, the
+  /// result card renders a primary CTA button labelled "Use This
+  /// MV"; when null, no extra button is shown (the calculator is
+  /// just a calculator).
+  final ValueChanged<double>? onMvAccepted;
 
   @override
   State<InternalBallisticsScreen> createState() =>
@@ -177,6 +254,48 @@ class _InternalBallisticsScreenState extends State<InternalBallisticsScreen> {
   bool _lastPredictAttempted = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Apply the External-Ballistics-handoff prefill once on mount.
+    // We only seed fields the External form actually carried — case
+    // capacity and case length are CASE-specific and not present on
+    // the External form, so the user fills those in here. Powder is
+    // matched against the burn-rate table by case-insensitive name.
+    final prefill = widget.prefill;
+    if (prefill != null) {
+      if (prefill.bulletWeightGr != null) {
+        _bulletWtCtrl.text = prefill.bulletWeightGr!;
+      }
+      if (prefill.bulletDiameterIn != null) {
+        _bulletDiamCtrl.text = prefill.bulletDiameterIn!;
+      }
+      if (prefill.coalIn != null) _coalCtrl.text = prefill.coalIn!;
+      if (prefill.bulletLengthIn != null) {
+        _bulletLenCtrl.text = prefill.bulletLengthIn!;
+      }
+      if (prefill.barrelLengthIn != null) {
+        _barrelLenCtrl.text = prefill.barrelLengthIn!;
+      }
+      if (prefill.boreDiameterIn != null) {
+        _boreDiamCtrl.text = prefill.boreDiameterIn!;
+      }
+      if (prefill.chargeGr != null) _chargeCtrl.text = prefill.chargeGr!;
+      if (prefill.powderName != null) {
+        final wanted = prefill.powderName!.trim().toLowerCase();
+        if (wanted.isNotEmpty) {
+          for (final entry in kPowderBurnRates) {
+            if (entry.name.toLowerCase() == wanted) {
+              _selectedPowder = entry;
+              _categoryFilter = entry.category;
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  @override
   void dispose() {
     _caseCapCtrl.dispose();
     _caseLengthCtrl.dispose();
@@ -196,38 +315,40 @@ class _InternalBallisticsScreenState extends State<InternalBallisticsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final body = ProGate(
+      feature: 'Internal Ballistics Calculator',
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _disclaimerBanner(),
+            const SizedBox(height: 12),
+            _cartridgeSection(),
+            const SizedBox(height: 8),
+            _powderSection(),
+            const SizedBox(height: 8),
+            _chargeSection(),
+            const SizedBox(height: 8),
+            _bulletSection(),
+            const SizedBox(height: 8),
+            _barrelSection(),
+            const SizedBox(height: 16),
+            _predictButton(),
+            const SizedBox(height: 12),
+            _resultCard(),
+            const SizedBox(height: 12),
+            _modelFooter(),
+          ],
+        ),
+      ),
+    );
+    if (!widget.wrapInScaffold) return body;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Internal Ballistics Calculator'),
       ),
-      body: ProGate(
-        feature: 'Internal Ballistics Calculator',
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _disclaimerBanner(),
-              const SizedBox(height: 12),
-              _cartridgeSection(),
-              const SizedBox(height: 8),
-              _powderSection(),
-              const SizedBox(height: 8),
-              _chargeSection(),
-              const SizedBox(height: 8),
-              _bulletSection(),
-              const SizedBox(height: 8),
-              _barrelSection(),
-              const SizedBox(height: 16),
-              _predictButton(),
-              const SizedBox(height: 12),
-              _resultCard(),
-              const SizedBox(height: 12),
-              _modelFooter(),
-            ],
-          ),
-        ),
-      ),
+      body: body,
     );
   }
 
@@ -690,8 +811,8 @@ class _InternalBallisticsScreenState extends State<InternalBallisticsScreen> {
                     Text(
                       'The predictor refused. Most common cause: loading '
                       'density (charge / case capacity) is below 10 percent '
-                      'or above 110 percent — outside Powley\'s calibration '
-                      'band. Other causes: bore diameter larger than bullet '
+                      'or above 110 percent — outside the calibration band. '
+                      'Other causes: bore diameter larger than bullet '
                       'diameter (data-entry error), case length greater than '
                       'or equal to COAL, or charge weight outside 1 to 300 grains.',
                       style: theme.textTheme.bodySmall,
@@ -790,6 +911,24 @@ class _InternalBallisticsScreenState extends State<InternalBallisticsScreen> {
                 ],
               ),
             ),
+            // "Use This MV" handoff CTA — visible only when this
+            // screen was opened from the External Ballistics inline
+            // link (`onMvAccepted` is non-null). Tapping fires the
+            // callback with the predicted MV, which the External
+            // screen uses to populate its own MV field and pop back.
+            // Hidden on the standalone Resources entry so the
+            // calculator stays a calculator there.
+            if (widget.onMvAccepted != null) ...[
+              const SizedBox(height: 14),
+              FilledButton.icon(
+                onPressed: () =>
+                    widget.onMvAccepted!(r.predictedMuzzleVelocityFps),
+                icon: const Icon(Icons.check_outlined),
+                label: Text(
+                  'Use ${r.predictedMuzzleVelocityFps.toStringAsFixed(0)} fps',
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -827,12 +966,12 @@ class _InternalBallisticsScreenState extends State<InternalBallisticsScreen> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
       child: Text(
-        'Model: Homer Powley\'s interior-ballistics method (1962, '
-        'revised 1980). Calibrated against the Hodgdon Reloading Data '
-        'Center; validated within plus or minus 10 percent on MV and '
-        'plus or minus 15 percent on pressure across a four-load test '
-        'set. Output is a planning aid — never a substitute for the '
-        'load workup process described in any reloading manual.',
+        'Model: a published interior-ballistics method (1962, revised '
+        '1980). Calibrated against the Hodgdon Reloading Data Center; '
+        'validated within plus or minus 10 percent on MV and plus or '
+        'minus 15 percent on pressure across a four-load test set. '
+        'Output is a planning aid — never a substitute for the load '
+        'workup process described in any reloading manual.',
         style: theme.textTheme.bodySmall?.copyWith(
           fontStyle: FontStyle.italic,
           color: theme.colorScheme.onSurfaceVariant,

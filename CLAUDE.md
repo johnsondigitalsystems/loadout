@@ -1686,9 +1686,9 @@ fills in every required field and taps "Predict Pressure & MV".
 
 ### Scope
 
-Powley applies to centerfire cased cartridges (rifle + pistol),
-within the [10%, 110%] loading-density band. Out-of-band inputs
-return null from `predictLoad(...)`. Shotshell loads, muzzleloaders,
+Powley applies to centerfire RIFLE cartridges within the [10%, 110%]
+loading-density band. Out-of-band inputs return null from
+`predictLoad(...)`. Pistol cartridges, shotshell loads, muzzleloaders,
 and black-powder cartridges are explicitly NOT modelled — the
 calibration corpus doesn't cover them and the predictor would
 produce nonsense numbers. There is no v2 plan to extend the model

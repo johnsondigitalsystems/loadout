@@ -29,6 +29,19 @@ flutter_ios_podfile_setup
 target 'Runner' do
   use_frameworks!
 
+  # share_handler_ios depends on share_handler_ios_models, which the
+  # plugin author publishes as a side-by-side pod under
+  # `share_handler_ios/ios/Models/`, NOT in the standard plugin root
+  # the way most federated Flutter plugins do. CocoaPods can't auto-
+  # discover it from the central CDN, so without this explicit path
+  # reference `pod install` fails with:
+  #   [!] Unable to find a specification for `share_handler_ios_models`
+  #       depended upon by `share_handler_ios`.
+  # The same line is required again on the ShareExtension target once
+  # that target gets added in Xcode (see ios/ShareExtension/README.md
+  # step 7) — keep the two in lockstep.
+  pod 'share_handler_ios_models', :path => '.symlinks/plugins/share_handler_ios/ios/Models'
+
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
   target 'RunnerTests' do
     inherit! :search_paths

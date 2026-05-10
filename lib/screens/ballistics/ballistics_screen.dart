@@ -279,6 +279,26 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   final _twistCtrl = TextEditingController();
   DragModel _dragModel = DragModel.g7;
 
+  // ─────────────────────── Calculator Tab Toggle ───────────────────────
+  // Top-of-screen SegmentedButton flips between External Ballistics
+  // (the trajectory solver, this screen's original surface) and
+  // Internal Ballistics (the pressure / MV predictor formerly
+  // reached only via the Resources tile). Both are first-class
+  // peers — the toggle replaces the old bottom-of-page entry
+  // button so users see both calculators the moment they open
+  // Ballistics.
+  //
+  // The Internal tab embeds `InternalBallisticsScreen` with
+  // `wrapInScaffold: false` so it doesn't render its own
+  // AppBar inside this screen's Scaffold. When the user opens
+  // Internal via the inline "Don't Know Your MV?" link on the
+  // External form, [_internalPrefill] carries the overlap fields
+  // and [_acceptPredictedMv] fires after a successful predict
+  // (writes the predicted velocity into the External form's MV
+  // field, switches the tab back to External).
+  _CalculatorTab _activeCalculator = _CalculatorTab.external;
+  InternalBallisticsPrefill? _internalPrefill;
+
   // ─────────────────────── Muzzle / Zero ───────────────────────
   final _muzzleVelCtrl = TextEditingController();
   final _sightHeightCtrl = TextEditingController();
@@ -1751,39 +1771,39 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
         child: Column(
           children: [
             if (showWeatherHint) _weatherHintBanner(),
+            // Top-of-screen calculator toggle. Always visible, both
+            // tabs are first-class peers. The old bottom-of-page
+            // "Predict Pressure & MV" entry button was removed in
+            // favour of this — discoverability up, scroll-to-find
+            // out.
+            _calculatorTabToggle(),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _profilePickerCard(),
-                    const SizedBox(height: 8),
-                    _firearmSection(),
-                    const SizedBox(height: 8),
-                    _projectileSection(),
-                    const SizedBox(height: 8),
-                    _muzzleZeroSection(),
-                    const SizedBox(height: 8),
-                    _environmentSection(),
-                    const SizedBox(height: 8),
-                    _advancedSection(),
-                    const SizedBox(height: 8),
-                    _outputSection(),
-                    const SizedBox(height: 16),
-                    // Sister calculator entry point — pivot from
-                    // EXTERNAL ballistics (this screen) to INTERNAL
-                    // ballistics (predict pressure / MV from a
-                    // recipe). Pro-gated; tapping routes through
-                    // `ensurePro` for non-Pro users. Mirrors the
-                    // "Predict" call out in the Resources directory
-                    // so the user can pivot without backing out.
-                    _internalBallisticsEntryButton(),
-                    const SizedBox(height: 16),
-                    _DisclaimerFooter(),
-                  ],
-                ),
-              ),
+              child: _activeCalculator == _CalculatorTab.internal
+                  ? _internalCalculatorBody()
+                  : SingleChildScrollView(
+                      padding:
+                          const EdgeInsets.fromLTRB(16, 12, 16, 32),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _profilePickerCard(),
+                          const SizedBox(height: 8),
+                          _firearmSection(),
+                          const SizedBox(height: 8),
+                          _projectileSection(),
+                          const SizedBox(height: 8),
+                          _muzzleZeroSection(),
+                          const SizedBox(height: 8),
+                          _environmentSection(),
+                          const SizedBox(height: 8),
+                          _advancedSection(),
+                          const SizedBox(height: 8),
+                          _outputSection(),
+                          const SizedBox(height: 16),
+                          _DisclaimerFooter(),
+                        ],
+                      ),
+                    ),
             ),
             // Bottom-of-page Save / Done button — full width, sticky
             // (does not scroll with content). Per CLAUDE.md UX rule:
@@ -2830,17 +2850,60 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
           Row(
             children: [
               Expanded(
-                child: TextField(
-                  controller: _muzzleVelCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true),
-                  decoration: InputDecoration(
-                    label: GlossaryLabel(
-                      text: 'Muzzle velocity ($velUnit)',
-                      glossaryTerm: 'Muzzle Velocity',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextField(
+                      controller: _muzzleVelCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true),
+                      decoration: InputDecoration(
+                        label: GlossaryLabel(
+                          text: 'Muzzle velocity ($velUnit)',
+                          glossaryTerm: 'Muzzle Velocity',
+                        ),
+                        suffixText: velUnit,
+                      ),
                     ),
-                    suffixText: velUnit,
-                  ),
+                    // Inline pivot to the Internal Ballistics tab
+                    // pre-filled with the bullet specs the user has
+                    // already typed. Surfaced precisely when the user
+                    // is missing MV (no chronograph data yet) — the
+                    // moment they tap, the Internal calculator opens
+                    // with the matching fields populated and "Use
+                    // This MV" comes back to fill this field. The
+                    // link hides once MV is filled to avoid clutter
+                    // on the common path where the user has chrono
+                    // data and just types it.
+                    AnimatedBuilder(
+                      animation: _muzzleVelCtrl,
+                      builder: (context, _) {
+                        if (_muzzleVelCtrl.text.trim().isNotEmpty) {
+                          return const SizedBox.shrink();
+                        }
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton.icon(
+                              onPressed: _openInternalForMvPredict,
+                              icon: const Icon(
+                                Icons.calculate_outlined,
+                                size: 16,
+                              ),
+                              label: const Text("Don't Know Your MV?"),
+                              style: TextButton.styleFrom(
+                                visualDensity: VisualDensity.compact,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(width: 12),
@@ -3662,26 +3725,110 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   /// Sister-calculator pivot button. The external-ballistics screen
   /// (this one) answers "where will the bullet land?"; the internal
   /// calculator answers "is this load over pressure?". A reloader who
-  /// just finished tuning a trajectory often wants to gut-check the
-  /// underlying recipe — this button pivots them in one tap.
-  ///
-  /// Pro-gated. `ensurePro(context)` routes free users to the paywall
-  /// before we push the route. The destination screen also wraps its
-  /// body in `ProGate` so a free user who somehow lands there sees
-  /// the lock card rather than the form.
-  Widget _internalBallisticsEntryButton() {
-    return OutlinedButton.icon(
-      onPressed: () async {
-        if (!await ensurePro(context)) return;
-        if (!mounted) return;
-        await Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => const InternalBallisticsScreen(),
+  /// Top-of-screen calculator toggle. Two tabs: External Ballistics
+  /// (the trajectory solver, this screen's original surface) and
+  /// Internal Ballistics (the pressure / MV predictor formerly only
+  /// reached via Resources or a bottom-of-page button). Both are
+  /// first-class peers — see [_activeCalculator] for the rationale.
+  Widget _calculatorTabToggle() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: SegmentedButton<_CalculatorTab>(
+        segments: const [
+          ButtonSegment<_CalculatorTab>(
+            value: _CalculatorTab.external,
+            label: Text('External Ballistics'),
+            icon: Icon(Icons.timeline_outlined),
           ),
-        );
-      },
-      icon: const Icon(Icons.calculate_outlined),
-      label: const Text('Predict Pressure & MV (Internal Ballistics)'),
+          ButtonSegment<_CalculatorTab>(
+            value: _CalculatorTab.internal,
+            label: Text('Internal Ballistics'),
+            icon: Icon(Icons.calculate_outlined),
+          ),
+        ],
+        selected: {_activeCalculator},
+        onSelectionChanged: (selection) {
+          setState(() {
+            _activeCalculator = selection.first;
+            // Switching tabs by user action clears any prefill from a
+            // previous "Don't Know Your MV?" handoff so the next visit
+            // to Internal starts clean unless the user re-invokes the
+            // link.
+            if (_activeCalculator == _CalculatorTab.external) {
+              _internalPrefill = null;
+            }
+          });
+        },
+      ),
+    );
+  }
+
+  /// Body of the Internal Ballistics tab. Embeds the standalone
+  /// `InternalBallisticsScreen` widget WITHOUT its Scaffold + AppBar
+  /// (`wrapInScaffold: false`) so the calculator nests cleanly under
+  /// this screen's existing Scaffold. Hands the screen its
+  /// pre-fill (if a "Don't Know Your MV?" link populated it) and the
+  /// `onMvAccepted` callback that closes the loop by writing the
+  /// predicted velocity into the External form's MV field and
+  /// flipping the tab back to External.
+  Widget _internalCalculatorBody() {
+    return InternalBallisticsScreen(
+      // Re-key on prefill identity so a fresh handoff (user taps the
+      // link a second time after editing inputs) actually re-mounts
+      // the state and applies the new prefill in initState. Without
+      // this, Flutter would keep the existing State and ignore the
+      // new prefill values.
+      key: ValueKey(_internalPrefill),
+      wrapInScaffold: false,
+      prefill: _internalPrefill,
+      onMvAccepted: _acceptPredictedMv,
+    );
+  }
+
+  /// Inline link rendered next to the Muzzle Velocity field. Only
+  /// shown when MV is empty — the user has all the OTHER recipe
+  /// inputs typed but doesn't know their velocity. Tapping flips
+  /// the calculator tab to Internal with a prefill carrying every
+  /// matching field this screen already knows.
+  void _openInternalForMvPredict() {
+    String? nonEmpty(TextEditingController c) {
+      final t = c.text.trim();
+      return t.isEmpty ? null : t;
+    }
+
+    setState(() {
+      // External Ballistics carries bullet diameter / weight / length.
+      // It does NOT track COAL, barrel length, charge, powder, case
+      // capacity, or case length — those are reloading-recipe inputs
+      // the Internal calculator owns. The user fills the gap on the
+      // Internal tab; we just save them re-typing what we already
+      // know. Bore diameter sensibly defaults to bullet diameter
+      // (rifling lands sit a few thou under, but the user can edit).
+      _internalPrefill = InternalBallisticsPrefill(
+        bulletWeightGr: nonEmpty(_weightCtrl),
+        bulletDiameterIn: nonEmpty(_diameterCtrl),
+        bulletLengthIn: nonEmpty(_lengthCtrl),
+        boreDiameterIn: nonEmpty(_diameterCtrl),
+      );
+      _activeCalculator = _CalculatorTab.internal;
+    });
+  }
+
+  /// Receives a predicted muzzle velocity from the embedded Internal
+  /// calculator (user tapped "Use This MV"). Writes it back into the
+  /// External form's MV field, flips the tab back to External, and
+  /// shows a snackbar so the user sees the value landed.
+  void _acceptPredictedMv(double fps) {
+    if (!mounted) return;
+    setState(() {
+      _muzzleVelCtrl.text = fps.toStringAsFixed(0);
+      _activeCalculator = _CalculatorTab.external;
+      _internalPrefill = null;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Predicted MV ${fps.toStringAsFixed(0)} fps applied.'),
+      ),
     );
   }
 
@@ -4582,3 +4729,10 @@ class _DisclaimerFooter extends StatelessWidget {
     );
   }
 }
+
+/// Discriminator for the top-of-screen calculator tab toggle. The
+/// External tab is the historical Ballistics screen (trajectory
+/// solver); the Internal tab embeds [InternalBallisticsScreen]
+/// without its Scaffold so the pressure / MV predictor lives as a
+/// peer surface rather than a hidden bottom-of-page link.
+enum _CalculatorTab { external, internal }

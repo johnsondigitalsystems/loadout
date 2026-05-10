@@ -114,7 +114,6 @@ class QuickAddFabStack extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     // IntrinsicWidth + Column(crossAxisAlignment: stretch) makes both
     // FABs adopt the wider one's natural width — so "Quick" (shorter)
     // stretches to match "Standard" (wider), or vice-versa if the
@@ -122,6 +121,15 @@ class QuickAddFabStack extends StatelessWidget {
     // to their own content and visually wobble between two
     // different widths in the FAB stack, which the user flagged as
     // distracting.
+    //
+    // Both FABs render in IDENTICAL colours (default M3 brass
+    // primary). Quick and Standard are PEER affordances — one isn't
+    // recommended over the other, they're for different workflows
+    // (fast bench-side capture vs full multi-field detail). The
+    // earlier mismatched palette (Quick = secondary container,
+    // Standard = primary container) read as accidental drift, not
+    // deliberate hierarchy. Disambiguation is done by icon + label
+    // alone, which is what the user actually scans.
     return IntrinsicWidth(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -132,17 +140,8 @@ class QuickAddFabStack extends StatelessWidget {
             onPressed: onQuickPressed,
             icon: Icon(quickIcon),
             label: Text(quickLabel),
-            // Brass-tinted variant — uses the secondary container so the
-            // Quick FAB reads as related-but-distinct from the standard
-            // primary `+` FAB.
-            backgroundColor: theme.colorScheme.secondaryContainer,
-            foregroundColor: theme.colorScheme.onSecondaryContainer,
           ),
           const SizedBox(height: 12),
-          // Standard FAB now uses the same .extended shape as Quick so
-          // the user can tell them apart at a glance. A bare `+` next
-          // to a labeled "Quick" was confusing — the user couldn't tell
-          // which one opened the full form.
           FloatingActionButton.extended(
             heroTag: '${tagPrefix}_add',
             tooltip: addTooltip,

@@ -300,7 +300,7 @@ the pitch goes wrong; keep them aligned.
 | **AI Smart Import** | OCR-improvement Anthropic call (opt-in per use) |
 | **AI Reloading Assistant chat** | Coming Soon at v1.0; Pro when shipped |
 | **Load Development** | OCW (Newberry), Audette Ladder, Satterlee 10-shot, Generic charge ladders, and Seating Depth ladders. Per-charge SD / ES / mean MV / group size; OCW vertical-impact flat-spot detection; Satterlee MV plateau detection; group-vs-charge plotting. Cited published sources for each method. |
-| **Internal Ballistics Calculator** | Powley method predictor for muzzle velocity and peak chamber pressure from a hypothetical recipe. Closes the GRT / QuickLOAD gap on mobile. Validation: ±10% MV / ±15% pressure across the test corpus. |
+| **Internal Ballistics Calculator** | Powley method predictor for muzzle velocity and peak chamber pressure from a hypothetical recipe. Closes the GRT / QuickLOAD gap on mobile. Centerfire rifle only (pistol/shotgun rejected for safety). Validation: ±10% MV / ±15% pressure on mid-rifle (33-anchor corpus, see `docs/internal_ballistics_validation.md`); magnum-rifle drifts wider (±25% MV / ±35% pressure on slow-powder loads). |
 | **Custom fields (unlimited)** | Per-recipe / per-firearm / per-batch user-defined fields |
 
 The free tier ships **everything else** — recipes, firearms, batches,
