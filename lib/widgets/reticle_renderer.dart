@@ -400,3 +400,63 @@ class _ReticlePainter extends CustomPainter {
         old.holdOverHighlightColor != holdOverHighlightColor;
   }
 }
+
+/// Small caption label shown directly under reticle previews, asserting
+/// LoadOut authorship of the artwork and explaining why the reticle is
+/// calibrated to match a real-world scope's subtensions. Per CLAUDE.md
+/// § 30 (Reticle catalog — dual-track IP posture), every preview surface
+/// in the picker / preview flow renders this caption so users understand
+/// the tool is not claiming to be the manufacturer's reticle. The label
+/// is intentionally NOT painted by [ReticleRenderer] itself — Range Day
+/// live-shooting surfaces (target plot, scope view) embed the renderer
+/// and would treat an always-on caption as noise during the aim/fire
+/// workflow. Reach for this widget on any new picker / preview surface.
+///
+/// The caption uses the theme's [TextTheme.bodySmall] colored with
+/// [ColorScheme.onSurfaceVariant] so it sits visually under the preview
+/// without competing with it. Wrapped in a [Tooltip] explaining the
+/// interoperability framing.
+///
+/// `align` controls horizontal alignment — defaults to centered so the
+/// label looks right under a centered preview (the picker field tile,
+/// the full-screen FOV). Pass [TextAlign.start] when the preview is
+/// itself left-aligned (e.g. the picker's list rows).
+///
+/// `inverse` flips the color to a high-contrast white tint for use over
+/// dark backdrops (the full-screen preview's black scaffold).
+class ReticleInteroperabilityLabel extends StatelessWidget {
+  const ReticleInteroperabilityLabel({
+    super.key,
+    this.align = TextAlign.center,
+    this.inverse = false,
+  });
+
+  final TextAlign align;
+  final bool inverse;
+
+  static const String _label = 'LoadOut Original — Interoperability Calibration';
+
+  static const String _tooltip =
+      'LoadOut original artwork, calibrated to match real-world scope '
+      'subtensions for accuracy. The reticle name and design are '
+      'LoadOut-original.';
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = inverse
+        ? Colors.white.withValues(alpha: 0.75)
+        : theme.colorScheme.onSurfaceVariant;
+    return Tooltip(
+      message: _tooltip,
+      child: Text(
+        _label,
+        textAlign: align,
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: color,
+          fontStyle: FontStyle.italic,
+        ),
+      ),
+    );
+  }
+}

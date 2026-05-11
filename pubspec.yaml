@@ -454,6 +454,7 @@ flutter:
     - assets/seed_data/
     - assets/seed_data/drag_curves/
     - assets/seed_data/components/
+    - assets/seed_data/reticle_subtensions/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

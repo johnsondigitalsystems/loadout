@@ -70,10 +70,13 @@ import 'package:flutter/material.dart';
 
 import '../services/scope_catalog_service.dart';
 
-/// Show the find-by-scope picker. Returns the LoadOut reticle ID the
-/// user's scope maps to, or `null` if they dismissed without picking.
-Future<String?> showFindByScopeSheet(BuildContext context) {
-  return showModalBottomSheet<String>(
+/// Show the find-by-scope picker. Returns the matched scope catalog
+/// entry (manufacturer + model + recommended reticle id + isFallback
+/// flag) so the caller can both navigate to the reticle and decide
+/// whether to surface a "we used the default" hint. Returns `null` if
+/// the user dismissed without picking.
+Future<ScopeCatalogEntry?> showFindByScopeSheet(BuildContext context) {
+  return showModalBottomSheet<ScopeCatalogEntry>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
@@ -129,7 +132,7 @@ class _FindByScopeSheetState extends State<_FindByScopeSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Find your scope',
+                      'Find Your Scope',
                       style: theme.textTheme.titleLarge,
                     ),
                     const SizedBox(height: 4),
@@ -244,8 +247,21 @@ class _ScopeList extends StatelessWidget {
         ListTile(
           dense: true,
           title: Text(entry.model),
+          // For scopes without a curated reticle mapping, surface the
+          // fallback status inline so the user sees BEFORE tapping
+          // that the recommendation is the LoadOut default rather
+          // than a scope-specific match.
+          subtitle: entry.isFallback
+              ? Text(
+                  'No specific reticle data — defaults to LoadOut Mil Tree',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontStyle: FontStyle.italic,
+                  ),
+                )
+              : null,
           trailing: const Icon(Icons.chevron_right, size: 18),
-          onTap: () => Navigator.of(context).pop(entry.recommendedReticleId),
+          onTap: () => Navigator.of(context).pop(entry),
         ),
       );
     }

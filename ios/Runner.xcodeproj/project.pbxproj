@@ -209,6 +209,7 @@
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				5454A6BF199E41597C7A6A40 /* [CP] Embed Pods Frameworks */,
 				F597D3FF965A86A67C04C2CB /* [CP] Copy Pods Resources */,
+				7AC8A41B2C3D4E5F60718293 /* [CP] Crashlytics Upload dSYMs */,
 			);
 			buildRules = (
 			);
@@ -388,6 +389,24 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		7AC8A41B2C3D4E5F60718293 /* [CP] Crashlytics Upload dSYMs */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}",
+				"$(SRCROOT)/$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)",
+			);
+			name = "[CP] Crashlytics Upload dSYMs";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Auto-uploads the build's dSYM to Firebase Crashlytics so server-\n# side symbolication works on every fresh build. Without this every\n# new TestFlight / App Store build would arrive at Crashlytics with\n# unresolved memory addresses, and an engineer would have to find\n# and drag-drop the dSYM through the Firebase Console manually.\n#\n# The upload-symbols binary ships inside the FirebaseCrashlytics Pod\n# (added by `pod install` automatically when firebase_crashlytics is\n# in pubspec.yaml). It picks up the project's Firebase config from\n# GoogleService-Info.plist and decides which Crashlytics app to\n# upload to from there.\n#\n# `-p ios` is the platform tag; `-gsp` points at the plist; the\n# trailing argument is the dSYM Xcode just produced for this build.\n# The script silently no-ops if no dSYM was generated (e.g. a debug\n# build configured for `dwarf` only).\nif [ -f \"${PODS_ROOT}/FirebaseCrashlytics/upload-symbols\" ]; then\n  \"${PODS_ROOT}/FirebaseCrashlytics/upload-symbols\" -gsp \"${PROJECT_DIR}/Runner/GoogleService-Info.plist\" -p ios \"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}\"\nelse\n  echo \"warning: FirebaseCrashlytics upload-symbols not found at ${PODS_ROOT}/FirebaseCrashlytics/upload-symbols. Run 'pod install' from ios/.\"\nfi\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */

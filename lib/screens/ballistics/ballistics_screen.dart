@@ -891,7 +891,7 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
     final result = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Name this profile'),
+        title: const Text('Name This Profile'),
         content: Form(
           key: formKey,
           child: TextFormField(
@@ -1070,7 +1070,7 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete profile?'),
+        title: const Text('Delete Profile?'),
         content: Text(
           'This will remove "${p.name}" from your saved profiles. The '
           'calculator inputs stay where they are.',

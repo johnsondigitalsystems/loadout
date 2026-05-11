@@ -5,6 +5,7 @@ plugins {
     id("com.android.application")
     // START: FlutterFire Configuration
     id("com.google.gms.google-services")
+    id("com.google.firebase.crashlytics")
     // END: FlutterFire Configuration
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
@@ -99,6 +100,22 @@ android {
             } else {
                 signingConfigs.getByName("debug")
             }
+            // R8 / mapping-file note — see CLAUDE.md §29:
+            //
+            // `isMinifyEnabled` is intentionally NOT set here (defaults to
+            // false). When it eventually flips to true (pre-launch APK-size
+            // optimization), the Crashlytics Gradle plugin will start
+            // auto-uploading the generated `mapping.txt` to Firebase on
+            // every release build — this is the Android analogue of the
+            // iOS `[CP] Crashlytics Upload dSYMs` build phase. The plugin
+            // configures it automatically (`mappingFileUploadEnabled`
+            // defaults to true); no extra wiring needed here.
+            //
+            // The cost of flipping R8 on is: every plugin that uses
+            // reflection (firebase, drift, kotlinx_serialization, etc.)
+            // needs explicit -keep rules to survive code shrinking, and
+            // the whole release flow needs a smoke test pass. Treat it as
+            // its own pre-launch task, not a freebie.
         }
     }
 }

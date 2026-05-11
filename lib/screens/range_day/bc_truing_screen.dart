@@ -807,7 +807,7 @@ class _BcTruingScreenState extends State<BcTruingScreen> {
             const SizedBox(height: 12),
             FilledButton.icon(
               icon: const Icon(Icons.save),
-              label: const Text('Save trued BC'),
+              label: const Text('Save Trued BC'),
               onPressed: canSave ? _saveOverride : null,
             ),
           ],

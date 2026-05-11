@@ -337,7 +337,13 @@
       "Bash(curl -s \"https://firebasestorage.googleapis.com/v0/b/loadout-precision-reloading.firebasestorage.app/o/seed_data%2Ffirearms.json?alt=media\")",
       "Bash(python3 -c \"import json, sys; d = json.load\\(sys.stdin\\); ai = next\\(m for m in d['manufacturers'] if m['name']=='Accuracy International'\\); atx = next\\(p for p in ai['products'] if p['model']=='AT-X'\\); print\\('caliberSpecs published?', 'caliberSpecs' in atx\\); print\\('keys:', list\\(atx.get\\('caliberSpecs', {}\\).keys\\(\\)\\)\\)\")",
       "Bash(grep -nB1 \"_bcCtrl,\\\\$\" /Users/general/Development/Applications/LoadOut/lib/screens/range_day/range_day_detail_screen.dart)",
-      "Bash(grep -nB1 -A2 \"_bcCtrl\\\\b\" /Users/general/Development/Applications/LoadOut/lib/screens/range_day/range_day_detail_screen.dart)"
+      "Bash(grep -nB1 -A2 \"_bcCtrl\\\\b\" /Users/general/Development/Applications/LoadOut/lib/screens/range_day/range_day_detail_screen.dart)",
+      "Bash(./gradlew :app:assembleDebug)",
+      "Bash(flutter doctor *)",
+      "Bash(zip -r /tmp/loadout-runner-dsym.zip Runner.app.dSYM)",
+      "Bash(xcodebuild -workspace Runner.xcworkspace -scheme Runner -showBuildSettings)",
+      "Bash(xcodebuild -workspace Runner.xcworkspace -scheme Runner -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' build)",
+      "Bash(awk '/\"id\": \"loadout_mil_tree_christmas\"/,/^  \\\\},?$/' /Users/general/Development/Applications/LoadOut/assets/seed_data/reticles_v2.json)"
     ]
   }
 }

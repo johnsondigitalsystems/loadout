@@ -73,6 +73,9 @@ import '../data/reticle_library.dart';
 import 'reticle_renderer.dart';
 import 'scope_daytime_backdrop.dart';
 
+// `ReticleInteroperabilityLabel` lives in `reticle_renderer.dart`; the
+// import above brings it into scope here.
+
 /// Open the full-screen reticle preview modal. Returns when the user
 /// dismisses it (no result — the preview is read-only).
 Future<void> showReticleFullScreenPreview(
@@ -136,53 +139,82 @@ class _ReticleFullScreenView extends StatelessWidget {
               ),
             ),
             // Centered FOV — fits the smaller of width / height.
+            // The interoperability caption sits directly underneath
+            // the FOV inside a Column so it follows the preview as
+            // it scales with screen size, rather than floating at a
+            // fixed bottom offset where it could overlap the dismiss
+            // hint on short screens. CLAUDE.md § 30 liability
+            // checklist requires the caption on every preview
+            // surface; the inverse color flag swaps the muted
+            // onSurfaceVariant tint for a high-contrast white tint
+            // so the label reads on the modal's black scaffold.
             Center(
               child: LayoutBuilder(
                 builder: (ctx, constraints) {
                   final maxSide = constraints.biggest.shortestSide;
                   final fovSide = maxSide * 0.85;
-                  return SizedBox(
-                    width: fovSide,
-                    height: fovSide,
-                    child: ClipOval(
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          ScopeDaytimeBackdrop(
-                            target: target,
-                            // Larger target than the default 16% so the
-                            // preview emphasizes "how the reticle sits on
-                            // a target" rather than the scenery.
-                            targetWidthFraction: 0.22,
-                          ),
-                          // Reticle rendered on top of the backdrop.
-                          // Use a dark line color (brand-safe black with
-                          // a thin highlight) so it reads on both sky
-                          // and grass.
-                          Center(
-                            child: ReticleRenderer(
-                              reticle: reticle,
-                              displayUnit:
-                                  reticle.nativeUnit == ReticleNativeUnit.moa
-                                      ? 'moa'
-                                      : 'mil',
-                              size: Size(fovSide, fovSide),
-                              showUnitOverlay: false,
-                              color: const Color(0xff111111),
-                            ),
-                          ),
-                          // Eyepiece ring + soft black bezel so the
-                          // backdrop doesn't bleed past the FOV edge.
-                          Positioned.fill(
-                            child: IgnorePointer(
-                              child: CustomPaint(
-                                painter: _EyepieceRingPainter(),
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: fovSide,
+                        height: fovSide,
+                        child: ClipOval(
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              ScopeDaytimeBackdrop(
+                                target: target,
+                                // Larger target than the default 16% so the
+                                // preview emphasizes "how the reticle sits on
+                                // a target" rather than the scenery.
+                                targetWidthFraction: 0.22,
                               ),
-                            ),
+                              // Reticle rendered on top of the backdrop.
+                              // Use a dark line color (brand-safe black with
+                              // a thin highlight) so it reads on both sky
+                              // and grass.
+                              Center(
+                                child: ReticleRenderer(
+                                  reticle: reticle,
+                                  displayUnit:
+                                      reticle.nativeUnit == ReticleNativeUnit.moa
+                                          ? 'moa'
+                                          : 'mil',
+                                  size: Size(fovSide, fovSide),
+                                  showUnitOverlay: false,
+                                  color: const Color(0xff111111),
+                                ),
+                              ),
+                              // Eyepiece ring + soft black bezel so the
+                              // backdrop doesn't bleed past the FOV edge.
+                              Positioned.fill(
+                                child: IgnorePointer(
+                                  child: CustomPaint(
+                                    painter: _EyepieceRingPainter(),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 12),
+                      // Interoperability caption — directly under the
+                      // FOV per CLAUDE.md § 30. Width-bounded to the
+                      // preview so it wraps cleanly on narrow phones
+                      // rather than running edge-to-edge.
+                      ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: fovSide),
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16),
+                          child: ReticleInteroperabilityLabel(
+                            align: TextAlign.center,
+                            inverse: true,
+                          ),
+                        ),
+                      ),
+                    ],
                   );
                 },
               ),

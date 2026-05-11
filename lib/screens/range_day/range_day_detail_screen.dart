@@ -8077,6 +8077,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                           rackChildren: _rackChildrenSpec,
                           activeRackChildIndex: _activeRackChildIndex,
                           colorHexOverride: _selectedTargetColorHex,
+                          rangeYards: yards > 0 ? yards : null,
                         ),
                       ],
                     );
@@ -8105,6 +8106,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                     rackChildren: _rackChildrenSpec,
                     activeRackChildIndex: _activeRackChildIndex,
                     colorHexOverride: _selectedTargetColorHex,
+                    rangeYards: yards > 0 ? yards : null,
                   );
                 },
               )
@@ -8124,6 +8126,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                 rackChildren: _rackChildrenSpec,
                 activeRackChildIndex: _activeRackChildIndex,
                 colorHexOverride: _selectedTargetColorHex,
+                rangeYards: yards > 0 ? yards : null,
               ),
             const SizedBox(height: 12),
             Row(

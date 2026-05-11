@@ -1,0 +1,878 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-11",
+  "category": "Red Dot, Holographic, and Public-Domain Reticles",
+  "notes": "Subtension data for LoadOut-original red-dot / holographic reticles plus two public-domain rifle reticles. Each LoadOut-original entry carries both Option A (subtensionsOriginal — pure first-principles geometry, zero IP risk) and Option B (subtensionsCalibrated — dimensions calibrated against a published manufacturer reference for interoperability, with provenance attribution). Public-domain reticles carry the same data in both fields because no manufacturer IP attaches.",
+  "reticles": [
+    {
+      "id": "loadout_red_dot_2moa",
+      "model": "LoadOut Red Dot - 2 MOA",
+      "manufacturer": "LoadOut",
+      "family": "LoadOut Red Dots",
+      "purpose": "Close-quarters and mid-range pistol / carbine aiming via a single illuminated dot. Designed for both-eyes-open shooting where speed of acquisition matters more than precision holdovers.",
+      "nativeUnit": "moa",
+      "subtensionsOriginal": {
+        "centerDot": {
+          "diameterMoa": 2.0,
+          "diameterMil": 0.582,
+          "filled": true,
+          "description": "Single 2-MOA filled dot at the optical center. No surrounding ring, no holdover marks, no ranging features."
+        },
+        "subtensions": [
+          {
+            "label": "Center Dot",
+            "feature": "centerDot",
+            "valueMoa": 2.0,
+            "valueMil": 0.582,
+            "purpose": "Aiming reference. At 100 yd the dot covers 2 inches; at 50 yd it covers 1 inch.",
+            "useCase": "Primary aiming point at all engagement distances."
+          }
+        ],
+        "rangingTools": [],
+        "holdoverMarks": [],
+        "subtensionAtDistance": [
+          {
+            "rangeYd": 25,
+            "centerDotInches": 0.52,
+            "centerDotCm": 1.32,
+            "notes": "Dot covers about half an inch — fine enough for rapid pistol target acquisition without obscuring the impact zone."
+          },
+          {
+            "rangeYd": 50,
+            "centerDotInches": 1.05,
+            "centerDotCm": 2.66,
+            "notes": "Dot covers about an inch."
+          },
+          {
+            "rangeYd": 100,
+            "centerDotInches": 2.09,
+            "centerDotCm": 5.32,
+            "notes": "Dot covers about two inches — the canonical 2-MOA reference point."
+          },
+          {
+            "rangeYd": 200,
+            "centerDotInches": 4.19,
+            "centerDotCm": 10.63,
+            "notes": "Dot still small enough to use on torso-sized targets at typical carbine distances."
+          },
+          {
+            "rangeYd": 300,
+            "centerDotInches": 6.28,
+            "centerDotCm": 15.95,
+            "notes": "Approaching the practical precision limit for a non-magnified 2-MOA dot."
+          }
+        ],
+        "intendedUse": [
+          "Pistol-mounted micro red-dots",
+          "AR-15 / carbine close-quarters and mid-range work",
+          "Shotgun bead replacement for slug guns",
+          "Both-eyes-open snap shooting at 0 to 200 yd"
+        ],
+        "limitations": "No holdover or ranging functionality. Beyond about 200 yd the shooter must rely on memorized holdover or a separate magnifier and BDC reference."
+      },
+      "subtensionsCalibrated": {
+        "centerDot": {
+          "diameterMoa": 2.0,
+          "diameterMil": 0.582,
+          "filled": true,
+          "description": "2-MOA dot calibrated against the industry-baseline 2-MOA red-dot reference. The 2-MOA dot is the single most common red-dot size across all major optic manufacturers (Aimpoint, Trijicon, Holosun, Vortex, Sig) and represents the long-standing speed-versus-precision compromise."
+        },
+        "subtensions": [
+          {
+            "label": "Center Dot",
+            "feature": "centerDot",
+            "valueMoa": 2.0,
+            "valueMil": 0.582,
+            "purpose": "Aiming reference. Calibrated to match the 2-MOA reference standard so estimates of dot coverage translate directly to a typical aftermarket 2-MOA red-dot.",
+            "useCase": "Primary aiming point. Same coverage as a generic industry 2-MOA dot at any range."
+          }
+        ],
+        "rangingTools": [],
+        "holdoverMarks": [],
+        "subtensionAtDistance": [
+          {
+            "rangeYd": 25,
+            "centerDotInches": 0.52,
+            "centerDotCm": 1.32,
+            "notes": "Same coverage as a generic 2-MOA optic at 25 yd."
+          },
+          {
+            "rangeYd": 50,
+            "centerDotInches": 1.05,
+            "centerDotCm": 2.66,
+            "notes": "Same coverage as a generic 2-MOA optic at 50 yd."
+          },
+          {
+            "rangeYd": 100,
+            "centerDotInches": 2.09,
+            "centerDotCm": 5.32,
+            "notes": "Same coverage as a generic 2-MOA optic at 100 yd. The dot covers two inches, which is the canonical value reloaders use to translate dot size into target coverage."
+          },
+          {
+            "rangeYd": 200,
+            "centerDotInches": 4.19,
+            "centerDotCm": 10.63
+          },
+          {
+            "rangeYd": 300,
+            "centerDotInches": 6.28,
+            "centerDotCm": 15.95
+          }
+        ],
+        "intendedUse": [
+          "Pistol-mounted micro red-dots",
+          "Carbine close-quarters and mid-range work",
+          "Shotgun bead replacement for slug guns",
+          "Both-eyes-open snap shooting at 0 to 200 yd"
+        ],
+        "limitations": "No holdover or ranging functionality. The dot does not provide BDC marks; treat as a pure aiming reference."
+      },
+      "calibrationProvenance": {
+        "calibratedAgainst": "Industry-standard 2-MOA red-dot baseline (representative reference: Aimpoint CompM5)",
+        "manufacturerName": "Aimpoint AB",
+        "publishedSubtensionUrl": "https://www.aimpoint.us/products/optics/red-dot-sights/compm5/",
+        "verifiedAt": "2026-05-11",
+        "verifiedBy": "LoadOut research, citing manufacturer published spec",
+        "notes": "Used for interoperability calibration only. The 2-MOA dot size is the long-standing industry baseline shared by Aimpoint, Trijicon, Sig, Vortex, Holosun, and others; LoadOut artwork and naming remain LoadOut-original. The 2-MOA value is a published optical specification, not a copyrightable design element."
+      }
+    },
+    {
+      "id": "loadout_red_dot_circle",
+      "model": "LoadOut Red Dot + Outer Ring",
+      "manufacturer": "LoadOut",
+      "family": "LoadOut Red Dots",
+      "purpose": "Close-quarters circle-dot pattern for fast-acquisition shotgun and carbine work. The outer ring drives the eye onto target while the small center dot allows precision when the shooter has time.",
+      "nativeUnit": "moa",
+      "subtensionsOriginal": {
+        "centerDot": {
+          "diameterMoa": 2.0,
+          "diameterMil": 0.582,
+          "filled": true,
+          "description": "2-MOA filled center dot for precision aiming."
+        },
+        "outerRing": {
+          "diameterMoa": 32.0,
+          "diameterMil": 9.31,
+          "filled": false,
+          "description": "32-MOA open outer ring centered on the dot. Acts as an eye-catching brightness mass that pulls the shooter's focus onto the dot quickly."
+        },
+        "subtensions": [
+          {
+            "label": "Center Dot",
+            "feature": "centerDot",
+            "valueMoa": 2.0,
+            "valueMil": 0.582,
+            "purpose": "Precision aiming reference inside the outer ring.",
+            "useCase": "Primary aiming point when the shooter has time to align."
+          },
+          {
+            "label": "Outer Ring (Diameter)",
+            "feature": "outerRing",
+            "valueMoa": 32.0,
+            "valueMil": 9.31,
+            "purpose": "Speed-acquisition ring. The ring is large enough that the shooter sees it before the dot in peripheral vision; their eye snaps to the dot in the middle.",
+            "useCase": "Fast snap-shooting. At very close range the entire ring may be used as a 'frame the target' reference."
+          }
+        ],
+        "rangingTools": [
+          {
+            "name": "Outer-ring quick reference",
+            "description": "The 32-MOA outer ring covers approximately 33.5 inches at 100 yd. A roughly torso-width target (~18 inches) at 100 yd will appear about half the ring's width, which gives the shooter a coarse range estimate without needing a dedicated ranging reticle.",
+            "valueMoa": 32.0,
+            "valueMil": 9.31
+          }
+        ],
+        "holdoverMarks": [],
+        "subtensionAtDistance": [
+          {
+            "rangeYd": 25,
+            "centerDotInches": 0.52,
+            "outerRingInches": 8.38,
+            "notes": "Outer ring frames a typical pistol-range steel plate at room distance."
+          },
+          {
+            "rangeYd": 50,
+            "centerDotInches": 1.05,
+            "outerRingInches": 16.76,
+            "notes": "Outer ring spans about an IPSC torso width at 50 yd."
+          },
+          {
+            "rangeYd": 100,
+            "centerDotInches": 2.09,
+            "outerRingInches": 33.51,
+            "notes": "Outer ring spans roughly two IPSC torso widths at 100 yd. Dot remains usable for precision."
+          },
+          {
+            "rangeYd": 200,
+            "centerDotInches": 4.19,
+            "outerRingInches": 67.02
+          }
+        ],
+        "intendedUse": [
+          "Defensive shotgun (slug or buck)",
+          "Pistol-caliber carbines",
+          "Close-quarters AR work where speed matters more than 200-yard precision",
+          "Turkey hunting (the ring frames the head/neck pattern)"
+        ],
+        "limitations": "Outer ring obscures upper-body sight picture beyond ~50 yd if the target is small. No BDC marks; not intended for engagements past ~150 yd."
+      },
+      "subtensionsCalibrated": {
+        "centerDot": {
+          "diameterMoa": 1.0,
+          "diameterMil": 0.291,
+          "filled": true,
+          "description": "1-MOA center dot calibrated to the canonical circle-dot holographic standard. Smaller than the LoadOut Original's 2-MOA dot for tighter precision aiming inside the same large outer ring."
+        },
+        "outerRing": {
+          "diameterMoa": 65.0,
+          "diameterMil": 18.91,
+          "filled": false,
+          "description": "65-MOA open outer ring calibrated against the canonical holographic circle-dot reference (e.g. EOTech XPS3-0). The 65-MOA ring is the de-facto industry standard for circle-dot holographic patterns and is the reference reloaders use when estimating ring coverage."
+        },
+        "subtensions": [
+          {
+            "label": "Center Dot",
+            "feature": "centerDot",
+            "valueMoa": 1.0,
+            "valueMil": 0.291,
+            "purpose": "Precision aiming reference. Calibrated to the 1-MOA holographic standard so dot-coverage estimates translate directly to a typical aftermarket holographic sight.",
+            "useCase": "Primary aiming point at all engagement distances."
+          },
+          {
+            "label": "Outer Ring (Diameter)",
+            "feature": "outerRing",
+            "valueMoa": 65.0,
+            "valueMil": 18.91,
+            "purpose": "Speed-acquisition ring calibrated to the industry-standard 65-MOA holographic ring diameter. At 100 yd the ring covers about 68 inches, which is roughly the height of a standing adult — useful for estimating both target distance and shoulder-width framing.",
+            "useCase": "Fast snap-shooting. The shooter's eye locks onto the bright ring first and the small center dot drives the precision shot."
+          }
+        ],
+        "rangingTools": [
+          {
+            "name": "Circle-ring 100-yd torso reference",
+            "description": "The 65-MOA outer ring covers approximately 68.04 inches at 100 yd. A standing adult target (~68 inches tall) precisely fills the ring at 100 yd; if the target appears half-ring-tall, the range is roughly 200 yd; quarter-ring-tall, roughly 400 yd. This is the ranging convention reloaders cite for the canonical 65-MOA holographic ring.",
+            "valueMoa": 65.0,
+            "valueMil": 18.91
+          }
+        ],
+        "holdoverMarks": [],
+        "subtensionAtDistance": [
+          {
+            "rangeYd": 25,
+            "centerDotInches": 0.26,
+            "outerRingInches": 17.01
+          },
+          {
+            "rangeYd": 50,
+            "centerDotInches": 0.52,
+            "outerRingInches": 34.03,
+            "notes": "Ring spans about two IPSC torso widths at 50 yd."
+          },
+          {
+            "rangeYd": 100,
+            "centerDotInches": 1.05,
+            "outerRingInches": 68.04,
+            "notes": "Ring spans the height of a standing adult at 100 yd — the canonical ranging reference."
+          },
+          {
+            "rangeYd": 200,
+            "centerDotInches": 2.09,
+            "outerRingInches": 136.10
+          },
+          {
+            "rangeYd": 300,
+            "centerDotInches": 3.14,
+            "outerRingInches": 204.10
+          }
+        ],
+        "intendedUse": [
+          "AR / carbine close-quarters work with magnifier flip-out for mid-range",
+          "Defensive shotgun",
+          "Pistol-caliber carbines",
+          "Both-eyes-open transitions between short and mid-range targets"
+        ],
+        "limitations": "65-MOA ring obscures sight picture for small targets beyond about 200 yd; flip a magnifier behind the optic for longer engagements."
+      },
+      "calibrationProvenance": {
+        "calibratedAgainst": "Industry-standard 1-MOA dot + 65-MOA ring holographic reference (representative reference: EOTech XPS3-0)",
+        "manufacturerName": "EOTech, Inc.",
+        "publishedSubtensionUrl": "https://www.eotechinc.com/holographic-weapon-sights/xps3",
+        "verifiedAt": "2026-05-11",
+        "verifiedBy": "LoadOut research, citing manufacturer published spec",
+        "notes": "Used for interoperability calibration only. The 1-MOA dot + 65-MOA ring pattern is the de-facto industry standard for circle-dot holographic sights and has been published in EOTech specifications for decades; the dimensions are functional optical specifications, not copyrightable design elements. LoadOut artwork and naming remain LoadOut-original."
+      }
+    },
+    {
+      "id": "loadout_holographic_ring",
+      "model": "LoadOut Holographic - Ring + Dot",
+      "manufacturer": "LoadOut",
+      "family": "LoadOut Holographic",
+      "purpose": "Holographic-style segmented ring with a small precision center dot. The broken outer ring (rendered as discrete arc segments) produces the distinctive holographic appearance and pulls the eye toward the dot without obscuring peripheral vision the way a solid ring does.",
+      "nativeUnit": "moa",
+      "subtensionsOriginal": {
+        "centerDot": {
+          "diameterMoa": 1.0,
+          "diameterMil": 0.291,
+          "filled": true,
+          "description": "1-MOA filled center dot for precision aiming."
+        },
+        "outerRing": {
+          "diameterMoa": 65.0,
+          "diameterMil": 18.91,
+          "filled": false,
+          "segmented": true,
+          "description": "65-MOA segmented outer ring rendered as 24 small arc dots tracing the ring's circumference. The gaps between segments preserve peripheral vision and produce the characteristic broken-ring holographic appearance."
+        },
+        "subtensions": [
+          {
+            "label": "Center Dot",
+            "feature": "centerDot",
+            "valueMoa": 1.0,
+            "valueMil": 0.291,
+            "purpose": "Primary precision aiming reference.",
+            "useCase": "Primary aiming point at all engagement distances."
+          },
+          {
+            "label": "Segmented Outer Ring (Diameter)",
+            "feature": "outerRing",
+            "valueMoa": 65.0,
+            "valueMil": 18.91,
+            "purpose": "Speed-acquisition reference. The ring is large enough to see in peripheral vision but its broken / segmented construction does not obscure the sight picture the way a continuous ring does.",
+            "useCase": "Fast snap-shooting and target framing at close range; the dot drives precision."
+          }
+        ],
+        "rangingTools": [
+          {
+            "name": "Ring 100-yd torso reference",
+            "description": "The 65-MOA segmented ring covers approximately 68 inches at 100 yd. A standing adult fills the ring at 100 yd; ranges scale inversely with apparent ring fill (half ring = ~200 yd, quarter ring = ~400 yd).",
+            "valueMoa": 65.0,
+            "valueMil": 18.91
+          }
+        ],
+        "holdoverMarks": [],
+        "subtensionAtDistance": [
+          {
+            "rangeYd": 25,
+            "centerDotInches": 0.26,
+            "outerRingInches": 17.01
+          },
+          {
+            "rangeYd": 50,
+            "centerDotInches": 0.52,
+            "outerRingInches": 34.03
+          },
+          {
+            "rangeYd": 100,
+            "centerDotInches": 1.05,
+            "outerRingInches": 68.04,
+            "notes": "Ring frames a standing adult at 100 yd — the canonical ranging reference for the segmented-ring holographic pattern."
+          },
+          {
+            "rangeYd": 200,
+            "centerDotInches": 2.09,
+            "outerRingInches": 136.10
+          },
+          {
+            "rangeYd": 300,
+            "centerDotInches": 3.14,
+            "outerRingInches": 204.10,
+            "notes": "Ring nearly fills the field; flip magnifier for precision at this distance."
+          }
+        ],
+        "intendedUse": [
+          "Carbine close-quarters with magnifier flip-out",
+          "Defensive shotgun",
+          "Both-eyes-open snap shooting",
+          "Pistol-caliber carbines"
+        ],
+        "limitations": "Segmented ring is intentionally broken to preserve peripheral vision but reads as smaller / less prominent than a continuous ring under bright sunlight. No BDC; pair with a magnifier for mid-range work."
+      },
+      "subtensionsCalibrated": {
+        "centerDot": {
+          "diameterMoa": 1.0,
+          "diameterMil": 0.291,
+          "filled": true,
+          "description": "1-MOA center dot calibrated against the 1-MOA holographic standard. The 1-MOA dot is the long-standing reference size for fixed-pattern holographic sights and is the canonical value reloaders use to estimate dot coverage."
+        },
+        "outerRing": {
+          "diameterMoa": 65.0,
+          "diameterMil": 18.91,
+          "filled": false,
+          "segmented": true,
+          "description": "65-MOA segmented outer ring calibrated against the standard 65-MOA holographic ring diameter. The broken / arc-segmented construction is the visual hallmark of the holographic class and is published in manufacturer specifications across multiple vendors."
+        },
+        "subtensions": [
+          {
+            "label": "Center Dot",
+            "feature": "centerDot",
+            "valueMoa": 1.0,
+            "valueMil": 0.291,
+            "purpose": "Precision aiming reference calibrated to the 1-MOA industry standard.",
+            "useCase": "Primary aiming point at all engagement distances. Coverage matches a typical aftermarket holographic 1-MOA dot."
+          },
+          {
+            "label": "Segmented Outer Ring (Diameter)",
+            "feature": "outerRing",
+            "valueMoa": 65.0,
+            "valueMil": 18.91,
+            "purpose": "Speed-acquisition ring calibrated to the canonical 65-MOA holographic ring. At 100 yd the ring covers 68 inches, which precisely frames a standing adult — the published ranging convention.",
+            "useCase": "Fast snap-shooting and 100-yd target ranging."
+          }
+        ],
+        "rangingTools": [
+          {
+            "name": "Ring 100-yd torso reference (calibrated)",
+            "description": "65-MOA ring covers 68.04 inches at 100 yd. Calibrated to match the industry-standard holographic ranging convention: standing adult fills the ring at 100 yd, half-fills at 200 yd, quarter-fills at 400 yd.",
+            "valueMoa": 65.0,
+            "valueMil": 18.91
+          }
+        ],
+        "holdoverMarks": [],
+        "subtensionAtDistance": [
+          {
+            "rangeYd": 25,
+            "centerDotInches": 0.26,
+            "outerRingInches": 17.01
+          },
+          {
+            "rangeYd": 50,
+            "centerDotInches": 0.52,
+            "outerRingInches": 34.03
+          },
+          {
+            "rangeYd": 100,
+            "centerDotInches": 1.05,
+            "outerRingInches": 68.04
+          },
+          {
+            "rangeYd": 200,
+            "centerDotInches": 2.09,
+            "outerRingInches": 136.10
+          },
+          {
+            "rangeYd": 300,
+            "centerDotInches": 3.14,
+            "outerRingInches": 204.10
+          }
+        ],
+        "intendedUse": [
+          "Carbine work with magnifier flip-out for 100 to 300 yd",
+          "Defensive shotgun (slug or buck)",
+          "Both-eyes-open snap shooting at close range",
+          "100-yd torso ranging via the ring-fills-target convention"
+        ],
+        "limitations": "Segmented ring is less prominent than a continuous ring under direct sunlight. No BDC marks; not intended for unaided engagements past about 200 yd."
+      },
+      "calibrationProvenance": {
+        "calibratedAgainst": "Industry-standard 1-MOA dot + 65-MOA segmented holographic ring reference (representative reference: EOTech 552 series)",
+        "manufacturerName": "EOTech, Inc.",
+        "publishedSubtensionUrl": "https://www.eotechinc.com/holographic-weapon-sights/552",
+        "verifiedAt": "2026-05-11",
+        "verifiedBy": "LoadOut research, citing manufacturer published spec",
+        "notes": "Used for interoperability calibration only. The 1-MOA dot + 65-MOA segmented ring pattern is the de-facto industry standard for fixed-pattern holographic sights, published in EOTech specifications for decades. The LoadOut artwork is rendered with 24 discrete arc dots tracing the 65-MOA circumference, which produces a visually faithful broken-ring appearance with LoadOut-original geometry. Dimensions are functional optical specifications, not copyrightable design elements."
+      }
+    },
+    {
+      "id": "pd_plex",
+      "model": "Plex",
+      "manufacturer": "Public domain",
+      "family": "Public-domain reticles",
+      "purpose": "Classic four-quadrant hunting reticle: thick outer posts taper inward to a thin precision crosshair at the center. Public-domain pattern shipped under various manufacturer names (Duplex, Multi-X, V-Plex, Dual-X, 4-Plex, etc.) since the 1960s.",
+      "nativeUnit": "moa",
+      "subtensionsOriginal": {
+        "thickPostThicknessMoa": 1.0,
+        "thinCrosshairThicknessMoa": 0.08,
+        "thickPostInnerRadiusMoa": 4.0,
+        "thickPostOuterRadiusMoa": 12.0,
+        "centerGapHalfWidthMoa": 0.2,
+        "description": "Classic 4-post plex pattern. Thick outer posts span from approximately 4 MOA to 12 MOA along each cardinal axis (top, bottom, left, right). Inside that they taper to a thin crosshair that runs from the post's inner end to a small gap at the optical center. A 0.4-MOA gap at the center keeps the crosshair from obscuring fine precision shots; some plex variants omit the gap entirely.",
+        "subtensions": [
+          {
+            "label": "Thick Post Inner Edge",
+            "feature": "thickPostInnerEdge",
+            "valueMoa": 4.0,
+            "valueMil": 1.16,
+            "purpose": "The inside edges of the four thick outer posts sit approximately 4 MOA from center (top, bottom, left, right). This forms a coarse 8-MOA aiming square that the eye snaps to in low light — the load-bearing feature of the plex pattern.",
+            "useCase": "Low-light hunting. The thick posts pull the eye to center even when the thin crosshair is invisible."
+          },
+          {
+            "label": "Thick Post Outer Edge",
+            "feature": "thickPostOuterEdge",
+            "valueMoa": 12.0,
+            "valueMil": 3.49,
+            "purpose": "The outer edges of the thick posts sit approximately 12 MOA from center, framing a 24-MOA total field that contains the precision crosshair.",
+            "useCase": "Reference for coarse target framing at close range."
+          },
+          {
+            "label": "Thin Crosshair Width",
+            "feature": "thinCrosshair",
+            "valueMoa": 0.08,
+            "valueMil": 0.023,
+            "purpose": "The thin precision crosshair is approximately 0.08 MOA thick. At 100 yd it covers about 0.08 inches — fine enough for sub-MOA aiming.",
+            "useCase": "Precision aiming when light and time permit."
+          }
+        ],
+        "rangingTools": [
+          {
+            "name": "Thick-post inner-edge framing",
+            "description": "The 4-MOA inner-edge spacing of the thick posts brackets a target roughly the height of a deer's vital zone (~12 inches) at 300 yd. Narrower fill = farther target; wider fill = closer target.",
+            "valueMoa": 4.0,
+            "valueMil": 1.16
+          }
+        ],
+        "holdoverMarks": [],
+        "subtensionAtDistance": [
+          {
+            "rangeYd": 100,
+            "thickPostInnerEdgeInches": 4.19,
+            "thickPostOuterEdgeInches": 12.57,
+            "thinCrosshairInches": 0.08
+          },
+          {
+            "rangeYd": 200,
+            "thickPostInnerEdgeInches": 8.38,
+            "thickPostOuterEdgeInches": 25.13,
+            "thinCrosshairInches": 0.17
+          },
+          {
+            "rangeYd": 300,
+            "thickPostInnerEdgeInches": 12.57,
+            "thickPostOuterEdgeInches": 37.70,
+            "thinCrosshairInches": 0.25,
+            "notes": "Inner edge of thick posts brackets a deer's vital zone — the canonical hunting-plex range estimation."
+          },
+          {
+            "rangeYd": 400,
+            "thickPostInnerEdgeInches": 16.76,
+            "thickPostOuterEdgeInches": 50.27,
+            "thinCrosshairInches": 0.34
+          }
+        ],
+        "intendedUse": [
+          "General-purpose big-game hunting (deer, elk, antelope)",
+          "Variable-power scopes 3-9x and 4-12x where the SFP plex thickens / thins with magnification",
+          "Low-light hunting where heavy posts remain visible after the thin crosshair fades",
+          "Coarse range estimation by bracketing a known-size target between the thick posts"
+        ],
+        "limitations": "No mil/MOA hashes for precision wind or holdover. Beyond about 400 yd the shooter must memorize holdovers or dial. Not intended for tactical / PRS work."
+      },
+      "subtensionsCalibrated": {
+        "thickPostThicknessMoa": 1.0,
+        "thinCrosshairThicknessMoa": 0.08,
+        "thickPostInnerRadiusMoa": 4.0,
+        "thickPostOuterRadiusMoa": 12.0,
+        "centerGapHalfWidthMoa": 0.2,
+        "description": "Identical to subtensionsOriginal — the plex is a public-domain pattern with no manufacturer IP attached. Leupold Duplex, Bushnell Multi-X, Vortex V-Plex, Burris Plex, Nikon Nikoplex, and Weaver Dual-X are all the same fundamental design with cosmetic variations in post thickness and inner-edge spacing. The values shown are representative of the long-standing industry baseline.",
+        "subtensions": [
+          {
+            "label": "Thick Post Inner Edge",
+            "feature": "thickPostInnerEdge",
+            "valueMoa": 4.0,
+            "valueMil": 1.16,
+            "purpose": "Inner edges of the four thick posts approximately 4 MOA from center.",
+            "useCase": "Low-light eye-pull and coarse target framing."
+          },
+          {
+            "label": "Thick Post Outer Edge",
+            "feature": "thickPostOuterEdge",
+            "valueMoa": 12.0,
+            "valueMil": 3.49,
+            "purpose": "Outer edges of the thick posts approximately 12 MOA from center.",
+            "useCase": "Field-of-view framing reference."
+          },
+          {
+            "label": "Thin Crosshair Width",
+            "feature": "thinCrosshair",
+            "valueMoa": 0.08,
+            "valueMil": 0.023,
+            "purpose": "Thin precision crosshair approximately 0.08 MOA wide.",
+            "useCase": "Precision aiming."
+          }
+        ],
+        "rangingTools": [
+          {
+            "name": "Thick-post inner-edge deer-vital framing",
+            "description": "Inner edges of the thick posts bracket a 12-inch deer vital zone at approximately 300 yd. Standard plex convention since the 1960s.",
+            "valueMoa": 4.0,
+            "valueMil": 1.16
+          }
+        ],
+        "holdoverMarks": [],
+        "subtensionAtDistance": [
+          {
+            "rangeYd": 100,
+            "thickPostInnerEdgeInches": 4.19,
+            "thickPostOuterEdgeInches": 12.57,
+            "thinCrosshairInches": 0.08
+          },
+          {
+            "rangeYd": 200,
+            "thickPostInnerEdgeInches": 8.38,
+            "thickPostOuterEdgeInches": 25.13,
+            "thinCrosshairInches": 0.17
+          },
+          {
+            "rangeYd": 300,
+            "thickPostInnerEdgeInches": 12.57,
+            "thickPostOuterEdgeInches": 37.70,
+            "thinCrosshairInches": 0.25
+          },
+          {
+            "rangeYd": 400,
+            "thickPostInnerEdgeInches": 16.76,
+            "thickPostOuterEdgeInches": 50.27,
+            "thinCrosshairInches": 0.34
+          }
+        ],
+        "intendedUse": [
+          "General big-game hunting",
+          "3-9x and 4-12x variable hunting scopes",
+          "Low-light hunting"
+        ],
+        "limitations": "No precision wind or holdover hashes; coarse range estimation only."
+      },
+      "calibrationProvenance": {
+        "calibratedAgainst": "Public-domain plex pattern (no specific manufacturer reference)",
+        "manufacturerName": null,
+        "publishedSubtensionUrl": null,
+        "verifiedAt": "2026-05-11",
+        "verifiedBy": "LoadOut research",
+        "notes": "Public-domain plex pattern; no IP attribution required. The 4-post plex has been shipped under many manufacturer names since the 1960s (Leupold Duplex, Bushnell Multi-X, Vortex V-Plex, Burris Plex, Nikon Nikoplex, Weaver Dual-X) and is universally treated as a generic reticle category, not a proprietary design. The subtensionsOriginal and subtensionsCalibrated entries are intentionally identical."
+      }
+    },
+    {
+      "id": "pd_mil_dot_usmc",
+      "model": "Mil-Dot (USMC)",
+      "manufacturer": "Public domain",
+      "family": "Public-domain reticles",
+      "purpose": "Original USMC mil-dot reticle: a fine cross with oval / round dots placed every 1 mil along the horizontal and vertical axes. Public-domain since the original USMC adoption in the late 1970s; used for both range estimation by mil-relating known target dimensions and for windage / holdover at known distances.",
+      "nativeUnit": "mil",
+      "subtensionsOriginal": {
+        "crosshairThicknessMil": 0.05,
+        "dotDiameterMil": 0.22,
+        "dotSpacingMil": 1.0,
+        "dotsPerSidePerAxis": 4,
+        "centerDotDiameterMil": 0.16,
+        "description": "Mil cross with 4 dots along each direction (up, down, left, right) of the central crosshair. Dots are spaced 1.0 mil apart center-to-center; each dot is approximately 0.22 mil in diameter (the original USMC oval-dot spec measured 0.25 mil long by 0.20 mil wide; LoadOut renders this as a round 0.22-mil dot for simplicity). The crosshair extends out to 5 mil per side, with ranging dots at 1, 2, 3, and 4 mil. Total span of the visible reticle is 8 mil horizontally and 8 mil vertically.",
+        "subtensions": [
+          {
+            "label": "Dot Spacing (center-to-center)",
+            "feature": "dotSpacing",
+            "valueMil": 1.0,
+            "valueMoa": 3.438,
+            "purpose": "The defining feature of the mil-dot pattern: every dot is exactly 1 mil from its neighbors along the crosshair. This is the load-bearing measurement for both range estimation (mil-relate a known-size target between dots) and windage / holdover holds.",
+            "useCase": "Range estimation, windage holds, holdover holds, lead estimation on moving targets."
+          },
+          {
+            "label": "Dot Diameter",
+            "feature": "dotDiameter",
+            "valueMil": 0.22,
+            "valueMoa": 0.756,
+            "purpose": "Each ranging dot covers approximately 0.22 mil. The dot is large enough to be visible at typical magnifications but small enough to allow precision aiming around it.",
+            "useCase": "Aiming reference. The center-to-center dot spacing is the load-bearing feature, not the dot itself."
+          },
+          {
+            "label": "Crosshair Span (per axis)",
+            "feature": "crosshairSpan",
+            "valueMil": 5.0,
+            "valueMoa": 17.19,
+            "purpose": "The fine crosshair extends 5 mil from center along each axis (10 mil total per axis). The four visible ranging dots sit at 1, 2, 3, and 4 mil; the line continues to 5 mil to provide a visible reference past the last dot.",
+            "useCase": "Holdover reference past 4 mil (extreme range or strong wind)."
+          }
+        ],
+        "rangingTools": [
+          {
+            "name": "Mil-relation formula",
+            "description": "Range (yards) = (Target size in inches × 27.78) / Target size in mils. Or: Range (m) = (Target size in m × 1000) / Target size in mils. The 1-mil dot spacing of the USMC pattern is the canonical reference for mil-relation; bracket a known-size target between two dots and read out the range.",
+            "valueMil": 1.0,
+            "valueMoa": 3.438
+          },
+          {
+            "name": "1-mil at typical ranges",
+            "description": "1 mil covers 3.6 inches at 100 yd, 7.2 inches at 200 yd, 10.8 inches at 300 yd. A 12-inch torso bracketed between two dots (1 mil) reads at approximately 333 yd; a 12-inch torso bracketed between three dots (2 mil) reads at approximately 167 yd.",
+            "valueMil": 1.0,
+            "valueMoa": 3.438
+          }
+        ],
+        "holdoverMarks": [
+          {
+            "label": "1 mil down",
+            "valueMil": 1.0,
+            "valueMoa": 3.438,
+            "purpose": "First holdover dot below center crosshair. Used for known holdovers at distances where bullet drop equals 1 mil."
+          },
+          {
+            "label": "2 mil down",
+            "valueMil": 2.0,
+            "valueMoa": 6.875,
+            "purpose": "Second holdover dot. Common holdover for typical 308 / 5.56 loads at 400 to 500 yd depending on muzzle velocity."
+          },
+          {
+            "label": "3 mil down",
+            "valueMil": 3.0,
+            "valueMoa": 10.31,
+            "purpose": "Third holdover dot."
+          },
+          {
+            "label": "4 mil down",
+            "valueMil": 4.0,
+            "valueMoa": 13.75,
+            "purpose": "Fourth and final holdover dot."
+          }
+        ],
+        "subtensionAtDistance": [
+          {
+            "rangeYd": 100,
+            "dotSpacingInches": 3.6,
+            "dotDiameterInches": 0.79,
+            "crosshairSpanInches": 18.0,
+            "notes": "1 mil = 3.6 inches at 100 yd — the canonical mil-relation baseline."
+          },
+          {
+            "rangeYd": 200,
+            "dotSpacingInches": 7.2,
+            "dotDiameterInches": 1.58,
+            "crosshairSpanInches": 36.0
+          },
+          {
+            "rangeYd": 300,
+            "dotSpacingInches": 10.8,
+            "dotDiameterInches": 2.38,
+            "crosshairSpanInches": 54.0
+          },
+          {
+            "rangeYd": 500,
+            "dotSpacingInches": 18.0,
+            "dotDiameterInches": 3.96,
+            "crosshairSpanInches": 90.0
+          },
+          {
+            "rangeYd": 1000,
+            "dotSpacingInches": 36.0,
+            "dotDiameterInches": 7.92,
+            "crosshairSpanInches": 180.0,
+            "notes": "1 mil = 36 inches at 1000 yd — the canonical 'mil = yard at 1000 yards' approximation."
+          }
+        ],
+        "intendedUse": [
+          "Range estimation by mil-relating a known-size target",
+          "Windage and holdover holds at known distances",
+          "Lead estimation on moving targets",
+          "Long-range tactical and military marksmanship",
+          "Precision rifle / bench shooting where mil math is preferred over MOA"
+        ],
+        "limitations": "Original USMC mil-dot pattern was designed for SFP scopes at one specific magnification; mil values are only correct at the calibrated power. Modern FFP mil reticles (Mil Hash, EBR-style trees) are now preferred for tactical work because mil values stay constant across the magnification range."
+      },
+      "subtensionsCalibrated": {
+        "crosshairThicknessMil": 0.05,
+        "dotDiameterMil": 0.22,
+        "dotSpacingMil": 1.0,
+        "dotsPerSidePerAxis": 4,
+        "centerDotDiameterMil": 0.16,
+        "description": "Identical to subtensionsOriginal — the USMC mil-dot is public-domain since the original 1970s adoption and has no manufacturer IP attached. The 1-mil dot spacing is universal; only minor cosmetic dot-shape variations (round vs oval) differ between vendors.",
+        "subtensions": [
+          {
+            "label": "Dot Spacing (center-to-center)",
+            "feature": "dotSpacing",
+            "valueMil": 1.0,
+            "valueMoa": 3.438,
+            "purpose": "Defining 1-mil dot spacing of the USMC pattern.",
+            "useCase": "Range estimation, windage, holdover, lead."
+          },
+          {
+            "label": "Dot Diameter",
+            "feature": "dotDiameter",
+            "valueMil": 0.22,
+            "valueMoa": 0.756,
+            "purpose": "Approximately 0.22-mil dot diameter.",
+            "useCase": "Aiming reference."
+          },
+          {
+            "label": "Crosshair Span (per axis)",
+            "feature": "crosshairSpan",
+            "valueMil": 5.0,
+            "valueMoa": 17.19,
+            "purpose": "Fine crosshair extends 5 mil per axis from center.",
+            "useCase": "Holdover reference past 4 mil."
+          }
+        ],
+        "rangingTools": [
+          {
+            "name": "Mil-relation formula",
+            "description": "Range (yards) = (Target size in inches × 27.78) / Target size in mils.",
+            "valueMil": 1.0,
+            "valueMoa": 3.438
+          }
+        ],
+        "holdoverMarks": [
+          {
+            "label": "1 mil down",
+            "valueMil": 1.0,
+            "valueMoa": 3.438
+          },
+          {
+            "label": "2 mil down",
+            "valueMil": 2.0,
+            "valueMoa": 6.875
+          },
+          {
+            "label": "3 mil down",
+            "valueMil": 3.0,
+            "valueMoa": 10.31
+          },
+          {
+            "label": "4 mil down",
+            "valueMil": 4.0,
+            "valueMoa": 13.75
+          }
+        ],
+        "subtensionAtDistance": [
+          {
+            "rangeYd": 100,
+            "dotSpacingInches": 3.6,
+            "dotDiameterInches": 0.79,
+            "crosshairSpanInches": 18.0
+          },
+          {
+            "rangeYd": 200,
+            "dotSpacingInches": 7.2,
+            "dotDiameterInches": 1.58,
+            "crosshairSpanInches": 36.0
+          },
+          {
+            "rangeYd": 300,
+            "dotSpacingInches": 10.8,
+            "dotDiameterInches": 2.38,
+            "crosshairSpanInches": 54.0
+          },
+          {
+            "rangeYd": 500,
+            "dotSpacingInches": 18.0,
+            "dotDiameterInches": 3.96,
+            "crosshairSpanInches": 90.0
+          },
+          {
+            "rangeYd": 1000,
+            "dotSpacingInches": 36.0,
+            "dotDiameterInches": 7.92,
+            "crosshairSpanInches": 180.0
+          }
+        ],
+        "intendedUse": [
+          "Range estimation via mil-relation",
+          "Windage and holdover at known distances",
+          "Long-range tactical / military marksmanship"
+        ],
+        "limitations": "Original SFP design — mil values are only correct at the calibrated magnification. Modern FFP mil hash reticles are preferred for tactical work."
+      },
+      "calibrationProvenance": {
+        "calibratedAgainst": "Original USMC mil-dot specification (public domain)",
+        "manufacturerName": null,
+        "publishedSubtensionUrl": "https://en.wikipedia.org/wiki/Mil-dot_reticle",
+        "verifiedAt": "2026-05-11",
+        "verifiedBy": "LoadOut research, citing the public-domain USMC specification",
+        "notes": "Public-domain since the original USMC adoption; baseline 1-mil dot spacing. The USMC mil-dot was developed and standardized in the 1970s for the M40 and M40A1 sniper rifle program; the design and dimensions have been in the public domain since adoption and are taught in every modern long-range marksmanship course. The subtensionsOriginal and subtensionsCalibrated entries are intentionally identical."
+      }
+    }
+  ]
+}

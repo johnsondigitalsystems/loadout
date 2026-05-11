@@ -102,6 +102,7 @@ import '../database/database.dart';
 import '../repositories/reticle_repository.dart';
 import 'find_by_scope_sheet.dart';
 import 'reticle_full_screen_view.dart';
+import 'reticle_renderer.dart';
 import 'reticle_thumbnail.dart';
 
 /// Reusable form field that lets the user pick a reticle. Renders a
@@ -159,29 +160,55 @@ class ReticlePickerField extends StatelessWidget {
             // produced a smear that looked clumped together — the
             // user can tap the picker to open the full-screen
             // preview when they want to see the actual pattern.
-            SizedBox(
-              width: 56,
-              height: 56,
-              child: selected != null
-                  ? CustomPaint(
-                      painter: _SimpleReticleGlyphPainter(
-                        kind: _glyphKindFor(selected!),
-                        color: theme.colorScheme.primary,
-                      ),
-                    )
-                  : Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: theme.colorScheme.outlineVariant,
+            //
+            // When a reticle IS picked we render the LoadOut
+            // interoperability caption directly underneath the
+            // glyph (CLAUDE.md § 30 liability checklist) so the
+            // user always sees who authored the reticle artwork.
+            // The placeholder state ("nothing picked yet") suppresses
+            // the caption — there is no preview to caption.
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 56,
+                  height: 56,
+                  child: selected != null
+                      ? CustomPaint(
+                          painter: _SimpleReticleGlyphPainter(
+                            kind: _glyphKindFor(selected!),
+                            color: theme.colorScheme.primary,
+                          ),
+                        )
+                      : Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: theme.colorScheme.outlineVariant,
+                            ),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Icon(
+                            Icons.crop_free_outlined,
+                            size: 22,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                         ),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Icon(
-                        Icons.crop_free_outlined,
-                        size: 22,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
+                ),
+                if (selected != null) ...[
+                  const SizedBox(height: 4),
+                  // Constrain the caption width to roughly the
+                  // glyph's footprint plus a little slack so it can
+                  // wrap to two lines under the 56 px tile rather
+                  // than blow out the field row.
+                  SizedBox(
+                    width: 96,
+                    child: ReticleInteroperabilityLabel(
+                      align: TextAlign.center,
                     ),
+                  ),
+                ],
+              ],
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -375,7 +402,7 @@ class _ReticlePickerSheetState extends State<_ReticlePickerSheet> {
                   child: TextButton.icon(
                     onPressed: () => _onFindByScope(context),
                     icon: const Icon(Icons.search_outlined, size: 18),
-                    label: const Text('Find by my scope'),
+                    label: const Text('Find by My Scope'),
                     style: TextButton.styleFrom(
                       visualDensity: VisualDensity.compact,
                     ),
@@ -485,26 +512,47 @@ class _ReticlePickerSheetState extends State<_ReticlePickerSheet> {
   Future<void> _onFindByScope(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
-    final recommendedId = await showFindByScopeSheet(context);
-    if (recommendedId == null) return;
+    final entry = await showFindByScopeSheet(context);
+    if (entry == null) return;
     if (!mounted) return;
     ReticleRow? match;
     try {
-      match = await widget.repo.byNaturalKey(recommendedId);
+      match = await widget.repo.byNaturalKey(entry.recommendedReticleId);
     } catch (_) {
       match = null;
     }
     if (!mounted) return;
     if (match == null) {
+      // The recommended reticle ID didn't resolve in the catalog —
+      // either the curated mapping points at a stale ID or the
+      // documented default reticle is missing. Surface so the user
+      // can pick manually instead of leaving them in a silent dead
+      // end.
       messenger.showSnackBar(
         SnackBar(
           content: Text(
             'Could not find the recommended reticle '
-            '("$recommendedId"). Pick one from the list below.',
+            '("${entry.recommendedReticleId}"). Pick one from the list below.',
           ),
         ),
       );
       return;
+    }
+    if (entry.isFallback) {
+      // Tell the user we don't have scope-specific data yet but the
+      // LoadOut default will still work. This stays out of the picker's
+      // navigation flow — we still pop with the selection so the user
+      // gets a usable result; the SnackBar just sets expectations.
+      messenger.showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 5),
+          content: Text(
+            "We don't have scope-specific reticle data for "
+            '${entry.manufacturer} ${entry.model} yet. '
+            'Showing the LoadOut default — adjust if needed.',
+          ),
+        ),
+      );
     }
     navigator.pop(_ReticleSelection(row: match));
   }
@@ -823,17 +871,38 @@ class _ReticleListRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return ListTile(
-      leading: SizedBox(
-        width: 36,
-        height: 36,
-        child: Center(
-          child: ReticleThumbnail(
-            size: 28,
-            color: selected
-                ? theme.colorScheme.primary
-                : theme.colorScheme.onSurfaceVariant,
+      // Leading column carries the LoadOut interoperability caption
+      // directly under the small thumbnail. Required by the
+      // CLAUDE.md § 30 liability checklist — the user must see the
+      // "LoadOut Original" framing on every preview surface in the
+      // picker, even at thumbnail size, so we never imply a
+      // manufacturer-licensed reticle. The caption is wrapped in a
+      // ConstrainedBox so it can break to two lines under the 36 px
+      // glyph rather than push the row width.
+      leading: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 36,
+            height: 36,
+            child: Center(
+              child: ReticleThumbnail(
+                size: 28,
+                color: selected
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ),
-        ),
+          const SizedBox(height: 2),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 80),
+            child: ReticleInteroperabilityLabel(
+              align: TextAlign.center,
+            ),
+          ),
+        ],
       ),
       title: Text(
         '${_displayManufacturer(row.manufacturerId)} ${row.model}',

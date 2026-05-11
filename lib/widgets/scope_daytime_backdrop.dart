@@ -219,9 +219,15 @@ class ScopeDaytimeBackdropPainter extends CustomPainter {
     final w = size.width;
     final h = size.height;
 
-    // Horizon at ~50% canvas height. Above is sky, below is grass +
-    // mound. Tuneable per design later — we expose it as a const here.
-    final horizonY = h * 0.50;
+    // Horizon at 62% canvas height. Above is sky, below is grass +
+    // mound. Lower-than-center horizon matches a real prone / bench
+    // shooting picture (you look slightly UP at distant targets) and
+    // pushes the dirt mound + target into the lower portion of the
+    // FOV — the user explicitly requested this. The realistic-mode
+    // target painter at `lib/screens/range_day/widgets/target_plot.dart`
+    // (`_RealisticLayout.compute`) reads the same convention so the
+    // two stay aligned.
+    final horizonY = h * 0.62;
 
     _paintSky(canvas, w, horizonY);
     _paintGrass(canvas, w, h, horizonY);
@@ -373,30 +379,49 @@ class ScopeDaytimeBackdropPainter extends CustomPainter {
 
     switch (target) {
       case BackdropTargetSilhouette.ipsc:
-        // Cardboard-style upper torso silhouette: rounded rect for the
-        // body with a smaller rounded rect on top for the head.
-        final bodyRect = Rect.fromCenter(
-          center: Offset(centerX, centerY + heightPx * 0.10),
-          width: widthPx,
-          height: heightPx * 0.70,
-        );
-        final headRect = Rect.fromCenter(
-          center: Offset(centerX, centerY - heightPx * 0.40),
-          width: widthPx * 0.55,
-          height: heightPx * 0.32,
-        );
-        final body = RRect.fromRectAndRadius(
-          bodyRect,
-          Radius.circular(widthPx * 0.10),
-        );
-        final head = RRect.fromRectAndRadius(
-          headRect,
-          Radius.circular(widthPx * 0.18),
-        );
-        canvas.drawRRect(body, fill);
-        canvas.drawRRect(head, fill);
-        canvas.drawRRect(body, outline);
-        canvas.drawRRect(head, outline);
+        // Real IPSC / USPSA Classic silhouette path. 18" wide × 30"
+        // tall body with a 6×6" head and a smooth shoulder taper
+        // between them. Single connected Path (not two rounded
+        // rects) so the silhouette reads as a recognisable bottle
+        // at any size — the prior two-rect version flattened into a
+        // single rounded rectangle at small sizes because the head
+        // and gap visually merged into the body. Mirrors the path
+        // in `_paintIpscSilhouette` in lib/screens/range_day/widgets/
+        // target_plot.dart — both painters draw the same target so
+        // they have to agree on its geometry.
+        final left = centerX - widthPx / 2;
+        final top = centerY - heightPx / 2;
+        final headLeft = left + widthPx * 0.333;
+        final headRight = left + widthPx * 0.667;
+        final headTop = top;
+        final headBottomY = top + heightPx * 0.20;
+        final shoulderY = top + heightPx * 0.30;
+        final bodyLeft = left;
+        final bodyRight = left + widthPx;
+        final bodyBottom = top + heightPx;
+        final headCornerR = widthPx * 0.06;
+        final bodyCornerR = widthPx * 0.04;
+        final path = Path()
+          ..moveTo(headLeft, headTop + headCornerR)
+          ..quadraticBezierTo(
+              headLeft, headTop, headLeft + headCornerR, headTop)
+          ..lineTo(headRight - headCornerR, headTop)
+          ..quadraticBezierTo(
+              headRight, headTop, headRight, headTop + headCornerR)
+          ..lineTo(headRight, headBottomY)
+          ..lineTo(bodyRight, shoulderY)
+          ..lineTo(bodyRight, bodyBottom - bodyCornerR)
+          ..quadraticBezierTo(bodyRight, bodyBottom,
+              bodyRight - bodyCornerR, bodyBottom)
+          ..lineTo(bodyLeft + bodyCornerR, bodyBottom)
+          ..quadraticBezierTo(
+              bodyLeft, bodyBottom, bodyLeft, bodyBottom - bodyCornerR)
+          ..lineTo(bodyLeft, shoulderY)
+          ..lineTo(headLeft, headBottomY)
+          ..lineTo(headLeft, headTop + headCornerR)
+          ..close();
+        canvas.drawPath(path, fill);
+        canvas.drawPath(path, outline);
       case BackdropTargetSilhouette.circle:
         canvas.drawCircle(
           Offset(centerX, centerY),

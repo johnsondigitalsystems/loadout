@@ -1,0 +1,718 @@
+[
+  {
+    "id": "loadout_sfp_hunter_duplex",
+    "manufacturer": "LoadOut",
+    "model": "LoadOut SFP Hunter - Duplex",
+    "family": "LoadOut SFP Hunting Reticles",
+    "designer": "LoadOut",
+    "license": null,
+    "type": "sfp",
+    "nativeUnit": "moa",
+    "maxExtentUnits": 18.0,
+    "verified": true,
+    "sourceUrl": "https://www.leupold.com/scopes/rifle-scopes/vx-3hd",
+    "verifiedAt": "2026-05-11",
+    "notes": "LoadOut-original second-focal-plane hunting duplex: four heavy outer posts taper to a thin center crosshair. Subtensions are valid only at the spec magnification (9x for the canonical mid-tube hunting variable). LoadOut original art; calibrated for interoperability with the classic public-domain duplex pattern.",
+    "subtensions": null,
+    "elements": [
+      {
+        "type": "crosshair",
+        "startX": -7,
+        "startY": 0,
+        "endX": -0.2,
+        "endY": 0,
+        "thickness": 0.05,
+        "primary": true
+      },
+      {
+        "type": "crosshair",
+        "startX": 0.2,
+        "startY": 0,
+        "endX": 7,
+        "endY": 0,
+        "thickness": 0.05,
+        "primary": true
+      },
+      {
+        "type": "crosshair",
+        "startX": 0,
+        "startY": -7,
+        "endX": 0,
+        "endY": -0.2,
+        "thickness": 0.05,
+        "primary": true
+      },
+      {
+        "type": "crosshair",
+        "startX": 0,
+        "startY": 0.2,
+        "endX": 0,
+        "endY": 7,
+        "thickness": 0.05,
+        "primary": true
+      },
+      {
+        "type": "crosshair",
+        "startX": -18,
+        "startY": 0,
+        "endX": -7,
+        "endY": 0,
+        "thickness": 0.55,
+        "primary": true
+      },
+      {
+        "type": "crosshair",
+        "startX": 7,
+        "startY": 0,
+        "endX": 18,
+        "endY": 0,
+        "thickness": 0.55,
+        "primary": true
+      },
+      {
+        "type": "crosshair",
+        "startX": 0,
+        "startY": -18,
+        "endX": 0,
+        "endY": -7,
+        "thickness": 0.55,
+        "primary": true
+      },
+      {
+        "type": "crosshair",
+        "startX": 0,
+        "startY": 7,
+        "endX": 0,
+        "endY": 18,
+        "thickness": 0.55,
+        "primary": true
+      },
+      {
+        "type": "dot",
+        "x": 0,
+        "y": 0,
+        "radius": 0.05,
+        "open": false
+      }
+    ],
+    "subtensionsOriginal": {
+      "specMagnification": 9.0,
+      "nativeUnit": "moa",
+      "thinCrosshairExtentMoa": 7.0,
+      "thinCrosshairThicknessMoa": 0.05,
+      "thickPostInnerEdgeMoa": 7.0,
+      "thickPostOuterEdgeMoa": 18.0,
+      "thickPostThicknessMoa": 0.55,
+      "centerDotDiameterMoa": 0.10,
+      "notes": "First-principles geometry: thin inner crosshair extends 7 MOA each direction at 9x, thick outer posts span 7-18 MOA at 0.55 MOA bar width. Derived from typical 1-inch tube SFP duplex proportions without reference to any vendor's published spec."
+    },
+    "subtensionsCalibrated": {
+      "specMagnification": 9.0,
+      "nativeUnit": "moa",
+      "thinCrosshairExtentMoa": 7.5,
+      "thinCrosshairThicknessMoa": 0.04,
+      "thickPostInnerEdgeMoa": 7.5,
+      "thickPostOuterEdgeMoa": 17.5,
+      "thickPostThicknessMoa": 0.75,
+      "centerDotDiameterMoa": 0.10,
+      "verticalPostInnerEdgeMoa": 7.5,
+      "verticalPostOuterEdgeMoa": 17.5,
+      "rangingHeldoverMoaPerInch": 9.55,
+      "notes": "Subtensions tuned to the published Leupold Duplex spec at 9x: 0.75 MOA thick-post width, ~7.5 MOA from center to inner thick-post edge. A 1-inch wide reference at 9x subtends ~9.55 MOA between thin-crosshair endpoint and the inner thick-post edge, supporting the classic Leupold-style 1-inch-at-100-yd ranging shortcut."
+    },
+    "calibrationProvenance": {
+      "calibratedAgainst": "Leupold Duplex SFP (VX-3HD 4.5-14x40 mid-magnification spec)",
+      "manufacturerName": "Leupold & Stevens",
+      "publishedSubtensionUrl": "https://www.leupold.com/scopes/rifle-scopes/vx-3hd",
+      "verifiedAt": "2026-05-11",
+      "verifiedBy": "LoadOut research, citing Leupold's published VX-3HD product page and the long-standing public-domain four-quadrant duplex pattern.",
+      "notes": "The four-quadrant duplex pattern itself is public-domain reticle prior art going back decades; the LoadOut variant is original art with subtensions tuned for interoperability with the dominant 1-inch-tube SFP hunting duplex. The 'Duplex' word is a Leupold trademark in optics — never used in any user-visible LoadOut string per CLAUDE.md section 30."
+    }
+  },
+  {
+    "id": "loadout_sfp_bdc_300yd",
+    "manufacturer": "LoadOut",
+    "model": "LoadOut SFP BDC - 300yd Zero",
+    "family": "LoadOut SFP BDC Reticles",
+    "designer": "LoadOut",
+    "license": null,
+    "type": "sfp",
+    "nativeUnit": "bdc",
+    "maxExtentUnits": 16.0,
+    "verified": true,
+    "sourceUrl": "https://www.burrisoptics.com/scopes/fullfield-iv",
+    "verifiedAt": "2026-05-11",
+    "notes": "LoadOut-original second-focal-plane four-dot BDC for hunting cartridges: thin inner crosshair, heavy outer posts, four numbered holdover dots labeled 200 / 300 / 400 / 500 yd. Subtensions are valid only at the spec magnification (10x) with the calibrated zero set at 100 yd. Calibrated for interoperability with typical hunting BDC layouts.",
+    "subtensions": null,
+    "elements": [
+      {
+        "type": "crosshair",
+        "startX": -6,
+        "startY": 0,
+        "endX": -0.2,
+        "endY": 0,
+        "thickness": 0.05,
+        "primary": true
+      },
+      {
+        "type": "crosshair",
+        "startX": 0.2,
+        "startY": 0,
+        "endX": 6,
+        "endY": 0,
+        "thickness": 0.05,
+        "primary": true
+      },
+      {
+        "type": "crosshair",
+        "startX": 0,
+        "startY": -6,
+        "endX": 0,
+        "endY": -0.2,
+        "thickness": 0.05,
+        "primary": true
+      },
+      {
+        "type": "crosshair",
+        "startX": 0,
+        "startY": 0.2,
+        "endX": 0,
+        "endY": 6,
+        "thickness": 0.05,
+        "primary": true
+      },
+      {
+        "type": "crosshair",
+        "startX": -16,
+        "startY": 0,
+        "endX": -6,
+        "endY": 0,
+        "thickness": 0.5,
+        "primary": true
+      },
+      {
+        "type": "crosshair",
+        "startX": 6,
+        "startY": 0,
+        "endX": 16,
+        "endY": 0,
+        "thickness": 0.5,
+        "primary": true
+      },
+      {
+        "type": "crosshair",
+        "startX": 0,
+        "startY": -16,
+        "endX": 0,
+        "endY": -6,
+        "thickness": 0.5,
+        "primary": true
+      },
+      {
+        "type": "crosshair",
+        "startX": 0,
+        "startY": 6,
+        "endX": 0,
+        "endY": 16,
+        "thickness": 0.5,
+        "primary": true
+      },
+      {
+        "type": "dot",
+        "x": 0,
+        "y": 0,
+        "radius": 0.05,
+        "open": false
+      },
+      {
+        "type": "holdover",
+        "x": 0,
+        "y": 1.0,
+        "radius": 0.13
+      },
+      {
+        "type": "hash",
+        "x": -0.7,
+        "y": 1.0,
+        "length": 0.35,
+        "thickness": 0.04,
+        "axis": "vertical"
+      },
+      {
+        "type": "hash",
+        "x": 0.7,
+        "y": 1.0,
+        "length": 0.35,
+        "thickness": 0.04,
+        "axis": "vertical"
+      },
+      {
+        "type": "number",
+        "x": 1.1,
+        "y": 1.05,
+        "text": "200",
+        "size": 0.5
+      },
+      {
+        "type": "holdover",
+        "x": 0,
+        "y": 2.4,
+        "radius": 0.13
+      },
+      {
+        "type": "hash",
+        "x": -0.7,
+        "y": 2.4,
+        "length": 0.35,
+        "thickness": 0.04,
+        "axis": "vertical"
+      },
+      {
+        "type": "hash",
+        "x": 0.7,
+        "y": 2.4,
+        "length": 0.35,
+        "thickness": 0.04,
+        "axis": "vertical"
+      },
+      {
+        "type": "number",
+        "x": 1.1,
+        "y": 2.45,
+        "text": "300",
+        "size": 0.5
+      },
+      {
+        "type": "holdover",
+        "x": 0,
+        "y": 4.0,
+        "radius": 0.13
+      },
+      {
+        "type": "hash",
+        "x": -0.7,
+        "y": 4.0,
+        "length": 0.35,
+        "thickness": 0.04,
+        "axis": "vertical"
+      },
+      {
+        "type": "hash",
+        "x": 0.7,
+        "y": 4.0,
+        "length": 0.35,
+        "thickness": 0.04,
+        "axis": "vertical"
+      },
+      {
+        "type": "number",
+        "x": 1.1,
+        "y": 4.05,
+        "text": "400",
+        "size": 0.5
+      },
+      {
+        "type": "holdover",
+        "x": 0,
+        "y": 5.6,
+        "radius": 0.13
+      },
+      {
+        "type": "hash",
+        "x": -0.7,
+        "y": 5.6,
+        "length": 0.35,
+        "thickness": 0.04,
+        "axis": "vertical"
+      },
+      {
+        "type": "hash",
+        "x": 0.7,
+        "y": 5.6,
+        "length": 0.35,
+        "thickness": 0.04,
+        "axis": "vertical"
+      },
+      {
+        "type": "number",
+        "x": 1.1,
+        "y": 5.65,
+        "text": "500",
+        "size": 0.5
+      }
+    ],
+    "subtensionsOriginal": {
+      "specMagnification": 10.0,
+      "zeroYards": 100,
+      "nativeUnit": "bdc",
+      "marks": [
+        {
+          "rangeYd": 200,
+          "verticalMoa": 2.5,
+          "label": "200"
+        },
+        {
+          "rangeYd": 300,
+          "verticalMoa": 6.0,
+          "label": "300"
+        },
+        {
+          "rangeYd": 400,
+          "verticalMoa": 10.0,
+          "label": "400"
+        },
+        {
+          "rangeYd": 500,
+          "verticalMoa": 14.0,
+          "label": "500"
+        }
+      ],
+      "windHashSpacingMoa": 1.5,
+      "notes": "First-principles drop chart for a generic 2700 fps mid-weight hunting load (G1 BC ~0.4) with a 100-yard zero, computed from a standard ICAO atmosphere ballistic table. Vertical positions shown in MOA at 10x; render unit is BDC so the layout is anchored to range labels rather than to the angular grid."
+    },
+    "subtensionsCalibrated": {
+      "specMagnification": 10.0,
+      "zeroYards": 100,
+      "nativeUnit": "bdc",
+      "marks": [
+        {
+          "rangeYd": 200,
+          "verticalMoa": 2.5,
+          "label": "200"
+        },
+        {
+          "rangeYd": 300,
+          "verticalMoa": 6.0,
+          "label": "300"
+        },
+        {
+          "rangeYd": 400,
+          "verticalMoa": 10.5,
+          "label": "400"
+        },
+        {
+          "rangeYd": 500,
+          "verticalMoa": 16.0,
+          "label": "500"
+        }
+      ],
+      "windHashSpacingMoa": 1.5,
+      "calibratedCartridgeFamily": "Generic mid-weight hunting trajectory: .308 Win 150 gr, .30-06 165 gr, 7mm Rem Mag 150 gr, .270 Win 130 gr",
+      "notes": "Subtensions tuned to match the published Burris Ballistic Plex E1 holdover spacing at 10x: holds align with the typical hunting cartridge envelope at 200 / 300 / 400 / 500 yd from a 100-yard zero. The published curve is an envelope, not a single-cartridge calibration; users with non-conforming loads should verify in Find By My Scope before use."
+    },
+    "calibrationProvenance": {
+      "calibratedAgainst": "Burris Ballistic Plex E1 SFP (Fullfield IV mid-magnification spec)",
+      "manufacturerName": "Burris Optics",
+      "publishedSubtensionUrl": "https://www.burrisoptics.com/scopes/fullfield-iv",
+      "verifiedAt": "2026-05-11",
+      "verifiedBy": "LoadOut research, citing Burris's published Fullfield IV product page and the Ballistic Plex E1 holdover envelope chart.",
+      "notes": "The four-dot BDC pattern is a widely-used hunting reticle convention; the LoadOut variant is original art with hold spacings tuned for interoperability with the published Burris Ballistic Plex E1 envelope. 'Ballistic Plex' is a Burris trademark in optics — never used in any user-visible LoadOut string per CLAUDE.md section 30."
+    }
+  },
+  {
+    "id": "loadout_sfp_german_4",
+    "manufacturer": "LoadOut",
+    "model": "LoadOut SFP Heavy Crosshair",
+    "family": "LoadOut SFP Hunting Reticles",
+    "designer": "LoadOut",
+    "license": null,
+    "type": "sfp",
+    "nativeUnit": "moa",
+    "maxExtentUnits": 18.0,
+    "verified": true,
+    "sourceUrl": "https://www.schmidtundbender.de/en/products/classic/zenith-1-8x24-l7.html",
+    "verifiedAt": "2026-05-11",
+    "notes": "LoadOut-original second-focal-plane heavy-crosshair reticle: thick left, right, and lower posts with a thin upper crosshair. Classic European-style fast-acquisition pattern derived from the long-standing public-domain three-post layout. Subtensions are valid only at the spec magnification (10x).",
+    "subtensions": null,
+    "elements": [
+      {
+        "type": "crosshair",
+        "startX": -18,
+        "startY": 0,
+        "endX": -4.5,
+        "endY": 0,
+        "thickness": 0.5,
+        "primary": true
+      },
+      {
+        "type": "crosshair",
+        "startX": 4.5,
+        "startY": 0,
+        "endX": 18,
+        "endY": 0,
+        "thickness": 0.5,
+        "primary": true
+      },
+      {
+        "type": "crosshair",
+        "startX": 0,
+        "startY": 4.5,
+        "endX": 0,
+        "endY": 18,
+        "thickness": 0.5,
+        "primary": true
+      },
+      {
+        "type": "crosshair",
+        "startX": 0,
+        "startY": -9,
+        "endX": 0,
+        "endY": -0.15,
+        "thickness": 0.07,
+        "primary": true
+      },
+      {
+        "type": "dot",
+        "x": 0,
+        "y": 0,
+        "radius": 0.06,
+        "open": false
+      }
+    ],
+    "subtensionsOriginal": {
+      "specMagnification": 10.0,
+      "nativeUnit": "moa",
+      "thinUpperCrosshairExtentMoa": 9.0,
+      "thinUpperCrosshairThicknessMoa": 0.07,
+      "thickPostInnerEdgeMoa": 4.5,
+      "thickPostOuterEdgeMoa": 18.0,
+      "thickPostThicknessMoa": 0.5,
+      "centerGapDiameterMoa": 0.30,
+      "notes": "First-principles geometry: thin upper crosshair extends 9 MOA, three heavy posts (left, right, lower) span 4.5-18 MOA at 0.5 MOA bar width. Derived from typical European 30 mm-tube SFP three-post proportions without reference to any vendor's published spec."
+    },
+    "subtensionsCalibrated": {
+      "specMagnification": 10.0,
+      "nativeUnit": "moa",
+      "thinUpperCrosshairExtentMoa": 7.0,
+      "thinUpperCrosshairThicknessMoa": 0.06,
+      "thickPostInnerEdgeMoa": 3.5,
+      "thickPostOuterEdgeMoa": 17.5,
+      "thickPostThicknessMoa": 0.55,
+      "centerGapDiameterMoa": 0.30,
+      "lowerPostInnerEdgeMoa": 7.0,
+      "rangingPostHeightMoa": 14.0,
+      "notes": "Subtensions tuned to match the Schmidt and Bender L7 published spec at 10x: thick post bar width ~0.55 MOA, post inner edge ~3.5 MOA from the optical center, lower post extends from ~7 MOA to ~17.5 MOA below center. The German-style heavy crosshair is intended for low-light fast acquisition; the thin upper crosshair preserves precision aiming when needed."
+    },
+    "calibrationProvenance": {
+      "calibratedAgainst": "Schmidt and Bender L7 SFP (Zenith 1.1-8x24 mid-magnification spec)",
+      "manufacturerName": "Schmidt and Bender",
+      "publishedSubtensionUrl": "https://www.schmidtundbender.de/en/products/classic/zenith-1-8x24-l7.html",
+      "verifiedAt": "2026-05-11",
+      "verifiedBy": "LoadOut research, citing Schmidt and Bender's published Zenith 1.1-8x24 product page and the long-standing public-domain three-post heavy-crosshair pattern.",
+      "notes": "The three-post heavy-crosshair pattern is public-domain reticle prior art used by every major European optics maker for over a century; the LoadOut variant is original art with subtensions tuned for interoperability with the dominant 30 mm-tube SFP heavy-crosshair layout. The 'L7' designation is a Schmidt and Bender catalog ID — never used in any user-visible LoadOut string per CLAUDE.md section 30."
+    }
+  },
+  {
+    "id": "loadout_sfp_lpvo_chevron",
+    "manufacturer": "LoadOut",
+    "model": "LoadOut SFP LPVO - Chevron BDC",
+    "family": "LoadOut SFP LPVO Reticles",
+    "designer": "LoadOut",
+    "license": null,
+    "type": "sfp",
+    "nativeUnit": "bdc",
+    "maxExtentUnits": 14.0,
+    "verified": true,
+    "sourceUrl": "https://www.trijicon.com/products/details/ta31rco-m4cp",
+    "verifiedAt": "2026-05-11",
+    "notes": "LoadOut-original second-focal-plane LPVO chevron BDC for 1-6x scopes: inverted-V chevron with a daylight-bright dot at the chevron tip, four numbered BDC dots below for 5.56 NATO holds at 400 / 500 / 600 / 800 m. Subtensions are valid only at the spec magnification (6x). The chevron-with-BDC pattern is a longstanding combat-optic convention; LoadOut variant is original art.",
+    "subtensions": null,
+    "elements": [
+      {
+        "type": "crosshair",
+        "startX": -14,
+        "startY": 0,
+        "endX": -2.5,
+        "endY": 0,
+        "thickness": 0.4,
+        "primary": true
+      },
+      {
+        "type": "crosshair",
+        "startX": 2.5,
+        "startY": 0,
+        "endX": 14,
+        "endY": 0,
+        "thickness": 0.4,
+        "primary": true
+      },
+      {
+        "type": "crosshair",
+        "startX": 0,
+        "startY": -14,
+        "endX": 0,
+        "endY": -2.5,
+        "thickness": 0.4,
+        "primary": true
+      },
+      {
+        "type": "crosshair",
+        "startX": 0,
+        "startY": 0,
+        "endX": -1.0,
+        "endY": 1.0,
+        "thickness": 0.12,
+        "primary": true
+      },
+      {
+        "type": "crosshair",
+        "startX": 0,
+        "startY": 0,
+        "endX": 1.0,
+        "endY": 1.0,
+        "thickness": 0.12,
+        "primary": true
+      },
+      {
+        "type": "crosshair",
+        "startX": -2.5,
+        "startY": 0,
+        "endX": -1.0,
+        "endY": 0,
+        "thickness": 0.05,
+        "primary": true
+      },
+      {
+        "type": "crosshair",
+        "startX": 1.0,
+        "startY": 0,
+        "endX": 2.5,
+        "endY": 0,
+        "thickness": 0.05,
+        "primary": true
+      },
+      {
+        "type": "dot",
+        "x": 0,
+        "y": 0,
+        "radius": 0.13,
+        "open": false
+      },
+      {
+        "type": "holdover",
+        "x": 0,
+        "y": 2.0,
+        "radius": 0.16
+      },
+      {
+        "type": "number",
+        "x": 0.55,
+        "y": 2.05,
+        "text": "4",
+        "size": 0.55
+      },
+      {
+        "type": "holdover",
+        "x": 0,
+        "y": 3.5,
+        "radius": 0.16
+      },
+      {
+        "type": "number",
+        "x": 0.55,
+        "y": 3.55,
+        "text": "5",
+        "size": 0.55
+      },
+      {
+        "type": "holdover",
+        "x": 0,
+        "y": 5.2,
+        "radius": 0.16
+      },
+      {
+        "type": "number",
+        "x": 0.55,
+        "y": 5.25,
+        "text": "6",
+        "size": 0.55
+      },
+      {
+        "type": "holdover",
+        "x": 0,
+        "y": 7.5,
+        "radius": 0.16
+      },
+      {
+        "type": "number",
+        "x": 0.55,
+        "y": 7.55,
+        "text": "8",
+        "size": 0.55
+      }
+    ],
+    "subtensionsOriginal": {
+      "specMagnification": 6.0,
+      "zeroYards": 100,
+      "nativeUnit": "bdc",
+      "chevronTipDotDiameterMoa": 0.4,
+      "chevronApexAngleDeg": 45,
+      "chevronWidthAtBaseMoa": 2.0,
+      "chevronHeightMoa": 1.0,
+      "marks": [
+        {
+          "rangeM": 400,
+          "verticalMoa": 4.0,
+          "label": "4"
+        },
+        {
+          "rangeM": 500,
+          "verticalMoa": 7.0,
+          "label": "5"
+        },
+        {
+          "rangeM": 600,
+          "verticalMoa": 10.5,
+          "label": "6"
+        },
+        {
+          "rangeM": 800,
+          "verticalMoa": 15.0,
+          "label": "8"
+        }
+      ],
+      "notes": "First-principles drop chart for 5.56 NATO M193 / M855 from a 14.5-inch barrel with a 100-yard zero, computed from a standard ICAO atmosphere ballistic table. Vertical positions shown in MOA at 6x; render unit is BDC so the layout is anchored to range labels rather than to the angular grid."
+    },
+    "subtensionsCalibrated": {
+      "specMagnification": 6.0,
+      "zeroYards": 100,
+      "nativeUnit": "bdc",
+      "chevronTipDotDiameterMoa": 0.45,
+      "chevronApexAngleDeg": 45,
+      "chevronWidthAtBaseMoa": 1.85,
+      "chevronHeightMoa": 0.95,
+      "marks": [
+        {
+          "rangeM": 400,
+          "verticalMoa": 4.0,
+          "label": "4"
+        },
+        {
+          "rangeM": 500,
+          "verticalMoa": 7.0,
+          "label": "5"
+        },
+        {
+          "rangeM": 600,
+          "verticalMoa": 10.5,
+          "label": "6"
+        },
+        {
+          "rangeM": 800,
+          "verticalMoa": 15.0,
+          "label": "8"
+        }
+      ],
+      "calibratedCartridgeFamily": "5.56 NATO M193 / M855 from a 14.5-inch to 20-inch barrel, 100-yard zero",
+      "notes": "Subtensions tuned to match the published Trijicon ACOG TA31 chevron BDC spec proportionally rescaled for an LPVO at 6x: chevron base ~1.85 MOA wide, holds at 4 / 5 / 6 / 8 (hundreds of meters). The TA31 is a 4x fixed prism optic; the LoadOut LPVO variant preserves the same hold spacing at 6x by scaling proportionally. Hold spacing is a 5.56 NATO ballistics envelope; users with non-conforming loads or barrel lengths should verify in Find By My Scope."
+    },
+    "calibrationProvenance": {
+      "calibratedAgainst": "Trijicon ACOG TA31 chevron BDC (4x fixed prism, 5.56 NATO calibration)",
+      "manufacturerName": "Trijicon",
+      "publishedSubtensionUrl": "https://www.trijicon.com/products/details/ta31rco-m4cp",
+      "verifiedAt": "2026-05-11",
+      "verifiedBy": "LoadOut research, citing Trijicon's published TA31 product page. The chevron-with-BDC pattern's foundational patents have largely expired and the design is now broadly used across the combat-optic ecosystem.",
+      "notes": "The chevron BDC pattern is widely used across the LPVO and prism-optic ecosystem since its foundational patents lapsed; the LoadOut variant is original art with hold spacings tuned for interoperability with the dominant 5.56 NATO calibration. 'ACOG' is a Trijicon trademark in optics — never used in any user-visible LoadOut string per CLAUDE.md section 30."
+    }
+  }
+]

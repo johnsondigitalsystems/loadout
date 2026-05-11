@@ -6,12 +6,12 @@
 // Settings → Privacy & Data submenu. Brings together every action that
 // affects what gets stored, sent off-device, or wiped:
 //
-//   * Crashlytics opt-in toggle
+//   * Crashlytics opt-in toggle (default ON; see CLAUDE.md §29)
 //   * Export my data (JSON local export)
-//   * Delete my data (triple-confirm wipe)
 //   * Privacy Policy link
 //   * Terms of Service link
 //   * Re-read safety disclaimer
+//   * Delete my data (triple-confirm wipe)
 //
 // Cloud Backup / Cloud Sync live on their own dedicated screens (linked
 // from the top-level Settings page), so this submenu is the audit /
@@ -304,7 +304,7 @@ class _DeleteDataSheetState extends State<_DeleteDataSheet> {
                     ? () => Navigator.of(context).pop(true)
                     : null,
                 icon: const Icon(Icons.delete_forever),
-                label: const Text('Delete everything.'),
+                label: const Text('Delete Everything.'),
               ),
             ),
             const SizedBox(height: 8),

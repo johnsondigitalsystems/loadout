@@ -101,7 +101,7 @@ class _BatchesListScreenState extends State<BatchesListScreen> {
                     ),
                   ),
                   icon: const Icon(Icons.add),
-                  label: const Text('Start batch'),
+                  label: const Text('Start Batch'),
                 ),
               ],
             ),

@@ -120,6 +120,7 @@ import 'database/seed_loader.dart';
 import 'firebase_options.dart';
 import 'services/crash_reporter.dart';
 import 'services/device_compatibility_service.dart';
+import 'services/hang_detector.dart';
 import 'services/purchases_service.dart';
 import 'services/seed_updater.dart';
 
@@ -340,4 +341,11 @@ Future<void> _configureCrashlytics() async {
       osVersion: kIsWeb ? 'web' : Platform.operatingSystemVersion,
     ),
   );
+
+  // Start the hang + slow-frame detector so freezes (synchronous heavy
+  // work, stuck animations, blocked event loop) surface as non-fatal
+  // reports alongside thrown errors. Reports flow through the same
+  // `CrashReporter` chokepoint, so the user's opt-out + platform
+  // gating apply automatically. See `lib/services/hang_detector.dart`.
+  if (enabled) HangDetector.instance.start();
 }

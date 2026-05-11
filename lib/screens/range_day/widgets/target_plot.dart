@@ -240,6 +240,7 @@ class TargetPlot extends StatelessWidget {
     this.rackChildren,
     this.activeRackChildIndex,
     this.colorHexOverride,
+    this.rangeYards,
   });
 
   /// Target geometry / color. In rack mode this is the active child's
@@ -306,6 +307,15 @@ class TargetPlot extends StatelessWidget {
   /// doesn't bleed across the whole rack. Null = use natural color.
   final String? colorHexOverride;
 
+  /// Distance to the target in yards. Used by the realistic-mode
+  /// painter to scale the target to its true angular size — a 30"
+  /// target at 500 yards subtends only ~1.67 mil and should appear
+  /// dwarfed by a 14-mil reticle tree, not larger than it. When
+  /// null the painter falls back to the legacy fixed-fraction
+  /// scaling (kept so callers without distance context — e.g.
+  /// component previews in onboarding — still render).
+  final double? rangeYards;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -338,6 +348,8 @@ class TargetPlot extends StatelessWidget {
             targetHeightIn: target.heightIn,
             rackChildren: rackChildren,
             activeRackChildIndex: activeRackChildIndex,
+            rangeYards: rangeYards,
+            reticle: reticle,
           );
           final targetRect = viewMode == TargetPlotViewMode.targetFocused
               ? Offset.zero & outerSize
@@ -517,12 +529,24 @@ class _RealisticLayout {
   /// Soft-fails on weird inputs (zero or negative dimensions, empty
   /// rack list) by falling back to sensible defaults so the painter
   /// never blows up at runtime.
+  ///
+  /// `rangeYards` and `reticle` together drive the realistic
+  /// mil-based target sizing. When BOTH are present, the target is
+  /// scaled to its true angular size (small-angle approximation
+  /// `mil = inches / (yd × 36) × 1000`) and rendered relative to the
+  /// reticle's own field-of-view, so a 30" IPSC at 500yd looks
+  /// dwarfed next to the reticle's 14-mil tree just like through a
+  /// real scope. When either is null, the painter falls back to the
+  /// legacy fixed-fraction scaling (22% of canvas width) — keeps
+  /// onboarding-deck previews working without distance context.
   factory _RealisticLayout.compute({
     required Size outerSize,
     required double targetWidthIn,
     required double targetHeightIn,
     required List<RackChildSpec>? rackChildren,
     required int? activeRackChildIndex,
+    double? rangeYards,
+    ReticleDefinition? reticle,
   }) {
     final w = math.max(outerSize.width, 1.0);
     final h = math.max(outerSize.height, 1.0);
@@ -536,25 +560,74 @@ class _RealisticLayout {
     final isRack = rackChildren != null && rackChildren.isNotEmpty;
 
     // Single-target layout: target sits on a pole rising from the
-    // dirt mound. The active rect occupies ~22% of canvas width so
-    // the user has plenty of margin around the target inside the
-    // scope ring.
+    // dirt mound. Sizing is mil-based when range + reticle are both
+    // available, falling back to fixed-fraction otherwise.
     if (!isRack) {
       final tw = math.max(targetWidthIn, 1.0);
       final th = math.max(targetHeightIn, 1.0);
       final aspect = tw / th;
-      // Scale the target by its real aspect ratio. We anchor on width
-      // so a wide rectangle stays wide — keeps perceived "look" stable
-      // across target shapes.
-      final targetWidthPx = w * 0.22;
-      final targetHeightPx = targetWidthPx / aspect;
-      // Vertical position: target stands just above the horizon
-      // (~50% canvas height) so it visually sits on the dirt mound.
-      // Horizon y = 50% of canvas height (matches
-      // ScopeDaytimeBackdropPainter). The target's bottom edge is
-      // 12% of canvas height ABOVE the horizon — same offset the
-      // backdrop's mound crest uses.
-      final horizonY = h * 0.50;
+
+      // ── Sizing ────────────────────────────────────────────────────
+      double targetWidthPx;
+      double targetHeightPx;
+      if (rangeYards != null && rangeYards > 0 && reticle != null) {
+        // Mil-based sizing. The reticle's `maxExtentUnits` (in its
+        // native unit) is the half-extent visible inside the scope
+        // ring. We add 1.4× margin to match the FFP convention used
+        // by the full ScopeViewScreen painter (lib/screens/range_day/
+        // scope_view_screen.dart `_fovHalfMil`). pxPerMil is then
+        // diameter/(2 × halfFovMil).
+        final halfExtentNative = math.max(reticle.maxExtentUnits, 1.0);
+        // Convert to mil if the reticle's native unit is MOA.
+        final halfExtentMil = reticle.nativeUnit == ReticleNativeUnit.moa
+            ? halfExtentNative / 3.4377  // mil-per-MOA conversion
+            : halfExtentNative;
+        final fovHalfMil = halfExtentMil * 1.4;
+        final pxPerMil = scopeRadius / fovHalfMil;
+        // Small-angle approximation: mil = in / (yd × 36) × 1000
+        final widthMil = tw / (rangeYards * 36.0) * 1000.0;
+        final heightMil = th / (rangeYards * 36.0) * 1000.0;
+        targetWidthPx = widthMil * pxPerMil;
+        targetHeightPx = heightMil * pxPerMil;
+        // Floor at a pixel — degenerate inputs (rangeYd massive or
+        // target tiny) shouldn't render an invisible target. The user
+        // still sees ONE pixel that signals the target is there.
+        targetWidthPx = math.max(targetWidthPx, 1.0);
+        targetHeightPx = math.max(targetHeightPx, 1.0);
+        // Cap at 90% of the scope diameter so very-close-range cases
+        // (e.g. 25yd plinking) don't overflow the scope ring.
+        final maxAllowedPx = scopeRadius * 1.8;
+        if (targetWidthPx > maxAllowedPx) {
+          final scale = maxAllowedPx / targetWidthPx;
+          targetWidthPx *= scale;
+          targetHeightPx *= scale;
+        }
+      } else {
+        // Legacy fixed-fraction fallback for callers without distance
+        // context. 18% of canvas width: small enough that a tall
+        // 18×30 IPSC silhouette (aspect 0.6 → height = 1.667× width)
+        // sits entirely above the dirt-mound crest at horizonY = 0.62,
+        // but large enough that the silhouette's head + shoulder
+        // taper read as a recognisable bottle shape rather than a
+        // featureless rectangle. The user's complaint that the
+        // previous 16% rendered "too zoomed in" was symptomatic of
+        // the silhouette geometry being too coarse at that size —
+        // we've replaced the old two-rects rendering with a real
+        // path-based bottle (see `_paintIpscSilhouette`) and bumped
+        // the size so the shoulders are clearly visible.
+        targetWidthPx = w * 0.18;
+        targetHeightPx = targetWidthPx / aspect;
+      }
+
+      // ── Vertical positioning ──────────────────────────────────────
+      // Horizon sits LOWER than canvas-center now (was 0.50). At 0.62
+      // the scope view shows roughly 60% sky / 40% ground, which
+      // looks like a real prone / bench shooting picture and pushes
+      // the dirt mound + target into the lower half of the FOV — the
+      // user explicitly asked for this. The backdrop painter
+      // (`scope_daytime_backdrop.dart`) reads the same convention so
+      // the two stay aligned.
+      final horizonY = h * 0.62;
       final crestY = horizonY - h * 0.12;
       final targetBottom = crestY + h * 0.005;
       final targetTop = targetBottom - targetHeightPx;
@@ -928,35 +1001,97 @@ class _RealisticTargetPainter extends CustomPainter {
   }
 
   void _paintIpscSilhouette(Canvas canvas, Rect rect) {
-    // Cardboard-style upper torso: rounded body + rounded head. Same
-    // shapes as ScopeDaytimeBackdropPainter._paintTarget for
-    // visual consistency.
-    final cx = rect.center.dx;
+    // Real IPSC / USPSA Classic silhouette path. Per official USPSA
+    // dimensions the target is 18" wide × 30" tall with the head
+    // measuring 6" wide × 6" tall and the shoulders tapering from
+    // the 6" neck out to the 18" body across a roughly 4" vertical
+    // span. We bake those proportions directly into a `Path` so the
+    // result reads as a recognisable IPSC bottle at any size — the
+    // previous "two separate rounded rects" version looked like a
+    // single rounded rectangle once the target got small enough for
+    // the gap and head to disappear visually.
+    //
+    // Coordinate breakdown (fractions of widthPx / heightPx, where
+    // rect.top is the top of the head and rect.bottom is the base
+    // sitting on the dirt mound):
+    //
+    //   y = 0.000          head top
+    //   y = 0.200          head bottom / neck top  (head occupies top 20%)
+    //   y = 0.333          shoulder line — taper from head width out
+    //                      to body width
+    //   y = 1.000          body base
+    //
+    //   x = 0.000          left edge of body
+    //   x = 0.333          left edge of head (= width × 0.333)
+    //   x = 0.667          right edge of head
+    //   x = 1.000          right edge of body
     final widthPx = rect.width;
     final heightPx = rect.height;
-    final centerY = rect.center.dy;
-    final bodyRect = Rect.fromCenter(
-      center: Offset(cx, centerY + heightPx * 0.10),
-      width: widthPx,
-      height: heightPx * 0.70,
-    );
-    final headRect = Rect.fromCenter(
-      center: Offset(cx, centerY - heightPx * 0.40),
-      width: widthPx * 0.55,
-      height: heightPx * 0.32,
-    );
-    final body = RRect.fromRectAndRadius(
-      bodyRect,
-      Radius.circular(widthPx * 0.10),
-    );
-    final head = RRect.fromRectAndRadius(
-      headRect,
-      Radius.circular(widthPx * 0.18),
-    );
-    canvas.drawRRect(body, _targetFillPaint);
-    canvas.drawRRect(head, _targetFillPaint);
-    canvas.drawRRect(body, _targetOutlinePaint);
-    canvas.drawRRect(head, _targetOutlinePaint);
+    final left = rect.left;
+    final top = rect.top;
+
+    // Pre-compute the eight key points along the silhouette outline,
+    // walked clockwise from the top-left corner of the head.
+    final headLeft = left + widthPx * 0.333;
+    final headRight = left + widthPx * 0.667;
+    final headTop = top;
+    final headBottomY = top + heightPx * 0.20;
+    final shoulderY = top + heightPx * 0.30;
+    final bodyLeft = left;
+    final bodyRight = left + widthPx;
+    final bodyBottom = top + heightPx;
+
+    // Cornering radii — head gets a generous round (looks like a
+    // real cardboard head box) and the body's bottom corners get a
+    // tiny round so the silhouette doesn't read as sharp-cornered
+    // (real USPSA targets are mildly rounded too).
+    final headCornerR = widthPx * 0.06;
+    final bodyCornerR = widthPx * 0.04;
+
+    final path = Path()
+      // Start at top-left of head, just below the head's top corner
+      // so we can arc into the corner cleanly.
+      ..moveTo(headLeft, headTop + headCornerR)
+      // Top-left rounded corner of head.
+      ..quadraticBezierTo(
+        headLeft, headTop, // control = corner
+        headLeft + headCornerR, headTop, // end = top edge
+      )
+      // Top edge of head.
+      ..lineTo(headRight - headCornerR, headTop)
+      // Top-right rounded corner of head.
+      ..quadraticBezierTo(
+        headRight, headTop,
+        headRight, headTop + headCornerR,
+      )
+      // Right side of head down to the neck.
+      ..lineTo(headRight, headBottomY)
+      // Diagonal shoulder line tapering out to body width.
+      ..lineTo(bodyRight, shoulderY)
+      // Right side of body straight down.
+      ..lineTo(bodyRight, bodyBottom - bodyCornerR)
+      // Bottom-right rounded corner.
+      ..quadraticBezierTo(
+        bodyRight, bodyBottom,
+        bodyRight - bodyCornerR, bodyBottom,
+      )
+      // Bottom edge across to the left.
+      ..lineTo(bodyLeft + bodyCornerR, bodyBottom)
+      // Bottom-left rounded corner.
+      ..quadraticBezierTo(
+        bodyLeft, bodyBottom,
+        bodyLeft, bodyBottom - bodyCornerR,
+      )
+      // Left side of body up to the shoulder.
+      ..lineTo(bodyLeft, shoulderY)
+      // Diagonal shoulder line tapering in toward the neck.
+      ..lineTo(headLeft, headBottomY)
+      // Left side of head up to the top-left corner radius.
+      ..lineTo(headLeft, headTop + headCornerR)
+      ..close();
+
+    canvas.drawPath(path, _targetFillPaint);
+    canvas.drawPath(path, _targetOutlinePaint);
   }
 
   void _paintAimAndShots(Canvas canvas) {

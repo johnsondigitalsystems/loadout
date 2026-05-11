@@ -22,6 +22,13 @@ plugins {
     id("com.android.application") version "8.11.1" apply false
     // START: FlutterFire Configuration
     id("com.google.gms.google-services") version("4.3.15") apply false
+    // Crashlytics Gradle plugin — required for the native Android SDK to
+    // bootstrap fully (without it, Dart-side `recordError` calls succeed
+    // but Firebase silently drops the reports and the Console keeps
+    // showing the "Add SDK" onboarding page). Pinned to 2.9.9 because
+    // 3.x requires the Gradle daemon to run on JDK 17; our daemon is
+    // currently on Java 11. Move to 3.x when the daemon's JVM moves.
+    id("com.google.firebase.crashlytics") version("2.9.9") apply false
     // END: FlutterFire Configuration
     id("org.jetbrains.kotlin.android") version "2.2.20" apply false
     // Compose Compiler plugin — required by `:wear` (Compose for Wear OS) since

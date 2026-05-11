@@ -285,7 +285,7 @@ class _PhotoImportScreenState extends State<PhotoImportScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Import from photo'),
+        title: const Text('Import From Photo'),
         leading: IconButton(
           icon: const Icon(Icons.close),
           tooltip: 'Cancel',

@@ -153,6 +153,29 @@ If in doubt: is this a NAME of something (button, card, section,
 screen, picker option)? → Title Case. Is it a SENTENCE describing
 something? → sentence case.
 
+### Edge cases — ASK before flipping a label that might look weird
+
+Title Case is the firm default. But for a small set of labels the
+mechanical Title-Case form actively reads worse to users — usually
+because the label is technically a fragment of a sentence ("Delete
+my data", "Don't know your MV?", "What's a BC?") or because a
+manufacturer phrase has its own established casing in the
+shooting-community vernacular.
+
+**When you find a label that fits Title Case mechanically but feels
+off in context, surface it to the user before changing it.** The
+30-second clarification cost is much lower than the cost of
+shipping a label that reads as awkwardly formal. The user makes
+the final call; engineering does not get to decide unilaterally
+that a label is "too weird for Title Case."
+
+Don't ask for the obvious cases — `Save`, `Cancel`, `Delete
+Profile?`, `Find by My Scope` are all clearly Title-Case. Only
+ask when (a) the label reads naturally as a sentence fragment or
+question, OR (b) shooter-community convention overrides the
+default rule (e.g. "Mil Tree" vs "Mil tree" — the latter is the
+common shooter form).
+
 ## 0b. WORK STYLE (firm rules)
 
 These rules govern how Claude approaches tasks in this repo. The user
@@ -2268,11 +2291,15 @@ can flip it off in Settings → Privacy & Data.
 | | |
 |---|---|
 | Crash service | `lib/services/crash_reporter.dart` (`CrashReporter` singleton — wraps `FirebaseCrashlytics` with privacy-aware custom keys + breadcrumbs; no-ops on web/macOS or when disabled) |
+| Hang + slow-frame detector | `lib/services/hang_detector.dart` (`HangDetector` singleton). Two complementary detectors share one lifecycle-aware service: a `Timer.periodic` heartbeat that measures actual-vs-expected tick lateness (catches general UI-thread blocks > 3s — sync heavy work, plugin deadlocks, runaway build loops), and a `SchedulerBinding.addTimingsCallback` observer that reports any frame > 1s (catches stuck animations, oversized chart redraws, full scroll re-flows). Both route through `CrashReporter.recordError` so the same opt-out + privacy + platform gating apply for free. Throws synthetic `AppHangDetected` / `SlowFrameDetected` types so Crashlytics groups the issues by class. Pauses on `AppLifecycleState.paused` so OS-suspended time isn't counted as a hang; throttles repeats to one report per 30s so a single 30s freeze produces one report, not 30. Started from `lib/main.dart` after `CrashReporter.initialize`. |
 | Universal in-tree boundary | `lib/widgets/app_error_boundary.dart` (`AppErrorBoundary` — wraps every routed screen via `MaterialApp.builder`; on render error, shows fallback panel with Reload + Back; double-records to Crashlytics) |
 | Per-screen boundary (legacy, kept) | `lib/widgets/range_day_safety.dart` (`RangeDayErrorBoundary` + `safeAsync` — predates the universal one but is still wrapped around Range Day for belt-and-suspenders) |
 | Route breadcrumbs | `lib/services/breadcrumb_navigator_observer.dart` (`BreadcrumbNavigatorObserver` — installed in `MaterialApp.navigatorObservers`; emits a Crashlytics log line on every push/pop/replace and sets the `current_route` custom key) |
 | Boot wiring | `lib/main.dart` `_configureCrashlytics()` — reads opt-out pref, calls `CrashReporter.initialize(...)` with `CrashReporterContext` (app version, schema version, platform, OS version) |
 | Settings toggle | `lib/screens/settings/privacy_data_screen.dart` "Send anonymous crash reports" `SwitchListTile` — flips `crashlytics_enabled` pref + calls `setCrashlyticsCollectionEnabled` |
+| Android native plugin | `android/settings.gradle.kts` declares `id("com.google.firebase.crashlytics") version("2.9.9") apply false`; `android/app/build.gradle.kts` applies it alongside `google-services`. Pinned to 2.9.9 — 3.x requires the Gradle daemon to run on JDK 17. **Without this Gradle plugin, Dart-side `recordError` calls succeed but Firebase silently drops the reports** and the Console keeps showing the "Add SDK" onboarding page; the iOS Pod brings everything in via CocoaPods so iOS does not need a parallel step. |
+| iOS dSYM auto-upload | Build phase `[CP] Crashlytics Upload dSYMs` in `ios/Runner.xcodeproj/project.pbxproj` (id `7AC8A41B2C3D4E5F60718293`) — runs after `[CP] Copy Pods Resources` on every build. Calls `${PODS_ROOT}/FirebaseCrashlytics/upload-symbols -gsp ${PROJECT_DIR}/Runner/GoogleService-Info.plist -p ios <dSYM>` so Firebase can symbolicate stack traces server-side. **Without this, every new TestFlight / App Store build arrives at Crashlytics with raw memory addresses** and an engineer has to drag-drop the dSYM through the Console manually for every release. The script silently no-ops when `upload-symbols` is missing (e.g. `pod install` hasn't run on a fresh checkout). |
+| Android R8 mapping auto-upload | The Android analogue of the iOS dSYM phase. Handled implicitly by the `com.google.firebase.crashlytics` Gradle plugin (`mappingFileUploadEnabled` defaults to true); no explicit build hook needed. **Only fires when `isMinifyEnabled = true`** — which is intentionally OFF today (see `android/app/build.gradle.kts` release block). Stack traces from current release builds already show real class/method names, so there's nothing to symbolicate. When R8 is eventually flipped on as a pre-launch APK-size optimization, mapping uploads start automatically — but every plugin that uses reflection (firebase, drift, kotlinx_serialization, etc.) will need explicit `-keep` rules first, and the whole release flow needs a smoke-test pass before shipping. Treat enabling R8 as its own pre-launch task. |
 
 ### "Show what's missing" pattern (Range Day, Internal Ballistics, Ballistic Profile form)
 
@@ -2337,3 +2364,139 @@ When changing the default, also update:
 - This section
 - App Store / Play Store privacy disclosures
 - The Privacy Policy + landing-page copy
+
+## 30. Reticle catalog — dual-track IP posture (firm rule)
+
+LoadOut ships an enriched reticle catalog with TWO subtension data
+sets per LoadOut-original reticle:
+
+- **Option A — `subtensionsOriginal`**: purely original LoadOut
+  subtensions (mil/MOA values for each hashmark, derived from
+  first-principles geometry without reference to any specific
+  manufacturer's published spec). Zero IP risk.
+- **Option B — `subtensionsCalibrated`**: subtension values
+  calibrated against published manufacturer specs (e.g. "this
+  LoadOut Mil Tree's 1-mil hash spacing matches the Vortex EBR-7D
+  published mil grid"). Moderate IP risk; defensible as
+  interoperability data; never exposes the manufacturer's
+  trademarked reticle name as a product entry in our catalog.
+
+**Option B is the production default.** Option A is
+debug-only — accessible via a hidden Settings → Diagnostics
+toggle for engineering use, never marketed as a user feature.
+The dual track exists so we can flip back to A globally with one
+config change if a manufacturer ever sends a takedown letter or
+claims design-patent infringement on a calibrated reticle.
+
+### Schema (additive on `assets/seed_data/reticles_v2.json`)
+
+```json
+{
+  "id": "loadout_default_mil_tree",            // LoadOut-original name
+  "model": "LoadOut Default - Mil Tree",       // user-visible
+  "manufacturer": "LoadOut",                    // ALWAYS "LoadOut"
+  "elements": [...],                            // visual definition
+  "subtensionsOriginal": { ... Option A data ... },
+  "subtensionsCalibrated": { ... Option B data ... },
+  "calibrationProvenance": {
+    "calibratedAgainst": "Vortex EBR-7D MOA/MRAD",
+    "manufacturerName": "Vortex Optics",
+    "publishedSubtensionUrl": "https://vortexoptics.com/...",
+    "verifiedAt": "2026-05-11",
+    "verifiedBy": "LoadOut research, citing manufacturer published spec",
+    "notes": "Used for interoperability calibration only. LoadOut original art retained."
+  },
+  "bdcCalibrations": [
+    {
+      "name": "DMR Standard (.308 175gr SMK)",  // LoadOut name
+      "cartridge": "308win",
+      "muzzleVelocityFps": 2600,
+      "zeroYards": 100,
+      "marks": [
+        {"y": -1.0, "rangeYd": 200, "label": "200"},
+        ...
+      ],
+      "calibratedAgainst": "Hornady BDC published curve",  // INTERNAL — not user-visible
+      "publishedSubtensionUrl": "https://hornady.com/...",
+      "verifiedAt": "2026-05-11"
+    }
+  ]
+}
+```
+
+### Hard rules for any agent / engineer touching reticle data
+
+1. **Never use a manufacturer's trademarked reticle name as the
+   `model`, `id`, or `family` field** of any reticle row. The
+   model is "LoadOut Default - Mil Tree", not "EBR-7D copy".
+2. **`manufacturer` is ALWAYS the string `"LoadOut"`** — even
+   when the calibration data was derived from another brand's
+   published spec.
+3. **`calibratedAgainst` and `publishedSubtensionUrl` capture
+   provenance** for interoperability defense. Always include both
+   when adding Option B subtensions. Pin to the most-current
+   manufacturer-published manual / spec page, not a fan blog or
+   forum post.
+4. **Skip Horus + ACSS reticles entirely.** No Option B
+   calibration against TReMoR2/3, H59, H58, Grid II, or any ACSS
+   variant. Per CLAUDE.md § 4a these are heavily litigated. The
+   LoadOut-original reticle defaults are sufficient — users with
+   those scopes get the LoadOut Mil Tree fallback.
+5. **No manufacturer reticle ARTWORK ever ships** — neither pulled
+   from manufacturer sites nor recreated pixel-accurately. The
+   `elements` array is and stays LoadOut-original.
+6. **The user-facing reticle picker and Find By My Scope sheet
+   never display a manufacturer's reticle name as a product
+   choice.** Internal docs / debug surfaces may reference
+   "calibrated against EBR-7D" descriptively, but that string
+   never appears on a button, tile, or tooltip the user reads.
+7. **The "LoadOut Original — Interoperability Calibration"
+   label** must appear on every reticle preview card, so users
+   understand the tool is not claiming to be the manufacturer's
+   reticle.
+
+### How a runtime decides which subtension set to use
+
+| Setting | Active subtension data |
+|---|---|
+| Production default | `subtensionsCalibrated` (Option B) |
+| Debug toggle ON: "Use Original Subtensions" | `subtensionsOriginal` (Option A) |
+| Calibrated set missing for a reticle | Falls back to `subtensionsOriginal` |
+| Both missing | Falls back to bare element positions (legacy behavior) |
+
+The toggle lives at Settings → Diagnostics → "Use Original
+Reticle Subtensions (Debug)". It's hidden by default and
+requires triple-tap on the version number to reveal — the same
+pattern Android uses for developer mode.
+
+### Liability reduction checklist (do all of these before launch)
+
+- [ ] Every Option B reticle row has a non-null
+  `calibrationProvenance` block citing the manufacturer's
+  published spec page.
+- [ ] No manufacturer reticle name appears in any user-visible
+  string (model, family, picker label, glossary entry).
+- [ ] The reticle picker's preview card prominently displays the
+  "LoadOut Original — Interoperability Calibration" tagline.
+- [ ] The "Use Original Subtensions" debug toggle is gated behind
+  developer mode and not visible in the standard Settings menu.
+- [ ] No Horus or ACSS reticle has a Calibrated subtension entry
+  (search the repo for "horus", "acss", "tremor" before launch).
+- [ ] Privacy & Legal copy (in-app + landing page) describes the
+  reticle catalog as "LoadOut-original reticles, calibrated for
+  interoperability with major scope manufacturers" — not "1-to-1
+  with manufacturer reticles".
+- [ ] Lawyer review of the Option B catalog before each
+  marketing-significant release.
+
+### Why this dual-track exists
+
+The user accepted moderate IP risk on Option B in exchange for
+much better real-world utility (a LoadOut Mil Tree calibrated
+against the actual Vortex EBR-7D mil grid behaves the same way
+the user's real scope behaves, even though they're looking at
+LoadOut-original artwork). Option A is the safety valve: if
+takedown notices arrive, we flip the toggle's default to ON and
+ship a build that uses purely original subtensions on the same
+LoadOut-original artwork. **The toggle's existence is the
+load-bearing safety mechanism — do not remove it.**
