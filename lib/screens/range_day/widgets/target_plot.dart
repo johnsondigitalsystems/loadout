@@ -1028,22 +1028,30 @@ class _RealisticScenePainter extends CustomPainter {
   /// Horizon position: sky/grass boundary at 70% from top.
   static const double _horizonFrac = 0.70;
   /// Reference scale denominator: 1 inch = H / _inchesPerCanvasHeight px.
-  /// Derived so 90″ (pole + mound stack) = 0.30 H.
-  static const double _inchesPerCanvasHeight = 300.0;
+  /// Tuned to 200 (was 300 in Phase 1) so a 60″ mound and a 60″-wide
+  /// target end up similar widths on screen — visually coherent rather
+  /// than the bear looking 3× wider than the mound it stands on.
+  static const double _inchesPerCanvasHeight = 200.0;
   /// Target bounding box dimensions as fractions of canvas.
+  /// Height tuned to 0.28 (was 0.35) so the bear doesn't dominate the
+  /// frame at the new scenery scale.
   static const double _targetBoxWidthFrac = 0.50;
-  static const double _targetBoxHeightFrac = 0.35;
+  static const double _targetBoxHeightFrac = 0.28;
 
   // ── Palette ──────────────────────────────────────────────────────
   static const Color _skyTopColor = Color(0xff5e8db8);
   static const Color _skyBottomColor = Color(0xffb8d4e6);
   static const Color _grassColor = Color(0xff6b8c3e);
-  static const Color _horizonStrokeColor = Color(0xff54702f);
-  static const Color _moundFillColor = Color(0xff8b6f47);
-  static const Color _moundPebbleColor = Color(0xff6f5538);
+  static const Color _grassTuftColor = Color(0xff54702f); // darker, for grass blades at horizon
+  static const Color _moundFillColor = Color(0xff8b6f47); // medium dirt brown
+  static const Color _moundHighlightColor = Color(0xffa8855a); // sandy upper edge
+  static const Color _moundShadowColor = Color(0xff5a3f25); // darker brown for shaded surface
+  static const Color _moundClumpColor = Color(0xff6f5538); // small clumps of dirt
+  static const Color _moundRockColor = Color(0xff3e2a16); // small rocks / dark spots
   static const Color _poleColor = Color(0xff7a7a7a);
   static const Color _poleHighlightColor = Color(0xff9a9a9a);
   static const Color _poleShadowColor = Color(0xff5a5a5a);
+  static const Color _poleBaseRingColor = Color(0xff4a3422); // disturbed earth ring around pole base
   static const Color _targetOutlineColor = Color(0xff1a1a1a);
 
   @override
@@ -1053,23 +1061,33 @@ class _RealisticScenePainter extends CustomPainter {
     final h = size.height;
     final inPerPx = h / _inchesPerCanvasHeight;
 
-    // Compute the y-coordinate of the target's bottom (= pole's top).
-    //   horizon_y               = 0.70 H
-    //   mound straddles horizon with half its height above and below
-    //   pole rises from mound apex (horizon - 0.5 × mound_height)
-    //   pole_top                = mound_apex - pole_height
-    //   target_bottom           = pole_top
+    // Layout math (single source for all paint helpers):
+    //   horizon_y          = 0.70 H (sky/grass boundary)
+    //   mound straddles horizon, half above, half below
+    //   pole rises from mound apex; pole's REAL top sets target's bottom
+    //   target rect computed up front so the pole can run THROUGH it
     final horizonY = _horizonFrac * h;
     final moundHeight = 18.0 * inPerPx;
     final poleHeight = 72.0 * inPerPx;
     final moundApexY = horizonY - moundHeight * 0.5;
-    final poleTopY = moundApexY - poleHeight;
+    final targetBottomY = moundApexY - poleHeight;
+    final targetRect = _computeTargetRect(w, h, targetBottomY);
+
+    // The pole's VISUAL top extends past the target's bottom up into
+    // the silhouette's center. The target body paints on top later
+    // and covers the upper half of the pole — reads as "target
+    // mounted to the post" rather than "target balanced on the post
+    // tip."
+    final visualPoleTopY = targetRect.center.dy;
+    final visualPoleHeight = moundApexY - visualPoleTopY;
 
     _paintSky(canvas, w, h, horizonY);
     _paintGrass(canvas, w, h, horizonY);
     _paintMound(canvas, w, horizonY, inPerPx);
-    _paintPole(canvas, w, poleTopY, poleHeight, inPerPx);
-    _paintTarget(canvas, w, h, poleTopY);
+    _paintPole(canvas, w, visualPoleTopY, visualPoleHeight, inPerPx);
+    _paintGrassTufts(canvas, w, horizonY, inPerPx);
+    _paintPoleBaseRing(canvas, w, moundApexY, inPerPx);
+    _paintTarget(canvas, targetRect);
   }
 
   void _paintSky(Canvas canvas, double w, double h, double horizonY) {
@@ -1084,15 +1102,69 @@ class _RealisticScenePainter extends CustomPainter {
   }
 
   void _paintGrass(Canvas canvas, double w, double h, double horizonY) {
+    // Solid grass field. The horizon boundary is conveyed by the
+    // mound + grass tufts painted on top later, NOT by a hard
+    // horizon stroke — which read as artificial separation between
+    // scene elements.
     canvas.drawRect(
       Rect.fromLTWH(0, horizonY, w, h - horizonY),
       Paint()..color = _grassColor,
     );
-    // 2-px crisp horizon stroke at the boundary.
-    canvas.drawRect(
-      Rect.fromLTWH(0, horizonY, w, 2),
-      Paint()..color = _horizonStrokeColor,
-    );
+  }
+
+  /// Small grass blades along the horizon line, breaking up the hard
+  /// edge between grass and sky / mound. Tufts are short vertical
+  /// strokes at varying heights using a darker green than the grass
+  /// field — read as blades silhouetted against the sky.
+  ///
+  /// Skips a band centered on the mound (the mound's silhouette
+  /// occupies the horizon there). Deterministic positions via sin().
+  void _paintGrassTufts(
+    Canvas canvas,
+    double w,
+    double horizonY,
+    double inPerPx,
+  ) {
+    final paint = Paint()
+      ..color = _grassTuftColor
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+
+    final cx = w / 2;
+    final moundW = 60.0 * inPerPx;
+    final moundHalfW = moundW * 0.5;
+
+    // Step across the horizon at small intervals. Skip the band
+    // where the mound sits.
+    final stepPx = math.max(w / 36.0, 4.0);
+    for (var x = stepPx * 0.5; x < w; x += stepPx) {
+      // Skip if inside the mound's horizontal extent (with a small
+      // margin so tufts blend with the mound edges).
+      if ((x - cx).abs() < moundHalfW - 4.0) continue;
+      // Vary blade heights via sin so tufts are not uniform.
+      final heightVariation = (math.sin(x * 0.4) + 1.0) * 0.5; // 0..1
+      final bladeH = 1.5 + heightVariation * 4.0;
+      canvas.drawLine(
+        Offset(x, horizonY),
+        Offset(x, horizonY - bladeH),
+        paint,
+      );
+    }
+
+    // A few darker grass clumps right where the mound meets the
+    // grass — gives the mound a sense of being EMBEDDED in the
+    // ground rather than sitting on top.
+    for (var i = 0; i < 6; i++) {
+      final side = i.isEven ? -1.0 : 1.0;
+      final t = (i ~/ 2) / 3.0; // 0, 0.33, 0.67
+      final x = cx + side * (moundHalfW - 2.0 - t * 8.0);
+      final bladeH = 2.0 + math.sin(i * 1.7) * 1.5;
+      canvas.drawLine(
+        Offset(x, horizonY + 1.0),
+        Offset(x, horizonY - bladeH),
+        paint,
+      );
+    }
   }
 
   void _paintMound(
@@ -1105,31 +1177,101 @@ class _RealisticScenePainter extends CustomPainter {
     final moundH = 18.0 * inPerPx;
     final cx = w / 2;
 
-    // Mound: ellipse centered on the horizon line. Height multiplier
-    // 1.5 gives a depth cue (the visible top half reads as a berm
-    // rising slightly out of the grass; the bottom half is occluded
-    // by grass but completes the curve).
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(cx, horizonY),
-        width: moundW,
-        height: moundH * 1.5,
-      ),
-      Paint()..color = _moundFillColor,
+    // 1. Base silhouette — irregular asymmetric pile, NOT a clean
+    //    ellipse. Built from cubic-bezier segments forming two
+    //    sub-peaks and varied slopes. The path closes along the
+    //    horizon, so the lower half of the pile is naturally hidden
+    //    by the grass painted above.
+    final base = Path();
+    base.moveTo(cx - moundW * 0.50, horizonY);
+    // Left slope — rises with a bump
+    base.cubicTo(
+      cx - moundW * 0.42, horizonY - moundH * 0.30,
+      cx - moundW * 0.34, horizonY - moundH * 0.70,
+      cx - moundW * 0.18, horizonY - moundH * 0.85,
+    );
+    // First sub-peak (left of center)
+    base.cubicTo(
+      cx - moundW * 0.08, horizonY - moundH * 0.95,
+      cx - moundW * 0.02, horizonY - moundH * 1.00,
+      cx + moundW * 0.04, horizonY - moundH * 0.92,
+    );
+    // Saddle dip and second sub-peak (right of center)
+    base.cubicTo(
+      cx + moundW * 0.10, horizonY - moundH * 0.82,
+      cx + moundW * 0.16, horizonY - moundH * 0.88,
+      cx + moundW * 0.24, horizonY - moundH * 0.78,
+    );
+    // Right slope — descends with a bump
+    base.cubicTo(
+      cx + moundW * 0.36, horizonY - moundH * 0.50,
+      cx + moundW * 0.46, horizonY - moundH * 0.18,
+      cx + moundW * 0.50, horizonY,
+    );
+    base.close();
+    canvas.drawPath(base, Paint()..color = _moundFillColor);
+
+    // 2. Shadowed lower-right slope — a slightly translucent darker
+    //    overlay on the right side, suggesting the sun's coming from
+    //    the upper left (consistent with the pole's left-side
+    //    highlight).
+    final shadow = Path();
+    shadow.moveTo(cx + moundW * 0.04, horizonY - moundH * 0.92);
+    shadow.cubicTo(
+      cx + moundW * 0.16, horizonY - moundH * 0.85,
+      cx + moundW * 0.30, horizonY - moundH * 0.55,
+      cx + moundW * 0.50, horizonY,
+    );
+    shadow.lineTo(cx + moundW * 0.04, horizonY);
+    shadow.close();
+    canvas.drawPath(
+      shadow,
+      Paint()..color = _moundShadowColor.withValues(alpha: 0.40),
     );
 
-    // A few darker pebbles for texture. Deterministic positions via
-    // sin() so the same target always paints identically (no rng,
-    // no per-frame jitter).
-    final pebblePaint = Paint()..color = _moundPebbleColor;
-    for (var i = 0; i < 4; i++) {
-      final px = cx + (math.sin(i * 1.7) * moundW * 0.3);
-      final py = horizonY - moundH * 0.3 + (i * moundH * 0.3);
-      canvas.drawCircle(
-        Offset(px, py),
-        math.max(moundH * 0.08, 0.5),
-        pebblePaint,
+    // 3. Highlight strokes — three small lighter patches on the
+    //    upper-left side suggesting light catching the dirt's
+    //    high points.
+    final highlight = Paint()
+      ..color = _moundHighlightColor.withValues(alpha: 0.55);
+    for (var i = 0; i < 3; i++) {
+      final t = (i + 1) / 4.0; // 0.25, 0.50, 0.75
+      final hx = cx - moundW * 0.32 + (t * moundW * 0.30);
+      final hy = horizonY - moundH * (0.50 + 0.30 * math.sin(t * math.pi));
+      final hr = math.max(moundH * 0.12 * (1.0 - 0.2 * i), 0.8);
+      canvas.drawCircle(Offset(hx, hy), hr, highlight);
+    }
+
+    // 4. Clumps — 8 small darker oval blobs distributed across the
+    //    pile's surface. Deterministic positions via sin/cos so the
+    //    same target paints identically every frame.
+    final clump = Paint()..color = _moundClumpColor;
+    for (var i = 0; i < 8; i++) {
+      final angle = i * 0.78; // ~0.78 rad ≈ 45° step
+      final tx = cx + math.sin(angle * 1.7) * moundW * 0.36;
+      final tyOffset = math.cos(angle * 1.3) * moundH * 0.45;
+      final ty = horizonY - moundH * 0.55 + tyOffset;
+      final cw = math.max(moundH * 0.18, 1.0);
+      final ch = math.max(moundH * 0.10, 0.6);
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(tx, ty),
+          width: cw,
+          height: ch,
+        ),
+        clump,
       );
+    }
+
+    // 5. Rocks — 5 small near-black dots scattered as visible
+    //    pebbles/rocks. Smaller than clumps; suggest grit.
+    final rock = Paint()..color = _moundRockColor;
+    for (var i = 0; i < 5; i++) {
+      final angle = i * 1.25;
+      final rx = cx + math.sin(angle) * moundW * 0.30;
+      final ry = horizonY - moundH * 0.40 + math.cos(angle * 0.9) * moundH * 0.35;
+      final rr = math.max(moundH * 0.06, 0.5);
+      canvas.drawCircle(Offset(rx, ry), rr, rock);
     }
   }
 
@@ -1163,18 +1305,42 @@ class _RealisticScenePainter extends CustomPainter {
     );
   }
 
-  void _paintTarget(
+  /// A small darker oval ring at the pole's base, where the post
+  /// enters the mound. Suggests disturbed earth around the post —
+  /// the "this is planted in the ground" cue.
+  void _paintPoleBaseRing(
     Canvas canvas,
     double w,
-    double h,
-    double poleTopY,
+    double moundApexY,
+    double inPerPx,
   ) {
-    // Bounding box for the target: 50% canvas width × 35% canvas
-    // height, centered horizontally, bottom-aligned at poleTopY.
+    final cx = w / 2;
+    // Ring slightly wider than the pole; thin (looks like the dirt
+    // is freshly disturbed in a small ring around the post).
+    final ringW = math.max(4.0 * inPerPx * 3.0, 6.0);
+    final ringH = math.max(4.0 * inPerPx * 0.9, 2.0);
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(cx, moundApexY + ringH * 0.4),
+        width: ringW,
+        height: ringH,
+      ),
+      Paint()..color = _poleBaseRingColor.withValues(alpha: 0.70),
+    );
+  }
+
+  /// Computes the target's pixel rect inside the canvas, given the
+  /// y-coordinate where its bottom should sit. Extracted from
+  /// [_paintTarget] so [paint] can know the target's center BEFORE
+  /// painting the pole (the pole's visual top runs to the target's
+  /// center, hidden behind the silhouette).
+  ///
+  /// Sizing is fit-to-frame: the target's natural aspect is preserved
+  /// inside a `0.50 W × 0.28 H` bounding box. Bottom-aligned at
+  /// [targetBottomY], horizontally centered.
+  Rect _computeTargetRect(double w, double h, double targetBottomY) {
     final boxW = w * _targetBoxWidthFrac;
     final boxH = h * _targetBoxHeightFrac;
-
-    // Aspect-preserved scale-to-fit inside the box.
     final targetAspect = target.widthIn / target.heightIn;
     final boxAspect = boxW / boxH;
     final double targetW;
@@ -1188,11 +1354,12 @@ class _RealisticScenePainter extends CustomPainter {
       targetH = boxH;
       targetW = boxH * targetAspect;
     }
-
     final targetLeft = (w - targetW) / 2;
-    final targetTop = poleTopY - targetH;
-    final rect = Rect.fromLTWH(targetLeft, targetTop, targetW, targetH);
+    final targetTop = targetBottomY - targetH;
+    return Rect.fromLTWH(targetLeft, targetTop, targetW, targetH);
+  }
 
+  void _paintTarget(Canvas canvas, Rect rect) {
     // Fill color: override beats target.colorHex; both go through the
     // same hex parser.
     final fillHex = colorHexOverride ?? target.colorHex;
