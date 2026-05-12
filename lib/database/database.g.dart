@@ -21644,6 +21644,18 @@ class $TargetsTable extends Targets with TableInfo<$TargetsTable, TargetRow> {
         requiredDuringInsert: false,
         defaultValue: const Constant(0.5),
       );
+  static const VerificationMeta _svgScaleFactorMeta = const VerificationMeta(
+    'svgScaleFactor',
+  );
+  @override
+  late final GeneratedColumn<double> svgScaleFactor = GeneratedColumn<double>(
+    'svg_scale_factor',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1.0),
+  );
   static const VerificationMeta _widthInMeta = const VerificationMeta(
     'widthIn',
   );
@@ -21706,6 +21718,7 @@ class $TargetsTable extends Targets with TableInfo<$TargetsTable, TargetRow> {
     shapeId,
     verticalCenterPctFromTop,
     horizontalCenterPctFromLeft,
+    svgScaleFactor,
     widthIn,
     heightIn,
     colorHex,
@@ -21764,6 +21777,15 @@ class $TargetsTable extends Targets with TableInfo<$TargetsTable, TargetRow> {
         horizontalCenterPctFromLeft.isAcceptableOrUnknown(
           data['horizontal_center_pct_from_left']!,
           _horizontalCenterPctFromLeftMeta,
+        ),
+      );
+    }
+    if (data.containsKey('svg_scale_factor')) {
+      context.handle(
+        _svgScaleFactorMeta,
+        svgScaleFactor.isAcceptableOrUnknown(
+          data['svg_scale_factor']!,
+          _svgScaleFactorMeta,
         ),
       );
     }
@@ -21836,6 +21858,10 @@ class $TargetsTable extends Targets with TableInfo<$TargetsTable, TargetRow> {
         DriftSqlType.double,
         data['${effectivePrefix}horizontal_center_pct_from_left'],
       )!,
+      svgScaleFactor: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}svg_scale_factor'],
+      )!,
       widthIn: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}width_in'],
@@ -21896,6 +21922,18 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
   final double verticalCenterPctFromTop;
   final double horizontalCenterPctFromLeft;
 
+  /// Per-target SVG scale-factor multiplier (v38). Multiplies the
+  /// natural fit-to-box scale applied by
+  /// `AnimalSilhouettes.scalePathToBounds` /
+  /// `TargetSilhouettes.scalePathToBounds`. Default 1.0 (no change);
+  /// animals with antlers / horns / tall tails that get clipped at
+  /// the new bigger box (Phase 6) author values like 1.2-1.4 so the
+  /// silhouette grows beyond the rect — bottom-aligned so the body
+  /// stays seated on the pole top while antlers extend into the
+  /// canvas sky region. Bottom-alignment is preserved in the
+  /// silhouette scaler so the visual anchor is consistent.
+  final double svgScaleFactor;
+
   /// Outer-bound width of the target in inches (the visible /
   /// scoreable area). For circles this equals heightIn.
   final double widthIn;
@@ -21917,6 +21955,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
     this.shapeId,
     required this.verticalCenterPctFromTop,
     required this.horizontalCenterPctFromLeft,
+    required this.svgScaleFactor,
     required this.widthIn,
     required this.heightIn,
     required this.colorHex,
@@ -21938,6 +21977,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
     map['horizontal_center_pct_from_left'] = Variable<double>(
       horizontalCenterPctFromLeft,
     );
+    map['svg_scale_factor'] = Variable<double>(svgScaleFactor);
     map['width_in'] = Variable<double>(widthIn);
     map['height_in'] = Variable<double>(heightIn);
     map['color_hex'] = Variable<String>(colorHex);
@@ -21958,6 +21998,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
           : Value(shapeId),
       verticalCenterPctFromTop: Value(verticalCenterPctFromTop),
       horizontalCenterPctFromLeft: Value(horizontalCenterPctFromLeft),
+      svgScaleFactor: Value(svgScaleFactor),
       widthIn: Value(widthIn),
       heightIn: Value(heightIn),
       colorHex: Value(colorHex),
@@ -21984,6 +22025,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
       horizontalCenterPctFromLeft: serializer.fromJson<double>(
         json['horizontalCenterPctFromLeft'],
       ),
+      svgScaleFactor: serializer.fromJson<double>(json['svgScaleFactor']),
       widthIn: serializer.fromJson<double>(json['widthIn']),
       heightIn: serializer.fromJson<double>(json['heightIn']),
       colorHex: serializer.fromJson<String>(json['colorHex']),
@@ -22005,6 +22047,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
       'horizontalCenterPctFromLeft': serializer.toJson<double>(
         horizontalCenterPctFromLeft,
       ),
+      'svgScaleFactor': serializer.toJson<double>(svgScaleFactor),
       'widthIn': serializer.toJson<double>(widthIn),
       'heightIn': serializer.toJson<double>(heightIn),
       'colorHex': serializer.toJson<String>(colorHex),
@@ -22020,6 +22063,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
     Value<String?> shapeId = const Value.absent(),
     double? verticalCenterPctFromTop,
     double? horizontalCenterPctFromLeft,
+    double? svgScaleFactor,
     double? widthIn,
     double? heightIn,
     String? colorHex,
@@ -22034,6 +22078,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
         verticalCenterPctFromTop ?? this.verticalCenterPctFromTop,
     horizontalCenterPctFromLeft:
         horizontalCenterPctFromLeft ?? this.horizontalCenterPctFromLeft,
+    svgScaleFactor: svgScaleFactor ?? this.svgScaleFactor,
     widthIn: widthIn ?? this.widthIn,
     heightIn: heightIn ?? this.heightIn,
     colorHex: colorHex ?? this.colorHex,
@@ -22052,6 +22097,9 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
       horizontalCenterPctFromLeft: data.horizontalCenterPctFromLeft.present
           ? data.horizontalCenterPctFromLeft.value
           : this.horizontalCenterPctFromLeft,
+      svgScaleFactor: data.svgScaleFactor.present
+          ? data.svgScaleFactor.value
+          : this.svgScaleFactor,
       widthIn: data.widthIn.present ? data.widthIn.value : this.widthIn,
       heightIn: data.heightIn.present ? data.heightIn.value : this.heightIn,
       colorHex: data.colorHex.present ? data.colorHex.value : this.colorHex,
@@ -22069,6 +22117,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
           ..write('shapeId: $shapeId, ')
           ..write('verticalCenterPctFromTop: $verticalCenterPctFromTop, ')
           ..write('horizontalCenterPctFromLeft: $horizontalCenterPctFromLeft, ')
+          ..write('svgScaleFactor: $svgScaleFactor, ')
           ..write('widthIn: $widthIn, ')
           ..write('heightIn: $heightIn, ')
           ..write('colorHex: $colorHex, ')
@@ -22086,6 +22135,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
     shapeId,
     verticalCenterPctFromTop,
     horizontalCenterPctFromLeft,
+    svgScaleFactor,
     widthIn,
     heightIn,
     colorHex,
@@ -22103,6 +22153,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
           other.verticalCenterPctFromTop == this.verticalCenterPctFromTop &&
           other.horizontalCenterPctFromLeft ==
               this.horizontalCenterPctFromLeft &&
+          other.svgScaleFactor == this.svgScaleFactor &&
           other.widthIn == this.widthIn &&
           other.heightIn == this.heightIn &&
           other.colorHex == this.colorHex &&
@@ -22117,6 +22168,7 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
   final Value<String?> shapeId;
   final Value<double> verticalCenterPctFromTop;
   final Value<double> horizontalCenterPctFromLeft;
+  final Value<double> svgScaleFactor;
   final Value<double> widthIn;
   final Value<double> heightIn;
   final Value<String> colorHex;
@@ -22129,6 +22181,7 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
     this.shapeId = const Value.absent(),
     this.verticalCenterPctFromTop = const Value.absent(),
     this.horizontalCenterPctFromLeft = const Value.absent(),
+    this.svgScaleFactor = const Value.absent(),
     this.widthIn = const Value.absent(),
     this.heightIn = const Value.absent(),
     this.colorHex = const Value.absent(),
@@ -22142,6 +22195,7 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
     this.shapeId = const Value.absent(),
     this.verticalCenterPctFromTop = const Value.absent(),
     this.horizontalCenterPctFromLeft = const Value.absent(),
+    this.svgScaleFactor = const Value.absent(),
     required double widthIn,
     required double heightIn,
     required String colorHex,
@@ -22159,6 +22213,7 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
     Expression<String>? shapeId,
     Expression<double>? verticalCenterPctFromTop,
     Expression<double>? horizontalCenterPctFromLeft,
+    Expression<double>? svgScaleFactor,
     Expression<double>? widthIn,
     Expression<double>? heightIn,
     Expression<String>? colorHex,
@@ -22174,6 +22229,7 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
         'vertical_center_pct_from_top': verticalCenterPctFromTop,
       if (horizontalCenterPctFromLeft != null)
         'horizontal_center_pct_from_left': horizontalCenterPctFromLeft,
+      if (svgScaleFactor != null) 'svg_scale_factor': svgScaleFactor,
       if (widthIn != null) 'width_in': widthIn,
       if (heightIn != null) 'height_in': heightIn,
       if (colorHex != null) 'color_hex': colorHex,
@@ -22189,6 +22245,7 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
     Value<String?>? shapeId,
     Value<double>? verticalCenterPctFromTop,
     Value<double>? horizontalCenterPctFromLeft,
+    Value<double>? svgScaleFactor,
     Value<double>? widthIn,
     Value<double>? heightIn,
     Value<String>? colorHex,
@@ -22204,6 +22261,7 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
           verticalCenterPctFromTop ?? this.verticalCenterPctFromTop,
       horizontalCenterPctFromLeft:
           horizontalCenterPctFromLeft ?? this.horizontalCenterPctFromLeft,
+      svgScaleFactor: svgScaleFactor ?? this.svgScaleFactor,
       widthIn: widthIn ?? this.widthIn,
       heightIn: heightIn ?? this.heightIn,
       colorHex: colorHex ?? this.colorHex,
@@ -22237,6 +22295,9 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
         horizontalCenterPctFromLeft.value,
       );
     }
+    if (svgScaleFactor.present) {
+      map['svg_scale_factor'] = Variable<double>(svgScaleFactor.value);
+    }
     if (widthIn.present) {
       map['width_in'] = Variable<double>(widthIn.value);
     }
@@ -22264,6 +22325,7 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
           ..write('shapeId: $shapeId, ')
           ..write('verticalCenterPctFromTop: $verticalCenterPctFromTop, ')
           ..write('horizontalCenterPctFromLeft: $horizontalCenterPctFromLeft, ')
+          ..write('svgScaleFactor: $svgScaleFactor, ')
           ..write('widthIn: $widthIn, ')
           ..write('heightIn: $heightIn, ')
           ..write('colorHex: $colorHex, ')
@@ -52567,6 +52629,7 @@ typedef $$TargetsTableCreateCompanionBuilder =
       Value<String?> shapeId,
       Value<double> verticalCenterPctFromTop,
       Value<double> horizontalCenterPctFromLeft,
+      Value<double> svgScaleFactor,
       required double widthIn,
       required double heightIn,
       required String colorHex,
@@ -52581,6 +52644,7 @@ typedef $$TargetsTableUpdateCompanionBuilder =
       Value<String?> shapeId,
       Value<double> verticalCenterPctFromTop,
       Value<double> horizontalCenterPctFromLeft,
+      Value<double> svgScaleFactor,
       Value<double> widthIn,
       Value<double> heightIn,
       Value<String> colorHex,
@@ -52624,6 +52688,11 @@ class $$TargetsTableFilterComposer
 
   ColumnFilters<double> get horizontalCenterPctFromLeft => $composableBuilder(
     column: $table.horizontalCenterPctFromLeft,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get svgScaleFactor => $composableBuilder(
+    column: $table.svgScaleFactor,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -52692,6 +52761,11 @@ class $$TargetsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get svgScaleFactor => $composableBuilder(
+    column: $table.svgScaleFactor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get widthIn => $composableBuilder(
     column: $table.widthIn,
     builder: (column) => ColumnOrderings(column),
@@ -52749,6 +52823,11 @@ class $$TargetsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<double> get svgScaleFactor => $composableBuilder(
+    column: $table.svgScaleFactor,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<double> get widthIn =>
       $composableBuilder(column: $table.widthIn, builder: (column) => column);
 
@@ -52800,6 +52879,7 @@ class $$TargetsTableTableManager
                 Value<double> verticalCenterPctFromTop = const Value.absent(),
                 Value<double> horizontalCenterPctFromLeft =
                     const Value.absent(),
+                Value<double> svgScaleFactor = const Value.absent(),
                 Value<double> widthIn = const Value.absent(),
                 Value<double> heightIn = const Value.absent(),
                 Value<String> colorHex = const Value.absent(),
@@ -52812,6 +52892,7 @@ class $$TargetsTableTableManager
                 shapeId: shapeId,
                 verticalCenterPctFromTop: verticalCenterPctFromTop,
                 horizontalCenterPctFromLeft: horizontalCenterPctFromLeft,
+                svgScaleFactor: svgScaleFactor,
                 widthIn: widthIn,
                 heightIn: heightIn,
                 colorHex: colorHex,
@@ -52827,6 +52908,7 @@ class $$TargetsTableTableManager
                 Value<double> verticalCenterPctFromTop = const Value.absent(),
                 Value<double> horizontalCenterPctFromLeft =
                     const Value.absent(),
+                Value<double> svgScaleFactor = const Value.absent(),
                 required double widthIn,
                 required double heightIn,
                 required String colorHex,
@@ -52839,6 +52921,7 @@ class $$TargetsTableTableManager
                 shapeId: shapeId,
                 verticalCenterPctFromTop: verticalCenterPctFromTop,
                 horizontalCenterPctFromLeft: horizontalCenterPctFromLeft,
+                svgScaleFactor: svgScaleFactor,
                 widthIn: widthIn,
                 heightIn: heightIn,
                 colorHex: colorHex,

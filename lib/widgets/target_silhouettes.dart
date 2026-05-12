@@ -166,21 +166,38 @@ class TargetSilhouettes {
   ///
   /// Synchronous companion to [buildTargetPath]. Use the async variant
   /// from any non-paint codepath.
-  static Path? cachedScaledPath(Rect bounds, String shapeId) {
+  ///
+  /// [scaleFactor] (v38+) multiplies the natural fit-to-box scale —
+  /// symmetric with `AnimalSilhouettes.cachedScaledPath`. Not used
+  /// for IPSC / popper today (default 1.0) but plumbed for future
+  /// catalog rows that might author oversized SVGs.
+  static Path? cachedScaledPath(
+    Rect bounds,
+    String shapeId, {
+    double scaleFactor = 1.0,
+  }) {
     final source = _pathCache[shapeId];
     if (source == null) return null;
-    return scalePathToBounds(source, bounds);
+    return scalePathToBounds(source, bounds, scaleFactor: scaleFactor);
   }
 
   /// Scale to fit bounds while preserving aspect ratio; bottom-aligned.
   /// (Same algorithm as AnimalSilhouettes.scalePathToBounds.)
-  static Path scalePathToBounds(Path source, Rect bounds) {
+  ///
+  /// [scaleFactor] (v38+) multiplies the uniform fit-to-box scale.
+  /// At 1.0 (default) the silhouette stays inside the rect.
+  static Path scalePathToBounds(
+    Path source,
+    Rect bounds, {
+    double scaleFactor = 1.0,
+  }) {
     final src = source.getBounds();
     if (src.width <= 0 || src.height <= 0) return source;
 
     final scaleX = bounds.width / src.width;
     final scaleY = bounds.height / src.height;
-    final scale = scaleX < scaleY ? scaleX : scaleY;
+    final fitScale = scaleX < scaleY ? scaleX : scaleY;
+    final scale = fitScale * scaleFactor;
 
     final scaledWidth = src.width * scale;
     final scaledHeight = src.height * scale;

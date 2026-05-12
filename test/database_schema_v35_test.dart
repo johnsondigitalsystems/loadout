@@ -78,15 +78,54 @@ void main() {
       await db.close();
     });
 
-    test('schemaVersion is 37', () {
+    test('schemaVersion is 38', () {
       // v35 added Range Day Realistic / per-firearm scope-and-reticle
       // defaults; v36 added `targets.shape_id` for SVG dispatch (v2.3
       // target render fix); v37 added the per-target `center_point`
       // columns (Scene Painter Phase 6) — two RealColumns with default
-      // 0.5 for vertical / horizontal anchor fractions. The file keeps
-      // its v35 name because every v35-era assertion below is still
-      // valid on v37 — schema bumps are additive.
-      expect(db.schemaVersion, 37);
+      // 0.5 for vertical / horizontal anchor fractions; v38 added
+      // `targets.svg_scale_factor` (Scene Painter Phase 7a) — a
+      // RealColumn with default 1.0 that the silhouette scaler
+      // multiplies on top of fit-to-box. The file keeps its v35
+      // name because every v35-era assertion below is still valid
+      // on v38 — schema bumps are additive.
+      expect(db.schemaVersion, 38);
+    });
+
+    test('targets accepts the new v38 svg_scale_factor column', () async {
+      // v38 — `svgScaleFactor` is a RealColumn default 1.0. Rows
+      // inserted without explicit value get the default; problem
+      // animals override to 1.2-1.4 so their authored SVGs overflow
+      // the rect (antlers / horns extend into the sky).
+      final defaultId = await db.into(db.targets).insert(
+            TargetsCompanion.insert(
+              name: 'v38 default-scale row',
+              shape: 'silhouette',
+              widthIn: 18,
+              heightIn: 30,
+              colorHex: '#ffffff',
+            ),
+          );
+      final defaultRow = await (db.select(db.targets)
+            ..where((t) => t.id.equals(defaultId)))
+          .getSingle();
+      expect(defaultRow.svgScaleFactor, 1.0);
+
+      final tunedId = await db.into(db.targets).insert(
+            TargetsCompanion.insert(
+              name: 'v38 tuned-scale deer',
+              shape: 'silhouette',
+              shapeId: const Value('deer'),
+              widthIn: 60,
+              heightIn: 32,
+              colorHex: '#ffffff',
+              svgScaleFactor: const Value(1.4),
+            ),
+          );
+      final tuned = await (db.select(db.targets)
+            ..where((t) => t.id.equals(tunedId)))
+          .getSingle();
+      expect(tuned.svgScaleFactor, 1.4);
     });
 
     test('targets accepts the new v37 center_point columns', () async {

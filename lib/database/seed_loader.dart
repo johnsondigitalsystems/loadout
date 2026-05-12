@@ -848,6 +848,13 @@ class SeedLoader {
       final centerPoint = TargetCenterPoint.fromJson(
         m['center_point'] as Map<String, dynamic>?,
       );
+      // v38 — `svg_scale_factor` is a multiplier on the natural
+      // fit-to-box scale applied by the silhouette helpers. Default
+      // 1.0; problem animals (antlers / horns / tall tails) author
+      // 1.2-1.4 so their authored SVG overflows the rect into the
+      // sky region.
+      final svgScaleFactor =
+          (m['svg_scale_factor'] as num?)?.toDouble() ?? 1.0;
       batch.add(TargetsCompanion.insert(
         name: m['name'] as String,
         shape: m['shape'] as String,
@@ -864,6 +871,7 @@ class SeedLoader {
         verticalCenterPctFromTop: Value(centerPoint.verticalFromTop),
         horizontalCenterPctFromLeft:
             Value(centerPoint.horizontalFromLeft),
+        svgScaleFactor: Value(svgScaleFactor),
       ));
     }
     await db.batch((b) => b.insertAll(db.targets, batch));

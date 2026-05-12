@@ -1536,6 +1536,19 @@ class Targets extends Table {
       real().withDefault(const Constant(0.5))();
   RealColumn get horizontalCenterPctFromLeft =>
       real().withDefault(const Constant(0.5))();
+
+  /// Per-target SVG scale-factor multiplier (v38). Multiplies the
+  /// natural fit-to-box scale applied by
+  /// `AnimalSilhouettes.scalePathToBounds` /
+  /// `TargetSilhouettes.scalePathToBounds`. Default 1.0 (no change);
+  /// animals with antlers / horns / tall tails that get clipped at
+  /// the new bigger box (Phase 6) author values like 1.2-1.4 so the
+  /// silhouette grows beyond the rect — bottom-aligned so the body
+  /// stays seated on the pole top while antlers extend into the
+  /// canvas sky region. Bottom-alignment is preserved in the
+  /// silhouette scaler so the visual anchor is consistent.
+  RealColumn get svgScaleFactor =>
+      real().withDefault(const Constant(1.0))();
   /// Outer-bound width of the target in inches (the visible /
   /// scoreable area). For circles this equals heightIn.
   RealColumn get widthIn => real()();
@@ -2337,7 +2350,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 37;
+  int get schemaVersion => 38;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -3115,6 +3128,20 @@ class AppDatabase extends _$AppDatabase {
             if (!targetsCols.contains('horizontal_center_pct_from_left')) {
               await m.addColumn(
                   targets, targets.horizontalCenterPctFromLeft);
+            }
+            await delete(targets).go();
+          }
+          if (from < 38) {
+            // v38 — per-target SVG scale-factor multiplier. Default
+            // 1.0 so non-animal rows and animals at natural scale
+            // render identically to v37; the 7 "problem animal" rows
+            // (deer / mule_deer / elk / moose / pronghorn / wild_turkey
+            // / pheasant) author 1.2-1.4 in targets.json so their
+            // antlers / horns / tail feathers extend visibly into the
+            // sky region above the target rect.
+            final targetsCols = await _columnsOf('targets');
+            if (!targetsCols.contains('svg_scale_factor')) {
+              await m.addColumn(targets, targets.svgScaleFactor);
             }
             await delete(targets).go();
           }

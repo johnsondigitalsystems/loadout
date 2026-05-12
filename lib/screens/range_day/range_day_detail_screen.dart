@@ -3220,16 +3220,25 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     // realistic scene painter intentionally omits those layers (per
     // Phase 1) and the picker preview doesn't need them: the user is
     // configuring a target, not shooting it.
+    // Phase 7a Group A — tap-to-zoom fix. TargetPlot has its own
+    // internal GestureDetector (target_plot.dart:494) for shot /
+    // aim-point recording; in preview contexts that detector wins
+    // the gesture arena and swallows taps before they bubble to the
+    // outer InkWell. Wrapping in IgnorePointer disables TargetPlot's
+    // hit testing entirely for this surface, so the InkWell below
+    // captures all taps and routes them to _showTargetPreviewDialog.
     final preview = SizedBox(
       height: 234,
-      child: TargetPlot(
-        target: activeTargetSpec,
-        shots: const [],
-        onTapAt: (_, _) {},
-        onLongPressShot: (_) {},
-        tapMode: TargetPlotTapMode.aimPoint,
-        viewMode: TargetPlotViewMode.realistic,
-        colorHexOverride: _selectedTargetColorHex,
+      child: IgnorePointer(
+        child: TargetPlot(
+          target: activeTargetSpec,
+          shots: const [],
+          onTapAt: (_, _) {},
+          onLongPressShot: (_) {},
+          tapMode: TargetPlotTapMode.aimPoint,
+          viewMode: TargetPlotViewMode.realistic,
+          colorHexOverride: _selectedTargetColorHex,
+        ),
       ),
     );
     // Tap-to-zoom: opens a full-screen dialog with a larger

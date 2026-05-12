@@ -191,22 +191,44 @@ class AnimalSilhouettes {
   ///
   /// Synchronous companion to [buildAnimalPath]. Use the async variant
   /// from any non-paint codepath.
-  static Path? cachedScaledPath(Rect bounds, String shapeId) {
+  ///
+  /// [scaleFactor] (v38+) is a multiplier on top of the natural
+  /// fit-to-box scale. Default 1.0 (no change). Values like 1.2-1.4
+  /// let problem animals (antlers, horns, tall tails) overflow the
+  /// rect cleanly — bottom-alignment is preserved, so the body
+  /// stays seated on the pole top while the antlers / horns extend
+  /// up into the canvas sky region.
+  static Path? cachedScaledPath(
+    Rect bounds,
+    String shapeId, {
+    double scaleFactor = 1.0,
+  }) {
     final source = _pathCache[shapeId];
     if (source == null) return null;
-    return scalePathToBounds(source, bounds);
+    return scalePathToBounds(source, bounds, scaleFactor: scaleFactor);
   }
 
   /// Returns a Path that fits [bounds] while preserving the source SVG's
   /// aspect ratio. The silhouette is centered horizontally and bottom-aligned
   /// (feet rest at the bottom of the rect, matching the post connection point).
-  static Path scalePathToBounds(Path source, Rect bounds) {
+  ///
+  /// [scaleFactor] (v38+) multiplies the uniform fit-to-box scale.
+  /// At 1.0 (default) the silhouette stays inside the rect. At >1.0
+  /// the silhouette overflows the rect's top edge while staying
+  /// bottom-aligned — used by the realistic scene painter to let
+  /// antlers / horns extend into the sky region above the target.
+  static Path scalePathToBounds(
+    Path source,
+    Rect bounds, {
+    double scaleFactor = 1.0,
+  }) {
     final src = source.getBounds();
     if (src.width <= 0 || src.height <= 0) return source;
 
     final scaleX = bounds.width / src.width;
     final scaleY = bounds.height / src.height;
-    final scale = scaleX < scaleY ? scaleX : scaleY;  // uniform scale
+    final fitScale = scaleX < scaleY ? scaleX : scaleY;  // uniform fit
+    final scale = fitScale * scaleFactor;
 
     final scaledWidth = src.width * scale;
     final scaledHeight = src.height * scale;

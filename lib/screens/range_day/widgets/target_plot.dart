@@ -158,13 +158,30 @@ import '../../../widgets/target_silhouettes.dart';
 /// (`_TargetThumbnailPainter` in `range_day_detail_screen.dart`). If a
 /// new SVG silhouette class ships, add its check here and both
 /// painters pick it up.
-Path? resolveTargetSvgPath(Rect bounds, String? shapeId) {
+///
+/// [scaleFactor] (v38+) multiplies the natural fit-to-box scale.
+/// Forwarded to whichever silhouette helper handles the shapeId.
+/// Default 1.0 (callers without per-target tuning get unchanged
+/// rendering).
+Path? resolveTargetSvgPath(
+  Rect bounds,
+  String? shapeId, {
+  double scaleFactor = 1.0,
+}) {
   if (shapeId == null) return null;
   if (AnimalSilhouettes.isAnimalShape(shapeId)) {
-    return AnimalSilhouettes.cachedScaledPath(bounds, shapeId);
+    return AnimalSilhouettes.cachedScaledPath(
+      bounds,
+      shapeId,
+      scaleFactor: scaleFactor,
+    );
   }
   if (TargetSilhouettes.isTargetShape(shapeId)) {
-    return TargetSilhouettes.cachedScaledPath(bounds, shapeId);
+    return TargetSilhouettes.cachedScaledPath(
+      bounds,
+      shapeId,
+      scaleFactor: scaleFactor,
+    );
   }
   return null;
 }
@@ -204,6 +221,7 @@ class TargetSpec {
     required this.heightIn,
     required this.colorHex,
     this.centerPoint = TargetCenterPoint.defaultCenter,
+    this.svgScaleFactor = 1.0,
   });
 
   /// 'circle' | 'square' | 'rectangle' | 'silhouette' | 'irregular'
@@ -223,6 +241,15 @@ class TargetSpec {
   /// Per-target geometric center (v37+). Defaults to 0.5/0.5 — same
   /// anchor as `targetRect.center` in Phase 5 painter math.
   final TargetCenterPoint centerPoint;
+
+  /// Per-target SVG scale-factor multiplier (v38+). The realistic
+  /// scene painter multiplies the natural fit-to-box scale by this
+  /// value. Defaults to 1.0 (no change). Catalog rows with antlers
+  /// / horns that get clipped at the bigger target box use values
+  /// like 1.2-1.4 so the silhouette overflows the rect into the
+  /// sky region (bottom-alignment is preserved by the silhouette
+  /// scaler).
+  final double svgScaleFactor;
 
   /// Default target used when the user hasn't picked one yet — an
   /// 18 in × 30 in white silhouette. This matches the canonical IPSC
@@ -252,6 +279,7 @@ class TargetSpec {
           verticalFromTop: row.verticalCenterPctFromTop,
           horizontalFromLeft: row.horizontalCenterPctFromLeft,
         ),
+        svgScaleFactor: row.svgScaleFactor,
       );
 }
 
@@ -1083,6 +1111,16 @@ class _RealisticScenePainter extends CustomPainter {
   static const int _tallGrassClumpCount = 5;
   static const double _tallGrassClumpMaxHeight = 15.0; // px tall blade max
 
+  // Phase 7a — foreground tree at right edge for depth cue.
+  // Height scales with the target box so the tree's relative size
+  // stays consistent across canvas sizes. X-position fixed at 85%
+  // canvas width so the tree sits to the right of the centered
+  // target rect and never overlaps the silhouette.
+  static const double _treeHeightFracOfTarget = 1.2;
+  static const double _treeXFracOfCanvas = 0.85;
+  static const Color _treeTrunkColor = Color(0xff5c3a1e); // dark brown
+  static const Color _treeCrownColor = Color(0xff4a6a2f); // dark conifer green
+
   @override
   void paint(Canvas canvas, Size size) {
     if (size.width <= 0 || size.height <= 0) return;
@@ -1125,16 +1163,20 @@ class _RealisticScenePainter extends CustomPainter {
         targetRect.left + cp.horizontalFromLeft * targetRect.width;
     final visualPoleHeight = moundApexY - visualPoleTopY;
 
-    // Phase 6 Group C — new layer order:
+    // Phase 7a Group C layer order (extends Phase 6):
     //   sky → distant hills → treeline → grass field → tall grass
-    //   → mound → pole → horizon tufts → pole base ring → target
-    // Layers read as depth: hills behind trees, trees behind grass,
-    // grass behind mound, mound behind pole, target on top.
+    //   → foreground tree → mound → pole → horizon tufts
+    //   → pole base ring → target
+    // Foreground tree paints AFTER tall grass and BEFORE mound so
+    // it reads as a depth layer between the foreground grass and
+    // the dirt pile. Tree is at x = 0.85W; target rect is centered;
+    // they don't overlap.
     _paintSky(canvas, w, h, horizonY);
     _paintDistantHills(canvas, w, horizonY);
     _paintTreeline(canvas, w, horizonY);
     _paintGrass(canvas, w, h, horizonY);
     _paintTallGrass(canvas, w, h, horizonY, inPerPx);
+    _paintForegroundTree(canvas, w, horizonY, targetBoxH);
     _paintMound(canvas, w, horizonY, inPerPx);
     _paintPole(canvas, poleX, visualPoleTopY, visualPoleHeight,
         visiblePoleHeight);
@@ -1269,6 +1311,58 @@ class _RealisticScenePainter extends CustomPainter {
         );
       }
     }
+  }
+
+  /// Foreground tree silhouette at the right edge of the canvas.
+  /// Provides a near-distance depth cue between the foreground grass
+  /// field and the dirt mound. The tree's height scales with the
+  /// target box so its size relative to the bear (and other targets)
+  /// stays visually consistent across canvas sizes; x-position is
+  /// fixed at 85% canvas width so it never overlaps the centered
+  /// target rect.
+  ///
+  /// Geometry: vertical trunk rooted at `horizonY` (so the base
+  /// disappears behind the grass field's edge — natural grounding
+  /// cue) plus 3 overlapping circles forming a leafy conifer crown.
+  /// Reserved for a future `windDirection` field to animate the
+  /// crown; Phase 7a builds the helper but no animation code.
+  void _paintForegroundTree(
+    Canvas canvas,
+    double w,
+    double horizonY,
+    double targetBoxH,
+  ) {
+    final treeHeight = targetBoxH * _treeHeightFracOfTarget;
+    final treeX = w * _treeXFracOfCanvas;
+    const double trunkW = 4.0;
+    final trunkH = treeHeight * 0.35;
+    final crownRadius = treeHeight * 0.32;
+
+    // Trunk rooted at the horizon line.
+    final trunkRect = Rect.fromLTWH(
+      treeX - trunkW / 2,
+      horizonY - trunkH,
+      trunkW,
+      trunkH,
+    );
+    canvas.drawRect(trunkRect, Paint()..color = _treeTrunkColor);
+
+    // Three overlapping circles for a leafy crown — center on top,
+    // two slightly lower on each side, all at ~70% of the center
+    // circle's radius for visual proportion.
+    final crownCenter = Offset(treeX, horizonY - trunkH - crownRadius);
+    final crownPaint = Paint()..color = _treeCrownColor;
+    canvas.drawCircle(crownCenter, crownRadius, crownPaint);
+    canvas.drawCircle(
+      crownCenter.translate(-crownRadius * 0.55, crownRadius * 0.25),
+      crownRadius * 0.7,
+      crownPaint,
+    );
+    canvas.drawCircle(
+      crownCenter.translate(crownRadius * 0.55, crownRadius * 0.25),
+      crownRadius * 0.7,
+      crownPaint,
+    );
   }
 
   void _paintGrass(Canvas canvas, double w, double h, double horizonY) {
@@ -1561,9 +1655,15 @@ class _RealisticScenePainter extends CustomPainter {
       ..strokeWidth = 1.6;
 
     // Shared dispatch: SVG path if shapeId resolves, otherwise null.
-    // See top-level [resolveTargetSvgPath]; the same helper backs the
-    // picker thumbnail painter in range_day_detail_screen.dart.
-    final svgPath = resolveTargetSvgPath(rect, target.shapeId);
+    // See top-level [resolveTargetSvgPath]. Phase 7a threads the
+    // per-target svgScaleFactor through so animals with antlers /
+    // horns / tall tails (deer, elk, moose, etc.) can overflow the
+    // rect into the sky region.
+    final svgPath = resolveTargetSvgPath(
+      rect,
+      target.shapeId,
+      scaleFactor: target.svgScaleFactor,
+    );
     if (svgPath != null) {
       canvas.drawPath(svgPath, fillPaint);
       canvas.drawPath(svgPath, outlinePaint);
