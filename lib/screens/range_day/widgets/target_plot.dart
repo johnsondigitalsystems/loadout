@@ -132,8 +132,10 @@ import 'package:flutter/material.dart';
 
 import '../../../data/reticle_library.dart';
 import '../../../database/database.dart';
+import '../../../widgets/animal_silhouettes.dart';
 import '../../../widgets/reticle_renderer.dart';
 import '../../../widgets/scope_daytime_backdrop.dart';
+import '../../../widgets/target_silhouettes.dart';
 
 /// Two interaction modes for the target plot.
 enum TargetPlotTapMode {
@@ -402,8 +404,14 @@ class TargetPlot extends StatelessWidget {
     // target" feel. We never let realistic mode get narrower than the
     // target itself (very tall targets keep their own ratio).
     final targetRatio = target.widthIn / target.heightIn;
+    // Realistic mode locks to 4:3 landscape regardless of target
+    // aspect — the scene composition (sky 70%, grass 30%, pole +
+    // mound under target) is laid out from the frame, not from the
+    // target's own dimensions. Target-focused mode still matches
+    // the target's aspect so the silhouette fills the box for
+    // accurate dot placement.
     final outerRatio = viewMode == TargetPlotViewMode.realistic
-        ? math.max(targetRatio, 4 / 3)
+        ? 4 / 3
         : targetRatio;
     return AspectRatio(
       aspectRatio: outerRatio,
@@ -454,19 +462,33 @@ class TargetPlot extends StatelessWidget {
                   if (viewMode == TargetPlotViewMode.realistic)
                     CustomPaint(
                       size: outerSize,
-                      painter: _RealisticTargetPainter(
-                        target: target,
-                        shots: shots,
-                        aimPointX: ax,
-                        aimPointY: ay,
-                        layout: layout,
-                        primary: theme.colorScheme.primary,
-                        errorColor: theme.colorScheme.error,
-                        textColor: theme.colorScheme.onSurface,
-                        colorHexOverride: colorHexOverride,
-                        lowLightMode: lowLightMode,
-                        rackMountStyle: rackMountStyle,
-                      ),
+                      // Rack targets keep the legacy painter (cross-bar,
+                      // chains, stakes, popper bases, individual posts —
+                      // all the rack-mount-style dispatch lives there).
+                      // Single targets use the new scene painter that
+                      // composes sky → grass → mound → pole → target
+                      // cleanly. Reticle / aim / shots are deferred to
+                      // subsequent phases for the single-target path;
+                      // the legacy painter still renders them for racks
+                      // until the rack rewrite lands.
+                      painter: layout.isRack
+                          ? _RealisticTargetPainter(
+                              target: target,
+                              shots: shots,
+                              aimPointX: ax,
+                              aimPointY: ay,
+                              layout: layout,
+                              primary: theme.colorScheme.primary,
+                              errorColor: theme.colorScheme.error,
+                              textColor: theme.colorScheme.onSurface,
+                              colorHexOverride: colorHexOverride,
+                              lowLightMode: lowLightMode,
+                              rackMountStyle: rackMountStyle,
+                            )
+                          : _RealisticScenePainter(
+                              target: target,
+                              colorHexOverride: colorHexOverride,
+                            ),
                     )
                   else
                     CustomPaint(
@@ -932,6 +954,280 @@ class RealisticLayout {
   final double poleX;
   final double poleTop;
   final double poleBottom;
+}
+
+/// Single-target realistic-mode painter. Composes a static scene:
+///
+///   1. Sky gradient — top 70% of canvas.
+///   2. Grass — solid green, bottom 30%.
+///   3. Mound — 60″ × 18″ brown ellipse straddling the horizon line.
+///   4. Pole — 4″ × 72″ steel-grey post from mound apex up to target
+///      bottom.
+///   5. Target — fit inside a 0.50 W × 0.35 H bounding box, aspect
+///      preserved, bottom-aligned at the pole's top. Dispatches to
+///      AnimalSilhouettes / TargetSilhouettes when [TargetSpec.shapeId]
+///      resolves; otherwise falls back to the procedural shape
+///      switch (circle / silhouette / rectangle / square).
+///
+/// Real-world dimensions for the pole and mound are converted to
+/// pixels via the reference scale `1 inch = H / 300 pixels`, derived
+/// so the combined pole + mound vertical span (90 inches) fills 30%
+/// of canvas height. The target's apparent size is decoupled from
+/// real dimensions (fit-to-frame) — this is a stylized scene
+/// preview, not a scope view at a real range.
+///
+/// This painter intentionally does NOT draw the reticle, scope ring,
+/// aim crosshair, or shot dots — those move to subsequent phases.
+/// Rack targets still use [_RealisticTargetPainter]; the dispatch
+/// happens in [TargetPlot.build].
+///
+/// [lowLightMode] is accepted (so the call site doesn't need to
+/// branch) but currently ignored — Phase 1 is daytime only. A dusk
+/// palette will return when low-light mode is reinstated.
+class _RealisticScenePainter extends CustomPainter {
+  _RealisticScenePainter({
+    required this.target,
+    this.colorHexOverride,
+  });
+
+  final TargetSpec target;
+  final String? colorHexOverride;
+
+  // ── Layout constants ─────────────────────────────────────────────
+  /// Horizon position: sky/grass boundary at 70% from top.
+  static const double _horizonFrac = 0.70;
+  /// Reference scale denominator: 1 inch = H / _inchesPerCanvasHeight px.
+  /// Derived so 90″ (pole + mound stack) = 0.30 H.
+  static const double _inchesPerCanvasHeight = 300.0;
+  /// Target bounding box dimensions as fractions of canvas.
+  static const double _targetBoxWidthFrac = 0.50;
+  static const double _targetBoxHeightFrac = 0.35;
+
+  // ── Palette ──────────────────────────────────────────────────────
+  static const Color _skyTopColor = Color(0xff5e8db8);
+  static const Color _skyBottomColor = Color(0xffb8d4e6);
+  static const Color _grassColor = Color(0xff6b8c3e);
+  static const Color _horizonStrokeColor = Color(0xff54702f);
+  static const Color _moundFillColor = Color(0xff8b6f47);
+  static const Color _moundPebbleColor = Color(0xff6f5538);
+  static const Color _poleColor = Color(0xff7a7a7a);
+  static const Color _poleHighlightColor = Color(0xff9a9a9a);
+  static const Color _poleShadowColor = Color(0xff5a5a5a);
+  static const Color _targetOutlineColor = Color(0xff1a1a1a);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.width <= 0 || size.height <= 0) return;
+    final w = size.width;
+    final h = size.height;
+    final inPerPx = h / _inchesPerCanvasHeight;
+
+    // Compute the y-coordinate of the target's bottom (= pole's top).
+    //   horizon_y               = 0.70 H
+    //   mound straddles horizon with half its height above and below
+    //   pole rises from mound apex (horizon - 0.5 × mound_height)
+    //   pole_top                = mound_apex - pole_height
+    //   target_bottom           = pole_top
+    final horizonY = _horizonFrac * h;
+    final moundHeight = 18.0 * inPerPx;
+    final poleHeight = 72.0 * inPerPx;
+    final moundApexY = horizonY - moundHeight * 0.5;
+    final poleTopY = moundApexY - poleHeight;
+
+    _paintSky(canvas, w, h, horizonY);
+    _paintGrass(canvas, w, h, horizonY);
+    _paintMound(canvas, w, horizonY, inPerPx);
+    _paintPole(canvas, w, poleTopY, poleHeight, inPerPx);
+    _paintTarget(canvas, w, h, poleTopY);
+  }
+
+  void _paintSky(Canvas canvas, double w, double h, double horizonY) {
+    final rect = Rect.fromLTWH(0, 0, w, horizonY);
+    final paint = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [_skyTopColor, _skyBottomColor],
+      ).createShader(rect);
+    canvas.drawRect(rect, paint);
+  }
+
+  void _paintGrass(Canvas canvas, double w, double h, double horizonY) {
+    canvas.drawRect(
+      Rect.fromLTWH(0, horizonY, w, h - horizonY),
+      Paint()..color = _grassColor,
+    );
+    // 2-px crisp horizon stroke at the boundary.
+    canvas.drawRect(
+      Rect.fromLTWH(0, horizonY, w, 2),
+      Paint()..color = _horizonStrokeColor,
+    );
+  }
+
+  void _paintMound(
+    Canvas canvas,
+    double w,
+    double horizonY,
+    double inPerPx,
+  ) {
+    final moundW = 60.0 * inPerPx;
+    final moundH = 18.0 * inPerPx;
+    final cx = w / 2;
+
+    // Mound: ellipse centered on the horizon line. Height multiplier
+    // 1.5 gives a depth cue (the visible top half reads as a berm
+    // rising slightly out of the grass; the bottom half is occluded
+    // by grass but completes the curve).
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(cx, horizonY),
+        width: moundW,
+        height: moundH * 1.5,
+      ),
+      Paint()..color = _moundFillColor,
+    );
+
+    // A few darker pebbles for texture. Deterministic positions via
+    // sin() so the same target always paints identically (no rng,
+    // no per-frame jitter).
+    final pebblePaint = Paint()..color = _moundPebbleColor;
+    for (var i = 0; i < 4; i++) {
+      final px = cx + (math.sin(i * 1.7) * moundW * 0.3);
+      final py = horizonY - moundH * 0.3 + (i * moundH * 0.3);
+      canvas.drawCircle(
+        Offset(px, py),
+        math.max(moundH * 0.08, 0.5),
+        pebblePaint,
+      );
+    }
+  }
+
+  void _paintPole(
+    Canvas canvas,
+    double w,
+    double poleTopY,
+    double poleHeight,
+    double inPerPx,
+  ) {
+    final poleW = 4.0 * inPerPx;
+    final cx = w / 2;
+    final halfW = poleW / 2;
+
+    // Main body — steel grey
+    canvas.drawRect(
+      Rect.fromLTWH(cx - halfW, poleTopY, poleW, poleHeight),
+      Paint()..color = _poleColor,
+    );
+
+    // Cylinder cue: a 25% wide lighter strip on the left, a 25% wide
+    // darker strip on the right. Reads as a round-ish metal post.
+    final stripW = math.max(poleW * 0.25, 0.5);
+    canvas.drawRect(
+      Rect.fromLTWH(cx - halfW, poleTopY, stripW, poleHeight),
+      Paint()..color = _poleHighlightColor,
+    );
+    canvas.drawRect(
+      Rect.fromLTWH(cx + halfW - stripW, poleTopY, stripW, poleHeight),
+      Paint()..color = _poleShadowColor,
+    );
+  }
+
+  void _paintTarget(
+    Canvas canvas,
+    double w,
+    double h,
+    double poleTopY,
+  ) {
+    // Bounding box for the target: 50% canvas width × 35% canvas
+    // height, centered horizontally, bottom-aligned at poleTopY.
+    final boxW = w * _targetBoxWidthFrac;
+    final boxH = h * _targetBoxHeightFrac;
+
+    // Aspect-preserved scale-to-fit inside the box.
+    final targetAspect = target.widthIn / target.heightIn;
+    final boxAspect = boxW / boxH;
+    final double targetW;
+    final double targetH;
+    if (targetAspect > boxAspect) {
+      // Target proportionally wider than box → fit to width.
+      targetW = boxW;
+      targetH = boxW / targetAspect;
+    } else {
+      // Target proportionally taller than box → fit to height.
+      targetH = boxH;
+      targetW = boxH * targetAspect;
+    }
+
+    final targetLeft = (w - targetW) / 2;
+    final targetTop = poleTopY - targetH;
+    final rect = Rect.fromLTWH(targetLeft, targetTop, targetW, targetH);
+
+    // Fill color: override beats target.colorHex; both go through the
+    // same hex parser.
+    final fillHex = colorHexOverride ?? target.colorHex;
+    final fillColor = _parseHexColor(fillHex);
+    final fillPaint = Paint()..color = fillColor;
+    final outlinePaint = Paint()
+      ..color = _targetOutlineColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.6;
+
+    // ── Dispatch ───────────────────────────────────────────────────
+    // 1. shapeId set + AnimalSilhouettes recognizes → SVG path.
+    // 2. shapeId set + TargetSilhouettes recognizes → SVG path.
+    // 3. Otherwise fall back to procedural by target.shape.
+    final shapeId = target.shapeId;
+    Path? svgPath;
+    if (shapeId != null) {
+      if (AnimalSilhouettes.isAnimalShape(shapeId)) {
+        svgPath = AnimalSilhouettes.cachedScaledPath(rect, shapeId);
+      } else if (TargetSilhouettes.isTargetShape(shapeId)) {
+        svgPath = TargetSilhouettes.cachedScaledPath(rect, shapeId);
+      }
+    }
+
+    if (svgPath != null) {
+      canvas.drawPath(svgPath, fillPaint);
+      canvas.drawPath(svgPath, outlinePaint);
+      return;
+    }
+
+    // Procedural fallback.
+    switch (target.shape) {
+      case 'circle':
+        final r = rect.shortestSide / 2;
+        canvas.drawCircle(rect.center, r, fillPaint);
+        canvas.drawCircle(rect.center, r, outlinePaint);
+        break;
+      case 'silhouette':
+        final ipsc = buildIpscPath(rect);
+        canvas.drawPath(ipsc, fillPaint);
+        canvas.drawPath(ipsc, outlinePaint);
+        break;
+      case 'square':
+      case 'rectangle':
+      default:
+        canvas.drawRect(rect, fillPaint);
+        canvas.drawRect(rect, outlinePaint);
+        break;
+    }
+  }
+
+  static Color _parseHexColor(String hex) {
+    var v = hex.replaceAll('#', '');
+    if (v.length == 6) v = 'ff$v';
+    return Color(int.parse(v, radix: 16));
+  }
+
+  @override
+  bool shouldRepaint(_RealisticScenePainter old) {
+    return old.target.shape != target.shape ||
+        old.target.shapeId != target.shapeId ||
+        old.target.widthIn != target.widthIn ||
+        old.target.heightIn != target.heightIn ||
+        old.target.colorHex != target.colorHex ||
+        old.colorHexOverride != colorHexOverride;
+  }
 }
 
 /// CustomPainter for realistic mode. Composes the daytime backdrop

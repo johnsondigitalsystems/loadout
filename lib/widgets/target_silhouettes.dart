@@ -146,6 +146,22 @@ class TargetSilhouettes {
     return combined;
   }
 
+  /// Synchronous cache-hit accessor for use from `CustomPainter.paint`.
+  /// Returns the SVG path scaled to [bounds] when the source path is
+  /// already in [_pathCache] (typically because `main.dart` preloaded
+  /// it at app boot per Appendix M of the Range Day Realistic v2.3
+  /// rewrite). Returns `null` when the cache is cold — callers should
+  /// fall back to a procedural shape for that frame; the next repaint
+  /// after preload completes will return the real path.
+  ///
+  /// Synchronous companion to [buildTargetPath]. Use the async variant
+  /// from any non-paint codepath.
+  static Path? cachedScaledPath(Rect bounds, String shapeId) {
+    final source = _pathCache[shapeId];
+    if (source == null) return null;
+    return scalePathToBounds(source, bounds);
+  }
+
   /// Scale to fit bounds while preserving aspect ratio; bottom-aligned.
   /// (Same algorithm as AnimalSilhouettes.scalePathToBounds.)
   static Path scalePathToBounds(Path source, Rect bounds) {
