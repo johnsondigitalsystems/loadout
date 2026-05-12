@@ -98,24 +98,30 @@ import 'dart:async';
 /// Renders hand-authored SVG silhouettes for animal targets.
 /// SVGs live in assets/silhouettes/animals/{filename}.svg.
 class AnimalSilhouettes {
-  /// Map of shape_id (from targets.json) to asset filename.
+  /// Map of shape_id (from `targets.json`) to asset filename. The KEY
+  /// equals the SVG filename basename for 15 of 16 rows; the lone
+  /// exception is `prairie_dog`, whose disk file is
+  /// `prairie_dog_standing.svg` (the SVG was authored before the
+  /// catalog renaming). The KEY tracks the logical catalog name;
+  /// the VALUE tracks the actual disk path. Renaming the file is a
+  /// follow-up.
   static const Map<String, String> _shapeIdToAsset = {
-    'deer_profile':           'assets/silhouettes/animals/deer.svg',
-    'mule_deer_profile':      'assets/silhouettes/animals/mule_deer.svg',
-    'elk_profile':            'assets/silhouettes/animals/elk.svg',
-    'moose_profile':          'assets/silhouettes/animals/moose.svg',
-    'pronghorn_profile':      'assets/silhouettes/animals/pronghorn.svg',
-    'bear_profile':           'assets/silhouettes/animals/bear.svg',
-    'boar_profile':           'assets/silhouettes/animals/boar.svg',
-    'mountain_lion_profile':  'assets/silhouettes/animals/mountain_lion.svg',
-    'coyote_profile':         'assets/silhouettes/animals/coyote.svg',
-    'fox_profile':            'assets/silhouettes/animals/fox.svg',
-    'rabbit_profile':         'assets/silhouettes/animals/rabbit.svg',
-    'groundhog_profile':      'assets/silhouettes/animals/groundhog.svg',
-    'prairie_dog_profile':    'assets/silhouettes/animals/prairie_dog_standing.svg',
-    'wild_turkey_profile':    'assets/silhouettes/animals/wild_turkey.svg',
-    'pheasant_profile':       'assets/silhouettes/animals/pheasant.svg',
-    'bigfoot_profile':        'assets/silhouettes/animals/bigfoot.svg',
+    'bear':           'assets/silhouettes/animals/bear.svg',
+    'bigfoot':        'assets/silhouettes/animals/bigfoot.svg',
+    'boar':           'assets/silhouettes/animals/boar.svg',
+    'coyote':         'assets/silhouettes/animals/coyote.svg',
+    'deer':           'assets/silhouettes/animals/deer.svg',
+    'elk':            'assets/silhouettes/animals/elk.svg',
+    'fox':            'assets/silhouettes/animals/fox.svg',
+    'groundhog':      'assets/silhouettes/animals/groundhog.svg',
+    'moose':          'assets/silhouettes/animals/moose.svg',
+    'mountain_lion':  'assets/silhouettes/animals/mountain_lion.svg',
+    'mule_deer':      'assets/silhouettes/animals/mule_deer.svg',
+    'pheasant':       'assets/silhouettes/animals/pheasant.svg',
+    'prairie_dog':    'assets/silhouettes/animals/prairie_dog_standing.svg',
+    'pronghorn':      'assets/silhouettes/animals/pronghorn.svg',
+    'rabbit':         'assets/silhouettes/animals/rabbit.svg',
+    'wild_turkey':    'assets/silhouettes/animals/wild_turkey.svg',
   };
 
   /// Cache of parsed Path objects keyed by shape_id.

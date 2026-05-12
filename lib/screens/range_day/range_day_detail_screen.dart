@@ -4891,21 +4891,33 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   ) {
     // Shape-based filter (CLAUDE.md / user feedback: reloaders pick
     // by shape, not material). Compare lowercased to be tolerant of
-    // any seed-row capitalisation drift. The 'animal' chip is a
-    // virtual bucket that matches any of the per-species shapes
-    // (bear / boar / deer / elk / coyote / hog) so the user gets
-    // one chip for "everything with legs" without exploding the
-    // chip count past five.
-    const animalShapes = {'bear', 'boar', 'deer', 'elk', 'coyote', 'hog'};
-    var filtered = _targetShapeFilter == 'all'
-        ? all
-        : _targetShapeFilter == 'animal'
-            ? all
-                .where((t) => animalShapes.contains(t.shape.toLowerCase()))
-                .toList()
-            : all
-                .where((t) => t.shape.toLowerCase() == _targetShapeFilter)
-                .toList();
+    // any seed-row capitalisation drift.
+    //
+    // The v2.3 catalog rewrite (schema v36) collapsed every animal
+    // row's `shape` field to `'silhouette'` — the per-species
+    // discriminator now lives on `shape_id` (matching the
+    // `AnimalSilhouettes` asset map). This means:
+    //   * The 'Animal' chip selects rows where shape='silhouette'
+    //     AND shape_id is non-null (the 16 authored animal SVGs).
+    //   * The 'IPSC' chip (`shape: 'silhouette'`) must EXCLUDE
+    //     rows that have a non-null shape_id, otherwise it would
+    //     over-match by showing 6 IPSC rows + 16 animals.
+    //   * Other shape chips (circle / square / rectangle / popper /
+    //     star) keep the simple direct `shape ==` comparison.
+    var filtered = switch (_targetShapeFilter) {
+      'all' => all,
+      'animal' => all
+          .where((t) =>
+              t.shape.toLowerCase() == 'silhouette' && t.shapeId != null)
+          .toList(),
+      'silhouette' => all
+          .where((t) =>
+              t.shape.toLowerCase() == 'silhouette' && t.shapeId == null)
+          .toList(),
+      _ => all
+          .where((t) => t.shape.toLowerCase() == _targetShapeFilter)
+          .toList(),
+    };
     // Apply the free-form search query. Tokenize on whitespace and
     // require every token to appear somewhere in the generated
     // shape+size label OR the underlying catalog name (so a search
@@ -5090,7 +5102,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                       final isFav = favIds.contains(t.id);
                       return ListTile(
                         dense: true,
-                        leading: _targetShapeIcon(t.shape, theme),
+                        leading: _targetShapeIcon(t.shape, t.shapeId, theme),
                         title: Text(
                           isFav
                               ? '★ ${_targetDropdownLabel(t)}'
@@ -5495,7 +5507,11 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
             padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
             child: Row(
               children: [
-                _targetShapeIcon(active.shape, theme),
+                // active is a TargetRackChildRow — rack children
+                // don't carry shape_id today (v36 added the column on
+                // Targets only). Pass null so the icon picker falls
+                // through to the shape-based dispatch.
+                _targetShapeIcon(active.shape, null, theme),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
@@ -5716,7 +5732,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         padding: const EdgeInsets.fromLTRB(10, 4, 4, 4),
         child: Row(
           children: [
-            _targetShapeIcon(t.shape, theme),
+            _targetShapeIcon(t.shape, t.shapeId, theme),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -5778,10 +5794,21 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   /// We don't try to render a fancy thumbnail here — the Range Day
   /// target plot already shows the actual target geometry once the
   /// user has set distance + scale. This is just a visual anchor
-  /// (circle / square / rectangle / silhouette) so the user knows at
-  /// a glance the shape they picked.
-  Widget _targetShapeIcon(String shape, ThemeData theme) {
+  /// (circle / square / rectangle / silhouette / animal) so the user
+  /// knows at a glance the shape they picked.
+  ///
+  /// Post-v36: animal rows share `shape: 'silhouette'` with IPSC, so
+  /// the [shapeId] discriminator is what tells us to surface the
+  /// `Icons.pets` glyph instead of the person silhouette. Same
+  /// pattern as the picker filter at `_targetShapeFilter`.
+  Widget _targetShapeIcon(String shape, String? shapeId, ThemeData theme) {
     final color = theme.colorScheme.primary;
+    // Animal-via-shape_id branch (16 rows): the catalog stores their
+    // shape as 'silhouette' but the per-species SVG key on shape_id
+    // tells us this is an animal.
+    if (shape == 'silhouette' && shapeId != null) {
+      return Icon(Icons.pets, size: 28, color: color);
+    }
     switch (shape) {
       case 'circle':
         return Container(
@@ -5809,13 +5836,6 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         return Icon(Icons.auto_awesome, size: 28, color: color);
       case 'popper':
         return Icon(Icons.swap_calls, size: 28, color: color);
-      case 'bear':
-      case 'boar':
-      case 'deer':
-      case 'elk':
-      case 'coyote':
-      case 'hog':
-        return Icon(Icons.pets, size: 28, color: color);
       default:
         return Icon(Icons.crop_square, size: 28, color: color);
     }

@@ -836,9 +836,15 @@ class SeedLoader {
       final heightIn = (m['height_in'] ?? m['heightIn']) as num;
       final colorHex =
           (m['color_hex'] as String?) ?? (m['colorHex'] as String?);
+      // v2.3 / v36 — `shape_id` is the SVG dispatch key. Non-null for
+      // the 16 animal rows (matching `AnimalSilhouettes` keys) and the
+      // 2 popper rows ('pepper_popper'); null for procedural shapes
+      // (circles, rectangles, IPSC silhouettes, Texas Star).
+      final shapeId = m['shape_id'] as String?;
       batch.add(TargetsCompanion.insert(
         name: m['name'] as String,
         shape: m['shape'] as String,
+        shapeId: Value(shapeId),
         widthIn: widthIn.toDouble(),
         heightIn: heightIn.toDouble(),
         // Default to white when missing from the JSON. The slimmed

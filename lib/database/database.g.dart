@@ -21609,6 +21609,17 @@ class $TargetsTable extends Targets with TableInfo<$TargetsTable, TargetRow> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _shapeIdMeta = const VerificationMeta(
+    'shapeId',
+  );
+  @override
+  late final GeneratedColumn<String> shapeId = GeneratedColumn<String>(
+    'shape_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _widthInMeta = const VerificationMeta(
     'widthIn',
   );
@@ -21668,6 +21679,7 @@ class $TargetsTable extends Targets with TableInfo<$TargetsTable, TargetRow> {
     id,
     name,
     shape,
+    shapeId,
     widthIn,
     heightIn,
     colorHex,
@@ -21704,6 +21716,12 @@ class $TargetsTable extends Targets with TableInfo<$TargetsTable, TargetRow> {
       );
     } else if (isInserting) {
       context.missing(_shapeMeta);
+    }
+    if (data.containsKey('shape_id')) {
+      context.handle(
+        _shapeIdMeta,
+        shapeId.isAcceptableOrUnknown(data['shape_id']!, _shapeIdMeta),
+      );
     }
     if (data.containsKey('width_in')) {
       context.handle(
@@ -21762,6 +21780,10 @@ class $TargetsTable extends Targets with TableInfo<$TargetsTable, TargetRow> {
         DriftSqlType.string,
         data['${effectivePrefix}shape'],
       )!,
+      shapeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}shape_id'],
+      ),
       widthIn: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}width_in'],
@@ -21796,12 +21818,22 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
   final String name;
 
   /// 'circle' | 'square' | 'rectangle' | 'silhouette' | 'star' |
-  /// 'bear' | 'boar' | 'deer' | 'elk' | 'coyote'. The picker
-  /// filters by SHAPE; older `category` / `materialKind` /
-  /// `manufacturer` columns were dropped in v28 because reloaders
-  /// pick by geometry, not by what the target's made of or who
-  /// printed the label.
+  /// 'popper'. Animal targets share `shape: 'silhouette'` with IPSC
+  /// rows; the [shapeId] discriminator is what tells animals apart
+  /// from IPSC at filter time and at paint time (v2.3 / v36 catalog
+  /// rewrite). Older `category` / `materialKind` / `manufacturer`
+  /// columns were dropped in v28 because reloaders pick by geometry,
+  /// not by what the target's made of or who printed the label.
   final String shape;
+
+  /// Optional discriminator that routes to a user-authored SVG path
+  /// (animal silhouettes, popper). Null for procedural shapes
+  /// (circle, square, rectangle, IPSC silhouette, Texas Star).
+  ///
+  /// When non-null, painters consult `AnimalSilhouettes` /
+  /// `TargetSilhouettes` to look up the cached SVG path and draw
+  /// it instead of the procedural geometry implied by `shape`.
+  final String? shapeId;
 
   /// Outer-bound width of the target in inches (the visible /
   /// scoreable area). For circles this equals heightIn.
@@ -21821,6 +21853,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
     required this.id,
     required this.name,
     required this.shape,
+    this.shapeId,
     required this.widthIn,
     required this.heightIn,
     required this.colorHex,
@@ -21833,6 +21866,9 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
     map['id'] = Variable<int>(id);
     map['name'] = Variable<String>(name);
     map['shape'] = Variable<String>(shape);
+    if (!nullToAbsent || shapeId != null) {
+      map['shape_id'] = Variable<String>(shapeId);
+    }
     map['width_in'] = Variable<double>(widthIn);
     map['height_in'] = Variable<double>(heightIn);
     map['color_hex'] = Variable<String>(colorHex);
@@ -21848,6 +21884,9 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
       id: Value(id),
       name: Value(name),
       shape: Value(shape),
+      shapeId: shapeId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(shapeId),
       widthIn: Value(widthIn),
       heightIn: Value(heightIn),
       colorHex: Value(colorHex),
@@ -21867,6 +21906,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
       id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
       shape: serializer.fromJson<String>(json['shape']),
+      shapeId: serializer.fromJson<String?>(json['shapeId']),
       widthIn: serializer.fromJson<double>(json['widthIn']),
       heightIn: serializer.fromJson<double>(json['heightIn']),
       colorHex: serializer.fromJson<String>(json['colorHex']),
@@ -21881,6 +21921,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
       'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
       'shape': serializer.toJson<String>(shape),
+      'shapeId': serializer.toJson<String?>(shapeId),
       'widthIn': serializer.toJson<double>(widthIn),
       'heightIn': serializer.toJson<double>(heightIn),
       'colorHex': serializer.toJson<String>(colorHex),
@@ -21893,6 +21934,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
     int? id,
     String? name,
     String? shape,
+    Value<String?> shapeId = const Value.absent(),
     double? widthIn,
     double? heightIn,
     String? colorHex,
@@ -21902,6 +21944,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
     id: id ?? this.id,
     name: name ?? this.name,
     shape: shape ?? this.shape,
+    shapeId: shapeId.present ? shapeId.value : this.shapeId,
     widthIn: widthIn ?? this.widthIn,
     heightIn: heightIn ?? this.heightIn,
     colorHex: colorHex ?? this.colorHex,
@@ -21913,6 +21956,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
       shape: data.shape.present ? data.shape.value : this.shape,
+      shapeId: data.shapeId.present ? data.shapeId.value : this.shapeId,
       widthIn: data.widthIn.present ? data.widthIn.value : this.widthIn,
       heightIn: data.heightIn.present ? data.heightIn.value : this.heightIn,
       colorHex: data.colorHex.present ? data.colorHex.value : this.colorHex,
@@ -21927,6 +21971,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('shape: $shape, ')
+          ..write('shapeId: $shapeId, ')
           ..write('widthIn: $widthIn, ')
           ..write('heightIn: $heightIn, ')
           ..write('colorHex: $colorHex, ')
@@ -21941,6 +21986,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
     id,
     name,
     shape,
+    shapeId,
     widthIn,
     heightIn,
     colorHex,
@@ -21954,6 +22000,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
           other.id == this.id &&
           other.name == this.name &&
           other.shape == this.shape &&
+          other.shapeId == this.shapeId &&
           other.widthIn == this.widthIn &&
           other.heightIn == this.heightIn &&
           other.colorHex == this.colorHex &&
@@ -21965,6 +22012,7 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
   final Value<int> id;
   final Value<String> name;
   final Value<String> shape;
+  final Value<String?> shapeId;
   final Value<double> widthIn;
   final Value<double> heightIn;
   final Value<String> colorHex;
@@ -21974,6 +22022,7 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.shape = const Value.absent(),
+    this.shapeId = const Value.absent(),
     this.widthIn = const Value.absent(),
     this.heightIn = const Value.absent(),
     this.colorHex = const Value.absent(),
@@ -21984,6 +22033,7 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
     this.id = const Value.absent(),
     required String name,
     required String shape,
+    this.shapeId = const Value.absent(),
     required double widthIn,
     required double heightIn,
     required String colorHex,
@@ -21998,6 +22048,7 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
     Expression<int>? id,
     Expression<String>? name,
     Expression<String>? shape,
+    Expression<String>? shapeId,
     Expression<double>? widthIn,
     Expression<double>? heightIn,
     Expression<String>? colorHex,
@@ -22008,6 +22059,7 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
       if (id != null) 'id': id,
       if (name != null) 'name': name,
       if (shape != null) 'shape': shape,
+      if (shapeId != null) 'shape_id': shapeId,
       if (widthIn != null) 'width_in': widthIn,
       if (heightIn != null) 'height_in': heightIn,
       if (colorHex != null) 'color_hex': colorHex,
@@ -22020,6 +22072,7 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
     Value<int>? id,
     Value<String>? name,
     Value<String>? shape,
+    Value<String?>? shapeId,
     Value<double>? widthIn,
     Value<double>? heightIn,
     Value<String>? colorHex,
@@ -22030,6 +22083,7 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
       id: id ?? this.id,
       name: name ?? this.name,
       shape: shape ?? this.shape,
+      shapeId: shapeId ?? this.shapeId,
       widthIn: widthIn ?? this.widthIn,
       heightIn: heightIn ?? this.heightIn,
       colorHex: colorHex ?? this.colorHex,
@@ -22049,6 +22103,9 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
     }
     if (shape.present) {
       map['shape'] = Variable<String>(shape.value);
+    }
+    if (shapeId.present) {
+      map['shape_id'] = Variable<String>(shapeId.value);
     }
     if (widthIn.present) {
       map['width_in'] = Variable<double>(widthIn.value);
@@ -22074,6 +22131,7 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('shape: $shape, ')
+          ..write('shapeId: $shapeId, ')
           ..write('widthIn: $widthIn, ')
           ..write('heightIn: $heightIn, ')
           ..write('colorHex: $colorHex, ')
@@ -52374,6 +52432,7 @@ typedef $$TargetsTableCreateCompanionBuilder =
       Value<int> id,
       required String name,
       required String shape,
+      Value<String?> shapeId,
       required double widthIn,
       required double heightIn,
       required String colorHex,
@@ -52385,6 +52444,7 @@ typedef $$TargetsTableUpdateCompanionBuilder =
       Value<int> id,
       Value<String> name,
       Value<String> shape,
+      Value<String?> shapeId,
       Value<double> widthIn,
       Value<double> heightIn,
       Value<String> colorHex,
@@ -52413,6 +52473,11 @@ class $$TargetsTableFilterComposer
 
   ColumnFilters<String> get shape => $composableBuilder(
     column: $table.shape,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get shapeId => $composableBuilder(
+    column: $table.shapeId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -52466,6 +52531,11 @@ class $$TargetsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get shapeId => $composableBuilder(
+    column: $table.shapeId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get widthIn => $composableBuilder(
     column: $table.widthIn,
     builder: (column) => ColumnOrderings(column),
@@ -52509,6 +52579,9 @@ class $$TargetsTableAnnotationComposer
 
   GeneratedColumn<String> get shape =>
       $composableBuilder(column: $table.shape, builder: (column) => column);
+
+  GeneratedColumn<String> get shapeId =>
+      $composableBuilder(column: $table.shapeId, builder: (column) => column);
 
   GeneratedColumn<double> get widthIn =>
       $composableBuilder(column: $table.widthIn, builder: (column) => column);
@@ -52557,6 +52630,7 @@ class $$TargetsTableTableManager
                 Value<int> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<String> shape = const Value.absent(),
+                Value<String?> shapeId = const Value.absent(),
                 Value<double> widthIn = const Value.absent(),
                 Value<double> heightIn = const Value.absent(),
                 Value<String> colorHex = const Value.absent(),
@@ -52566,6 +52640,7 @@ class $$TargetsTableTableManager
                 id: id,
                 name: name,
                 shape: shape,
+                shapeId: shapeId,
                 widthIn: widthIn,
                 heightIn: heightIn,
                 colorHex: colorHex,
@@ -52577,6 +52652,7 @@ class $$TargetsTableTableManager
                 Value<int> id = const Value.absent(),
                 required String name,
                 required String shape,
+                Value<String?> shapeId = const Value.absent(),
                 required double widthIn,
                 required double heightIn,
                 required String colorHex,
@@ -52586,6 +52662,7 @@ class $$TargetsTableTableManager
                 id: id,
                 name: name,
                 shape: shape,
+                shapeId: shapeId,
                 widthIn: widthIn,
                 heightIn: heightIn,
                 colorHex: colorHex,

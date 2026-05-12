@@ -1509,12 +1509,22 @@ class Targets extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
   /// 'circle' | 'square' | 'rectangle' | 'silhouette' | 'star' |
-  /// 'bear' | 'boar' | 'deer' | 'elk' | 'coyote'. The picker
-  /// filters by SHAPE; older `category` / `materialKind` /
-  /// `manufacturer` columns were dropped in v28 because reloaders
-  /// pick by geometry, not by what the target's made of or who
-  /// printed the label.
+  /// 'popper'. Animal targets share `shape: 'silhouette'` with IPSC
+  /// rows; the [shapeId] discriminator is what tells animals apart
+  /// from IPSC at filter time and at paint time (v2.3 / v36 catalog
+  /// rewrite). Older `category` / `materialKind` / `manufacturer`
+  /// columns were dropped in v28 because reloaders pick by geometry,
+  /// not by what the target's made of or who printed the label.
   TextColumn get shape => text()();
+
+  /// Optional discriminator that routes to a user-authored SVG path
+  /// (animal silhouettes, popper). Null for procedural shapes
+  /// (circle, square, rectangle, IPSC silhouette, Texas Star).
+  ///
+  /// When non-null, painters consult `AnimalSilhouettes` /
+  /// `TargetSilhouettes` to look up the cached SVG path and draw
+  /// it instead of the procedural geometry implied by `shape`.
+  TextColumn get shapeId => text().nullable()();
   /// Outer-bound width of the target in inches (the visible /
   /// scoreable area). For circles this equals heightIn.
   RealColumn get widthIn => real()();
@@ -2316,7 +2326,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 35;
+  int get schemaVersion => 36;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -3062,6 +3072,22 @@ class AppDatabase extends _$AppDatabase {
             // rewritten reticles.json. SeedLoader's per-table seed
             // method runs when the table is empty.
             await delete(reticles).go();
+          }
+          if (from < 36) {
+            // v36 — v2.3 target render fix. Adds `shape_id` to the
+            // Targets table so animal / popper rows can route to
+            // user-authored SVGs at paint time. Existing rows on
+            // pre-v36 installs get NULL until the next re-seed
+            // (which is triggered below by wiping the Targets table
+            // — same pattern as v3 primers / v35 reticles).
+            final targetsCols = await _columnsOf('targets');
+            if (!targetsCols.contains('shape_id')) {
+              await m.addColumn(targets, targets.shapeId);
+            }
+            // Wipe the catalog so SeedLoader re-reads `targets.json`
+            // and populates `shape_id` on the 16 animal + 2 popper
+            // rows. Reference-table only; user data unaffected.
+            await delete(targets).go();
           }
         },
       );

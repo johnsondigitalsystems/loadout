@@ -165,6 +165,7 @@ enum TargetPlotViewMode {
 class TargetSpec {
   const TargetSpec({
     required this.shape,
+    this.shapeId,
     required this.widthIn,
     required this.heightIn,
     required this.colorHex,
@@ -172,6 +173,14 @@ class TargetSpec {
 
   /// 'circle' | 'square' | 'rectangle' | 'silhouette' | 'irregular'
   final String shape;
+
+  /// Optional discriminator that routes to a user-authored SVG path
+  /// (animal silhouettes, popper). Null for procedural shapes
+  /// (circle, square, rectangle, IPSC silhouette, Texas Star, generic
+  /// `silhouette`). When non-null, painters look up
+  /// `AnimalSilhouettes` / `TargetSilhouettes` by this key.
+  final String? shapeId;
+
   final double widthIn;
   final double heightIn;
   final String colorHex;
@@ -196,6 +205,7 @@ class TargetSpec {
 
   factory TargetSpec.fromRow(TargetRow row) => TargetSpec(
         shape: row.shape,
+        shapeId: row.shapeId,
         widthIn: row.widthIn,
         heightIn: row.heightIn,
         colorHex: row.colorHex,

@@ -117,7 +117,7 @@
     "notes": "24-inch round plate. ELR / 1500+ yard gong."
   },
   {
-    "name": "Square 4×4 in",
+    "name": "Square 4 in",
     "category": "target",
     "shape": "square",
     "width_in": 4.0,
@@ -126,7 +126,7 @@
     "notes": "4-inch square aiming patch."
   },
   {
-    "name": "Square 6×6 in",
+    "name": "Square 6 in",
     "category": "target",
     "shape": "square",
     "width_in": 6.0,
@@ -135,7 +135,7 @@
     "notes": "6-inch square plate."
   },
   {
-    "name": "Square 8×8 in",
+    "name": "Square 8 in",
     "category": "target",
     "shape": "square",
     "width_in": 8.0,
@@ -144,7 +144,7 @@
     "notes": "8-inch square plate."
   },
   {
-    "name": "Square 10×10 in",
+    "name": "Square 10 in",
     "category": "target",
     "shape": "square",
     "width_in": 10.0,
@@ -153,7 +153,7 @@
     "notes": "10-inch square plate."
   },
   {
-    "name": "Square 12×12 in",
+    "name": "Square 12 in",
     "category": "target",
     "shape": "square",
     "width_in": 12.0,
@@ -288,7 +288,7 @@
     "notes": "B-6 NRA pistol slow-fire target."
   },
   {
-    "name": "Texas Star 36×36 in",
+    "name": "Texas Star 36 in",
     "category": "target",
     "shape": "star",
     "width_in": 36.0,
@@ -380,227 +380,296 @@
     "notes": "Mini pepper popper — 56 cm tall, 20 cm wide at the head. Same silhouette as the full popper at a reduced height."
   },
   {
-    "id": "animal_deer",
+    "id": "deer",
     "name": "Deer",
     "category": "animal",
     "shape": "silhouette",
-    "shape_id": "deer_profile",
+    "shape_id": "deer",
     "width_in": 60,
     "height_in": 32,
     "color_hex": "#3D2F1E",
     "rim_color_hex": "#1A1410",
     "default_distance_yd": 200,
-    "category_tags": ["animal", "big-game", "north-america"],
+    "category_tags": [
+      "animal",
+      "big-game",
+      "north-america"
+    ],
     "notes": "Side angle of a deer target."
   },
   {
-    "id": "animal_mule_deer",
+    "id": "mule_deer",
     "name": "Mule deer",
     "category": "animal",
     "shape": "silhouette",
-    "shape_id": "mule_deer_profile",
+    "shape_id": "mule_deer",
     "width_in": 60,
     "height_in": 32,
     "color_hex": "#3D2F1E",
     "rim_color_hex": "#1A1410",
     "default_distance_yd": 250,
-    "category_tags": ["animal", "big-game", "north-america", "western"],
+    "category_tags": [
+      "animal",
+      "big-game",
+      "north-america",
+      "western"
+    ],
     "notes": "Side angle of a mule deer target."
   },
   {
-    "id": "animal_elk",
+    "id": "elk",
     "name": "Elk",
     "category": "animal",
     "shape": "silhouette",
-    "shape_id": "elk_profile",
+    "shape_id": "elk",
     "width_in": 100,
     "height_in": 53,
     "color_hex": "#3D2F1E",
     "rim_color_hex": "#1A1410",
     "default_distance_yd": 300,
-    "category_tags": ["animal", "big-game", "north-america", "western"],
+    "category_tags": [
+      "animal",
+      "big-game",
+      "north-america",
+      "western"
+    ],
     "notes": "Side angle of an elk target."
   },
   {
-    "id": "animal_moose",
+    "id": "moose",
     "name": "Moose",
     "category": "animal",
     "shape": "silhouette",
-    "shape_id": "moose_profile",
+    "shape_id": "moose",
     "width_in": 120,
     "height_in": 64,
     "color_hex": "#2A1F14",
     "rim_color_hex": "#1A1410",
     "default_distance_yd": 200,
-    "category_tags": ["animal", "big-game", "north-america", "northern"],
+    "category_tags": [
+      "animal",
+      "big-game",
+      "north-america",
+      "northern"
+    ],
     "notes": "Side angle of a moose target."
   },
   {
-    "id": "animal_pronghorn",
+    "id": "pronghorn",
     "name": "Pronghorn",
     "category": "animal",
     "shape": "silhouette",
-    "shape_id": "pronghorn_profile",
+    "shape_id": "pronghorn",
     "width_in": 60,
     "height_in": 32,
     "color_hex": "#A87D4E",
     "rim_color_hex": "#3D2F1E",
     "default_distance_yd": 300,
-    "category_tags": ["animal", "big-game", "north-america", "western", "open-country"],
+    "category_tags": [
+      "animal",
+      "big-game",
+      "north-america",
+      "western",
+      "open-country"
+    ],
     "notes": "Side angle of a pronghorn target."
   },
   {
-    "id": "animal_bear",
+    "id": "bear",
     "name": "Bear",
     "category": "animal",
     "shape": "silhouette",
-    "shape_id": "bear_profile",
+    "shape_id": "bear",
     "width_in": 60,
     "height_in": 32,
     "color_hex": "#1A1410",
     "rim_color_hex": "#000000",
     "default_distance_yd": 150,
-    "category_tags": ["animal", "big-game", "north-america"],
+    "category_tags": [
+      "animal",
+      "big-game",
+      "north-america"
+    ],
     "notes": "Side angle of a bear target."
   },
   {
-    "id": "animal_boar",
+    "id": "boar",
     "name": "Boar",
     "category": "animal",
     "shape": "silhouette",
-    "shape_id": "boar_profile",
+    "shape_id": "boar",
     "width_in": 60,
     "height_in": 33,
     "color_hex": "#1A1410",
     "rim_color_hex": "#000000",
     "default_distance_yd": 150,
-    "category_tags": ["animal", "big-game", "north-america", "varmint"],
+    "category_tags": [
+      "animal",
+      "big-game",
+      "north-america",
+      "varmint"
+    ],
     "notes": "Side angle of a boar target."
   },
   {
-    "id": "animal_mountain_lion",
+    "id": "mountain_lion",
     "name": "Mountain lion",
     "category": "animal",
     "shape": "silhouette",
-    "shape_id": "mountain_lion_profile",
+    "shape_id": "mountain_lion",
     "width_in": 84,
     "height_in": 45,
     "color_hex": "#8B6F47",
     "rim_color_hex": "#3D2F1E",
     "default_distance_yd": 100,
-    "category_tags": ["animal", "predator", "north-america"],
+    "category_tags": [
+      "animal",
+      "predator",
+      "north-america"
+    ],
     "notes": "Side angle of a mountain lion target."
   },
   {
-    "id": "animal_coyote",
+    "id": "coyote",
     "name": "Coyote",
     "category": "animal",
     "shape": "silhouette",
-    "shape_id": "coyote_profile",
+    "shape_id": "coyote",
     "width_in": 48,
     "height_in": 26,
     "color_hex": "#5A4A36",
     "rim_color_hex": "#1A1410",
     "default_distance_yd": 300,
-    "category_tags": ["animal", "predator", "north-america"],
+    "category_tags": [
+      "animal",
+      "predator",
+      "north-america"
+    ],
     "notes": "Side angle of a coyote target."
   },
   {
-    "id": "animal_fox",
+    "id": "fox",
     "name": "Fox",
     "category": "animal",
     "shape": "silhouette",
-    "shape_id": "fox_profile",
+    "shape_id": "fox",
     "width_in": 36,
     "height_in": 19,
     "color_hex": "#8B4513",
     "rim_color_hex": "#1A1410",
     "default_distance_yd": 200,
-    "category_tags": ["animal", "predator", "small-game"],
+    "category_tags": [
+      "animal",
+      "predator",
+      "small-game"
+    ],
     "notes": "Side angle of a fox target."
   },
   {
-    "id": "animal_rabbit",
+    "id": "rabbit",
     "name": "Rabbit",
     "category": "animal",
     "shape": "silhouette",
-    "shape_id": "rabbit_profile",
+    "shape_id": "rabbit",
     "width_in": 18,
     "height_in": 10,
     "color_hex": "#7D6B53",
     "rim_color_hex": "#1A1410",
     "default_distance_yd": 100,
-    "category_tags": ["animal", "small-game"],
+    "category_tags": [
+      "animal",
+      "small-game"
+    ],
     "notes": "Side angle of a rabbit target."
   },
   {
-    "id": "animal_groundhog",
+    "id": "groundhog",
     "name": "Groundhog",
     "category": "animal",
     "shape": "silhouette",
-    "shape_id": "groundhog_profile",
+    "shape_id": "groundhog",
     "width_in": 24,
     "height_in": 13,
     "color_hex": "#5A4A36",
     "rim_color_hex": "#1A1410",
     "default_distance_yd": 200,
-    "category_tags": ["animal", "varmint", "small-game"],
+    "category_tags": [
+      "animal",
+      "varmint",
+      "small-game"
+    ],
     "notes": "Side angle of a groundhog target."
   },
   {
-    "id": "animal_prairie_dog",
+    "id": "prairie_dog",
     "name": "Prairie dog",
     "category": "animal",
     "shape": "silhouette",
-    "shape_id": "prairie_dog_profile",
+    "shape_id": "prairie_dog",
     "width_in": 12,
     "height_in": 6,
     "color_hex": "#A87D4E",
     "rim_color_hex": "#3D2F1E",
     "default_distance_yd": 400,
-    "category_tags": ["animal", "varmint", "long-range-plinking"],
+    "category_tags": [
+      "animal",
+      "varmint",
+      "long-range-plinking"
+    ],
     "notes": "Side angle of a prairie dog target."
   },
   {
-    "id": "animal_turkey",
-    "name": "Turkey",
+    "id": "wild_turkey",
+    "name": "Wild turkey",
     "category": "animal",
     "shape": "silhouette",
-    "shape_id": "wild_turkey_profile",
+    "shape_id": "wild_turkey",
     "width_in": 36,
     "height_in": 19,
     "color_hex": "#3D2F1E",
     "rim_color_hex": "#1A1410",
     "default_distance_yd": 40,
-    "category_tags": ["animal", "upland-bird", "game-bird"],
+    "category_tags": [
+      "animal",
+      "upland-bird",
+      "game-bird"
+    ],
     "notes": "Side angle of a turkey target."
   },
   {
-    "id": "animal_pheasant",
+    "id": "pheasant",
     "name": "Pheasant",
     "category": "animal",
     "shape": "silhouette",
-    "shape_id": "pheasant_profile",
+    "shape_id": "pheasant",
     "width_in": 36,
     "height_in": 19,
     "color_hex": "#8B4513",
     "rim_color_hex": "#1A1410",
     "default_distance_yd": 30,
-    "category_tags": ["animal", "upland-bird", "game-bird"],
+    "category_tags": [
+      "animal",
+      "upland-bird",
+      "game-bird"
+    ],
     "notes": "Side angle of a pheasant target."
   },
   {
-    "id": "animal_bigfoot",
+    "id": "bigfoot",
     "name": "Bigfoot",
     "category": "animal",
     "shape": "silhouette",
-    "shape_id": "bigfoot_profile",
+    "shape_id": "bigfoot",
     "width_in": 84,
     "height_in": 46,
     "color_hex": "#2A1F14",
     "rim_color_hex": "#000000",
     "default_distance_yd": 400,
-    "category_tags": ["animal", "novelty", "cryptid"],
+    "category_tags": [
+      "animal",
+      "novelty",
+      "cryptid"
+    ],
     "notes": "Side angle of a bigfoot target."
   }
 ]

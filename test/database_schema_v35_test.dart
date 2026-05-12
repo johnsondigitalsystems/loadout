@@ -78,8 +78,47 @@ void main() {
       await db.close();
     });
 
-    test('schemaVersion is 35', () {
-      expect(db.schemaVersion, 35);
+    test('schemaVersion is 36', () {
+      // v35 added Range Day Realistic / per-firearm scope-and-reticle
+      // defaults; v36 added `targets.shape_id` for SVG dispatch (v2.3
+      // target render fix). The file keeps its v35 name because every
+      // v35-era assertion below is still valid on v36 — schema bumps
+      // are additive.
+      expect(db.schemaVersion, 36);
+    });
+
+    test('targets accepts the new v36 shape_id column', () async {
+      // v36 — `shape_id` routes animal / popper rows to their
+      // user-authored SVGs. Nullable; pre-v36 rows or non-SVG shapes
+      // (circle, rectangle, IPSC silhouette) leave it null.
+      final animalId = await db.into(db.targets).insert(
+            TargetsCompanion.insert(
+              name: 'v36 test bear',
+              shape: 'silhouette',
+              shapeId: const Value('bear'),
+              widthIn: 60,
+              heightIn: 32,
+              colorHex: '#ffffff',
+            ),
+          );
+      final animal = await (db.select(db.targets)
+            ..where((t) => t.id.equals(animalId)))
+          .getSingle();
+      expect(animal.shapeId, 'bear');
+
+      final plainId = await db.into(db.targets).insert(
+            TargetsCompanion.insert(
+              name: 'v36 plain circle',
+              shape: 'circle',
+              widthIn: 12,
+              heightIn: 12,
+              colorHex: '#ffffff',
+            ),
+          );
+      final plain = await (db.select(db.targets)
+            ..where((t) => t.id.equals(plainId)))
+          .getSingle();
+      expect(plain.shapeId, isNull);
     });
 
     test('range_day_sessions accepts the 6 new v35 columns', () async {

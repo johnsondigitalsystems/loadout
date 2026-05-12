@@ -162,22 +162,22 @@ Future<void> main() async {
   // (Per Appendix H.4 of the Range Day Realistic v2.3 rewrite.) Total
   // payload ~250 KB; preload completes in ~80ms on a mid-tier device.
   unawaited(Future.wait([
-    AnimalSilhouettes.loadAnimalPath('deer_profile'),
-    AnimalSilhouettes.loadAnimalPath('mule_deer_profile'),
-    AnimalSilhouettes.loadAnimalPath('elk_profile'),
-    AnimalSilhouettes.loadAnimalPath('moose_profile'),
-    AnimalSilhouettes.loadAnimalPath('pronghorn_profile'),
-    AnimalSilhouettes.loadAnimalPath('bear_profile'),
-    AnimalSilhouettes.loadAnimalPath('boar_profile'),
-    AnimalSilhouettes.loadAnimalPath('mountain_lion_profile'),
-    AnimalSilhouettes.loadAnimalPath('coyote_profile'),
-    AnimalSilhouettes.loadAnimalPath('fox_profile'),
-    AnimalSilhouettes.loadAnimalPath('rabbit_profile'),
-    AnimalSilhouettes.loadAnimalPath('groundhog_profile'),
-    AnimalSilhouettes.loadAnimalPath('prairie_dog_profile'),
-    AnimalSilhouettes.loadAnimalPath('wild_turkey_profile'),
-    AnimalSilhouettes.loadAnimalPath('pheasant_profile'),
-    AnimalSilhouettes.loadAnimalPath('bigfoot_profile'),
+    AnimalSilhouettes.loadAnimalPath('bear'),
+    AnimalSilhouettes.loadAnimalPath('bigfoot'),
+    AnimalSilhouettes.loadAnimalPath('boar'),
+    AnimalSilhouettes.loadAnimalPath('coyote'),
+    AnimalSilhouettes.loadAnimalPath('deer'),
+    AnimalSilhouettes.loadAnimalPath('elk'),
+    AnimalSilhouettes.loadAnimalPath('fox'),
+    AnimalSilhouettes.loadAnimalPath('groundhog'),
+    AnimalSilhouettes.loadAnimalPath('moose'),
+    AnimalSilhouettes.loadAnimalPath('mountain_lion'),
+    AnimalSilhouettes.loadAnimalPath('mule_deer'),
+    AnimalSilhouettes.loadAnimalPath('pheasant'),
+    AnimalSilhouettes.loadAnimalPath('prairie_dog'),
+    AnimalSilhouettes.loadAnimalPath('pronghorn'),
+    AnimalSilhouettes.loadAnimalPath('rabbit'),
+    AnimalSilhouettes.loadAnimalPath('wild_turkey'),
   ]));
 
   // Preload competition target SVGs (per Appendix M).
