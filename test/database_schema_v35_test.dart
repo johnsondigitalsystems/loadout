@@ -78,13 +78,53 @@ void main() {
       await db.close();
     });
 
-    test('schemaVersion is 36', () {
+    test('schemaVersion is 37', () {
       // v35 added Range Day Realistic / per-firearm scope-and-reticle
       // defaults; v36 added `targets.shape_id` for SVG dispatch (v2.3
-      // target render fix). The file keeps its v35 name because every
-      // v35-era assertion below is still valid on v36 — schema bumps
-      // are additive.
-      expect(db.schemaVersion, 36);
+      // target render fix); v37 added the per-target `center_point`
+      // columns (Scene Painter Phase 6) — two RealColumns with default
+      // 0.5 for vertical / horizontal anchor fractions. The file keeps
+      // its v35 name because every v35-era assertion below is still
+      // valid on v37 — schema bumps are additive.
+      expect(db.schemaVersion, 37);
+    });
+
+    test('targets accepts the new v37 center_point columns', () async {
+      // v37 — `verticalCenterPctFromTop` and `horizontalCenterPctFromLeft`
+      // are RealColumn defaults of 0.5 each. Rows inserted without
+      // explicit values get the defaults; rows can override per-target.
+      final defaultId = await db.into(db.targets).insert(
+            TargetsCompanion.insert(
+              name: 'v37 default-center row',
+              shape: 'silhouette',
+              widthIn: 18,
+              heightIn: 30,
+              colorHex: '#ffffff',
+            ),
+          );
+      final defaultRow = await (db.select(db.targets)
+            ..where((t) => t.id.equals(defaultId)))
+          .getSingle();
+      expect(defaultRow.verticalCenterPctFromTop, 0.5);
+      expect(defaultRow.horizontalCenterPctFromLeft, 0.5);
+
+      final tunedId = await db.into(db.targets).insert(
+            TargetsCompanion.insert(
+              name: 'v37 tuned-center deer',
+              shape: 'silhouette',
+              shapeId: const Value('deer'),
+              widthIn: 60,
+              heightIn: 32,
+              colorHex: '#ffffff',
+              verticalCenterPctFromTop: const Value(0.65),
+              horizontalCenterPctFromLeft: const Value(0.40),
+            ),
+          );
+      final tuned = await (db.select(db.targets)
+            ..where((t) => t.id.equals(tunedId)))
+          .getSingle();
+      expect(tuned.verticalCenterPctFromTop, 0.65);
+      expect(tuned.horizontalCenterPctFromLeft, 0.40);
     });
 
     test('targets accepts the new v36 shape_id column', () async {

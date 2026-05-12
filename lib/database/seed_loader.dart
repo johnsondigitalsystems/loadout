@@ -148,6 +148,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/target_center_point.dart';
 import '../services/seed_updater.dart' show seedNeedsReseedPrefix;
 import 'database.dart';
 
@@ -838,9 +839,15 @@ class SeedLoader {
           (m['color_hex'] as String?) ?? (m['colorHex'] as String?);
       // v2.3 / v36 — `shape_id` is the SVG dispatch key. Non-null for
       // the 16 animal rows (matching `AnimalSilhouettes` keys) and the
-      // 2 popper rows ('pepper_popper'); null for procedural shapes
-      // (circles, rectangles, IPSC silhouettes, Texas Star).
+      // popper / IPSC rows; null for procedural shapes (circles,
+      // rectangles, Texas Star).
       final shapeId = m['shape_id'] as String?;
+      // v37 — `center_point` is the per-target geometric anchor for
+      // pole positioning (and future visual anchors). Null block →
+      // default 0.5/0.5 (= rect center, same as the Phase 5 anchor).
+      final centerPoint = TargetCenterPoint.fromJson(
+        m['center_point'] as Map<String, dynamic>?,
+      );
       batch.add(TargetsCompanion.insert(
         name: m['name'] as String,
         shape: m['shape'] as String,
@@ -854,6 +861,9 @@ class SeedLoader {
         // a future entry omits the field.
         colorHex: colorHex ?? '#ffffff',
         notes: Value(m['notes'] as String?),
+        verticalCenterPctFromTop: Value(centerPoint.verticalFromTop),
+        horizontalCenterPctFromLeft:
+            Value(centerPoint.horizontalFromLeft),
       ));
     }
     await db.batch((b) => b.insertAll(db.targets, batch));

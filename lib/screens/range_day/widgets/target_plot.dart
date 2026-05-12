@@ -132,6 +132,7 @@ import 'package:flutter/material.dart';
 
 import '../../../data/reticle_library.dart';
 import '../../../database/database.dart';
+import '../../../models/target_center_point.dart';
 import '../../../widgets/animal_silhouettes.dart';
 import '../../../widgets/reticle_renderer.dart';
 import '../../../widgets/scope_daytime_backdrop.dart';
@@ -202,6 +203,7 @@ class TargetSpec {
     required this.widthIn,
     required this.heightIn,
     required this.colorHex,
+    this.centerPoint = TargetCenterPoint.defaultCenter,
   });
 
   /// 'circle' | 'square' | 'rectangle' | 'silhouette' | 'irregular'
@@ -217,6 +219,10 @@ class TargetSpec {
   final double widthIn;
   final double heightIn;
   final String colorHex;
+
+  /// Per-target geometric center (v37+). Defaults to 0.5/0.5 — same
+  /// anchor as `targetRect.center` in Phase 5 painter math.
+  final TargetCenterPoint centerPoint;
 
   /// Default target used when the user hasn't picked one yet — an
   /// 18 in × 30 in white silhouette. This matches the canonical IPSC
@@ -242,6 +248,10 @@ class TargetSpec {
         widthIn: row.widthIn,
         heightIn: row.heightIn,
         colorHex: row.colorHex,
+        centerPoint: TargetCenterPoint(
+          verticalFromTop: row.verticalCenterPctFromTop,
+          horizontalFromLeft: row.horizontalCenterPctFromLeft,
+        ),
       );
 }
 
@@ -1036,22 +1046,22 @@ class _RealisticScenePainter extends CustomPainter {
   /// than the bear looking 3× wider than the mound it stands on.
   static const double _inchesPerCanvasHeight = 200.0;
   /// Target bounding box dimensions as fractions of canvas.
-  /// Height tuned to 0.28 (was 0.35) so the bear doesn't dominate the
-  /// frame at the new scenery scale.
+  /// Phase 6 bumped height 0.28 → 0.40 so the bear / IPSC / animal
+  /// silhouettes become the focal point. A 60×32 bear (aspect 1.875)
+  /// in a 156×93.6 box at H=234 now fits to width (156 wide × 83.2
+  /// tall, bottom-aligned).
   static const double _targetBoxWidthFrac = 0.50;
-  static const double _targetBoxHeightFrac = 0.28;
+  static const double _targetBoxHeightFrac = 0.40;
   /// Visible pole stub height as a fraction of the target box height.
-  /// Phase 5 cut the pole from a fixed 72″ real-world height to a
-  /// short mounting stub anchored to target height — bear becomes
-  /// the focal point and the pole no longer reads as a "stilt".
-  /// 0.20 ≈ stub is ~20% of the target's vertical extent.
-  static const double _visiblePoleFracOfTarget = 0.20;
+  /// Phase 6 bumped 0.20 → 0.25 in concert with the bigger target
+  /// box so the pole stub stays visually proportional.
+  static const double _visiblePoleFracOfTarget = 0.25;
 
   // ── Palette ──────────────────────────────────────────────────────
   static const Color _skyTopColor = Color(0xff5e8db8);
   static const Color _skyBottomColor = Color(0xffb8d4e6);
   static const Color _grassColor = Color(0xff6b8c3e);
-  static const Color _grassTuftColor = Color(0xff54702f); // darker, for grass blades at horizon
+  static const Color _grassTuftColor = Color(0xff54702f); // darker, for grass blades at horizon and tall-grass clumps
   static const Color _moundFillColor = Color(0xff8b6f47); // medium dirt brown
   static const Color _moundHighlightColor = Color(0xffa8855a); // sandy upper edge
   static const Color _moundShadowColor = Color(0xff5a3f25); // darker brown for shaded surface
@@ -1062,6 +1072,16 @@ class _RealisticScenePainter extends CustomPainter {
   static const Color _poleShadowColor = Color(0xff5a5a5a);
   static const Color _poleBaseRingColor = Color(0xff4a3422); // disturbed earth ring around pole base
   static const Color _targetOutlineColor = Color(0xff1a1a1a);
+  // Phase 6 — Group C background depth layers
+  static const Color _distantHillsColor = Color(0xffa8b5a0); // atmospheric-perspective faded green-grey
+  static const Color _treelineColor = Color(0xff3a5a1f); // dark green tree silhouettes against sky
+
+  // Phase 6 — background layer geometry
+  static const double _distantHillsMaxHeight = 30.0; // px above horizon at peaks
+  static const double _treelineMaxHeight = 12.0; // px above horizon at peaks
+  static const int _treelineCount = 12; // individual tree silhouettes
+  static const int _tallGrassClumpCount = 5;
+  static const double _tallGrassClumpMaxHeight = 15.0; // px tall blade max
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1091,20 +1111,35 @@ class _RealisticScenePainter extends CustomPainter {
     final targetBottomY = moundApexY - visiblePoleHeight;
     final targetRect = _computeTargetRect(w, h, targetBottomY);
 
-    // The pole's VISUAL top extends past the target's bottom up into
-    // the silhouette's center. The target body paints on top later
-    // and covers the upper half of the pole — reads as "target
-    // mounted to the post" rather than "target balanced on the post
-    // tip."
-    final visualPoleTopY = targetRect.center.dy;
+    // Phase 6 Group A: pole anchor comes from the target's per-row
+    // center_point (defaults to 0.5/0.5, which matches Phase 5's
+    // hardcoded `targetRect.center` behaviour exactly). When animal
+    // SVGs eventually get per-row tuning (e.g. deer at 0.65 vert /
+    // 0.4 horiz to put the pole through the deer's body instead of
+    // its head), the same plumbing flows from JSON → drift → TargetSpec
+    // → here without further painter changes.
+    final cp = target.centerPoint;
+    final visualPoleTopY =
+        targetRect.top + cp.verticalFromTop * targetRect.height;
+    final poleX =
+        targetRect.left + cp.horizontalFromLeft * targetRect.width;
     final visualPoleHeight = moundApexY - visualPoleTopY;
 
+    // Phase 6 Group C — new layer order:
+    //   sky → distant hills → treeline → grass field → tall grass
+    //   → mound → pole → horizon tufts → pole base ring → target
+    // Layers read as depth: hills behind trees, trees behind grass,
+    // grass behind mound, mound behind pole, target on top.
     _paintSky(canvas, w, h, horizonY);
+    _paintDistantHills(canvas, w, horizonY);
+    _paintTreeline(canvas, w, horizonY);
     _paintGrass(canvas, w, h, horizonY);
+    _paintTallGrass(canvas, w, h, horizonY, inPerPx);
     _paintMound(canvas, w, horizonY, inPerPx);
-    _paintPole(canvas, w, visualPoleTopY, visualPoleHeight, inPerPx);
+    _paintPole(canvas, poleX, visualPoleTopY, visualPoleHeight,
+        visiblePoleHeight);
     _paintGrassTufts(canvas, w, horizonY, inPerPx);
-    _paintPoleBaseRing(canvas, w, moundApexY, inPerPx);
+    _paintPoleBaseRing(canvas, poleX, moundApexY, visiblePoleHeight);
     _paintTarget(canvas, targetRect);
   }
 
@@ -1117,6 +1152,123 @@ class _RealisticScenePainter extends CustomPainter {
         colors: [_skyTopColor, _skyBottomColor],
       ).createShader(rect);
     canvas.drawRect(rect, paint);
+  }
+
+  /// Distant hills behind the horizon. A single cubic-bezier path
+  /// forming 3 gentle wide peaks across the canvas width. Filled
+  /// with a faded green-grey ("atmospheric perspective"); peaks rise
+  /// up to [_distantHillsMaxHeight] px above the horizon. Path closes
+  /// along the horizon so the lower portion sits behind the grass
+  /// field (painted next).
+  ///
+  /// Deterministic peak positions driven only by canvas width — same
+  /// canvas size always yields the same hills, frame after frame.
+  void _paintDistantHills(Canvas canvas, double w, double horizonY) {
+    final path = Path();
+    path.moveTo(0, horizonY);
+    // Three peaks: left at 0.2W, center at 0.5W, right at 0.85W.
+    // Peak heights vary slightly so the silhouette isn't symmetric.
+    path.cubicTo(
+      w * 0.10, horizonY - _distantHillsMaxHeight * 0.55,
+      w * 0.15, horizonY - _distantHillsMaxHeight * 1.00,
+      w * 0.20, horizonY - _distantHillsMaxHeight * 0.85,
+    );
+    path.cubicTo(
+      w * 0.30, horizonY - _distantHillsMaxHeight * 0.45,
+      w * 0.42, horizonY - _distantHillsMaxHeight * 0.95,
+      w * 0.50, horizonY - _distantHillsMaxHeight * 0.75,
+    );
+    path.cubicTo(
+      w * 0.60, horizonY - _distantHillsMaxHeight * 0.40,
+      w * 0.75, horizonY - _distantHillsMaxHeight * 0.65,
+      w * 0.85, horizonY - _distantHillsMaxHeight * 0.55,
+    );
+    path.cubicTo(
+      w * 0.92, horizonY - _distantHillsMaxHeight * 0.30,
+      w * 0.97, horizonY - _distantHillsMaxHeight * 0.15,
+      w, horizonY,
+    );
+    path.close();
+    canvas.drawPath(path, Paint()..color = _distantHillsColor);
+  }
+
+  /// Treeline silhouettes between the hills and the grass field.
+  /// [_treelineCount] small dark-green tree shapes (rounded triangles)
+  /// spaced across the canvas width with overlapping placement; peak
+  /// heights vary deterministically via `sin(i * 1.3)` so neighbours
+  /// don't read as identical. Each tree closes its base along the
+  /// horizon line — the grass painted next will cover the seam.
+  void _paintTreeline(Canvas canvas, double w, double horizonY) {
+    final paint = Paint()..color = _treelineColor;
+    final treeBaseW = w / (_treelineCount * 0.85); // slight overlap
+    for (var i = 0; i < _treelineCount; i++) {
+      final cx = (i + 0.5) * (w / _treelineCount);
+      // Height varies 0.5..1.0 of the configured max.
+      final tHeight = _treelineMaxHeight *
+          (0.5 + 0.5 * (math.sin(i * 1.3) + 1.0) * 0.5);
+      final halfW = treeBaseW * 0.5;
+      final path = Path();
+      path.moveTo(cx - halfW, horizonY);
+      // Rounded triangle: quad-bezier up to the peak from each side.
+      path.quadraticBezierTo(
+        cx - halfW * 0.35, horizonY - tHeight * 0.65,
+        cx, horizonY - tHeight,
+      );
+      path.quadraticBezierTo(
+        cx + halfW * 0.35, horizonY - tHeight * 0.65,
+        cx + halfW, horizonY,
+      );
+      path.close();
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  /// Tall grass clumps scattered in the foreground grass field
+  /// (below the horizon). [_tallGrassClumpCount] clumps, each with
+  /// 3-5 vertical blade strokes up to [_tallGrassClumpMaxHeight] px
+  /// tall. Positions deterministic via sin/cos of canvas width.
+  /// Skips the mound's horizontal extent so clumps don't paint
+  /// across the dirt pile.
+  void _paintTallGrass(
+    Canvas canvas,
+    double w,
+    double h,
+    double horizonY,
+    double inPerPx,
+  ) {
+    final paint = Paint()
+      ..color = _grassTuftColor
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+
+    final cx = w / 2;
+    final moundHalfW = 60.0 * inPerPx * 0.5;
+    final grassBand = h - horizonY;
+
+    for (var i = 0; i < _tallGrassClumpCount; i++) {
+      // Deterministic positions across the canvas; cosine drives
+      // vertical placement within the grass band.
+      final clumpX =
+          w * (0.10 + 0.80 * ((math.sin(i * 2.3) + 1.0) * 0.5));
+      // Skip if the clump would paint on top of the mound.
+      if ((clumpX - cx).abs() < moundHalfW) continue;
+      // Vertical position: scattered through the grass band, biased
+      // slightly toward the front (lower y).
+      final clumpY = horizonY +
+          grassBand * (0.20 + 0.60 * ((math.cos(i * 1.7) + 1.0) * 0.5));
+      // 3..5 blades per clump.
+      final blades = 3 + (i % 3);
+      for (var j = 0; j < blades; j++) {
+        final jitterX = (j - blades * 0.5) * 2.0;
+        final bladeH = _tallGrassClumpMaxHeight *
+            (0.5 + 0.5 * ((math.sin(i * 3.1 + j * 0.9) + 1.0) * 0.5));
+        canvas.drawLine(
+          Offset(clumpX + jitterX, clumpY),
+          Offset(clumpX + jitterX, clumpY - bladeH),
+          paint,
+        );
+      }
+    }
   }
 
   void _paintGrass(Canvas canvas, double w, double h, double horizonY) {
@@ -1174,14 +1326,18 @@ class _RealisticScenePainter extends CustomPainter {
     // Darker grass clumps where the mound meets the grass —
     // gives the mound a sense of being EMBEDDED in the ground
     // rather than sitting on top. Phase 5 expanded from 6 → 10
-    // clumps (5 each side) and stagger heights via a 1.5×
-    // multiplier on alternate indices so the fringe doesn't read
-    // as uniform.
+    // clumps (5 each side) and staggered heights via a 1.5×
+    // multiplier on alternate indices. Phase 6 fixes the
+    // symmetry: the multiplier now keys off the PAIR INDEX
+    // `(i ~/ 2).isEven` instead of `i.isEven`, so both left and
+    // right clumps at the same distance from the mound center
+    // get the same height. Pre-fix, all left-side clumps were
+    // tall and all right-side short — visible asymmetry.
     for (var i = 0; i < 10; i++) {
       final side = i.isEven ? -1.0 : 1.0;
       final t = (i ~/ 2) / 4.0; // 0, 0.25, 0.50, 0.75, 1.0
       final x = cx + side * (moundHalfW - 2.0 - t * 8.0);
-      final heightMultiplier = i.isEven ? 1.5 : 1.0;
+      final heightMultiplier = (i ~/ 2).isEven ? 1.5 : 1.0;
       final bladeH = (2.0 + math.sin(i * 1.7) * 1.5) * heightMultiplier;
       canvas.drawLine(
         Offset(x, horizonY + 1.0),
@@ -1301,18 +1457,22 @@ class _RealisticScenePainter extends CustomPainter {
 
   void _paintPole(
     Canvas canvas,
-    double w,
+    double poleX,
     double poleTopY,
     double poleHeight,
-    double inPerPx,
+    double visiblePoleHeight,
   ) {
-    final poleW = 4.0 * inPerPx;
-    final cx = w / 2;
+    // Phase 6 Group B: pole width derived from visible pole height
+    // (max(2.5, visiblePoleHeight × 0.15)) so the pole stays
+    // proportional to its own length. Was a fixed 4" × inPerPx in
+    // Phase 5; that scaled with canvas height but not with the new
+    // smaller pole stub, which left the pole looking chunky.
+    final poleW = math.max(2.5, visiblePoleHeight * 0.15);
     final halfW = poleW / 2;
 
     // Main body — steel grey
     canvas.drawRect(
-      Rect.fromLTWH(cx - halfW, poleTopY, poleW, poleHeight),
+      Rect.fromLTWH(poleX - halfW, poleTopY, poleW, poleHeight),
       Paint()..color = _poleColor,
     );
 
@@ -1320,11 +1480,12 @@ class _RealisticScenePainter extends CustomPainter {
     // darker strip on the right. Reads as a round-ish metal post.
     final stripW = math.max(poleW * 0.25, 0.5);
     canvas.drawRect(
-      Rect.fromLTWH(cx - halfW, poleTopY, stripW, poleHeight),
+      Rect.fromLTWH(poleX - halfW, poleTopY, stripW, poleHeight),
       Paint()..color = _poleHighlightColor,
     );
     canvas.drawRect(
-      Rect.fromLTWH(cx + halfW - stripW, poleTopY, stripW, poleHeight),
+      Rect.fromLTWH(
+          poleX + halfW - stripW, poleTopY, stripW, poleHeight),
       Paint()..color = _poleShadowColor,
     );
   }
@@ -1332,20 +1493,25 @@ class _RealisticScenePainter extends CustomPainter {
   /// A small darker oval ring at the pole's base, where the post
   /// enters the mound. Suggests disturbed earth around the post —
   /// the "this is planted in the ground" cue.
+  ///
+  /// Phase 6 Group A: anchored to the configurable `poleX` instead
+  /// of canvas center, so the ring follows the pole when per-target
+  /// `center_point` horizontal offsets pull it off-center.
   void _paintPoleBaseRing(
     Canvas canvas,
-    double w,
+    double poleX,
     double moundApexY,
-    double inPerPx,
+    double visiblePoleHeight,
   ) {
-    final cx = w / 2;
-    // Ring slightly wider than the pole; thin (looks like the dirt
-    // is freshly disturbed in a small ring around the post).
-    final ringW = math.max(4.0 * inPerPx * 3.0, 6.0);
-    final ringH = math.max(4.0 * inPerPx * 0.9, 2.0);
+    // Phase 6 Group B: ring sizing derived from the pole's own width
+    // (which is in turn derived from visiblePoleHeight). Keeps the
+    // ring scale proportional as the pole grows / shrinks.
+    final poleW = math.max(2.5, visiblePoleHeight * 0.15);
+    final ringW = math.max(poleW * 3.0, 6.0);
+    final ringH = math.max(poleW * 0.9, 2.0);
     canvas.drawOval(
       Rect.fromCenter(
-        center: Offset(cx, moundApexY + ringH * 0.4),
+        center: Offset(poleX, moundApexY + ringH * 0.4),
         width: ringW,
         height: ringH,
       ),

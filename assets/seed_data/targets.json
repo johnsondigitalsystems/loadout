@@ -6,7 +6,11 @@
     "width_in": 1.0,
     "height_in": 1.0,
     "color_hex": "#ffffff",
-    "notes": "1-inch aiming dot. 1 MOA at 100 yards."
+    "notes": "1-inch aiming dot. 1 MOA at 100 yards.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "Circle 2 in",
@@ -15,7 +19,11 @@
     "width_in": 2.0,
     "height_in": 2.0,
     "color_hex": "#ffffff",
-    "notes": "2-inch aiming dot. Common load-development reference."
+    "notes": "2-inch aiming dot. Common load-development reference.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "Circle 3 in",
@@ -24,7 +32,11 @@
     "width_in": 3.0,
     "height_in": 3.0,
     "color_hex": "#ffffff",
-    "notes": "3-inch aiming dot. Standard 100-yard sight-in bull."
+    "notes": "3-inch aiming dot. Standard 100-yard sight-in bull.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "Circle 4 in",
@@ -33,7 +45,11 @@
     "width_in": 4.0,
     "height_in": 4.0,
     "color_hex": "#ffffff",
-    "notes": "4-inch aiming circle. Common pistol bullseye at 25 yards."
+    "notes": "4-inch aiming circle. Common pistol bullseye at 25 yards.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "Circle 5 in",
@@ -42,7 +58,11 @@
     "width_in": 5.0,
     "height_in": 5.0,
     "color_hex": "#ffffff",
-    "notes": "5-inch aiming circle."
+    "notes": "5-inch aiming circle.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "Circle 6 in",
@@ -51,7 +71,11 @@
     "width_in": 6.0,
     "height_in": 6.0,
     "color_hex": "#ffffff",
-    "notes": "6-inch round plate. Common 100-300 yard rifle gong."
+    "notes": "6-inch round plate. Common 100-300 yard rifle gong.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "Circle 8 in",
@@ -60,7 +84,11 @@
     "width_in": 8.0,
     "height_in": 8.0,
     "color_hex": "#ffffff",
-    "notes": "8-inch round plate. Standard mid-range rifle gong."
+    "notes": "8-inch round plate. Standard mid-range rifle gong.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "Circle 10 in",
@@ -69,7 +97,11 @@
     "width_in": 10.0,
     "height_in": 10.0,
     "color_hex": "#ffffff",
-    "notes": "10-inch round plate. Common action-pistol / mid-range size."
+    "notes": "10-inch round plate. Common action-pistol / mid-range size.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "Circle 12 in",
@@ -78,7 +110,11 @@
     "width_in": 12.0,
     "height_in": 12.0,
     "color_hex": "#ffffff",
-    "notes": "12-inch round plate. Common 500-yard rifle gong."
+    "notes": "12-inch round plate. Common 500-yard rifle gong.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "Circle 15 in",
@@ -87,7 +123,11 @@
     "width_in": 15.0,
     "height_in": 15.0,
     "color_hex": "#ffffff",
-    "notes": "15-inch round plate."
+    "notes": "15-inch round plate.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "Circle 18 in",
@@ -96,7 +136,11 @@
     "width_in": 18.0,
     "height_in": 18.0,
     "color_hex": "#ffffff",
-    "notes": "18-inch round plate. Long-range gong (1000-yard typical)."
+    "notes": "18-inch round plate. Long-range gong (1000-yard typical).",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "Circle 20 in",
@@ -105,7 +149,11 @@
     "width_in": 20.0,
     "height_in": 20.0,
     "color_hex": "#ffffff",
-    "notes": "20-inch round plate."
+    "notes": "20-inch round plate.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "Circle 24 in",
@@ -114,7 +162,11 @@
     "width_in": 24.0,
     "height_in": 24.0,
     "color_hex": "#ffffff",
-    "notes": "24-inch round plate. ELR / 1500+ yard gong."
+    "notes": "24-inch round plate. ELR / 1500+ yard gong.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "Square 4 in",
@@ -123,7 +175,11 @@
     "width_in": 4.0,
     "height_in": 4.0,
     "color_hex": "#ffffff",
-    "notes": "4-inch square aiming patch."
+    "notes": "4-inch square aiming patch.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "Square 6 in",
@@ -132,7 +188,11 @@
     "width_in": 6.0,
     "height_in": 6.0,
     "color_hex": "#ffffff",
-    "notes": "6-inch square plate."
+    "notes": "6-inch square plate.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "Square 8 in",
@@ -141,7 +201,11 @@
     "width_in": 8.0,
     "height_in": 8.0,
     "color_hex": "#ffffff",
-    "notes": "8-inch square plate."
+    "notes": "8-inch square plate.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "Square 10 in",
@@ -150,7 +214,11 @@
     "width_in": 10.0,
     "height_in": 10.0,
     "color_hex": "#ffffff",
-    "notes": "10-inch square plate."
+    "notes": "10-inch square plate.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "Square 12 in",
@@ -159,7 +227,11 @@
     "width_in": 12.0,
     "height_in": 12.0,
     "color_hex": "#ffffff",
-    "notes": "12-inch square plate."
+    "notes": "12-inch square plate.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "Rectangle 12\u00d718 in",
@@ -168,7 +240,11 @@
     "width_in": 12.0,
     "height_in": 18.0,
     "color_hex": "#ffffff",
-    "notes": "12x18 rectangular plate. Common PRS practice size."
+    "notes": "12x18 rectangular plate. Common PRS practice size.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "Rectangle 18\u00d724 in",
@@ -177,7 +253,11 @@
     "width_in": 18.0,
     "height_in": 24.0,
     "color_hex": "#ffffff",
-    "notes": "18x24 rectangular plate. Half-IPSC PRS practice size."
+    "notes": "18x24 rectangular plate. Half-IPSC PRS practice size.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "Rectangle 24\u00d730 in",
@@ -186,7 +266,11 @@
     "width_in": 24.0,
     "height_in": 30.0,
     "color_hex": "#ffffff",
-    "notes": "24x30 rectangular plate. Full IPSC-shape PRS rifle target."
+    "notes": "24x30 rectangular plate. Full IPSC-shape PRS rifle target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "Rectangle 24\u00d736 in",
@@ -195,7 +279,11 @@
     "width_in": 24.0,
     "height_in": 36.0,
     "color_hex": "#ffffff",
-    "notes": "24x36 rectangular plate. Long-range PRS / NRL plate."
+    "notes": "24x36 rectangular plate. Long-range PRS / NRL plate.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "Rectangle 36\u00d748 in",
@@ -204,7 +292,11 @@
     "width_in": 36.0,
     "height_in": 48.0,
     "color_hex": "#ffffff",
-    "notes": "36x48 rectangular plate. ELR backer / spotting target."
+    "notes": "36x48 rectangular plate. ELR backer / spotting target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "Rectangle 36\u00d760 in",
@@ -213,7 +305,11 @@
     "width_in": 36.0,
     "height_in": 60.0,
     "color_hex": "#ffffff",
-    "notes": "36x60 rectangular plate. Full-height backer / IPSC silhouette stand-in."
+    "notes": "36x60 rectangular plate. Full-height backer / IPSC silhouette stand-in.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "NRA SR-1 Reduced 12.71\u00d712.71 in (100 yd)",
@@ -222,7 +318,11 @@
     "width_in": 12.71,
     "height_in": 12.71,
     "color_hex": "#ffffff",
-    "notes": "100-yard reduced version of the SR target - used in NRA High Power Match Course."
+    "notes": "100-yard reduced version of the SR target - used in NRA High Power Match Course.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "NRA SR-21 19\u00d719 in (200 yd)",
@@ -231,7 +331,11 @@
     "width_in": 19.0,
     "height_in": 19.0,
     "color_hex": "#ffffff",
-    "notes": "200-yard NRA Service Rifle target. 7-inch X-ring within 12-inch 10-ring."
+    "notes": "200-yard NRA Service Rifle target. 7-inch X-ring within 12-inch 10-ring.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "NRA MR-1 21\u00d721 in (300 yd)",
@@ -240,7 +344,11 @@
     "width_in": 21.0,
     "height_in": 21.0,
     "color_hex": "#ffffff",
-    "notes": "300-yard NRA Mid-Range target. 6-inch X-ring within 12-inch 10-ring."
+    "notes": "300-yard NRA Mid-Range target. 6-inch X-ring within 12-inch 10-ring.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "NRA LR 36\u00d736 in (600 yd)",
@@ -249,7 +357,11 @@
     "width_in": 36.0,
     "height_in": 36.0,
     "color_hex": "#ffffff",
-    "notes": "600-yard NRA Long Range target. 12-inch X-ring within 24-inch 10-ring."
+    "notes": "600-yard NRA Long Range target. 12-inch X-ring within 24-inch 10-ring.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "F-Class F-Open 72\u00d772 in (1000 yd)",
@@ -258,7 +370,11 @@
     "width_in": 72.0,
     "height_in": 72.0,
     "color_hex": "#ffffff",
-    "notes": "1000-yard F-Class target. 5-inch X-ring within 10-inch 10-ring."
+    "notes": "1000-yard F-Class target. 5-inch X-ring within 10-inch 10-ring.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "F-Class F-T/R 36\u00d736 in (600 yd)",
@@ -267,7 +383,11 @@
     "width_in": 36.0,
     "height_in": 36.0,
     "color_hex": "#ffffff",
-    "notes": "600-yard F-Class Target Rifle target. 3-inch X-ring within 6-inch 10-ring."
+    "notes": "600-yard F-Class Target Rifle target. 3-inch X-ring within 6-inch 10-ring.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "Bullseye Slow-Fire Pistol 10.5\u00d710.5 in (25 yd)",
@@ -276,7 +396,11 @@
     "width_in": 10.5,
     "height_in": 10.5,
     "color_hex": "#ffffff",
-    "notes": "B-16 NRA pistol slow-fire target. Black bullseye on a light field."
+    "notes": "B-16 NRA pistol slow-fire target. Black bullseye on a light field.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "Bullseye Slow-Fire Pistol 10.5\u00d710.5 in (50 yd)",
@@ -285,7 +409,11 @@
     "width_in": 10.5,
     "height_in": 10.5,
     "color_hex": "#ffffff",
-    "notes": "B-6 NRA pistol slow-fire target."
+    "notes": "B-6 NRA pistol slow-fire target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "Texas Star 36 in",
@@ -294,7 +422,11 @@
     "width_in": 36.0,
     "height_in": 36.0,
     "color_hex": "#ffffff",
-    "notes": "Texas Star - central hub with five 8-inch satellite plates on radial arms. Hitting a plate shifts the balance and rotates the rig so the next plate moves into the sight picture."
+    "notes": "Texas Star - central hub with five 8-inch satellite plates on radial arms. Hitting a plate shifts the balance and rotates the rig so the next plate moves into the sight picture.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "Dueling Tree 36\u00d760 in",
@@ -303,7 +435,11 @@
     "width_in": 36.0,
     "height_in": 60.0,
     "color_hex": "#ffffff",
-    "notes": "Pivoting plate rack - typically six 6-inch round plates that swing to the opposite side when hit."
+    "notes": "Pivoting plate rack - typically six 6-inch round plates that swing to the opposite side when hit.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "IPSC USPSA Classic 18\u00d730 in",
@@ -312,7 +448,12 @@
     "width_in": 18.0,
     "height_in": 30.0,
     "color_hex": "#ffffff",
-    "notes": "Full-size USPSA / IPSC competition silhouette (45.7 x 76.2 cm). The reference target for action-pistol matches; A-zone scoring centered on the chest box, head box on top."
+    "notes": "Full-size USPSA / IPSC competition silhouette (45.7 x 76.2 cm). The reference target for action-pistol matches; A-zone scoring centered on the chest box, head box on top.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    },
+    "shape_id": "ipsc"
   },
   {
     "name": "IPSC Classic Official 18.12\u00d729.93 in",
@@ -321,7 +462,12 @@
     "width_in": 18.12,
     "height_in": 29.93,
     "color_hex": "#ffffff",
-    "notes": "Official IPSC Classic Target \u2014 460 x 760 mm. Slightly different proportions than the USPSA Metric; used by IPSC Region matches outside the USA."
+    "notes": "Official IPSC Classic Target \u2014 460 x 760 mm. Slightly different proportions than the USPSA Metric; used by IPSC Region matches outside the USA.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    },
+    "shape_id": "ipsc"
   },
   {
     "name": "IPSC Classic Mini 18.12\u00d722.84 in",
@@ -330,7 +476,12 @@
     "width_in": 18.12,
     "height_in": 22.84,
     "color_hex": "#ffffff",
-    "notes": "Reduced-height IPSC Classic \u2014 460 x 580 mm. Same width as the full Classic, shorter overall for indoor / restricted-bay use."
+    "notes": "Reduced-height IPSC Classic \u2014 460 x 580 mm. Same width as the full Classic, shorter overall for indoor / restricted-bay use.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    },
+    "shape_id": "ipsc"
   },
   {
     "name": "IPSC Mini 12\u00d720 in",
@@ -339,7 +490,12 @@
     "width_in": 12.0,
     "height_in": 20.0,
     "color_hex": "#ffffff",
-    "notes": "Mini USPSA / IPSC silhouette (~66% of full Classic). Used for distance training and indoor ranges."
+    "notes": "Mini USPSA / IPSC silhouette (~66% of full Classic). Used for distance training and indoor ranges.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    },
+    "shape_id": "ipsc"
   },
   {
     "name": "IPSC A4 11.81\u00d723.62 in",
@@ -348,7 +504,12 @@
     "width_in": 11.81,
     "height_in": 23.62,
     "color_hex": "#ffffff",
-    "notes": "IPSC A4-size target \u2014 300 x 600 mm. Sized to print on a single A4 sheet for at-home practice."
+    "notes": "IPSC A4-size target \u2014 300 x 600 mm. Sized to print on a single A4 sheet for at-home practice.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    },
+    "shape_id": "ipsc"
   },
   {
     "name": "IPSC Head Box 5.91\u00d711.02 in",
@@ -357,7 +518,12 @@
     "width_in": 5.91,
     "height_in": 11.02,
     "color_hex": "#ffffff",
-    "notes": "USPSA / IPSC head box only \u2014 150 x 280 mm. The high-value shoot-or-no-shoot zone, often used as a small standalone reduced-target drill."
+    "notes": "USPSA / IPSC head box only \u2014 150 x 280 mm. The high-value shoot-or-no-shoot zone, often used as a small standalone reduced-target drill.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    },
+    "shape_id": "ipsc"
   },
   {
     "name": "Pepper Popper Full 7.87\u00d733.46 in",
@@ -367,7 +533,11 @@
     "width_in": 7.87,
     "height_in": 33.46,
     "color_hex": "#ffffff",
-    "notes": "Full-size pepper popper \u2014 85 cm tall, 20 cm wide at the head. Reactive falling silhouette used in action-pistol matches."
+    "notes": "Full-size pepper popper \u2014 85 cm tall, 20 cm wide at the head. Reactive falling silhouette used in action-pistol matches.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "name": "Pepper Popper Mini 7.87\u00d722.05 in",
@@ -377,7 +547,11 @@
     "width_in": 7.87,
     "height_in": 22.05,
     "color_hex": "#ffffff",
-    "notes": "Mini pepper popper \u2014 56 cm tall, 20 cm wide at the head. Same silhouette as the full popper at a reduced height."
+    "notes": "Mini pepper popper \u2014 56 cm tall, 20 cm wide at the head. Same silhouette as the full popper at a reduced height.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "id": "deer",
@@ -395,7 +569,11 @@
       "big-game",
       "north-america"
     ],
-    "notes": "Side angle of a deer target."
+    "notes": "Side angle of a deer target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "id": "mule_deer",
@@ -414,7 +592,11 @@
       "north-america",
       "western"
     ],
-    "notes": "Side angle of a mule deer target."
+    "notes": "Side angle of a mule deer target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "id": "elk",
@@ -433,7 +615,11 @@
       "north-america",
       "western"
     ],
-    "notes": "Side angle of an elk target."
+    "notes": "Side angle of an elk target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "id": "moose",
@@ -452,7 +638,11 @@
       "north-america",
       "northern"
     ],
-    "notes": "Side angle of a moose target."
+    "notes": "Side angle of a moose target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "id": "pronghorn",
@@ -472,7 +662,11 @@
       "western",
       "open-country"
     ],
-    "notes": "Side angle of a pronghorn target."
+    "notes": "Side angle of a pronghorn target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "id": "bear",
@@ -490,7 +684,11 @@
       "big-game",
       "north-america"
     ],
-    "notes": "Side angle of a bear target."
+    "notes": "Side angle of a bear target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "id": "boar",
@@ -509,7 +707,11 @@
       "north-america",
       "varmint"
     ],
-    "notes": "Side angle of a boar target."
+    "notes": "Side angle of a boar target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "id": "mountain_lion",
@@ -527,7 +729,11 @@
       "predator",
       "north-america"
     ],
-    "notes": "Side angle of a mountain lion target."
+    "notes": "Side angle of a mountain lion target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "id": "coyote",
@@ -545,7 +751,11 @@
       "predator",
       "north-america"
     ],
-    "notes": "Side angle of a coyote target."
+    "notes": "Side angle of a coyote target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "id": "fox",
@@ -563,7 +773,11 @@
       "predator",
       "small-game"
     ],
-    "notes": "Side angle of a fox target."
+    "notes": "Side angle of a fox target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "id": "rabbit",
@@ -580,7 +794,11 @@
       "animal",
       "small-game"
     ],
-    "notes": "Side angle of a rabbit target."
+    "notes": "Side angle of a rabbit target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "id": "groundhog",
@@ -598,7 +816,11 @@
       "varmint",
       "small-game"
     ],
-    "notes": "Side angle of a groundhog target."
+    "notes": "Side angle of a groundhog target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "id": "prairie_dog",
@@ -616,7 +838,11 @@
       "varmint",
       "long-range-plinking"
     ],
-    "notes": "Side angle of a prairie dog target."
+    "notes": "Side angle of a prairie dog target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "id": "wild_turkey",
@@ -634,7 +860,11 @@
       "upland-bird",
       "game-bird"
     ],
-    "notes": "Side angle of a turkey target."
+    "notes": "Side angle of a turkey target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "id": "pheasant",
@@ -652,7 +882,11 @@
       "upland-bird",
       "game-bird"
     ],
-    "notes": "Side angle of a pheasant target."
+    "notes": "Side angle of a pheasant target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   },
   {
     "id": "bigfoot",
@@ -670,6 +904,10 @@
       "novelty",
       "cryptid"
     ],
-    "notes": "Side angle of a bigfoot target."
+    "notes": "Side angle of a bigfoot target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
   }
 ]

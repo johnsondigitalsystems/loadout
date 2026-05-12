@@ -21620,6 +21620,30 @@ class $TargetsTable extends Targets with TableInfo<$TargetsTable, TargetRow> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _verticalCenterPctFromTopMeta =
+      const VerificationMeta('verticalCenterPctFromTop');
+  @override
+  late final GeneratedColumn<double> verticalCenterPctFromTop =
+      GeneratedColumn<double>(
+        'vertical_center_pct_from_top',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0.5),
+      );
+  static const VerificationMeta _horizontalCenterPctFromLeftMeta =
+      const VerificationMeta('horizontalCenterPctFromLeft');
+  @override
+  late final GeneratedColumn<double> horizontalCenterPctFromLeft =
+      GeneratedColumn<double>(
+        'horizontal_center_pct_from_left',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0.5),
+      );
   static const VerificationMeta _widthInMeta = const VerificationMeta(
     'widthIn',
   );
@@ -21680,6 +21704,8 @@ class $TargetsTable extends Targets with TableInfo<$TargetsTable, TargetRow> {
     name,
     shape,
     shapeId,
+    verticalCenterPctFromTop,
+    horizontalCenterPctFromLeft,
     widthIn,
     heightIn,
     colorHex,
@@ -21721,6 +21747,24 @@ class $TargetsTable extends Targets with TableInfo<$TargetsTable, TargetRow> {
       context.handle(
         _shapeIdMeta,
         shapeId.isAcceptableOrUnknown(data['shape_id']!, _shapeIdMeta),
+      );
+    }
+    if (data.containsKey('vertical_center_pct_from_top')) {
+      context.handle(
+        _verticalCenterPctFromTopMeta,
+        verticalCenterPctFromTop.isAcceptableOrUnknown(
+          data['vertical_center_pct_from_top']!,
+          _verticalCenterPctFromTopMeta,
+        ),
+      );
+    }
+    if (data.containsKey('horizontal_center_pct_from_left')) {
+      context.handle(
+        _horizontalCenterPctFromLeftMeta,
+        horizontalCenterPctFromLeft.isAcceptableOrUnknown(
+          data['horizontal_center_pct_from_left']!,
+          _horizontalCenterPctFromLeftMeta,
+        ),
       );
     }
     if (data.containsKey('width_in')) {
@@ -21784,6 +21828,14 @@ class $TargetsTable extends Targets with TableInfo<$TargetsTable, TargetRow> {
         DriftSqlType.string,
         data['${effectivePrefix}shape_id'],
       ),
+      verticalCenterPctFromTop: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}vertical_center_pct_from_top'],
+      )!,
+      horizontalCenterPctFromLeft: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}horizontal_center_pct_from_left'],
+      )!,
       widthIn: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}width_in'],
@@ -21835,6 +21887,15 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
   /// it instead of the procedural geometry implied by `shape`.
   final String? shapeId;
 
+  /// Per-target geometric center point (v37). Used by the realistic
+  /// scene painter to anchor the pole top against a specific point on
+  /// the target silhouette (e.g. an animal's vitals zone) instead of
+  /// always the rect's geometric center. Both fractions default to
+  /// 0.5 (= rect center), so existing rows render identically to v36.
+  /// 0.0 = top edge / left edge; 1.0 = bottom edge / right edge.
+  final double verticalCenterPctFromTop;
+  final double horizontalCenterPctFromLeft;
+
   /// Outer-bound width of the target in inches (the visible /
   /// scoreable area). For circles this equals heightIn.
   final double widthIn;
@@ -21854,6 +21915,8 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
     required this.name,
     required this.shape,
     this.shapeId,
+    required this.verticalCenterPctFromTop,
+    required this.horizontalCenterPctFromLeft,
     required this.widthIn,
     required this.heightIn,
     required this.colorHex,
@@ -21869,6 +21932,12 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
     if (!nullToAbsent || shapeId != null) {
       map['shape_id'] = Variable<String>(shapeId);
     }
+    map['vertical_center_pct_from_top'] = Variable<double>(
+      verticalCenterPctFromTop,
+    );
+    map['horizontal_center_pct_from_left'] = Variable<double>(
+      horizontalCenterPctFromLeft,
+    );
     map['width_in'] = Variable<double>(widthIn);
     map['height_in'] = Variable<double>(heightIn);
     map['color_hex'] = Variable<String>(colorHex);
@@ -21887,6 +21956,8 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
       shapeId: shapeId == null && nullToAbsent
           ? const Value.absent()
           : Value(shapeId),
+      verticalCenterPctFromTop: Value(verticalCenterPctFromTop),
+      horizontalCenterPctFromLeft: Value(horizontalCenterPctFromLeft),
       widthIn: Value(widthIn),
       heightIn: Value(heightIn),
       colorHex: Value(colorHex),
@@ -21907,6 +21978,12 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
       name: serializer.fromJson<String>(json['name']),
       shape: serializer.fromJson<String>(json['shape']),
       shapeId: serializer.fromJson<String?>(json['shapeId']),
+      verticalCenterPctFromTop: serializer.fromJson<double>(
+        json['verticalCenterPctFromTop'],
+      ),
+      horizontalCenterPctFromLeft: serializer.fromJson<double>(
+        json['horizontalCenterPctFromLeft'],
+      ),
       widthIn: serializer.fromJson<double>(json['widthIn']),
       heightIn: serializer.fromJson<double>(json['heightIn']),
       colorHex: serializer.fromJson<String>(json['colorHex']),
@@ -21922,6 +21999,12 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
       'name': serializer.toJson<String>(name),
       'shape': serializer.toJson<String>(shape),
       'shapeId': serializer.toJson<String?>(shapeId),
+      'verticalCenterPctFromTop': serializer.toJson<double>(
+        verticalCenterPctFromTop,
+      ),
+      'horizontalCenterPctFromLeft': serializer.toJson<double>(
+        horizontalCenterPctFromLeft,
+      ),
       'widthIn': serializer.toJson<double>(widthIn),
       'heightIn': serializer.toJson<double>(heightIn),
       'colorHex': serializer.toJson<String>(colorHex),
@@ -21935,6 +22018,8 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
     String? name,
     String? shape,
     Value<String?> shapeId = const Value.absent(),
+    double? verticalCenterPctFromTop,
+    double? horizontalCenterPctFromLeft,
     double? widthIn,
     double? heightIn,
     String? colorHex,
@@ -21945,6 +22030,10 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
     name: name ?? this.name,
     shape: shape ?? this.shape,
     shapeId: shapeId.present ? shapeId.value : this.shapeId,
+    verticalCenterPctFromTop:
+        verticalCenterPctFromTop ?? this.verticalCenterPctFromTop,
+    horizontalCenterPctFromLeft:
+        horizontalCenterPctFromLeft ?? this.horizontalCenterPctFromLeft,
     widthIn: widthIn ?? this.widthIn,
     heightIn: heightIn ?? this.heightIn,
     colorHex: colorHex ?? this.colorHex,
@@ -21957,6 +22046,12 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
       name: data.name.present ? data.name.value : this.name,
       shape: data.shape.present ? data.shape.value : this.shape,
       shapeId: data.shapeId.present ? data.shapeId.value : this.shapeId,
+      verticalCenterPctFromTop: data.verticalCenterPctFromTop.present
+          ? data.verticalCenterPctFromTop.value
+          : this.verticalCenterPctFromTop,
+      horizontalCenterPctFromLeft: data.horizontalCenterPctFromLeft.present
+          ? data.horizontalCenterPctFromLeft.value
+          : this.horizontalCenterPctFromLeft,
       widthIn: data.widthIn.present ? data.widthIn.value : this.widthIn,
       heightIn: data.heightIn.present ? data.heightIn.value : this.heightIn,
       colorHex: data.colorHex.present ? data.colorHex.value : this.colorHex,
@@ -21972,6 +22067,8 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
           ..write('name: $name, ')
           ..write('shape: $shape, ')
           ..write('shapeId: $shapeId, ')
+          ..write('verticalCenterPctFromTop: $verticalCenterPctFromTop, ')
+          ..write('horizontalCenterPctFromLeft: $horizontalCenterPctFromLeft, ')
           ..write('widthIn: $widthIn, ')
           ..write('heightIn: $heightIn, ')
           ..write('colorHex: $colorHex, ')
@@ -21987,6 +22084,8 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
     name,
     shape,
     shapeId,
+    verticalCenterPctFromTop,
+    horizontalCenterPctFromLeft,
     widthIn,
     heightIn,
     colorHex,
@@ -22001,6 +22100,9 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
           other.name == this.name &&
           other.shape == this.shape &&
           other.shapeId == this.shapeId &&
+          other.verticalCenterPctFromTop == this.verticalCenterPctFromTop &&
+          other.horizontalCenterPctFromLeft ==
+              this.horizontalCenterPctFromLeft &&
           other.widthIn == this.widthIn &&
           other.heightIn == this.heightIn &&
           other.colorHex == this.colorHex &&
@@ -22013,6 +22115,8 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
   final Value<String> name;
   final Value<String> shape;
   final Value<String?> shapeId;
+  final Value<double> verticalCenterPctFromTop;
+  final Value<double> horizontalCenterPctFromLeft;
   final Value<double> widthIn;
   final Value<double> heightIn;
   final Value<String> colorHex;
@@ -22023,6 +22127,8 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
     this.name = const Value.absent(),
     this.shape = const Value.absent(),
     this.shapeId = const Value.absent(),
+    this.verticalCenterPctFromTop = const Value.absent(),
+    this.horizontalCenterPctFromLeft = const Value.absent(),
     this.widthIn = const Value.absent(),
     this.heightIn = const Value.absent(),
     this.colorHex = const Value.absent(),
@@ -22034,6 +22140,8 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
     required String name,
     required String shape,
     this.shapeId = const Value.absent(),
+    this.verticalCenterPctFromTop = const Value.absent(),
+    this.horizontalCenterPctFromLeft = const Value.absent(),
     required double widthIn,
     required double heightIn,
     required String colorHex,
@@ -22049,6 +22157,8 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
     Expression<String>? name,
     Expression<String>? shape,
     Expression<String>? shapeId,
+    Expression<double>? verticalCenterPctFromTop,
+    Expression<double>? horizontalCenterPctFromLeft,
     Expression<double>? widthIn,
     Expression<double>? heightIn,
     Expression<String>? colorHex,
@@ -22060,6 +22170,10 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
       if (name != null) 'name': name,
       if (shape != null) 'shape': shape,
       if (shapeId != null) 'shape_id': shapeId,
+      if (verticalCenterPctFromTop != null)
+        'vertical_center_pct_from_top': verticalCenterPctFromTop,
+      if (horizontalCenterPctFromLeft != null)
+        'horizontal_center_pct_from_left': horizontalCenterPctFromLeft,
       if (widthIn != null) 'width_in': widthIn,
       if (heightIn != null) 'height_in': heightIn,
       if (colorHex != null) 'color_hex': colorHex,
@@ -22073,6 +22187,8 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
     Value<String>? name,
     Value<String>? shape,
     Value<String?>? shapeId,
+    Value<double>? verticalCenterPctFromTop,
+    Value<double>? horizontalCenterPctFromLeft,
     Value<double>? widthIn,
     Value<double>? heightIn,
     Value<String>? colorHex,
@@ -22084,6 +22200,10 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
       name: name ?? this.name,
       shape: shape ?? this.shape,
       shapeId: shapeId ?? this.shapeId,
+      verticalCenterPctFromTop:
+          verticalCenterPctFromTop ?? this.verticalCenterPctFromTop,
+      horizontalCenterPctFromLeft:
+          horizontalCenterPctFromLeft ?? this.horizontalCenterPctFromLeft,
       widthIn: widthIn ?? this.widthIn,
       heightIn: heightIn ?? this.heightIn,
       colorHex: colorHex ?? this.colorHex,
@@ -22106,6 +22226,16 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
     }
     if (shapeId.present) {
       map['shape_id'] = Variable<String>(shapeId.value);
+    }
+    if (verticalCenterPctFromTop.present) {
+      map['vertical_center_pct_from_top'] = Variable<double>(
+        verticalCenterPctFromTop.value,
+      );
+    }
+    if (horizontalCenterPctFromLeft.present) {
+      map['horizontal_center_pct_from_left'] = Variable<double>(
+        horizontalCenterPctFromLeft.value,
+      );
     }
     if (widthIn.present) {
       map['width_in'] = Variable<double>(widthIn.value);
@@ -22132,6 +22262,8 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
           ..write('name: $name, ')
           ..write('shape: $shape, ')
           ..write('shapeId: $shapeId, ')
+          ..write('verticalCenterPctFromTop: $verticalCenterPctFromTop, ')
+          ..write('horizontalCenterPctFromLeft: $horizontalCenterPctFromLeft, ')
           ..write('widthIn: $widthIn, ')
           ..write('heightIn: $heightIn, ')
           ..write('colorHex: $colorHex, ')
@@ -52433,6 +52565,8 @@ typedef $$TargetsTableCreateCompanionBuilder =
       required String name,
       required String shape,
       Value<String?> shapeId,
+      Value<double> verticalCenterPctFromTop,
+      Value<double> horizontalCenterPctFromLeft,
       required double widthIn,
       required double heightIn,
       required String colorHex,
@@ -52445,6 +52579,8 @@ typedef $$TargetsTableUpdateCompanionBuilder =
       Value<String> name,
       Value<String> shape,
       Value<String?> shapeId,
+      Value<double> verticalCenterPctFromTop,
+      Value<double> horizontalCenterPctFromLeft,
       Value<double> widthIn,
       Value<double> heightIn,
       Value<String> colorHex,
@@ -52478,6 +52614,16 @@ class $$TargetsTableFilterComposer
 
   ColumnFilters<String> get shapeId => $composableBuilder(
     column: $table.shapeId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get verticalCenterPctFromTop => $composableBuilder(
+    column: $table.verticalCenterPctFromTop,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get horizontalCenterPctFromLeft => $composableBuilder(
+    column: $table.horizontalCenterPctFromLeft,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -52536,6 +52682,16 @@ class $$TargetsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get verticalCenterPctFromTop => $composableBuilder(
+    column: $table.verticalCenterPctFromTop,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get horizontalCenterPctFromLeft => $composableBuilder(
+    column: $table.horizontalCenterPctFromLeft,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get widthIn => $composableBuilder(
     column: $table.widthIn,
     builder: (column) => ColumnOrderings(column),
@@ -52582,6 +52738,16 @@ class $$TargetsTableAnnotationComposer
 
   GeneratedColumn<String> get shapeId =>
       $composableBuilder(column: $table.shapeId, builder: (column) => column);
+
+  GeneratedColumn<double> get verticalCenterPctFromTop => $composableBuilder(
+    column: $table.verticalCenterPctFromTop,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get horizontalCenterPctFromLeft => $composableBuilder(
+    column: $table.horizontalCenterPctFromLeft,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<double> get widthIn =>
       $composableBuilder(column: $table.widthIn, builder: (column) => column);
@@ -52631,6 +52797,9 @@ class $$TargetsTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<String> shape = const Value.absent(),
                 Value<String?> shapeId = const Value.absent(),
+                Value<double> verticalCenterPctFromTop = const Value.absent(),
+                Value<double> horizontalCenterPctFromLeft =
+                    const Value.absent(),
                 Value<double> widthIn = const Value.absent(),
                 Value<double> heightIn = const Value.absent(),
                 Value<String> colorHex = const Value.absent(),
@@ -52641,6 +52810,8 @@ class $$TargetsTableTableManager
                 name: name,
                 shape: shape,
                 shapeId: shapeId,
+                verticalCenterPctFromTop: verticalCenterPctFromTop,
+                horizontalCenterPctFromLeft: horizontalCenterPctFromLeft,
                 widthIn: widthIn,
                 heightIn: heightIn,
                 colorHex: colorHex,
@@ -52653,6 +52824,9 @@ class $$TargetsTableTableManager
                 required String name,
                 required String shape,
                 Value<String?> shapeId = const Value.absent(),
+                Value<double> verticalCenterPctFromTop = const Value.absent(),
+                Value<double> horizontalCenterPctFromLeft =
+                    const Value.absent(),
                 required double widthIn,
                 required double heightIn,
                 required String colorHex,
@@ -52663,6 +52837,8 @@ class $$TargetsTableTableManager
                 name: name,
                 shape: shape,
                 shapeId: shapeId,
+                verticalCenterPctFromTop: verticalCenterPctFromTop,
+                horizontalCenterPctFromLeft: horizontalCenterPctFromLeft,
                 widthIn: widthIn,
                 heightIn: heightIn,
                 colorHex: colorHex,

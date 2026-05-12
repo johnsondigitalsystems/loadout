@@ -85,6 +85,16 @@ class TargetSilhouettes {
   /// Map of shape_id (from targets.json / target_racks.json) to asset filename.
   static const Map<String, String> _shapeIdToAsset = {
     'pepper_popper': 'assets/silhouettes/targets/pepper_popper.svg',
+    // Registered for Phase 6 IPSC dispatch. The asset file
+    // `assets/silhouettes/targets/ipsc.svg` is NOT yet on disk;
+    // until the operator drops it in (and a `loadTargetPath('ipsc')`
+    // call is added to `main.dart`'s boot preload), `cachedScaledPath`
+    // returns null for `'ipsc'` and the realistic scene painter
+    // falls back to the procedural IPSC drawing via `buildIpscPath`
+    // in `_paintTarget`'s `case 'silhouette'` branch. The catalog
+    // already carries `shape_id: 'ipsc'` on the 6 IPSC rows so the
+    // swap is automatic once the SVG ships.
+    'ipsc': 'assets/silhouettes/targets/ipsc.svg',
     // Future additions per docs/ROADMAP.md "Competition target SVGs":
     // 'ipsc_open_stage':    'assets/silhouettes/targets/ipsc_open_stage.svg',
     // 'uspsa_classifier_b': 'assets/silhouettes/targets/uspsa_classifier_b.svg',

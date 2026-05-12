@@ -1525,6 +1525,17 @@ class Targets extends Table {
   /// `TargetSilhouettes` to look up the cached SVG path and draw
   /// it instead of the procedural geometry implied by `shape`.
   TextColumn get shapeId => text().nullable()();
+
+  /// Per-target geometric center point (v37). Used by the realistic
+  /// scene painter to anchor the pole top against a specific point on
+  /// the target silhouette (e.g. an animal's vitals zone) instead of
+  /// always the rect's geometric center. Both fractions default to
+  /// 0.5 (= rect center), so existing rows render identically to v36.
+  /// 0.0 = top edge / left edge; 1.0 = bottom edge / right edge.
+  RealColumn get verticalCenterPctFromTop =>
+      real().withDefault(const Constant(0.5))();
+  RealColumn get horizontalCenterPctFromLeft =>
+      real().withDefault(const Constant(0.5))();
   /// Outer-bound width of the target in inches (the visible /
   /// scoreable area). For circles this equals heightIn.
   RealColumn get widthIn => real()();
@@ -2326,7 +2337,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 36;
+  int get schemaVersion => 37;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -3087,6 +3098,24 @@ class AppDatabase extends _$AppDatabase {
             // Wipe the catalog so SeedLoader re-reads `targets.json`
             // and populates `shape_id` on the 16 animal + 2 popper
             // rows. Reference-table only; user data unaffected.
+            await delete(targets).go();
+          }
+          if (from < 37) {
+            // v37 — per-target geometric center point. Two RealColumn
+            // additions with default 0.5 so existing rows render
+            // identically; values get populated from `center_point`
+            // blocks in targets.json on next re-seed (also triggered
+            // here so the catalog picks up any non-default per-row
+            // tuning the operator authors).
+            final targetsCols = await _columnsOf('targets');
+            if (!targetsCols.contains('vertical_center_pct_from_top')) {
+              await m.addColumn(
+                  targets, targets.verticalCenterPctFromTop);
+            }
+            if (!targetsCols.contains('horizontal_center_pct_from_left')) {
+              await m.addColumn(
+                  targets, targets.horizontalCenterPctFromLeft);
+            }
             await delete(targets).go();
           }
         },
