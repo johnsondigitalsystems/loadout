@@ -98,13 +98,11 @@ import 'dart:async';
 /// Renders hand-authored SVG silhouettes for animal targets.
 /// SVGs live in assets/silhouettes/animals/{filename}.svg.
 class AnimalSilhouettes {
-  /// Map of shape_id (from `targets.json`) to asset filename. The KEY
-  /// equals the SVG filename basename for 15 of 16 rows; the lone
-  /// exception is `prairie_dog`, whose disk file is
-  /// `prairie_dog_standing.svg` (the SVG was authored before the
-  /// catalog renaming). The KEY tracks the logical catalog name;
-  /// the VALUE tracks the actual disk path. Renaming the file is a
-  /// follow-up.
+  /// Map of shape_id (from `targets.json`) to asset filename. KEY
+  /// equals SVG filename basename for every row — strict 1:1 mapping
+  /// from logical catalog name to physical file. After the v36 catalog
+  /// rewrite + the `prairie_dog_standing.svg → prairie_dog.svg` rename,
+  /// there are no longer any exceptions.
   static const Map<String, String> _shapeIdToAsset = {
     'bear':           'assets/silhouettes/animals/bear.svg',
     'bigfoot':        'assets/silhouettes/animals/bigfoot.svg',
@@ -118,7 +116,7 @@ class AnimalSilhouettes {
     'mountain_lion':  'assets/silhouettes/animals/mountain_lion.svg',
     'mule_deer':      'assets/silhouettes/animals/mule_deer.svg',
     'pheasant':       'assets/silhouettes/animals/pheasant.svg',
-    'prairie_dog':    'assets/silhouettes/animals/prairie_dog_standing.svg',
+    'prairie_dog':    'assets/silhouettes/animals/prairie_dog.svg',
     'pronghorn':      'assets/silhouettes/animals/pronghorn.svg',
     'rabbit':         'assets/silhouettes/animals/rabbit.svg',
     'wild_turkey':    'assets/silhouettes/animals/wild_turkey.svg',
@@ -161,7 +159,7 @@ class AnimalSilhouettes {
   /// into a single Path. Each path's geometry becomes a subpath of the result.
   ///
   /// Multi-path SVG support is important: some authored silhouettes (e.g.
-  /// prairie_dog_standing.svg with 4 paths) contain multiple sibling <path>
+  /// prairie_dog.svg with 4 paths) contain multiple sibling <path>
   /// elements. Concatenating their geometries into one Path correctly renders
   /// the full silhouette via a single canvas.drawPath call.
   static Path _extractAndCombinePaths(String svgContent, String assetPath) {
