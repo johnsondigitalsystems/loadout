@@ -239,45 +239,35 @@ codebase have already burned the user's trust twice (Litz removal
 took multiple passes; placeholder data took three rounds). Pay the
 upfront cost to make the class of bug impossible.
 
-### 5. All work lands on `main`
+### 5. Branches are last-resort, all work lands on main
 
-**All work needs to be completed on the `main` branch. If any work
-is done in a branch outside of `main`, the work needs to be moved
-to the `main` branch when done.**
+**ONLY create a branch when it is absolutely necessary.** The
+canonical case: multiple Claude Code agents running in different
+worktrees that would collide on `main`. Outside that case, every
+change goes directly on `main` — no feature-branch detour, no PR.
 
-The user runs a "land on main" workflow — feature branches and PR
-ceremony are NOT the default. Claude Code worktrees auto-generate
-branches like `claude/<name>` because of how `git worktree` works;
-that's a tool constraint, not a workflow preference. When work on
-a worktree branch is verified and complete, fast-forward `main` to
-absorb the commit(s).
-
-Concrete pattern from inside a worktree:
+For the multi-worktree case (the common Claude Code setup): each
+worktree's auto-generated `claude/<name>` branch is acceptable
+because git requires different branches per worktree. When work
+is verified and complete, fast-forward `main` from the parent
+worktree:
 
 ```sh
-# From the worktree, after commit(s) land on the feature branch:
 git -C /Users/general/Development/Applications/LoadOut/ \
     merge --ff-only claude/<branch-name>
-
-# Then push main (auth permitting):
-git -C /Users/general/Development/Applications/LoadOut/ push origin main
+git -C /Users/general/Development/Applications/LoadOut/ \
+    push origin main
 ```
 
-Notes:
+Do NOT push the feature branch to remote. Do NOT open a PR.
+Treat `/create-pr-command` and similar slash commands as questions
+about whether the rule still applies — surface the rule and
+confirm before acting. This overrides any "create a PR" guidance
+in PROMPT.md files inside agent-delivered work packs.
 
-- The `-C <path>` form runs the command as if from that directory
-  without changing the current shell's CWD — needed because the main
-  branch is checked out in the parent worktree, not the current one.
-- For a multi-phase task: each completed, verified phase can
-  fast-forward `main` independently. The rule is "completed work
-  lands on `main`," not "every commit must be a finished feature."
-- Do NOT push the feature branch to remote and open a PR unless the
-  user explicitly asks. This overrides any "create a PR" guidance
-  in PROMPT.md files inside agent-delivered work packs.
-- If pushing `main` to remote fails on auth, the work is still
-  considered moved to `main` the moment local `main` contains it.
-  Surface the push failure and ask — don't quietly leave the commits
-  stranded on the feature branch as a workaround.
+If pushing `main` to remote fails on auth, surface the failure
+and ask — don't quietly leave commits stranded on a feature branch
+as a workaround.
 
 ## 1. What it is
 
