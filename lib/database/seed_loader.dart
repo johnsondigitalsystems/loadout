@@ -875,11 +875,20 @@ class SeedLoader {
 
     for (final entry in racks) {
       final m = entry as Map<String, dynamic>;
+      // Prefer the v2.3 §6A.3 `mount_style` taxonomy
+      // (`hanging_rail | standing_stakes | popper_base | individual_posts`)
+      // — falls back to the legacy `rack_kind` field when a JSON row
+      // doesn't yet carry the new one. The drift column name stays
+      // `rackKind` for now; Phase 6 may rename to `mountStyle` along
+      // with a schema migration. See Phase 2 erratum item #13 in the
+      // PHASE_2_COMPLETION_REPORT.md.
+      final mountStyle =
+          (m['mount_style'] as String?) ?? (m['rack_kind'] as String);
       final rackId = await db.into(db.targetRacks).insert(
             TargetRacksCompanion.insert(
               name: m['name'] as String,
               description: Value(m['description'] as String?),
-              rackKind: m['rack_kind'] as String,
+              rackKind: mountStyle,
               totalWidthIn: (m['total_width_in'] as num).toDouble(),
               totalHeightIn: (m['total_height_in'] as num).toDouble(),
               notes: Value(m['notes'] as String?),
@@ -890,6 +899,14 @@ class SeedLoader {
       final childBatch = <TargetRackChildrenCompanion>[];
       for (final c in children) {
         final cm = c as Map<String, dynamic>;
+        // Prefer the v2.3 §6A.3 `x_offset_in` / `y_offset_in` field
+        // names. Legacy `offset_x_in` / `offset_y_in` retained as
+        // fallback so the seed_loader works against the dual-field
+        // JSON rows the Phase 2.8 agent produced.
+        final xOffset =
+            (cm['x_offset_in'] as num?) ?? (cm['offset_x_in'] as num);
+        final yOffset =
+            (cm['y_offset_in'] as num?) ?? (cm['offset_y_in'] as num);
         childBatch.add(TargetRackChildrenCompanion.insert(
           rackId: rackId,
           position: cm['position'] as int,
@@ -897,8 +914,8 @@ class SeedLoader {
           shape: cm['shape'] as String,
           widthIn: (cm['width_in'] as num).toDouble(),
           heightIn: (cm['height_in'] as num).toDouble(),
-          offsetXIn: (cm['offset_x_in'] as num).toDouble(),
-          offsetYIn: (cm['offset_y_in'] as num).toDouble(),
+          offsetXIn: xOffset.toDouble(),
+          offsetYIn: yOffset.toDouble(),
           colorHex: cm['color_hex'] as String,
         ));
       }

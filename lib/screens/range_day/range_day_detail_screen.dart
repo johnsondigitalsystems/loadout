@@ -91,6 +91,7 @@ import '../../services/sensors/cant_service.dart';
 import '../../services/common_loads_catalog.dart';
 import '../../services/sensors/inclinometer_service.dart';
 import '../../services/sensors/magnetometer_service.dart';
+import '../../services/scope_catalog_v2.dart';
 import '../../services/unit_service.dart';
 import '../../services/watch_bridge_service.dart';
 import '../../services/watch_payload_projection.dart';
@@ -129,6 +130,16 @@ enum _TargetPickerMode { single, rack }
 /// `targetFocused` (the existing default). File-private const because
 /// no other surface needs the preference today.
 const String _kTargetPlotViewModePrefKey = 'range_day_target_plot_view_mode';
+
+/// SharedPreferences key for the Range Day Realistic "Low Light"
+/// AppBar toggle (see `range_day_realistic_rewrite_v23.md` §6A.2).
+/// Stored as a plain bool, default `false` (daytime palette). The
+/// public `k`-prefix matches the convention shared by other keys
+/// that downstream callers might need to reference (e.g.
+/// `kRangeDayModePrefKey` in `range_day_mode.dart`); the key string
+/// lives in this top-level constant so other screens / tests can
+/// reference it without duplicating the literal.
+const String kRangeDayLowLightPrefKey = 'range_day_low_light';
 
 /// Tolerant parser for the persisted [TargetPlotViewMode] string.
 /// Returns `targetFocused` for any unknown / null input so a corrupt
@@ -456,6 +467,16 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   /// hydration is fire-and-forget during [initState].
   TargetPlotViewMode _targetPlotViewMode = TargetPlotViewMode.targetFocused;
 
+  /// Range Day Realistic "Low Light" AppBar toggle (see
+  /// `range_day_realistic_rewrite_v23.md` §6A.2). When `true`, the
+  /// scene swaps to the dusk variant (dark blue sky, darkened
+  /// grass / mound, dimmed target silhouette) and illuminated
+  /// reticle elements render in their authored color (per
+  /// [ReticleElement.illuminatedColorHex]). Persisted under
+  /// [kRangeDayLowLightPrefKey] in SharedPreferences; hydration is
+  /// fire-and-forget from [initState] via [_hydrateLowLightMode].
+  bool _lowLightMode = false;
+
   /// Whole-screen Quick vs Full visibility mode. Quick collapses the
   /// scroll surface to Setup + Firing Solution (the bare minimum at
   /// the firing line); Full reveals every advanced card (environment
@@ -630,6 +651,11 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     // Same pattern for the whole-screen Quick vs Full mode.
     // ignore: discarded_futures
     _hydrateRangeDayMode();
+    // Same pattern for the AppBar "Low Light" toggle (§6A.2). Default
+    // is `false` (daytime backdrop); the read flips to `true` when
+    // the user previously enabled dusk mode.
+    // ignore: discarded_futures
+    _hydrateLowLightMode();
   }
 
   /// On a fresh session, pre-populate the reticle and target with the
@@ -830,6 +856,40 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     }
   }
 
+  /// Read the persisted Range Day "Low Light" toggle from
+  /// SharedPreferences and apply it. Mirror of
+  /// [_hydrateRangeDayMode] — soft-fails on a corrupt entry by
+  /// keeping the default (`false` = daytime). See § 6A.2 of
+  /// `range_day_realistic_rewrite_v23.md`.
+  Future<void> _hydrateLowLightMode() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      // getBool returns null when unset — treat that as the default
+      // (`false`). Any other read failure also keeps the default,
+      // since the toggle is a pure UI state with no DB consequence.
+      final next = prefs.getBool(kRangeDayLowLightPrefKey) ?? false;
+      if (!mounted) return;
+      if (next != _lowLightMode) {
+        setState(() => _lowLightMode = next);
+      }
+    } catch (e) {
+      debugPrint('[range_day] _hydrateLowLightMode failed: $e');
+    }
+  }
+
+  /// Persist the Range Day "Low Light" toggle. Called from the AppBar
+  /// sun/moon IconButton. Fire-and-forget — `_lowLightMode` is
+  /// updated synchronously via setState so the scene transitions
+  /// within one frame even if the prefs write is slow.
+  Future<void> _persistLowLightMode(bool value) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(kRangeDayLowLightPrefKey, value);
+    } catch (e) {
+      debugPrint('[range_day] _persistLowLightMode failed: $e');
+    }
+  }
+
   Future<void> _hydrateFromSession(int id) async {
     // Capture every repository up front so we don't reach into the
     // BuildContext after an `await`.
@@ -1013,7 +1073,13 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       final f = await firearmRepo.getById(s.firearmId!);
       if (mounted && f != null) {
         setState(() => _selectedFirearm = f);
-        _applyFirearmDefaults(f);
+        // `applyV2Defaults: false` — restoring a saved session must
+        // NOT overwrite the session's own reticle / scope picks
+        // with the firearm's defaults. The session's `reticleId`
+        // path below (around line 1095) is the authoritative
+        // restore; v2.3 default-firearm seeding fires only when the
+        // user ACTIVELY picks a firearm from the dropdown.
+        _applyFirearmDefaults(f, applyV2Defaults: false);
       }
     }
     if (s.recipeId != null) {
@@ -1191,7 +1257,19 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     _scheduleSolve();
   }
 
-  void _applyFirearmDefaults(UserFirearmRow f) {
+  /// Seed Range Day inputs from a firearm row.
+  ///
+  /// [applyV2Defaults] controls whether the v2.3 §6A.4 default
+  /// scope / reticle / magnification firearm columns are honored.
+  /// Defaults to `true` (the user is actively picking a firearm
+  /// from the dropdown and expects the firearm's defaults to take
+  /// effect). Session-restore paths pass `false` so the session's
+  /// own saved reticle / scope / magnification picks aren't
+  /// overwritten by the firearm-defaults seed.
+  void _applyFirearmDefaults(
+    UserFirearmRow f, {
+    bool applyV2Defaults = true,
+  }) {
     setState(() {
       // MV used to be pulled from `f.defaultMuzzleVelocityFps` here.
       // Removed at schema v33 — MV doesn't belong on the firearm row
@@ -1222,8 +1300,22 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     // the reticle is firearm-scoped (it lives on the optic mounted to
     // the rifle), so propagating it on firearm change is the
     // expected behaviour.
-    // ignore: discarded_futures
-    _applyReticleFromFirearm(f);
+    if (applyV2Defaults) {
+      // ignore: discarded_futures
+      _applyReticleFromFirearm(f);
+      // v2.3 §6A.4 — apply the firearm's v2.3 "default scope &
+      // reticle" pair from the merged scope catalog JSON if set.
+      // This runs AFTER `_applyReticleFromFirearm` so the v2.3
+      // string-id reticle wins over the legacy integer-FK reticle
+      // when both are populated — the v2.3 catalog is the newer
+      // source of truth and is what Range Day Realistic renders
+      // against. The v2.3 lookup is async; per-session overrides
+      // made by the user later in the session take precedence
+      // (they write to `_selectedReticleRow` directly without
+      // touching the firearm row).
+      // ignore: discarded_futures
+      _applyV2DefaultsFromFirearm(f);
+    }
     _scheduleSolve();
   }
 
@@ -1333,6 +1425,75 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       _scheduleAutoSave();
     } catch (e) {
       debugPrint('[range_day] _applyReticleFromFirearm failed: $e');
+    }
+  }
+
+  /// v2.3 §6A.4 — apply the firearm's `defaultScopeId` /
+  /// `defaultReticleId` / `defaultMagnification` columns to the
+  /// current Range Day session state. The columns hold STRING ids
+  /// from the merged v2.3 scope catalog
+  /// (`assets/seed_data/scopes.json`, `reticles.json`,
+  /// `scope_reticle_options.json`); we resolve them through
+  /// [ScopeCatalogV2Service] and the [ReticleRepository] so the
+  /// existing `_selectedReticleRow` / `_selectedReticle` state
+  /// stays canonical with the legacy reticle-pick path.
+  ///
+  /// Behaviour:
+  ///   * Reticle: when `defaultReticleId` is set and resolves to a
+  ///     v2.3 reticle row, walk the drift [Reticles] table and
+  ///     match by `(manufacturerId, model)` — that's how the seed
+  ///     loader bridges the JSON string-id world to the drift
+  ///     integer-id world today. A match overrides whatever was
+  ///     set by `_applyReticleFromFirearm` above (the v2.3 catalog
+  ///     is newer / source of truth). A miss is a silent no-op:
+  ///     the legacy reticle stays in place.
+  ///   * Magnification: writes to `_currentMagnification` IF / WHEN
+  ///     a magnification UI surface exists in this screen. Today
+  ///     no such surface exists — the value is persisted on the
+  ///     session via the `RangeDaySessions.currentMagnification`
+  ///     column but isn't read by the renderer yet (deferred to a
+  ///     future Range Day Realistic surface). Stub left in place
+  ///     so the call site is wired when the renderer lands.
+  ///   * Scope: there is no Range Day "scope picker" surface today
+  ///     to write back to — the legacy integer-FK `_opticsId` and
+  ///     the v2.3 string `defaultScopeId` cover different render
+  ///     paths. Logged only.
+  ///
+  /// Silent no-op when none of the three columns are set, when
+  /// the catalog lookup misses, or when any step throws. The
+  /// firearm pick MUST NOT fail because the v2.3 catalog had a
+  /// stale id.
+  Future<void> _applyV2DefaultsFromFirearm(UserFirearmRow f) async {
+    final v2ReticleId = f.defaultReticleId;
+    if (v2ReticleId == null || v2ReticleId.isEmpty) return;
+    try {
+      final v2 = ScopeCatalogV2Service.instance;
+      final v2Reticle = await v2.reticleById(v2ReticleId);
+      if (v2Reticle == null || !mounted) return;
+      // Bridge v2 string id -> drift integer-keyed ReticleRow by
+      // (manufacturer, model) exact match. The seed loader inserts
+      // every reticles.json row into the drift Reticles table with
+      // `manufacturerId = m['manufacturer']` and `model = m['model']`,
+      // so an exact-string match here is the inverse operation.
+      final reticleRepo = context.read<ReticleRepository>();
+      final all = await reticleRepo.allReticles();
+      ReticleRow? match;
+      for (final row in all) {
+        if (row.manufacturerId == v2Reticle.manufacturer &&
+            row.model == v2Reticle.model) {
+          match = row;
+          break;
+        }
+      }
+      if (match == null || !mounted) return;
+      final resolved = match;
+      setState(() {
+        _selectedReticleRow = resolved;
+        _selectedReticle = reticleRepo.definitionFromRow(resolved);
+      });
+      _scheduleAutoSave();
+    } catch (e) {
+      debugPrint('[range_day] _applyV2DefaultsFromFirearm failed: $e');
     }
   }
 
@@ -2300,6 +2461,29 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
               },
             ),
           ),
+          // Low Light toggle (§6A.2). Sun when off, moon when on.
+          // Flips the Realistic scene to a dusk backdrop +
+          // illuminates reticle elements that publish an
+          // `illuminated_color_hex`. The toggle is visible in both
+          // Quick and Full modes (the user can flip it at any time
+          // even while Setup is collapsed); the actual visual
+          // change only surfaces inside the Target Plot when the
+          // user is using Realistic view mode. Persisted under
+          // [kRangeDayLowLightPrefKey] in SharedPreferences.
+          IconButton(
+            tooltip: 'Low Light',
+            icon: Icon(
+              _lowLightMode ? Icons.nightlight_round : Icons.wb_sunny_outlined,
+            ),
+            onPressed: () {
+              final next = !_lowLightMode;
+              setState(() => _lowLightMode = next);
+              // Fire-and-forget — state has already flipped, the
+              // scene will repaint on this frame.
+              // ignore: discarded_futures
+              _persistLowLightMode(next);
+            },
+          ),
           // History entry point. The bottom-nav "Range Day" tab now
           // always opens a fresh detail screen; users reach the saved-
           // sessions list through this action instead of from a
@@ -3251,6 +3435,11 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
               targetColor: activeTargetSpec == null
                   ? const Color(0xff5e6552)
                   : _resolveTargetColor(activeTargetSpec),
+              // §6A.2 — the inline Scope View preview honours the
+              // same AppBar Low Light toggle as the Realistic Target
+              // Plot below, so a user flipping the toggle sees both
+              // surfaces transition to dusk in lockstep.
+              lowLightMode: _lowLightMode,
             ),
             if (reticle != null)
               Center(
@@ -3267,6 +3456,13 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                   // backdrop. Black reads cleanly against sky,
                   // grass, and the silhouette body.
                   color: Colors.black,
+                  // §6A.2 — when the AppBar Low Light toggle is on,
+                  // any reticle element carrying an authored
+                  // [illuminated_color_hex] renders in its
+                  // illuminated color (red center dot in the v2.3
+                  // LoadOut originals). Non-illuminated elements
+                  // stay black against the dusk backdrop.
+                  lowLightMode: _lowLightMode,
                 ),
               ),
           ],
@@ -8076,8 +8272,10 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                           reticleDisplayUnit: reticleUnit,
                           rackChildren: _rackChildrenSpec,
                           activeRackChildIndex: _activeRackChildIndex,
+                          rackMountStyle: _selectedRack?.rackKind,
                           colorHexOverride: _selectedTargetColorHex,
                           rangeYards: yards > 0 ? yards : null,
+                          lowLightMode: _lowLightMode,
                         ),
                       ],
                     );
@@ -8105,8 +8303,10 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                     reticleDisplayUnit: reticleUnit,
                     rackChildren: _rackChildrenSpec,
                     activeRackChildIndex: _activeRackChildIndex,
+                    rackMountStyle: _selectedRack?.rackKind,
                     colorHexOverride: _selectedTargetColorHex,
                     rangeYards: yards > 0 ? yards : null,
+                    lowLightMode: _lowLightMode,
                   );
                 },
               )
@@ -8125,8 +8325,10 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                 reticleDisplayUnit: reticleUnit,
                 rackChildren: _rackChildrenSpec,
                 activeRackChildIndex: _activeRackChildIndex,
+                rackMountStyle: _selectedRack?.rackKind,
                 colorHexOverride: _selectedTargetColorHex,
                 rangeYards: yards > 0 ? yards : null,
+                lowLightMode: _lowLightMode,
               ),
             const SizedBox(height: 12),
             Row(

@@ -772,9 +772,9 @@ file — only the user-facing UI changed. If we later move to a real
 DB rename we'll add a one-shot migration; for now the display
 transform keeps the change low-risk.
 
-### What ships today (43 reticles total)
+### What ships today (52 reticles total)
 
-**24 LoadOut-original archetypes** (`loadout_*` IDs):
+**21 LoadOut-original archetypes** (`loadout_*` IDs):
 
 - Mil Tree family — Default, Compact, Medium, Dense, Christmas Tree,
   Hash (6 variants).
@@ -785,7 +785,7 @@ transform keeps the change low-risk.
 - Red Dot 2 / 4 / 6 MOA, Red Dot + Ring.
 - Holographic Ring + Dot.
 
-**19 public-domain reticles** (`pd_*` IDs):
+**21 public-domain reticles** (`pd_*` IDs):
 
 - Mil-Dot (USMC), Mil Hash (Generic).
 - Plex, Crosshair (fine / medium / heavy).
@@ -795,20 +795,26 @@ transform keeps the change low-risk.
 - Chevron, Dotted Crosshair, Iron Sight Ring.
 - Post and Dot, Diamond.
 
+**10 reticles calibrated to manufacturer-published specs**
+(`subtension_origin: published_spec`) — these carry
+`calibration_provenance` JSON blobs and render the "Calibrated to
+[Manufacturer] [Reticle Name]" disclaimer per Phase 6 §C.
+
 ### Scope NAMES are kept (factual identification)
 
-We ship 47 scopes across 26 brands today
+We ship 194 scopes across 30 brands today
 (`assets/seed_data/scopes.json`). Naming a scope is **factual product
 identification** — saying "Vortex Razor HD Gen III 6-36x56 FFP" is
 descriptive, not infringing. This is also nominative fair use under US
 trademark doctrine: you can't identify the product without the name.
 
-Brands shipped: Vortex Optics, Nightforce Optics, Schmidt & Bender,
-Leupold, Tangent Theta, Zero Compromise Optic, Hensoldt, Kahles,
-Bushnell, Sig Sauer, Athlon Optics, Element Optics, Burris, Arken
-Optics, Primary Arms, Aimpoint, EOTech, Trijicon, Holosun, ZeroTech
-Optics, Riton Optics, Swarovski Optik, Carl Zeiss, Meopta, DEON
-Optical Design (March), Sightron.
+Brands shipped: Aimpoint, Arken Optics, Athlon Optics, Burris,
+Bushnell, Carl Zeiss, DEON Optical Design (March), EOTech, Element
+Optics, Hawke Optics, Hensoldt, Holosun, Kahles, Leupold, Maven,
+Meopta, Nightforce Optics, Primary Arms, Riton Optics, Schmidt &
+Bender, Sig Sauer, Sightron, Steiner, Swarovski Optik, Tangent
+Theta, Trijicon, US Optics, Vortex Optics, Zero Compromise Optic,
+ZeroTech Optics.
 
 ### "Find by my scope"
 
@@ -828,15 +834,18 @@ to a shooter who's only ever held the branded reticle.
   Default Mil Tree," "LoadOut Christmas Tree MOA").
 - For copy that needs a "we cover the equivalents" pitch, say
   something like: "If your scope ships with a TReMoR3 or an EBR-7C,
-  use the LoadOut Mil Tree archetype — same hold-off math, no
-  licensing complications." That's accurate AND honest.
+  the LoadOut Mil Tree archetype uses the same hold-off math.
+  Either reticle gives you the same precision; the LoadOut version
+  is what you'll see in the picker." That's pure interoperability
+  framing — no licensing or substitution language.
 
 ---
 
 ## 10. Targets
 
-`assets/seed_data/targets.json` ships 52 entries across 4 shape
-families: Circle, Square, Rectangle, Silhouette.
+`assets/seed_data/targets.json` ships 65 entries across 4 shape
+families: Circle, Square, Rectangle, Silhouette (49 target +
+16 animal silhouettes).
 
 - **Default for fresh Range Day sessions:** 18 in × 30 in **white** IPSC
   silhouette.
@@ -844,7 +853,7 @@ families: Circle, Square, Rectangle, Silhouette.
   Yellow / Red. Black silhouettes render via the `silhouette` shape
   primitive itself, not via tint.
 - Categories: paper, steel, reactive, game-silhouette.
-- Rack support (6 rack types — see § 8) for KYL plates, IDPA stages,
+- Rack support (9 rack types — see § 8) for KYL plates, IDPA stages,
   pepper poppers.
 
 ---
@@ -1456,7 +1465,7 @@ A short tactical checklist for any copy review:
 
 ## 23. Useful stats + numbers for copy
 
-Cite these directly. Counts current as of 2026-05-10 from
+Cite these directly. Counts current as of 2026-05-12 from
 `assets/seed_data/` and the engineering CLAUDE.md:
 
 - **203 cartridges** with full SAAMI specs (`cartridges.json`).
@@ -1466,10 +1475,12 @@ Cite these directly. Counts current as of 2026-05-10 from
   picker (`manufactured_ammo.json`).
 - **300+ Hornady 4DOF measured Cd-vs-Mach curves**
   (`drag_curves/curves.json`) — Pro.
-- **47 scopes across 26 brands** (`scopes.json`).
-- **43 reticles** (24 LoadOut-original + 19 public-domain) — see § 9.
-- **52 target shapes** across 4 shape families (`targets.json`).
-- **6 target rack types** (`target_racks.json`).
+- **194 scopes across 30 brands** (`scopes.json`).
+- **52 reticles** (21 LoadOut-original + 21 public-domain + 10
+  calibrated-to-published-spec) — see § 9.
+- **65 target shapes** across 4 shape families (49 target + 16
+  animal silhouettes) (`targets.json`).
+- **9 target rack types** (`target_racks.json`).
 - **153 glossary terms across 10 categories**, with **34+ worked
   examples**. (142 launched + 11 added in the Load Development /
   Internal Ballistics wave: OCW, Audette Ladder, Satterlee 10-shot,
@@ -1516,14 +1527,21 @@ Cite these directly. Counts current as of 2026-05-10 from
 
 Numbers to NOT cite without verification:
 
-- "258 reticles" — outdated; we ship 43 today after the LoadOut-
-  original / public-domain rebuild.
-- "156 optics across 21 brands" — outdated; we ship 47 across 26.
+- "258 reticles" — outdated; we ship 52 today after the LoadOut-
+  original / public-domain / calibrated-to-spec rebuild.
+- "43 reticles" — outdated; the count is now 52 (21 original + 21
+  public-domain + 10 calibrated-to-published-spec).
+- "156 optics across 21 brands" — outdated; we ship 194 across 30.
+- "47 scopes across 26 brands" — outdated; the count is now 194
+  across 30 after the Phase 4/5 catalog expansion.
 - "290 reticles" / "290+ reticles" — outdated.
 - "200+ cartridges" is OK; the precise count is 203.
 - "6 platforms" — outdated until Apple Watch / Wear OS ship payloads.
   Today it's 4.
-- "55 target shapes" — outdated; the count is 52.
+- "55 target shapes" — outdated; the count is now 65.
+- "52 target shapes" — outdated; the count is now 65 (49 target +
+  16 animal silhouettes).
+- "6 target rack types" — outdated; the count is now 9.
 - **"15 languages" without the beta caveat** — see above. The 6
   reviewed + 9 in beta framing is the safe version.
 - **"Available in 6 languages"** is now outdated as a top-line

@@ -152,7 +152,10 @@ const allowedKeys = <String>{
   'brass',
   'firearms',
   'firearm_parts',
-  'optics',
+  // 'optics' removed in v2.3: optics.json was merged into scopes.json
+  // during the Range Day Realistic data-model consolidation. See
+  // `docs/DECISIONS.md` D-001 and `range_day_realistic_rewrite_v23.md`
+  // §4.2 for the merge rationale.
   // v8 onwards.
   'targets',
   'reticles',
@@ -162,9 +165,11 @@ const allowedKeys = <String>{
   'factory_loads',
   // v19 — target racks reference catalog.
   'target_racks',
-  // v22 — verified scope + reticle catalog.
+  // v22 — verified scope + reticle catalog. `scopes_v2` is the merged
+  // 182-row catalog as of v2.3 (see `range_day_realistic_rewrite_v23.md`
+  // §4.2). `reticles_v2` was retired in v2.3 — the 52-row merged catalog
+  // ships as `reticles` above.
   'scopes_v2',
-  'reticles_v2',
   'scope_reticle_options',
   // v23 — curated manufactured-ammo catalog feeding the Range Day
   // common-load picker.

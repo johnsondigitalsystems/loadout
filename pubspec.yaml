@@ -202,6 +202,13 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  # SVG path-data parser. Used by `lib/widgets/animal_silhouettes.dart`
+  # and `lib/widgets/target_silhouettes.dart` to convert the
+  # hand-authored SVG silhouettes under `assets/silhouettes/` into
+  # Flutter `Path` objects (per the v2.3 Range Day Realistic rewrite,
+  # Appendix H.2). The parser supports the full SVG path spec including
+  # cubic Beziers and arcs.
+  path_drawing: ^1.0.1
   firebase_core: ^4.7.0
   firebase_auth: ^6.4.0
   # Optional crash reporting. OFF by default. Activated only when the
@@ -454,7 +461,15 @@ flutter:
     - assets/seed_data/
     - assets/seed_data/drag_curves/
     - assets/seed_data/components/
-    - assets/seed_data/reticle_subtensions/
+    # v2.3 Range Day Realistic rewrite: 16 hand-authored animal SVG
+    # silhouettes (deer / elk / bear / boar / etc.) rendered via
+    # `path_drawing` from `lib/widgets/animal_silhouettes.dart`. Parallel
+    # `targets/` dir ships competition-target SVGs (pepper popper today,
+    # IDPA / USPSA / NRA targets next per `docs/ROADMAP.md`). Note: the
+    # old `reticle_subtensions/` line was removed when the merge in
+    # Phase 2.4 consolidated those files into `reticles.json`.
+    - assets/silhouettes/animals/
+    - assets/silhouettes/targets/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

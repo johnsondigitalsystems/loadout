@@ -11864,6 +11864,39 @@ class $UserFirearmsTable extends UserFirearms
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _defaultMagnificationMeta =
+      const VerificationMeta('defaultMagnification');
+  @override
+  late final GeneratedColumn<double> defaultMagnification =
+      GeneratedColumn<double>(
+        'default_magnification',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _defaultScopeIdMeta = const VerificationMeta(
+    'defaultScopeId',
+  );
+  @override
+  late final GeneratedColumn<String> defaultScopeId = GeneratedColumn<String>(
+    'default_scope_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _defaultReticleIdMeta = const VerificationMeta(
+    'defaultReticleId',
+  );
+  @override
+  late final GeneratedColumn<String> defaultReticleId = GeneratedColumn<String>(
+    'default_reticle_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -11906,6 +11939,9 @@ class $UserFirearmsTable extends UserFirearms
     muzzleBrakeName,
     suppressorName,
     bipodName,
+    defaultMagnification,
+    defaultScopeId,
+    defaultReticleId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -12230,6 +12266,33 @@ class $UserFirearmsTable extends UserFirearms
         bipodName.isAcceptableOrUnknown(data['bipod_name']!, _bipodNameMeta),
       );
     }
+    if (data.containsKey('default_magnification')) {
+      context.handle(
+        _defaultMagnificationMeta,
+        defaultMagnification.isAcceptableOrUnknown(
+          data['default_magnification']!,
+          _defaultMagnificationMeta,
+        ),
+      );
+    }
+    if (data.containsKey('default_scope_id')) {
+      context.handle(
+        _defaultScopeIdMeta,
+        defaultScopeId.isAcceptableOrUnknown(
+          data['default_scope_id']!,
+          _defaultScopeIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('default_reticle_id')) {
+      context.handle(
+        _defaultReticleIdMeta,
+        defaultReticleId.isAcceptableOrUnknown(
+          data['default_reticle_id']!,
+          _defaultReticleIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -12399,6 +12462,18 @@ class $UserFirearmsTable extends UserFirearms
         DriftSqlType.string,
         data['${effectivePrefix}bipod_name'],
       ),
+      defaultMagnification: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}default_magnification'],
+      ),
+      defaultScopeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}default_scope_id'],
+      ),
+      defaultReticleId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}default_reticle_id'],
+      ),
     );
   }
 
@@ -12545,6 +12620,26 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
   final String? muzzleBrakeName;
   final String? suppressorName;
   final String? bipodName;
+
+  /// Preferred scope magnification for this firearm. Range Day
+  /// pre-populates the session's `currentMagnification` from this
+  /// value when the firearm is picked. Null falls back to the
+  /// scope's geometric-mean magnification at runtime.
+  final double? defaultMagnification;
+
+  /// Preferred scope for this firearm, as a string id matching
+  /// `scopes.json` row's `id` field (e.g. `vortex_razor_hd_gen_iii_6_36x56_ffp`).
+  /// Distinct from `opticsId` (an integer FK to the `Optics`
+  /// drift table); this column reads from the merged v2.3 scope
+  /// catalog by string id. Null falls back to `opticsId`.
+  final String? defaultScopeId;
+
+  /// Preferred reticle for this firearm, as a string id matching
+  /// `reticles.json` row's `id` field (e.g. `loadout_mil_tree_flare`).
+  /// Distinct from `reticleId` (the integer FK on the Reticles
+  /// drift table); this column reads from the merged v2.3 reticle
+  /// catalog by string id. Null falls back to `reticleId`.
+  final String? defaultReticleId;
   const UserFirearmRow({
     required this.id,
     required this.name,
@@ -12586,6 +12681,9 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
     this.muzzleBrakeName,
     this.suppressorName,
     this.bipodName,
+    this.defaultMagnification,
+    this.defaultScopeId,
+    this.defaultReticleId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -12696,6 +12794,15 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
     if (!nullToAbsent || bipodName != null) {
       map['bipod_name'] = Variable<String>(bipodName);
     }
+    if (!nullToAbsent || defaultMagnification != null) {
+      map['default_magnification'] = Variable<double>(defaultMagnification);
+    }
+    if (!nullToAbsent || defaultScopeId != null) {
+      map['default_scope_id'] = Variable<String>(defaultScopeId);
+    }
+    if (!nullToAbsent || defaultReticleId != null) {
+      map['default_reticle_id'] = Variable<String>(defaultReticleId);
+    }
     return map;
   }
 
@@ -12801,6 +12908,15 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
       bipodName: bipodName == null && nullToAbsent
           ? const Value.absent()
           : Value(bipodName),
+      defaultMagnification: defaultMagnification == null && nullToAbsent
+          ? const Value.absent()
+          : Value(defaultMagnification),
+      defaultScopeId: defaultScopeId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(defaultScopeId),
+      defaultReticleId: defaultReticleId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(defaultReticleId),
     );
   }
 
@@ -12866,6 +12982,11 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
       muzzleBrakeName: serializer.fromJson<String?>(json['muzzleBrakeName']),
       suppressorName: serializer.fromJson<String?>(json['suppressorName']),
       bipodName: serializer.fromJson<String?>(json['bipodName']),
+      defaultMagnification: serializer.fromJson<double?>(
+        json['defaultMagnification'],
+      ),
+      defaultScopeId: serializer.fromJson<String?>(json['defaultScopeId']),
+      defaultReticleId: serializer.fromJson<String?>(json['defaultReticleId']),
     );
   }
   @override
@@ -12918,6 +13039,9 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
       'muzzleBrakeName': serializer.toJson<String?>(muzzleBrakeName),
       'suppressorName': serializer.toJson<String?>(suppressorName),
       'bipodName': serializer.toJson<String?>(bipodName),
+      'defaultMagnification': serializer.toJson<double?>(defaultMagnification),
+      'defaultScopeId': serializer.toJson<String?>(defaultScopeId),
+      'defaultReticleId': serializer.toJson<String?>(defaultReticleId),
     };
   }
 
@@ -12962,6 +13086,9 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
     Value<String?> muzzleBrakeName = const Value.absent(),
     Value<String?> suppressorName = const Value.absent(),
     Value<String?> bipodName = const Value.absent(),
+    Value<double?> defaultMagnification = const Value.absent(),
+    Value<String?> defaultScopeId = const Value.absent(),
+    Value<String?> defaultReticleId = const Value.absent(),
   }) => UserFirearmRow(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -13035,6 +13162,15 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
         ? suppressorName.value
         : this.suppressorName,
     bipodName: bipodName.present ? bipodName.value : this.bipodName,
+    defaultMagnification: defaultMagnification.present
+        ? defaultMagnification.value
+        : this.defaultMagnification,
+    defaultScopeId: defaultScopeId.present
+        ? defaultScopeId.value
+        : this.defaultScopeId,
+    defaultReticleId: defaultReticleId.present
+        ? defaultReticleId.value
+        : this.defaultReticleId,
   );
   UserFirearmRow copyWithCompanion(UserFirearmsCompanion data) {
     return UserFirearmRow(
@@ -13132,6 +13268,15 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
           ? data.suppressorName.value
           : this.suppressorName,
       bipodName: data.bipodName.present ? data.bipodName.value : this.bipodName,
+      defaultMagnification: data.defaultMagnification.present
+          ? data.defaultMagnification.value
+          : this.defaultMagnification,
+      defaultScopeId: data.defaultScopeId.present
+          ? data.defaultScopeId.value
+          : this.defaultScopeId,
+      defaultReticleId: data.defaultReticleId.present
+          ? data.defaultReticleId.value
+          : this.defaultReticleId,
     );
   }
 
@@ -13179,7 +13324,10 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
           ..write('buttstockName: $buttstockName, ')
           ..write('muzzleBrakeName: $muzzleBrakeName, ')
           ..write('suppressorName: $suppressorName, ')
-          ..write('bipodName: $bipodName')
+          ..write('bipodName: $bipodName, ')
+          ..write('defaultMagnification: $defaultMagnification, ')
+          ..write('defaultScopeId: $defaultScopeId, ')
+          ..write('defaultReticleId: $defaultReticleId')
           ..write(')'))
         .toString();
   }
@@ -13226,6 +13374,9 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
     muzzleBrakeName,
     suppressorName,
     bipodName,
+    defaultMagnification,
+    defaultScopeId,
+    defaultReticleId,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -13271,7 +13422,10 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
           other.buttstockName == this.buttstockName &&
           other.muzzleBrakeName == this.muzzleBrakeName &&
           other.suppressorName == this.suppressorName &&
-          other.bipodName == this.bipodName);
+          other.bipodName == this.bipodName &&
+          other.defaultMagnification == this.defaultMagnification &&
+          other.defaultScopeId == this.defaultScopeId &&
+          other.defaultReticleId == this.defaultReticleId);
 }
 
 class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
@@ -13315,6 +13469,9 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
   final Value<String?> muzzleBrakeName;
   final Value<String?> suppressorName;
   final Value<String?> bipodName;
+  final Value<double?> defaultMagnification;
+  final Value<String?> defaultScopeId;
+  final Value<String?> defaultReticleId;
   const UserFirearmsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -13356,6 +13513,9 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
     this.muzzleBrakeName = const Value.absent(),
     this.suppressorName = const Value.absent(),
     this.bipodName = const Value.absent(),
+    this.defaultMagnification = const Value.absent(),
+    this.defaultScopeId = const Value.absent(),
+    this.defaultReticleId = const Value.absent(),
   });
   UserFirearmsCompanion.insert({
     this.id = const Value.absent(),
@@ -13398,6 +13558,9 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
     this.muzzleBrakeName = const Value.absent(),
     this.suppressorName = const Value.absent(),
     this.bipodName = const Value.absent(),
+    this.defaultMagnification = const Value.absent(),
+    this.defaultScopeId = const Value.absent(),
+    this.defaultReticleId = const Value.absent(),
   }) : name = Value(name);
   static Insertable<UserFirearmRow> custom({
     Expression<int>? id,
@@ -13440,6 +13603,9 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
     Expression<String>? muzzleBrakeName,
     Expression<String>? suppressorName,
     Expression<String>? bipodName,
+    Expression<double>? defaultMagnification,
+    Expression<String>? defaultScopeId,
+    Expression<String>? defaultReticleId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -13491,6 +13657,10 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
       if (muzzleBrakeName != null) 'muzzle_brake_name': muzzleBrakeName,
       if (suppressorName != null) 'suppressor_name': suppressorName,
       if (bipodName != null) 'bipod_name': bipodName,
+      if (defaultMagnification != null)
+        'default_magnification': defaultMagnification,
+      if (defaultScopeId != null) 'default_scope_id': defaultScopeId,
+      if (defaultReticleId != null) 'default_reticle_id': defaultReticleId,
     });
   }
 
@@ -13535,6 +13705,9 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
     Value<String?>? muzzleBrakeName,
     Value<String?>? suppressorName,
     Value<String?>? bipodName,
+    Value<double?>? defaultMagnification,
+    Value<String?>? defaultScopeId,
+    Value<String?>? defaultReticleId,
   }) {
     return UserFirearmsCompanion(
       id: id ?? this.id,
@@ -13580,6 +13753,9 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
       muzzleBrakeName: muzzleBrakeName ?? this.muzzleBrakeName,
       suppressorName: suppressorName ?? this.suppressorName,
       bipodName: bipodName ?? this.bipodName,
+      defaultMagnification: defaultMagnification ?? this.defaultMagnification,
+      defaultScopeId: defaultScopeId ?? this.defaultScopeId,
+      defaultReticleId: defaultReticleId ?? this.defaultReticleId,
     );
   }
 
@@ -13716,6 +13892,17 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
     if (bipodName.present) {
       map['bipod_name'] = Variable<String>(bipodName.value);
     }
+    if (defaultMagnification.present) {
+      map['default_magnification'] = Variable<double>(
+        defaultMagnification.value,
+      );
+    }
+    if (defaultScopeId.present) {
+      map['default_scope_id'] = Variable<String>(defaultScopeId.value);
+    }
+    if (defaultReticleId.present) {
+      map['default_reticle_id'] = Variable<String>(defaultReticleId.value);
+    }
     return map;
   }
 
@@ -13763,7 +13950,10 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
           ..write('buttstockName: $buttstockName, ')
           ..write('muzzleBrakeName: $muzzleBrakeName, ')
           ..write('suppressorName: $suppressorName, ')
-          ..write('bipodName: $bipodName')
+          ..write('bipodName: $bipodName, ')
+          ..write('defaultMagnification: $defaultMagnification, ')
+          ..write('defaultScopeId: $defaultScopeId, ')
+          ..write('defaultReticleId: $defaultReticleId')
           ..write(')'))
         .toString();
   }
@@ -22757,6 +22947,72 @@ class $RangeDaySessionsTable extends RangeDaySessions
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _currentMagnificationMeta =
+      const VerificationMeta('currentMagnification');
+  @override
+  late final GeneratedColumn<double> currentMagnification =
+      GeneratedColumn<double>(
+        'current_magnification',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _currentReticleIdMeta = const VerificationMeta(
+    'currentReticleId',
+  );
+  @override
+  late final GeneratedColumn<String> currentReticleId = GeneratedColumn<String>(
+    'current_reticle_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _dewPointFMeta = const VerificationMeta(
+    'dewPointF',
+  );
+  @override
+  late final GeneratedColumn<double> dewPointF = GeneratedColumn<double>(
+    'dew_point_f',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sessionLocalTimeMeta = const VerificationMeta(
+    'sessionLocalTime',
+  );
+  @override
+  late final GeneratedColumn<String> sessionLocalTime = GeneratedColumn<String>(
+    'session_local_time',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _latitudeDegMeta = const VerificationMeta(
+    'latitudeDeg',
+  );
+  @override
+  late final GeneratedColumn<double> latitudeDeg = GeneratedColumn<double>(
+    'latitude_deg',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _longitudeDegMeta = const VerificationMeta(
+    'longitudeDeg',
+  );
+  @override
+  late final GeneratedColumn<double> longitudeDeg = GeneratedColumn<double>(
+    'longitude_deg',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -22789,6 +23045,12 @@ class $RangeDaySessionsTable extends RangeDaySessions
     atmospherePresetId,
     rackId,
     rackChildPosition,
+    currentMagnification,
+    currentReticleId,
+    dewPointF,
+    sessionLocalTime,
+    latitudeDeg,
+    longitudeDeg,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -23033,6 +23295,57 @@ class $RangeDaySessionsTable extends RangeDaySessions
         ),
       );
     }
+    if (data.containsKey('current_magnification')) {
+      context.handle(
+        _currentMagnificationMeta,
+        currentMagnification.isAcceptableOrUnknown(
+          data['current_magnification']!,
+          _currentMagnificationMeta,
+        ),
+      );
+    }
+    if (data.containsKey('current_reticle_id')) {
+      context.handle(
+        _currentReticleIdMeta,
+        currentReticleId.isAcceptableOrUnknown(
+          data['current_reticle_id']!,
+          _currentReticleIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('dew_point_f')) {
+      context.handle(
+        _dewPointFMeta,
+        dewPointF.isAcceptableOrUnknown(data['dew_point_f']!, _dewPointFMeta),
+      );
+    }
+    if (data.containsKey('session_local_time')) {
+      context.handle(
+        _sessionLocalTimeMeta,
+        sessionLocalTime.isAcceptableOrUnknown(
+          data['session_local_time']!,
+          _sessionLocalTimeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('latitude_deg')) {
+      context.handle(
+        _latitudeDegMeta,
+        latitudeDeg.isAcceptableOrUnknown(
+          data['latitude_deg']!,
+          _latitudeDegMeta,
+        ),
+      );
+    }
+    if (data.containsKey('longitude_deg')) {
+      context.handle(
+        _longitudeDegMeta,
+        longitudeDeg.isAcceptableOrUnknown(
+          data['longitude_deg']!,
+          _longitudeDegMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -23162,6 +23475,30 @@ class $RangeDaySessionsTable extends RangeDaySessions
         DriftSqlType.int,
         data['${effectivePrefix}rack_child_position'],
       ),
+      currentMagnification: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}current_magnification'],
+      ),
+      currentReticleId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}current_reticle_id'],
+      ),
+      dewPointF: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}dew_point_f'],
+      ),
+      sessionLocalTime: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}session_local_time'],
+      ),
+      latitudeDeg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}latitude_deg'],
+      ),
+      longitudeDeg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}longitude_deg'],
+      ),
     );
   }
 
@@ -23277,6 +23614,41 @@ class RangeDaySessionRow extends DataClass
   /// position) is clamped to the valid range by the picker, never
   /// crashes.
   final int? rackChildPosition;
+
+  /// Current scope magnification at session time. Drives the
+  /// `fovRadiansAtMagnification` interpolation and the SFP/FFP
+  /// reticle scaling math in `scope_view_geometry.dart`. Null means
+  /// "use the firearm's default" (which itself falls back to the
+  /// scope's geometric-mean magnification if unset).
+  final double? currentMagnification;
+
+  /// Reticle picked for this session, as a string id matching
+  /// `reticles.json` row's `id` field. Distinct from `reticleId`
+  /// (an integer FK to the Reticles drift table) — this column
+  /// supports the v2.3 mid-session reticle switcher which writes
+  /// directly to the session by string id without resolving to a
+  /// DB row first. Null falls back to `reticleId`.
+  final String? currentReticleId;
+
+  /// Dew point in Fahrenheit. Feeds the `mirageStrength` calculation
+  /// in `scope_view_geometry.dart` together with `temperatureF`.
+  /// Null when the user hasn't entered atmosphere data.
+  final double? dewPointF;
+
+  /// ISO8601 local time the session was recorded at. Feeds the
+  /// `solarPosition` calculation for mound-shadow lighting
+  /// direction. Stored as text so the timezone offset survives a
+  /// round trip; the painter converts to UTC at use time.
+  final String? sessionLocalTime;
+
+  /// Geographic latitude in decimal degrees. Feeds `solarPosition`
+  /// for lighting direction. Null when the user hasn't enabled
+  /// location services.
+  final double? latitudeDeg;
+
+  /// Geographic longitude in decimal degrees. Pairs with
+  /// `latitudeDeg`.
+  final double? longitudeDeg;
   const RangeDaySessionRow({
     required this.id,
     required this.name,
@@ -23308,6 +23680,12 @@ class RangeDaySessionRow extends DataClass
     this.atmospherePresetId,
     this.rackId,
     this.rackChildPosition,
+    this.currentMagnification,
+    this.currentReticleId,
+    this.dewPointF,
+    this.sessionLocalTime,
+    this.latitudeDeg,
+    this.longitudeDeg,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -23387,6 +23765,24 @@ class RangeDaySessionRow extends DataClass
     }
     if (!nullToAbsent || rackChildPosition != null) {
       map['rack_child_position'] = Variable<int>(rackChildPosition);
+    }
+    if (!nullToAbsent || currentMagnification != null) {
+      map['current_magnification'] = Variable<double>(currentMagnification);
+    }
+    if (!nullToAbsent || currentReticleId != null) {
+      map['current_reticle_id'] = Variable<String>(currentReticleId);
+    }
+    if (!nullToAbsent || dewPointF != null) {
+      map['dew_point_f'] = Variable<double>(dewPointF);
+    }
+    if (!nullToAbsent || sessionLocalTime != null) {
+      map['session_local_time'] = Variable<String>(sessionLocalTime);
+    }
+    if (!nullToAbsent || latitudeDeg != null) {
+      map['latitude_deg'] = Variable<double>(latitudeDeg);
+    }
+    if (!nullToAbsent || longitudeDeg != null) {
+      map['longitude_deg'] = Variable<double>(longitudeDeg);
     }
     return map;
   }
@@ -23469,6 +23865,24 @@ class RangeDaySessionRow extends DataClass
       rackChildPosition: rackChildPosition == null && nullToAbsent
           ? const Value.absent()
           : Value(rackChildPosition),
+      currentMagnification: currentMagnification == null && nullToAbsent
+          ? const Value.absent()
+          : Value(currentMagnification),
+      currentReticleId: currentReticleId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(currentReticleId),
+      dewPointF: dewPointF == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dewPointF),
+      sessionLocalTime: sessionLocalTime == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sessionLocalTime),
+      latitudeDeg: latitudeDeg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(latitudeDeg),
+      longitudeDeg: longitudeDeg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(longitudeDeg),
     );
   }
 
@@ -23514,6 +23928,14 @@ class RangeDaySessionRow extends DataClass
       atmospherePresetId: serializer.fromJson<int?>(json['atmospherePresetId']),
       rackId: serializer.fromJson<int?>(json['rackId']),
       rackChildPosition: serializer.fromJson<int?>(json['rackChildPosition']),
+      currentMagnification: serializer.fromJson<double?>(
+        json['currentMagnification'],
+      ),
+      currentReticleId: serializer.fromJson<String?>(json['currentReticleId']),
+      dewPointF: serializer.fromJson<double?>(json['dewPointF']),
+      sessionLocalTime: serializer.fromJson<String?>(json['sessionLocalTime']),
+      latitudeDeg: serializer.fromJson<double?>(json['latitudeDeg']),
+      longitudeDeg: serializer.fromJson<double?>(json['longitudeDeg']),
     );
   }
   @override
@@ -23550,6 +23972,12 @@ class RangeDaySessionRow extends DataClass
       'atmospherePresetId': serializer.toJson<int?>(atmospherePresetId),
       'rackId': serializer.toJson<int?>(rackId),
       'rackChildPosition': serializer.toJson<int?>(rackChildPosition),
+      'currentMagnification': serializer.toJson<double?>(currentMagnification),
+      'currentReticleId': serializer.toJson<String?>(currentReticleId),
+      'dewPointF': serializer.toJson<double?>(dewPointF),
+      'sessionLocalTime': serializer.toJson<String?>(sessionLocalTime),
+      'latitudeDeg': serializer.toJson<double?>(latitudeDeg),
+      'longitudeDeg': serializer.toJson<double?>(longitudeDeg),
     };
   }
 
@@ -23584,6 +24012,12 @@ class RangeDaySessionRow extends DataClass
     Value<int?> atmospherePresetId = const Value.absent(),
     Value<int?> rackId = const Value.absent(),
     Value<int?> rackChildPosition = const Value.absent(),
+    Value<double?> currentMagnification = const Value.absent(),
+    Value<String?> currentReticleId = const Value.absent(),
+    Value<double?> dewPointF = const Value.absent(),
+    Value<String?> sessionLocalTime = const Value.absent(),
+    Value<double?> latitudeDeg = const Value.absent(),
+    Value<double?> longitudeDeg = const Value.absent(),
   }) => RangeDaySessionRow(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -23633,6 +24067,18 @@ class RangeDaySessionRow extends DataClass
     rackChildPosition: rackChildPosition.present
         ? rackChildPosition.value
         : this.rackChildPosition,
+    currentMagnification: currentMagnification.present
+        ? currentMagnification.value
+        : this.currentMagnification,
+    currentReticleId: currentReticleId.present
+        ? currentReticleId.value
+        : this.currentReticleId,
+    dewPointF: dewPointF.present ? dewPointF.value : this.dewPointF,
+    sessionLocalTime: sessionLocalTime.present
+        ? sessionLocalTime.value
+        : this.sessionLocalTime,
+    latitudeDeg: latitudeDeg.present ? latitudeDeg.value : this.latitudeDeg,
+    longitudeDeg: longitudeDeg.present ? longitudeDeg.value : this.longitudeDeg,
   );
   RangeDaySessionRow copyWithCompanion(RangeDaySessionsCompanion data) {
     return RangeDaySessionRow(
@@ -23700,6 +24146,22 @@ class RangeDaySessionRow extends DataClass
       rackChildPosition: data.rackChildPosition.present
           ? data.rackChildPosition.value
           : this.rackChildPosition,
+      currentMagnification: data.currentMagnification.present
+          ? data.currentMagnification.value
+          : this.currentMagnification,
+      currentReticleId: data.currentReticleId.present
+          ? data.currentReticleId.value
+          : this.currentReticleId,
+      dewPointF: data.dewPointF.present ? data.dewPointF.value : this.dewPointF,
+      sessionLocalTime: data.sessionLocalTime.present
+          ? data.sessionLocalTime.value
+          : this.sessionLocalTime,
+      latitudeDeg: data.latitudeDeg.present
+          ? data.latitudeDeg.value
+          : this.latitudeDeg,
+      longitudeDeg: data.longitudeDeg.present
+          ? data.longitudeDeg.value
+          : this.longitudeDeg,
     );
   }
 
@@ -23735,7 +24197,13 @@ class RangeDaySessionRow extends DataClass
           ..write('inclineAngleDeg: $inclineAngleDeg, ')
           ..write('atmospherePresetId: $atmospherePresetId, ')
           ..write('rackId: $rackId, ')
-          ..write('rackChildPosition: $rackChildPosition')
+          ..write('rackChildPosition: $rackChildPosition, ')
+          ..write('currentMagnification: $currentMagnification, ')
+          ..write('currentReticleId: $currentReticleId, ')
+          ..write('dewPointF: $dewPointF, ')
+          ..write('sessionLocalTime: $sessionLocalTime, ')
+          ..write('latitudeDeg: $latitudeDeg, ')
+          ..write('longitudeDeg: $longitudeDeg')
           ..write(')'))
         .toString();
   }
@@ -23772,6 +24240,12 @@ class RangeDaySessionRow extends DataClass
     atmospherePresetId,
     rackId,
     rackChildPosition,
+    currentMagnification,
+    currentReticleId,
+    dewPointF,
+    sessionLocalTime,
+    latitudeDeg,
+    longitudeDeg,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -23806,7 +24280,13 @@ class RangeDaySessionRow extends DataClass
           other.inclineAngleDeg == this.inclineAngleDeg &&
           other.atmospherePresetId == this.atmospherePresetId &&
           other.rackId == this.rackId &&
-          other.rackChildPosition == this.rackChildPosition);
+          other.rackChildPosition == this.rackChildPosition &&
+          other.currentMagnification == this.currentMagnification &&
+          other.currentReticleId == this.currentReticleId &&
+          other.dewPointF == this.dewPointF &&
+          other.sessionLocalTime == this.sessionLocalTime &&
+          other.latitudeDeg == this.latitudeDeg &&
+          other.longitudeDeg == this.longitudeDeg);
 }
 
 class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
@@ -23840,6 +24320,12 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
   final Value<int?> atmospherePresetId;
   final Value<int?> rackId;
   final Value<int?> rackChildPosition;
+  final Value<double?> currentMagnification;
+  final Value<String?> currentReticleId;
+  final Value<double?> dewPointF;
+  final Value<String?> sessionLocalTime;
+  final Value<double?> latitudeDeg;
+  final Value<double?> longitudeDeg;
   const RangeDaySessionsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -23871,6 +24357,12 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
     this.atmospherePresetId = const Value.absent(),
     this.rackId = const Value.absent(),
     this.rackChildPosition = const Value.absent(),
+    this.currentMagnification = const Value.absent(),
+    this.currentReticleId = const Value.absent(),
+    this.dewPointF = const Value.absent(),
+    this.sessionLocalTime = const Value.absent(),
+    this.latitudeDeg = const Value.absent(),
+    this.longitudeDeg = const Value.absent(),
   });
   RangeDaySessionsCompanion.insert({
     this.id = const Value.absent(),
@@ -23903,6 +24395,12 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
     this.atmospherePresetId = const Value.absent(),
     this.rackId = const Value.absent(),
     this.rackChildPosition = const Value.absent(),
+    this.currentMagnification = const Value.absent(),
+    this.currentReticleId = const Value.absent(),
+    this.dewPointF = const Value.absent(),
+    this.sessionLocalTime = const Value.absent(),
+    this.latitudeDeg = const Value.absent(),
+    this.longitudeDeg = const Value.absent(),
   }) : name = Value(name),
        date = Value(date),
        distanceYd = Value(distanceYd);
@@ -23937,6 +24435,12 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
     Expression<int>? atmospherePresetId,
     Expression<int>? rackId,
     Expression<int>? rackChildPosition,
+    Expression<double>? currentMagnification,
+    Expression<String>? currentReticleId,
+    Expression<double>? dewPointF,
+    Expression<String>? sessionLocalTime,
+    Expression<double>? latitudeDeg,
+    Expression<double>? longitudeDeg,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -23974,6 +24478,13 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
         'atmosphere_preset_id': atmospherePresetId,
       if (rackId != null) 'rack_id': rackId,
       if (rackChildPosition != null) 'rack_child_position': rackChildPosition,
+      if (currentMagnification != null)
+        'current_magnification': currentMagnification,
+      if (currentReticleId != null) 'current_reticle_id': currentReticleId,
+      if (dewPointF != null) 'dew_point_f': dewPointF,
+      if (sessionLocalTime != null) 'session_local_time': sessionLocalTime,
+      if (latitudeDeg != null) 'latitude_deg': latitudeDeg,
+      if (longitudeDeg != null) 'longitude_deg': longitudeDeg,
     });
   }
 
@@ -24008,6 +24519,12 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
     Value<int?>? atmospherePresetId,
     Value<int?>? rackId,
     Value<int?>? rackChildPosition,
+    Value<double?>? currentMagnification,
+    Value<String?>? currentReticleId,
+    Value<double?>? dewPointF,
+    Value<String?>? sessionLocalTime,
+    Value<double?>? latitudeDeg,
+    Value<double?>? longitudeDeg,
   }) {
     return RangeDaySessionsCompanion(
       id: id ?? this.id,
@@ -24040,6 +24557,12 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
       atmospherePresetId: atmospherePresetId ?? this.atmospherePresetId,
       rackId: rackId ?? this.rackId,
       rackChildPosition: rackChildPosition ?? this.rackChildPosition,
+      currentMagnification: currentMagnification ?? this.currentMagnification,
+      currentReticleId: currentReticleId ?? this.currentReticleId,
+      dewPointF: dewPointF ?? this.dewPointF,
+      sessionLocalTime: sessionLocalTime ?? this.sessionLocalTime,
+      latitudeDeg: latitudeDeg ?? this.latitudeDeg,
+      longitudeDeg: longitudeDeg ?? this.longitudeDeg,
     );
   }
 
@@ -24136,6 +24659,26 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
     if (rackChildPosition.present) {
       map['rack_child_position'] = Variable<int>(rackChildPosition.value);
     }
+    if (currentMagnification.present) {
+      map['current_magnification'] = Variable<double>(
+        currentMagnification.value,
+      );
+    }
+    if (currentReticleId.present) {
+      map['current_reticle_id'] = Variable<String>(currentReticleId.value);
+    }
+    if (dewPointF.present) {
+      map['dew_point_f'] = Variable<double>(dewPointF.value);
+    }
+    if (sessionLocalTime.present) {
+      map['session_local_time'] = Variable<String>(sessionLocalTime.value);
+    }
+    if (latitudeDeg.present) {
+      map['latitude_deg'] = Variable<double>(latitudeDeg.value);
+    }
+    if (longitudeDeg.present) {
+      map['longitude_deg'] = Variable<double>(longitudeDeg.value);
+    }
     return map;
   }
 
@@ -24171,7 +24714,13 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
           ..write('inclineAngleDeg: $inclineAngleDeg, ')
           ..write('atmospherePresetId: $atmospherePresetId, ')
           ..write('rackId: $rackId, ')
-          ..write('rackChildPosition: $rackChildPosition')
+          ..write('rackChildPosition: $rackChildPosition, ')
+          ..write('currentMagnification: $currentMagnification, ')
+          ..write('currentReticleId: $currentReticleId, ')
+          ..write('dewPointF: $dewPointF, ')
+          ..write('sessionLocalTime: $sessionLocalTime, ')
+          ..write('latitudeDeg: $latitudeDeg, ')
+          ..write('longitudeDeg: $longitudeDeg')
           ..write(')'))
         .toString();
   }
@@ -24885,6 +25434,29 @@ class $ReticlesTable extends Reticles
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _subtensionOriginMeta = const VerificationMeta(
+    'subtensionOrigin',
+  );
+  @override
+  late final GeneratedColumn<String> subtensionOrigin = GeneratedColumn<String>(
+    'subtension_origin',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('original'),
+  );
+  static const VerificationMeta _calibrationProvenanceMeta =
+      const VerificationMeta('calibrationProvenance');
+  @override
+  late final GeneratedColumn<String> calibrationProvenance =
+      GeneratedColumn<String>(
+        'calibration_provenance',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -24903,6 +25475,8 @@ class $ReticlesTable extends Reticles
     designer,
     license,
     subtensionsJson,
+    subtensionOrigin,
+    calibrationProvenance,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -25033,6 +25607,24 @@ class $ReticlesTable extends Reticles
         ),
       );
     }
+    if (data.containsKey('subtension_origin')) {
+      context.handle(
+        _subtensionOriginMeta,
+        subtensionOrigin.isAcceptableOrUnknown(
+          data['subtension_origin']!,
+          _subtensionOriginMeta,
+        ),
+      );
+    }
+    if (data.containsKey('calibration_provenance')) {
+      context.handle(
+        _calibrationProvenanceMeta,
+        calibrationProvenance.isAcceptableOrUnknown(
+          data['calibration_provenance']!,
+          _calibrationProvenanceMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -25105,6 +25697,14 @@ class $ReticlesTable extends Reticles
       subtensionsJson: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}subtensions_json'],
+      ),
+      subtensionOrigin: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}subtension_origin'],
+      )!,
+      calibrationProvenance: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}calibration_provenance'],
       ),
     );
   }
@@ -25180,6 +25780,24 @@ class ReticleRow extends DataClass implements Insertable<ReticleRow> {
   /// reticles_v2.json` for the canonical shape). Optional — null when
   /// the geometry in `definitionJson` is sufficient on its own.
   final String? subtensionsJson;
+
+  /// IP-posture discriminator. One of:
+  ///   * `'original'`       — LoadOut original artwork, original subtensions
+  ///   * `'published_spec'` — LoadOut original artwork, subtensions calibrated
+  ///                          to match a manufacturer's published spec
+  ///   * `'public_domain'`  — A public-domain reticle design (e.g. plex,
+  ///                          USMC mil-dot)
+  /// Drives the i18n disclaimer surface in the reticle preview screen
+  /// (see `lib/l10n/intl_*.arb` keys `reticle_disclaimer_*`). Required by
+  /// the dual-track IP posture documented in CLAUDE.md § 30.
+  final String subtensionOrigin;
+
+  /// JSON blob with provenance fields when `subtensionOrigin ==
+  /// 'published_spec'` — carries `manufacturer`, `reticle_name`,
+  /// `source_url`, `verified_at`. Null for `original` and
+  /// `public_domain`. The provenance string is internal-only and never
+  /// appears in user-visible product surfaces (CLAUDE.md § 30 rule 6).
+  final String? calibrationProvenance;
   const ReticleRow({
     required this.id,
     required this.manufacturerId,
@@ -25197,6 +25815,8 @@ class ReticleRow extends DataClass implements Insertable<ReticleRow> {
     this.designer,
     this.license,
     this.subtensionsJson,
+    required this.subtensionOrigin,
+    this.calibrationProvenance,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -25230,6 +25850,10 @@ class ReticleRow extends DataClass implements Insertable<ReticleRow> {
     }
     if (!nullToAbsent || subtensionsJson != null) {
       map['subtensions_json'] = Variable<String>(subtensionsJson);
+    }
+    map['subtension_origin'] = Variable<String>(subtensionOrigin);
+    if (!nullToAbsent || calibrationProvenance != null) {
+      map['calibration_provenance'] = Variable<String>(calibrationProvenance);
     }
     return map;
   }
@@ -25266,6 +25890,10 @@ class ReticleRow extends DataClass implements Insertable<ReticleRow> {
       subtensionsJson: subtensionsJson == null && nullToAbsent
           ? const Value.absent()
           : Value(subtensionsJson),
+      subtensionOrigin: Value(subtensionOrigin),
+      calibrationProvenance: calibrationProvenance == null && nullToAbsent
+          ? const Value.absent()
+          : Value(calibrationProvenance),
     );
   }
 
@@ -25291,6 +25919,10 @@ class ReticleRow extends DataClass implements Insertable<ReticleRow> {
       designer: serializer.fromJson<String?>(json['designer']),
       license: serializer.fromJson<String?>(json['license']),
       subtensionsJson: serializer.fromJson<String?>(json['subtensionsJson']),
+      subtensionOrigin: serializer.fromJson<String>(json['subtensionOrigin']),
+      calibrationProvenance: serializer.fromJson<String?>(
+        json['calibrationProvenance'],
+      ),
     );
   }
   @override
@@ -25313,6 +25945,10 @@ class ReticleRow extends DataClass implements Insertable<ReticleRow> {
       'designer': serializer.toJson<String?>(designer),
       'license': serializer.toJson<String?>(license),
       'subtensionsJson': serializer.toJson<String?>(subtensionsJson),
+      'subtensionOrigin': serializer.toJson<String>(subtensionOrigin),
+      'calibrationProvenance': serializer.toJson<String?>(
+        calibrationProvenance,
+      ),
     };
   }
 
@@ -25333,6 +25969,8 @@ class ReticleRow extends DataClass implements Insertable<ReticleRow> {
     Value<String?> designer = const Value.absent(),
     Value<String?> license = const Value.absent(),
     Value<String?> subtensionsJson = const Value.absent(),
+    String? subtensionOrigin,
+    Value<String?> calibrationProvenance = const Value.absent(),
   }) => ReticleRow(
     id: id ?? this.id,
     manufacturerId: manufacturerId ?? this.manufacturerId,
@@ -25352,6 +25990,10 @@ class ReticleRow extends DataClass implements Insertable<ReticleRow> {
     subtensionsJson: subtensionsJson.present
         ? subtensionsJson.value
         : this.subtensionsJson,
+    subtensionOrigin: subtensionOrigin ?? this.subtensionOrigin,
+    calibrationProvenance: calibrationProvenance.present
+        ? calibrationProvenance.value
+        : this.calibrationProvenance,
   );
   ReticleRow copyWithCompanion(ReticlesCompanion data) {
     return ReticleRow(
@@ -25383,6 +26025,12 @@ class ReticleRow extends DataClass implements Insertable<ReticleRow> {
       subtensionsJson: data.subtensionsJson.present
           ? data.subtensionsJson.value
           : this.subtensionsJson,
+      subtensionOrigin: data.subtensionOrigin.present
+          ? data.subtensionOrigin.value
+          : this.subtensionOrigin,
+      calibrationProvenance: data.calibrationProvenance.present
+          ? data.calibrationProvenance.value
+          : this.calibrationProvenance,
     );
   }
 
@@ -25404,7 +26052,9 @@ class ReticleRow extends DataClass implements Insertable<ReticleRow> {
           ..write('verifiedAt: $verifiedAt, ')
           ..write('designer: $designer, ')
           ..write('license: $license, ')
-          ..write('subtensionsJson: $subtensionsJson')
+          ..write('subtensionsJson: $subtensionsJson, ')
+          ..write('subtensionOrigin: $subtensionOrigin, ')
+          ..write('calibrationProvenance: $calibrationProvenance')
           ..write(')'))
         .toString();
   }
@@ -25427,6 +26077,8 @@ class ReticleRow extends DataClass implements Insertable<ReticleRow> {
     designer,
     license,
     subtensionsJson,
+    subtensionOrigin,
+    calibrationProvenance,
   );
   @override
   bool operator ==(Object other) =>
@@ -25447,7 +26099,9 @@ class ReticleRow extends DataClass implements Insertable<ReticleRow> {
           other.verifiedAt == this.verifiedAt &&
           other.designer == this.designer &&
           other.license == this.license &&
-          other.subtensionsJson == this.subtensionsJson);
+          other.subtensionsJson == this.subtensionsJson &&
+          other.subtensionOrigin == this.subtensionOrigin &&
+          other.calibrationProvenance == this.calibrationProvenance);
 }
 
 class ReticlesCompanion extends UpdateCompanion<ReticleRow> {
@@ -25467,6 +26121,8 @@ class ReticlesCompanion extends UpdateCompanion<ReticleRow> {
   final Value<String?> designer;
   final Value<String?> license;
   final Value<String?> subtensionsJson;
+  final Value<String> subtensionOrigin;
+  final Value<String?> calibrationProvenance;
   const ReticlesCompanion({
     this.id = const Value.absent(),
     this.manufacturerId = const Value.absent(),
@@ -25484,6 +26140,8 @@ class ReticlesCompanion extends UpdateCompanion<ReticleRow> {
     this.designer = const Value.absent(),
     this.license = const Value.absent(),
     this.subtensionsJson = const Value.absent(),
+    this.subtensionOrigin = const Value.absent(),
+    this.calibrationProvenance = const Value.absent(),
   });
   ReticlesCompanion.insert({
     this.id = const Value.absent(),
@@ -25502,6 +26160,8 @@ class ReticlesCompanion extends UpdateCompanion<ReticleRow> {
     this.designer = const Value.absent(),
     this.license = const Value.absent(),
     this.subtensionsJson = const Value.absent(),
+    this.subtensionOrigin = const Value.absent(),
+    this.calibrationProvenance = const Value.absent(),
   }) : manufacturerId = Value(manufacturerId),
        model = Value(model),
        type = Value(type),
@@ -25525,6 +26185,8 @@ class ReticlesCompanion extends UpdateCompanion<ReticleRow> {
     Expression<String>? designer,
     Expression<String>? license,
     Expression<String>? subtensionsJson,
+    Expression<String>? subtensionOrigin,
+    Expression<String>? calibrationProvenance,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -25543,6 +26205,9 @@ class ReticlesCompanion extends UpdateCompanion<ReticleRow> {
       if (designer != null) 'designer': designer,
       if (license != null) 'license': license,
       if (subtensionsJson != null) 'subtensions_json': subtensionsJson,
+      if (subtensionOrigin != null) 'subtension_origin': subtensionOrigin,
+      if (calibrationProvenance != null)
+        'calibration_provenance': calibrationProvenance,
     });
   }
 
@@ -25563,6 +26228,8 @@ class ReticlesCompanion extends UpdateCompanion<ReticleRow> {
     Value<String?>? designer,
     Value<String?>? license,
     Value<String?>? subtensionsJson,
+    Value<String>? subtensionOrigin,
+    Value<String?>? calibrationProvenance,
   }) {
     return ReticlesCompanion(
       id: id ?? this.id,
@@ -25581,6 +26248,9 @@ class ReticlesCompanion extends UpdateCompanion<ReticleRow> {
       designer: designer ?? this.designer,
       license: license ?? this.license,
       subtensionsJson: subtensionsJson ?? this.subtensionsJson,
+      subtensionOrigin: subtensionOrigin ?? this.subtensionOrigin,
+      calibrationProvenance:
+          calibrationProvenance ?? this.calibrationProvenance,
     );
   }
 
@@ -25635,6 +26305,14 @@ class ReticlesCompanion extends UpdateCompanion<ReticleRow> {
     if (subtensionsJson.present) {
       map['subtensions_json'] = Variable<String>(subtensionsJson.value);
     }
+    if (subtensionOrigin.present) {
+      map['subtension_origin'] = Variable<String>(subtensionOrigin.value);
+    }
+    if (calibrationProvenance.present) {
+      map['calibration_provenance'] = Variable<String>(
+        calibrationProvenance.value,
+      );
+    }
     return map;
   }
 
@@ -25656,7 +26334,9 @@ class ReticlesCompanion extends UpdateCompanion<ReticleRow> {
           ..write('verifiedAt: $verifiedAt, ')
           ..write('designer: $designer, ')
           ..write('license: $license, ')
-          ..write('subtensionsJson: $subtensionsJson')
+          ..write('subtensionsJson: $subtensionsJson, ')
+          ..write('subtensionOrigin: $subtensionOrigin, ')
+          ..write('calibrationProvenance: $calibrationProvenance')
           ..write(')'))
         .toString();
   }
@@ -45233,6 +45913,9 @@ typedef $$UserFirearmsTableCreateCompanionBuilder =
       Value<String?> muzzleBrakeName,
       Value<String?> suppressorName,
       Value<String?> bipodName,
+      Value<double?> defaultMagnification,
+      Value<String?> defaultScopeId,
+      Value<String?> defaultReticleId,
     });
 typedef $$UserFirearmsTableUpdateCompanionBuilder =
     UserFirearmsCompanion Function({
@@ -45276,6 +45959,9 @@ typedef $$UserFirearmsTableUpdateCompanionBuilder =
       Value<String?> muzzleBrakeName,
       Value<String?> suppressorName,
       Value<String?> bipodName,
+      Value<double?> defaultMagnification,
+      Value<String?> defaultScopeId,
+      Value<String?> defaultReticleId,
     });
 
 final class $$UserFirearmsTableReferences
@@ -45625,6 +46311,21 @@ class $$UserFirearmsTableFilterComposer
 
   ColumnFilters<String> get bipodName => $composableBuilder(
     column: $table.bipodName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get defaultMagnification => $composableBuilder(
+    column: $table.defaultMagnification,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get defaultScopeId => $composableBuilder(
+    column: $table.defaultScopeId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get defaultReticleId => $composableBuilder(
+    column: $table.defaultReticleId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -45988,6 +46689,21 @@ class $$UserFirearmsTableOrderingComposer
     column: $table.bipodName,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<double> get defaultMagnification => $composableBuilder(
+    column: $table.defaultMagnification,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get defaultScopeId => $composableBuilder(
+    column: $table.defaultScopeId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get defaultReticleId => $composableBuilder(
+    column: $table.defaultReticleId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$UserFirearmsTableAnnotationComposer
@@ -46172,6 +46888,21 @@ class $$UserFirearmsTableAnnotationComposer
 
   GeneratedColumn<String> get bipodName =>
       $composableBuilder(column: $table.bipodName, builder: (column) => column);
+
+  GeneratedColumn<double> get defaultMagnification => $composableBuilder(
+    column: $table.defaultMagnification,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get defaultScopeId => $composableBuilder(
+    column: $table.defaultScopeId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get defaultReticleId => $composableBuilder(
+    column: $table.defaultReticleId,
+    builder: (column) => column,
+  );
 
   Expression<T> batchesRefs<T extends Object>(
     Expression<T> Function($$BatchesTableAnnotationComposer a) f,
@@ -46403,6 +47134,9 @@ class $$UserFirearmsTableTableManager
                 Value<String?> muzzleBrakeName = const Value.absent(),
                 Value<String?> suppressorName = const Value.absent(),
                 Value<String?> bipodName = const Value.absent(),
+                Value<double?> defaultMagnification = const Value.absent(),
+                Value<String?> defaultScopeId = const Value.absent(),
+                Value<String?> defaultReticleId = const Value.absent(),
               }) => UserFirearmsCompanion(
                 id: id,
                 name: name,
@@ -46444,6 +47178,9 @@ class $$UserFirearmsTableTableManager
                 muzzleBrakeName: muzzleBrakeName,
                 suppressorName: suppressorName,
                 bipodName: bipodName,
+                defaultMagnification: defaultMagnification,
+                defaultScopeId: defaultScopeId,
+                defaultReticleId: defaultReticleId,
               ),
           createCompanionCallback:
               ({
@@ -46488,6 +47225,9 @@ class $$UserFirearmsTableTableManager
                 Value<String?> muzzleBrakeName = const Value.absent(),
                 Value<String?> suppressorName = const Value.absent(),
                 Value<String?> bipodName = const Value.absent(),
+                Value<double?> defaultMagnification = const Value.absent(),
+                Value<String?> defaultScopeId = const Value.absent(),
+                Value<String?> defaultReticleId = const Value.absent(),
               }) => UserFirearmsCompanion.insert(
                 id: id,
                 name: name,
@@ -46529,6 +47269,9 @@ class $$UserFirearmsTableTableManager
                 muzzleBrakeName: muzzleBrakeName,
                 suppressorName: suppressorName,
                 bipodName: bipodName,
+                defaultMagnification: defaultMagnification,
+                defaultScopeId: defaultScopeId,
+                defaultReticleId: defaultReticleId,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -52374,6 +53117,12 @@ typedef $$RangeDaySessionsTableCreateCompanionBuilder =
       Value<int?> atmospherePresetId,
       Value<int?> rackId,
       Value<int?> rackChildPosition,
+      Value<double?> currentMagnification,
+      Value<String?> currentReticleId,
+      Value<double?> dewPointF,
+      Value<String?> sessionLocalTime,
+      Value<double?> latitudeDeg,
+      Value<double?> longitudeDeg,
     });
 typedef $$RangeDaySessionsTableUpdateCompanionBuilder =
     RangeDaySessionsCompanion Function({
@@ -52407,6 +53156,12 @@ typedef $$RangeDaySessionsTableUpdateCompanionBuilder =
       Value<int?> atmospherePresetId,
       Value<int?> rackId,
       Value<int?> rackChildPosition,
+      Value<double?> currentMagnification,
+      Value<String?> currentReticleId,
+      Value<double?> dewPointF,
+      Value<String?> sessionLocalTime,
+      Value<double?> latitudeDeg,
+      Value<double?> longitudeDeg,
     });
 
 final class $$RangeDaySessionsTableReferences
@@ -52617,6 +53372,36 @@ class $$RangeDaySessionsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<double> get currentMagnification => $composableBuilder(
+    column: $table.currentMagnification,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get currentReticleId => $composableBuilder(
+    column: $table.currentReticleId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get dewPointF => $composableBuilder(
+    column: $table.dewPointF,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sessionLocalTime => $composableBuilder(
+    column: $table.sessionLocalTime,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get latitudeDeg => $composableBuilder(
+    column: $table.latitudeDeg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get longitudeDeg => $composableBuilder(
+    column: $table.longitudeDeg,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$TargetRacksTableFilterComposer get rackId {
     final $$TargetRacksTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -52820,6 +53605,36 @@ class $$RangeDaySessionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get currentMagnification => $composableBuilder(
+    column: $table.currentMagnification,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get currentReticleId => $composableBuilder(
+    column: $table.currentReticleId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get dewPointF => $composableBuilder(
+    column: $table.dewPointF,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sessionLocalTime => $composableBuilder(
+    column: $table.sessionLocalTime,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get latitudeDeg => $composableBuilder(
+    column: $table.latitudeDeg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get longitudeDeg => $composableBuilder(
+    column: $table.longitudeDeg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$TargetRacksTableOrderingComposer get rackId {
     final $$TargetRacksTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -52974,6 +53789,34 @@ class $$RangeDaySessionsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<double> get currentMagnification => $composableBuilder(
+    column: $table.currentMagnification,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get currentReticleId => $composableBuilder(
+    column: $table.currentReticleId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get dewPointF =>
+      $composableBuilder(column: $table.dewPointF, builder: (column) => column);
+
+  GeneratedColumn<String> get sessionLocalTime => $composableBuilder(
+    column: $table.sessionLocalTime,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get latitudeDeg => $composableBuilder(
+    column: $table.latitudeDeg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get longitudeDeg => $composableBuilder(
+    column: $table.longitudeDeg,
+    builder: (column) => column,
+  );
+
   $$TargetRacksTableAnnotationComposer get rackId {
     final $$TargetRacksTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -53083,6 +53926,12 @@ class $$RangeDaySessionsTableTableManager
                 Value<int?> atmospherePresetId = const Value.absent(),
                 Value<int?> rackId = const Value.absent(),
                 Value<int?> rackChildPosition = const Value.absent(),
+                Value<double?> currentMagnification = const Value.absent(),
+                Value<String?> currentReticleId = const Value.absent(),
+                Value<double?> dewPointF = const Value.absent(),
+                Value<String?> sessionLocalTime = const Value.absent(),
+                Value<double?> latitudeDeg = const Value.absent(),
+                Value<double?> longitudeDeg = const Value.absent(),
               }) => RangeDaySessionsCompanion(
                 id: id,
                 name: name,
@@ -53114,6 +53963,12 @@ class $$RangeDaySessionsTableTableManager
                 atmospherePresetId: atmospherePresetId,
                 rackId: rackId,
                 rackChildPosition: rackChildPosition,
+                currentMagnification: currentMagnification,
+                currentReticleId: currentReticleId,
+                dewPointF: dewPointF,
+                sessionLocalTime: sessionLocalTime,
+                latitudeDeg: latitudeDeg,
+                longitudeDeg: longitudeDeg,
               ),
           createCompanionCallback:
               ({
@@ -53147,6 +54002,12 @@ class $$RangeDaySessionsTableTableManager
                 Value<int?> atmospherePresetId = const Value.absent(),
                 Value<int?> rackId = const Value.absent(),
                 Value<int?> rackChildPosition = const Value.absent(),
+                Value<double?> currentMagnification = const Value.absent(),
+                Value<String?> currentReticleId = const Value.absent(),
+                Value<double?> dewPointF = const Value.absent(),
+                Value<String?> sessionLocalTime = const Value.absent(),
+                Value<double?> latitudeDeg = const Value.absent(),
+                Value<double?> longitudeDeg = const Value.absent(),
               }) => RangeDaySessionsCompanion.insert(
                 id: id,
                 name: name,
@@ -53178,6 +54039,12 @@ class $$RangeDaySessionsTableTableManager
                 atmospherePresetId: atmospherePresetId,
                 rackId: rackId,
                 rackChildPosition: rackChildPosition,
+                currentMagnification: currentMagnification,
+                currentReticleId: currentReticleId,
+                dewPointF: dewPointF,
+                sessionLocalTime: sessionLocalTime,
+                latitudeDeg: latitudeDeg,
+                longitudeDeg: longitudeDeg,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -53667,6 +54534,8 @@ typedef $$ReticlesTableCreateCompanionBuilder =
       Value<String?> designer,
       Value<String?> license,
       Value<String?> subtensionsJson,
+      Value<String> subtensionOrigin,
+      Value<String?> calibrationProvenance,
     });
 typedef $$ReticlesTableUpdateCompanionBuilder =
     ReticlesCompanion Function({
@@ -53686,6 +54555,8 @@ typedef $$ReticlesTableUpdateCompanionBuilder =
       Value<String?> designer,
       Value<String?> license,
       Value<String?> subtensionsJson,
+      Value<String> subtensionOrigin,
+      Value<String?> calibrationProvenance,
     });
 
 final class $$ReticlesTableReferences
@@ -53809,6 +54680,16 @@ class $$ReticlesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get subtensionOrigin => $composableBuilder(
+    column: $table.subtensionOrigin,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get calibrationProvenance => $composableBuilder(
+    column: $table.calibrationProvenance,
+    builder: (column) => ColumnFilters(column),
+  );
+
   Expression<bool> scopeReticleOptionsRefs(
     Expression<bool> Function($$ScopeReticleOptionsTableFilterComposer f) f,
   ) {
@@ -53923,6 +54804,16 @@ class $$ReticlesTableOrderingComposer
     column: $table.subtensionsJson,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get subtensionOrigin => $composableBuilder(
+    column: $table.subtensionOrigin,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get calibrationProvenance => $composableBuilder(
+    column: $table.calibrationProvenance,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ReticlesTableAnnotationComposer
@@ -53991,6 +54882,16 @@ class $$ReticlesTableAnnotationComposer
 
   GeneratedColumn<String> get subtensionsJson => $composableBuilder(
     column: $table.subtensionsJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get subtensionOrigin => $composableBuilder(
+    column: $table.subtensionOrigin,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get calibrationProvenance => $composableBuilder(
+    column: $table.calibrationProvenance,
     builder: (column) => column,
   );
 
@@ -54065,6 +54966,8 @@ class $$ReticlesTableTableManager
                 Value<String?> designer = const Value.absent(),
                 Value<String?> license = const Value.absent(),
                 Value<String?> subtensionsJson = const Value.absent(),
+                Value<String> subtensionOrigin = const Value.absent(),
+                Value<String?> calibrationProvenance = const Value.absent(),
               }) => ReticlesCompanion(
                 id: id,
                 manufacturerId: manufacturerId,
@@ -54082,6 +54985,8 @@ class $$ReticlesTableTableManager
                 designer: designer,
                 license: license,
                 subtensionsJson: subtensionsJson,
+                subtensionOrigin: subtensionOrigin,
+                calibrationProvenance: calibrationProvenance,
               ),
           createCompanionCallback:
               ({
@@ -54101,6 +55006,8 @@ class $$ReticlesTableTableManager
                 Value<String?> designer = const Value.absent(),
                 Value<String?> license = const Value.absent(),
                 Value<String?> subtensionsJson = const Value.absent(),
+                Value<String> subtensionOrigin = const Value.absent(),
+                Value<String?> calibrationProvenance = const Value.absent(),
               }) => ReticlesCompanion.insert(
                 id: id,
                 manufacturerId: manufacturerId,
@@ -54118,6 +55025,8 @@ class $$ReticlesTableTableManager
                 designer: designer,
                 license: license,
                 subtensionsJson: subtensionsJson,
+                subtensionOrigin: subtensionOrigin,
+                calibrationProvenance: calibrationProvenance,
               ),
           withReferenceMapper: (p0) => p0
               .map(

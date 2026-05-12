@@ -94,6 +94,8 @@
 // the parent's responsibility (this widget only fires
 // [onChanged]).
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -104,6 +106,24 @@ import 'find_by_scope_sheet.dart';
 import 'reticle_full_screen_view.dart';
 import 'reticle_renderer.dart';
 import 'reticle_thumbnail.dart';
+
+/// Safe-decode the `calibration_provenance` JSON blob carried on a
+/// drift [ReticleRow]. The disclaimer label only needs the dictionary
+/// (it picks `manufacturer` + `reticle_name` out of it); a malformed
+/// payload or non-object root collapses to null so the label falls
+/// back to the generic name-free template. The IP-posture rule
+/// (CLAUDE.md § 30) is that we ALWAYS surface SOME interoperability
+/// disclaimer — never an empty caption or a crash from a bad blob.
+Map<String, dynamic>? _decodeProvenance(String? raw) {
+  if (raw == null || raw.isEmpty) return null;
+  try {
+    final decoded = json.decode(raw);
+    if (decoded is Map<String, dynamic>) return decoded;
+  } catch (_) {
+    // Fall through — bad JSON shape, return null.
+  }
+  return null;
+}
 
 /// Reusable form field that lets the user pick a reticle. Renders a
 /// label, a preview tile with the selected reticle's name and family,
@@ -200,11 +220,16 @@ class ReticlePickerField extends StatelessWidget {
                   // Constrain the caption width to roughly the
                   // glyph's footprint plus a little slack so it can
                   // wrap to two lines under the 56 px tile rather
-                  // than blow out the field row.
+                  // than blow out the field row. The label resolves
+                  // the §7.7 per-origin template from the selected
+                  // row's `subtensionOrigin` + `calibrationProvenance`.
                   SizedBox(
                     width: 96,
                     child: ReticleInteroperabilityLabel(
                       align: TextAlign.center,
+                      subtensionOrigin: selected!.subtensionOrigin,
+                      calibrationProvenance:
+                          _decodeProvenance(selected!.calibrationProvenance),
                     ),
                   ),
                 ],
@@ -900,6 +925,9 @@ class _ReticleListRow extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 80),
             child: ReticleInteroperabilityLabel(
               align: TextAlign.center,
+              subtensionOrigin: row.subtensionOrigin,
+              calibrationProvenance:
+                  _decodeProvenance(row.calibrationProvenance),
             ),
           ),
         ],

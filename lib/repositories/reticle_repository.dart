@@ -196,6 +196,8 @@ class ReticleRepository {
       designer: row.designer,
       license: row.license,
       subtensionsJson: row.subtensionsJson,
+      subtensionOrigin: row.subtensionOrigin,
+      calibrationProvenanceJson: row.calibrationProvenance,
     );
   }
 

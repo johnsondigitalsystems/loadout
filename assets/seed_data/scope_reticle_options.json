@@ -1,949 +1,972 @@
-{
-  "options": [
-    {
-      "scope_manufacturer": "Aimpoint",
-      "scope_model": "CompM5",
-      "reticle_id": "loadout_red_dot_2moa",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_red_dot_2moa'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_red_dot_2moa"
-    },
-    {
-      "scope_manufacturer": "Arken Optics",
-      "scope_model": "EP5 5-25x56 FFP",
-      "reticle_id": "loadout_mil_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Arken Optics",
-      "scope_model": "EP5 5-25x56 FFP",
-      "reticle_id": "loadout_moa_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_moa_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Arken Optics",
-      "scope_model": "SH4 6-24x50 FFP",
-      "reticle_id": "loadout_mil_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Arken Optics",
-      "scope_model": "SH4 6-24x50 FFP",
-      "reticle_id": "loadout_moa_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_moa_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Athlon Optics",
-      "scope_model": "Cronus BTR Gen2 4.5-29x56",
-      "reticle_id": "loadout_mil_tree_dense",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_dense'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_dense"
-    },
-    {
-      "scope_manufacturer": "Athlon Optics",
-      "scope_model": "Cronus BTR Gen2 4.5-29x56",
-      "reticle_id": "loadout_moa_tree_dense",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_moa_tree_dense'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_dense"
-    },
-    {
-      "scope_manufacturer": "Burris",
-      "scope_model": "XTR III 5.5-30x56",
-      "reticle_id": "loadout_mil_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Burris",
-      "scope_model": "XTR III 5.5-30x56",
-      "reticle_id": "loadout_moa_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_moa_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Bushnell",
-      "scope_model": "Match Pro ED 5-30x56",
-      "reticle_id": "loadout_mil_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Bushnell",
-      "scope_model": "Match Pro ED 5-30x56",
-      "reticle_id": "loadout_mil_hash",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_hash'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Bushnell",
-      "scope_model": "Match Pro ED 5-30x56",
-      "reticle_id": "loadout_moa_hash",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_moa_hash'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Carl Zeiss",
-      "scope_model": "LRP S5 5-25x56",
-      "reticle_id": "loadout_mil_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Carl Zeiss",
-      "scope_model": "LRP S5 5-25x56",
-      "reticle_id": "loadout_moa_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_moa_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Carl Zeiss",
-      "scope_model": "Victory V8 4.8-35x60",
-      "reticle_id": "pd_plex",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'pd_plex'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "pd_plex"
-    },
-    {
-      "scope_manufacturer": "Carl Zeiss",
-      "scope_model": "Victory V8 4.8-35x60",
-      "reticle_id": "pd_mil_dot_usmc",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'pd_mil_dot_usmc'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "pd_plex"
-    },
-    {
-      "scope_manufacturer": "DEON Optical Design (March)",
-      "scope_model": "March-FX 4.5-28x52 FFP Tactical High Master Wide-Angle",
-      "reticle_id": "loadout_mil_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "DEON Optical Design (March)",
-      "scope_model": "March-FX 4.5-28x52 FFP Tactical High Master Wide-Angle",
-      "reticle_id": "loadout_mil_tree_compact",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_compact'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "DEON Optical Design (March)",
-      "scope_model": "March-X 5-50x56 SFP Tactical",
-      "reticle_id": "loadout_moa_hash",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_moa_hash'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_moa_hash"
-    },
-    {
-      "scope_manufacturer": "EOTech",
-      "scope_model": "XPS3-0 Holographic",
-      "reticle_id": "loadout_holographic_ring",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_holographic_ring'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_holographic_ring"
-    },
-    {
-      "scope_manufacturer": "Element Optics",
-      "scope_model": "Helix 6-24x50 FFP",
-      "reticle_id": "loadout_mil_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Hensoldt",
-      "scope_model": "ZF 4-16x56",
-      "reticle_id": "loadout_mil_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Hensoldt",
-      "scope_model": "ZF 6-24x72",
-      "reticle_id": "loadout_mil_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Holosun",
-      "scope_model": "HE509T",
-      "reticle_id": "loadout_red_dot_circle",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_red_dot_circle'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_red_dot_circle"
-    },
-    {
-      "scope_manufacturer": "Kahles",
-      "scope_model": "K318i 3.5-18x50",
-      "reticle_id": "loadout_mil_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Kahles",
-      "scope_model": "K318i 3.5-18x50",
-      "reticle_id": "loadout_mil_hash",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_hash'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Kahles",
-      "scope_model": "K318i 3.5-18x50",
-      "reticle_id": "loadout_moa_hash",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_moa_hash'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Kahles",
-      "scope_model": "K525i 5-25x56",
-      "reticle_id": "loadout_mil_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Kahles",
-      "scope_model": "K525i 5-25x56",
-      "reticle_id": "loadout_mil_hash",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_hash'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Kahles",
-      "scope_model": "K525i 5-25x56",
-      "reticle_id": "loadout_moa_hash",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_moa_hash'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Leupold",
-      "scope_model": "Mark 4HD 4.5-18x52 M5C3 FFP",
-      "reticle_id": "loadout_mil_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Leupold",
-      "scope_model": "Mark 4HD 4.5-18x52 M5C3 FFP",
-      "reticle_id": "loadout_mil_hash",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_hash'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Leupold",
-      "scope_model": "Mark 4HD 4.5-18x52 M5C3 FFP",
-      "reticle_id": "loadout_moa_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_moa_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Leupold",
-      "scope_model": "Mark 5HD 5-25x56 M5C3 FFP",
-      "reticle_id": "loadout_mil_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Leupold",
-      "scope_model": "Mark 5HD 5-25x56 M5C3 FFP",
-      "reticle_id": "loadout_mil_hash",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_hash'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Leupold",
-      "scope_model": "Mark 5HD 5-25x56 M5C3 FFP",
-      "reticle_id": "loadout_mil_tree_christmas",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_christmas'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Leupold",
-      "scope_model": "Mark 5HD 5-25x56 M5C3 FFP",
-      "reticle_id": "loadout_mil_tree_dense",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_dense'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Leupold",
-      "scope_model": "Mark 5HD 5-25x56 M5C3 FFP",
-      "reticle_id": "loadout_moa_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_moa_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Leupold",
-      "scope_model": "VX-5HD 3-15x44 CDS-ZL2 Side Focus",
-      "reticle_id": "loadout_moa_hash",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_moa_hash'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_moa_hash"
-    },
-    {
-      "scope_manufacturer": "Meopta",
-      "scope_model": "Optika6 4.5-27x50 RD FFP",
-      "reticle_id": "loadout_mil_tree_compact",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_compact'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_compact"
-    },
-    {
-      "scope_manufacturer": "Meopta",
-      "scope_model": "Optika6 4.5-27x50 RD FFP",
-      "reticle_id": "pd_mil_dot_usmc",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'pd_mil_dot_usmc'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_compact"
-    },
-    {
-      "scope_manufacturer": "Meopta",
-      "scope_model": "Optika6 5-30x56 RD FFP",
-      "reticle_id": "loadout_mil_tree_compact",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_compact'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_compact"
-    },
-    {
-      "scope_manufacturer": "Meopta",
-      "scope_model": "Optika6 5-30x56 RD FFP",
-      "reticle_id": "pd_mil_dot_usmc",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'pd_mil_dot_usmc'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_compact"
-    },
-    {
-      "scope_manufacturer": "Nightforce Optics",
-      "scope_model": "ATACR 4-16x42 F1",
-      "reticle_id": "loadout_mil_tree_dense",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_dense'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_dense"
-    },
-    {
-      "scope_manufacturer": "Nightforce Optics",
-      "scope_model": "ATACR 4-16x42 F1",
-      "reticle_id": "loadout_mil_hash",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_hash'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_dense"
-    },
-    {
-      "scope_manufacturer": "Nightforce Optics",
-      "scope_model": "ATACR 4-16x42 F1",
-      "reticle_id": "loadout_mil_tree_christmas",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_christmas'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_dense"
-    },
-    {
-      "scope_manufacturer": "Nightforce Optics",
-      "scope_model": "ATACR 4-16x42 F1",
-      "reticle_id": "loadout_moa_tree_compact",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_moa_tree_compact'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_dense"
-    },
-    {
-      "scope_manufacturer": "Nightforce Optics",
-      "scope_model": "ATACR 4-16x42 F1",
-      "reticle_id": "loadout_moa_tree_dense",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_moa_tree_dense'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_dense"
-    },
-    {
-      "scope_manufacturer": "Nightforce Optics",
-      "scope_model": "ATACR 7-35x56 F1",
-      "reticle_id": "loadout_mil_tree_dense",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_dense'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_dense"
-    },
-    {
-      "scope_manufacturer": "Nightforce Optics",
-      "scope_model": "ATACR 7-35x56 F1",
-      "reticle_id": "loadout_mil_hash",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_hash'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_dense"
-    },
-    {
-      "scope_manufacturer": "Nightforce Optics",
-      "scope_model": "ATACR 7-35x56 F1",
-      "reticle_id": "loadout_mil_tree_christmas",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_christmas'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_dense"
-    },
-    {
-      "scope_manufacturer": "Nightforce Optics",
-      "scope_model": "ATACR 7-35x56 F1",
-      "reticle_id": "loadout_moa_tree_compact",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_moa_tree_compact'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_dense"
-    },
-    {
-      "scope_manufacturer": "Nightforce Optics",
-      "scope_model": "ATACR 7-35x56 F1",
-      "reticle_id": "loadout_moa_tree_dense",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_moa_tree_dense'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_dense"
-    },
-    {
-      "scope_manufacturer": "Nightforce Optics",
-      "scope_model": "NX8 4-32x50 F1",
-      "reticle_id": "loadout_mil_tree_dense",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_dense'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_dense"
-    },
-    {
-      "scope_manufacturer": "Nightforce Optics",
-      "scope_model": "NX8 4-32x50 F1",
-      "reticle_id": "loadout_mil_hash",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_hash'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_dense"
-    },
-    {
-      "scope_manufacturer": "Nightforce Optics",
-      "scope_model": "NX8 4-32x50 F1",
-      "reticle_id": "loadout_mil_tree_christmas",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_christmas'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_dense"
-    },
-    {
-      "scope_manufacturer": "Nightforce Optics",
-      "scope_model": "NX8 4-32x50 F1",
-      "reticle_id": "loadout_moa_tree_compact",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_moa_tree_compact'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_dense"
-    },
-    {
-      "scope_manufacturer": "Nightforce Optics",
-      "scope_model": "NX8 4-32x50 F1",
-      "reticle_id": "loadout_moa_tree_dense",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_moa_tree_dense'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_dense"
-    },
-    {
-      "scope_manufacturer": "Nightforce Optics",
-      "scope_model": "SHV 5-20x56",
-      "reticle_id": "loadout_sfp_moa_drop",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_sfp_moa_drop'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_sfp_moa_drop"
-    },
-    {
-      "scope_manufacturer": "Primary Arms",
-      "scope_model": "GLx 4-16x50 FFP",
-      "reticle_id": "loadout_combat_bdc",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_combat_bdc'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_combat_bdc"
-    },
-    {
-      "scope_manufacturer": "Primary Arms",
-      "scope_model": "GLx 4-16x50 FFP",
-      "reticle_id": "loadout_dmr_bdc",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_dmr_bdc'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_combat_bdc"
-    },
-    {
-      "scope_manufacturer": "Primary Arms",
-      "scope_model": "SLx 4-14x44 FFP",
-      "reticle_id": "loadout_dmr_bdc",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_dmr_bdc'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_dmr_bdc"
-    },
-    {
-      "scope_manufacturer": "Primary Arms",
-      "scope_model": "SLx 4-14x44 FFP",
-      "reticle_id": "loadout_combat_bdc",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_combat_bdc'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_dmr_bdc"
-    },
-    {
-      "scope_manufacturer": "Riton Optics",
-      "scope_model": "5 Conquer 5-25x56 FFP",
-      "reticle_id": "loadout_mil_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Riton Optics",
-      "scope_model": "5 Conquer 5-25x56 FFP",
-      "reticle_id": "loadout_mil_hash",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_hash'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Riton Optics",
-      "scope_model": "7 Conquer 4-32x56 FFP",
-      "reticle_id": "loadout_mil_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Riton Optics",
-      "scope_model": "7 Conquer 4-32x56 FFP",
-      "reticle_id": "loadout_moa_hash",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_moa_hash'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Schmidt & Bender",
-      "scope_model": "PM II 3-20x50 Ultra Short",
-      "reticle_id": "loadout_mil_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Schmidt & Bender",
-      "scope_model": "PM II 3-20x50 Ultra Short",
-      "reticle_id": "loadout_mil_tree_christmas",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_christmas'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Schmidt & Bender",
-      "scope_model": "PM II 3-20x50 Ultra Short",
-      "reticle_id": "loadout_mil_tree_dense",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_dense'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Schmidt & Bender",
-      "scope_model": "PM II 5-25x56",
-      "reticle_id": "loadout_mil_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Schmidt & Bender",
-      "scope_model": "PM II 5-25x56",
-      "reticle_id": "loadout_mil_tree_christmas",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_christmas'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Schmidt & Bender",
-      "scope_model": "PM II 5-25x56",
-      "reticle_id": "loadout_mil_tree_dense",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_dense'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Sig Sauer",
-      "scope_model": "Tango6T 1-6x24",
-      "reticle_id": "loadout_dmr_bdc",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_dmr_bdc'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_dmr_bdc"
-    },
-    {
-      "scope_manufacturer": "Sig Sauer",
-      "scope_model": "Tango6T DEV-L 5-30x56",
-      "reticle_id": "loadout_mil_tree_dense",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_dense'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_dense"
-    },
-    {
-      "scope_manufacturer": "Sightron",
-      "scope_model": "SIII PLR 6-24x50 FFP Zero Stop",
-      "reticle_id": "loadout_mil_hash",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_hash'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_hash"
-    },
-    {
-      "scope_manufacturer": "Sightron",
-      "scope_model": "SIII PLR 6-24x50 FFP Zero Stop",
-      "reticle_id": "loadout_moa_hash",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_moa_hash'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_hash"
-    },
-    {
-      "scope_manufacturer": "Sightron",
-      "scope_model": "SVIII 5-40x56 FFP ED IR Zero Stop",
-      "reticle_id": "loadout_mil_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Sightron",
-      "scope_model": "SVIII 5-40x56 FFP ED IR Zero Stop",
-      "reticle_id": "loadout_mil_hash",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_hash'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Swarovski Optik",
-      "scope_model": "X5(i) 5-25x56 P",
-      "reticle_id": "loadout_mil_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Swarovski Optik",
-      "scope_model": "X5(i) 5-25x56 P",
-      "reticle_id": "loadout_hunting_bdc",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_hunting_bdc'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Swarovski Optik",
-      "scope_model": "Z6i 2.5-15x56 P (Gen 2)",
-      "reticle_id": "pd_plex",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'pd_plex'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "pd_plex"
-    },
-    {
-      "scope_manufacturer": "Swarovski Optik",
-      "scope_model": "Z6i 2.5-15x56 P (Gen 2)",
-      "reticle_id": "loadout_hunting_bdc",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_hunting_bdc'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "pd_plex"
-    },
-    {
-      "scope_manufacturer": "Tangent Theta",
-      "scope_model": "TT315M 3-15x50",
-      "reticle_id": "loadout_mil_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Tangent Theta",
-      "scope_model": "TT525P 5-25x56",
-      "reticle_id": "loadout_mil_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Tangent Theta",
-      "scope_model": "TT525P 5-25x56",
-      "reticle_id": "loadout_mil_tree_christmas",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_christmas'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Trijicon",
-      "scope_model": "ACOG TA31 4x32",
-      "reticle_id": "loadout_combat",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_combat'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_combat"
-    },
-    {
-      "scope_manufacturer": "Vortex Optics",
-      "scope_model": "Razor HD Gen II 4.5-27x56 FFP",
-      "reticle_id": "loadout_mil_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Vortex Optics",
-      "scope_model": "Razor HD Gen II 4.5-27x56 FFP",
-      "reticle_id": "loadout_mil_tree_christmas",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_christmas'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Vortex Optics",
-      "scope_model": "Razor HD Gen II 4.5-27x56 FFP",
-      "reticle_id": "loadout_mil_tree_compact",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_compact'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Vortex Optics",
-      "scope_model": "Razor HD Gen II 4.5-27x56 FFP",
-      "reticle_id": "loadout_mil_tree_dense",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_dense'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Vortex Optics",
-      "scope_model": "Razor HD Gen II 4.5-27x56 FFP",
-      "reticle_id": "loadout_moa_tree_compact",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_moa_tree_compact'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Vortex Optics",
-      "scope_model": "Razor HD Gen II 4.5-27x56 FFP",
-      "reticle_id": "loadout_moa_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_moa_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Vortex Optics",
-      "scope_model": "Razor HD Gen III 6-36x56 FFP",
-      "reticle_id": "loadout_mil_tree_dense",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_dense'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_dense"
-    },
-    {
-      "scope_manufacturer": "Vortex Optics",
-      "scope_model": "Razor HD Gen III 6-36x56 FFP",
-      "reticle_id": "loadout_moa_tree_dense",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_moa_tree_dense'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_dense"
-    },
-    {
-      "scope_manufacturer": "Zero Compromise Optic",
-      "scope_model": "ZC527 5-27x56",
-      "reticle_id": "loadout_mil_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Zero Compromise Optic",
-      "scope_model": "ZC527 5-27x56",
-      "reticle_id": "loadout_mil_tree_christmas",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_christmas'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Zero Compromise Optic",
-      "scope_model": "ZC527 5-27x56",
-      "reticle_id": "loadout_mil_tree_dense",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_dense'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "Zero Compromise Optic",
-      "scope_model": "ZC840 8-40x56",
-      "reticle_id": "loadout_mil_tree_dense",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_dense'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_dense"
-    },
-    {
-      "scope_manufacturer": "Zero Compromise Optic",
-      "scope_model": "ZC840 8-40x56",
-      "reticle_id": "loadout_mil_tree_christmas",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_christmas'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_dense"
-    },
-    {
-      "scope_manufacturer": "Zero Compromise Optic",
-      "scope_model": "ZC840 8-40x56",
-      "reticle_id": "loadout_mil_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_dense"
-    },
-    {
-      "scope_manufacturer": "ZeroTech Optics",
-      "scope_model": "Trace Advanced 4.5-27x50 RMG FFP",
-      "reticle_id": "loadout_mil_tree_medium",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_tree_medium'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "ZeroTech Optics",
-      "scope_model": "Trace Advanced 4.5-27x50 RMG FFP",
-      "reticle_id": "loadout_mil_hash",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_hash'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "loadout_mil_tree_medium"
-    },
-    {
-      "scope_manufacturer": "ZeroTech Optics",
-      "scope_model": "Vengeance 4-20x50 SFP",
-      "reticle_id": "pd_plex",
-      "manufacturer_sku": null,
-      "is_default": true,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'pd_plex'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "pd_plex"
-    },
-    {
-      "scope_manufacturer": "ZeroTech Optics",
-      "scope_model": "Vengeance 4-20x50 SFP",
-      "reticle_id": "loadout_mil_hash",
-      "manufacturer_sku": null,
-      "is_default": false,
-      "notes": "LoadOut archetype mapping: this scope's stock reticle maps to 'loadout_mil_hash'. Original scope-brand reticle name is no longer surfaced in the catalog.",
-      "recommended_loadout_reticle_id": "pd_plex"
-    }
-  ]
-}
+[
+  {
+    "scope_id": "aimpoint_acro_p_2",
+    "reticle_id": "loadout_red_dot_2moa",
+    "notes": "Aimpoint Acro P-2 ships with a 3.5 MOA dot; closest LoadOut archetype is the 2 MOA red dot (catalog does not include a 3.5 MOA archetype)."
+  },
+  {
+    "scope_id": "aimpoint_compm4s",
+    "reticle_id": "loadout_red_dot_2moa",
+    "notes": "Aimpoint CompM4s ships with a 2 MOA dot \u2014 exact match to loadout_red_dot_2moa."
+  },
+  {
+    "scope_id": "aimpoint_compm5",
+    "reticle_id": "loadout_red_dot_2moa",
+    "notes": "Aimpoint CompM5 ships with a 2 MOA dot \u2014 exact match to loadout_red_dot_2moa. Carried forward from prior mapping."
+  },
+  {
+    "scope_id": "aimpoint_compm5s",
+    "reticle_id": "loadout_red_dot_2moa",
+    "notes": "Aimpoint CompM5s ships with a 2 MOA dot \u2014 exact match to loadout_red_dot_2moa."
+  },
+  {
+    "scope_id": "aimpoint_micro_h_2",
+    "reticle_id": "loadout_red_dot_2moa",
+    "notes": "Aimpoint Micro H-2 ships with a 2 MOA dot \u2014 exact match to loadout_red_dot_2moa."
+  },
+  {
+    "scope_id": "aimpoint_micro_t_2",
+    "reticle_id": "loadout_red_dot_2moa",
+    "notes": "Aimpoint Micro T-2 ships with a 2 MOA dot \u2014 exact match to loadout_red_dot_2moa."
+  },
+  {
+    "scope_id": "aimpoint_pro_patrol_rifle_optic",
+    "reticle_id": "loadout_red_dot_2moa",
+    "notes": "Aimpoint PRO ships with a 2 MOA dot \u2014 exact match to loadout_red_dot_2moa."
+  },
+  {
+    "scope_id": "arken_optics_ep5_5_25x56_ffp",
+    "reticle_id": "loadout_mil_tree_medium",
+    "notes": "Arken EP5 ships in mil + MOA tactical Christmas-tree variants. Default mapping to mil tree medium (most-sold variant). Carried forward from prior mapping."
+  },
+  {
+    "scope_id": "arken_optics_sh4_6_24x50_ffp",
+    "reticle_id": "loadout_mil_tree_medium",
+    "notes": "Arken SH4 ships in mil + MOA tactical Christmas-tree variants. Default mapping to mil tree medium. Carried forward from prior mapping."
+  },
+  {
+    "scope_id": "athlon_optics_ares_btr_gen2_2_5_15x50",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Athlon Ares BTR Gen2 ships with APRS3 MIL (mil hash without dense Christmas tree) \u2014 maps to loadout_mil_hash per audit."
+  },
+  {
+    "scope_id": "athlon_optics_ares_etr_uhd_4_5_30x56",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Athlon Ares ETR UHD ships with APRS3 MIL \u2014 maps to loadout_mil_hash per audit."
+  },
+  {
+    "scope_id": "athlon_optics_argos_btr_gen2_6_24x50",
+    "reticle_id": "loadout_moa_tree_flare",
+    "notes": "Athlon Argos BTR Gen2 ships in BOTH APMR2 MIL and APMR2 MOA variants. Per Appendix G #16 (LoadOut v2.3 brief), the MOA variant is the canonical reference reticle; the flaring MOA tree (`loadout_moa_tree_flare`) is the \u00a77.3 launch-blocker target. Phase 5 mapping correction: was `loadout_mil_hash`."
+  },
+  {
+    "scope_id": "athlon_optics_cronus_btr_4_5_29x56",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Athlon Cronus BTR (original) ships with APRS1 MIL \u2014 maps to loadout_mil_hash per audit."
+  },
+  {
+    "scope_id": "athlon_optics_cronus_btr_gen2_4_5_29x56",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "Drift fix: Athlon Cronus BTR Gen2 ships with the APRS6 MIL flaring Christmas tree \u2014 re-mapped from loadout_mil_tree_dense to loadout_mil_tree_flare per Appendix J."
+  },
+  {
+    "scope_id": "athlon_optics_helos_btr_gen2_2_12x42",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Athlon Helos BTR Gen2 ships with APRS6 MIL (compact scope, hash style without dense Christmas tree on this small magnification range) \u2014 maps to loadout_mil_hash per audit."
+  },
+  {
+    "scope_id": "athlon_optics_midas_btr_gen2_4_5_27x50",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Athlon Midas BTR Gen2 ships with APRS3 MIL \u2014 maps to loadout_mil_hash per audit."
+  },
+  {
+    "scope_id": "athlon_optics_midas_tac_hd_6_24x50",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Athlon Midas TAC HD ships with APRS3 MIL \u2014 maps to loadout_mil_hash per audit."
+  },
+  {
+    "scope_id": "burris_eliminator_6_4_20x52",
+    "reticle_id": "loadout_hunting_bdc",
+    "notes": "Burris Eliminator 6 X96 is a rangefinding hunting reticle with a dot-on-a-vertical-ladder BDC. Closest LoadOut archetype is the SFP hunting BDC; the X96 ladder pattern is unique to Burris and has no exact LoadOut equivalent (manual_research fallback)."
+  },
+  {
+    "scope_id": "burris_fullfield_iv_3_12x42",
+    "reticle_id": "loadout_hunting_bdc",
+    "notes": "Burris Fullfield IV ships with Ballistic Plex E1 \u2014 SFP hunting BDC plex variant maps to loadout_hunting_bdc per README pattern table."
+  },
+  {
+    "scope_id": "burris_fullfield_iv_4_16x50",
+    "reticle_id": "loadout_hunting_bdc",
+    "notes": "Burris Fullfield IV 4-16x50 ships with E3 / Ballistic Plex E1; both are SFP hunting BDC plex variants that map to loadout_hunting_bdc."
+  },
+  {
+    "scope_id": "burris_veracity_ph_3_15x44",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Burris Veracity PH ships with the PEK mil-hash FFP reticle \u2014 maps to loadout_mil_hash per audit."
+  },
+  {
+    "scope_id": "burris_veracity_ph_4_20x50",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Burris Veracity PH 4-20x50 ships with PEK / Wind MOA. Default to PEK mil-hash (loadout_mil_hash) per audit."
+  },
+  {
+    "scope_id": "burris_xtr_iii_3_3_18x50",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Burris XTR III 3.3-18x50 ships with SCR 2 MIL (FFP mil hash without dense Christmas tree) \u2014 maps to loadout_mil_hash per audit."
+  },
+  {
+    "scope_id": "burris_xtr_iii_5_5_30x56",
+    "reticle_id": "loadout_moa_tree_flare",
+    "notes": "Burris XTR III 5.5-30x56 ships in BOTH SCR2 MIL and SCR2 MOA variants. Per Appendix G #15 (LoadOut v2.3 brief), the MOA variant is the canonical reference reticle; the flaring MOA tree (`loadout_moa_tree_flare`) is the \u00a77.3 launch-blocker target. Phase 5 mapping correction: was `loadout_mil_tree_medium`."
+  },
+  {
+    "scope_id": "burris_xtr_pro_5_5_30x56",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "Burris XTR Pro ships with the SCR 2 MIL plus a Tremor3 option \u2014 the Tremor3-class flaring Christmas tree maps to loadout_mil_tree_flare per the audit's NEW-reticle classification."
+  },
+  {
+    "scope_id": "bushnell_elite_tactical_dmr3_3_5_21x50",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "Bushnell Elite Tactical DMR3 ships with the G3 MIL / EQL flaring Christmas-tree reticles \u2014 maps to loadout_mil_tree_flare per the audit's NEW-reticle classification."
+  },
+  {
+    "scope_id": "bushnell_elite_tactical_xrs3_6_36x56",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Bushnell Elite Tactical XRS3 ships with the G4P MIL reticle \u2014 FFP mil hash without flaring tree, maps to loadout_mil_hash per audit."
+  },
+  {
+    "scope_id": "bushnell_engage_3_9x40",
+    "reticle_id": "loadout_moa_hash",
+    "notes": "Bushnell Engage 3-9x40 ships with Deploy MOA \u2014 SFP MOA hash maps to loadout_moa_hash per audit."
+  },
+  {
+    "scope_id": "bushnell_engage_4_16x44",
+    "reticle_id": "loadout_moa_hash",
+    "notes": "Bushnell Engage 4-16x44 ships with Deploy MOA \u2014 SFP MOA hash maps to loadout_moa_hash per audit."
+  },
+  {
+    "scope_id": "bushnell_forge_4_5_27x50",
+    "reticle_id": "loadout_moa_hash",
+    "notes": "Bushnell Forge 4.5-27x50 ships with Deploy MOA \u2014 SFP MOA hash maps to loadout_moa_hash per audit."
+  },
+  {
+    "scope_id": "bushnell_match_pro_6_24x50",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Bushnell Match Pro 6-24x50 ships with Deploy MIL \u2014 FFP mil hash maps to loadout_mil_hash per audit."
+  },
+  {
+    "scope_id": "bushnell_match_pro_ed_5_30x56",
+    "reticle_id": "loadout_mil_tree_medium",
+    "notes": "Bushnell Match Pro ED 5-30x56 ships with the DM2 MIL Christmas-tree reticle. Default to loadout_mil_tree_medium (carried forward); DM2 is a uniform-grid tree, not the modern flaring variant."
+  },
+  {
+    "scope_id": "carl_zeiss_conquest_v4_4_16x44",
+    "reticle_id": "pd_plex",
+    "notes": "Zeiss Conquest V4 ships with a Plex or ZBR-1 (mil hash) \u2014 default to pd_plex (most-sold variant for hunting) per audit."
+  },
+  {
+    "scope_id": "carl_zeiss_conquest_v4_6_24x50",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Zeiss Conquest V4 6-24x50 ships with ZBR-1 (mil hash) or ZMOAi \u2014 default to loadout_mil_hash per audit (long-range tactical variant)."
+  },
+  {
+    "scope_id": "carl_zeiss_conquest_v6_3_18x50",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Zeiss Conquest V6 ships with ZBi (mil hash) or ZMOA \u2014 default to loadout_mil_hash per audit."
+  },
+  {
+    "scope_id": "carl_zeiss_lrp_s3_4_25x50",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Zeiss LRP S3 4-25x50 ships with ZF-MRi (mil) or ZF-MOAi \u2014 default to loadout_mil_hash per audit; ZF-MRi is FFP mil hash without flaring tree."
+  },
+  {
+    "scope_id": "carl_zeiss_lrp_s3_6_36x56",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Zeiss LRP S3 6-36x56 ships with ZF-MRi (mil hash) \u2014 maps to loadout_mil_hash per audit."
+  },
+  {
+    "scope_id": "carl_zeiss_lrp_s5_3_6_18x50",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Zeiss LRP S5 3.6-18x50 ships with ZF-MRi (mil hash) / ZF-MOAi \u2014 maps to loadout_mil_hash per audit."
+  },
+  {
+    "scope_id": "carl_zeiss_lrp_s5_5_25x56",
+    "reticle_id": "loadout_mil_tree_medium",
+    "notes": "Zeiss LRP S5 5-25x56 ships in mil + MOA tactical Christmas-tree variants. Default to loadout_mil_tree_medium (carried forward from prior mapping); ZF-MRi on this larger scope is a uniform-grid tree, not the modern flaring variant."
+  },
+  {
+    "scope_id": "carl_zeiss_victory_v8_2_8_20x56",
+    "reticle_id": "loadout_holographic_ring",
+    "notes": "Zeiss Victory V8 2.8-20x56 ships with the 60 / ASV illuminated dot-in-ring style hunting reticle \u2014 closest LoadOut archetype is loadout_holographic_ring per audit (manual_research fallback; the ASV is a Zeiss-specific elevation-turret-paired reticle without a clean LoadOut equivalent)."
+  },
+  {
+    "scope_id": "carl_zeiss_victory_v8_4_8_35x60",
+    "reticle_id": "pd_plex",
+    "notes": "Zeiss Victory V8 4.8-35x60 ships with a Plex-style hunting reticle \u2014 maps to pd_plex per audit. Carried forward from prior mapping."
+  },
+  {
+    "scope_id": "deon_optical_design_march_march_fx_4_5_28x52_ffp_tactical_high_master_wide_angle",
+    "reticle_id": "loadout_mil_tree_medium",
+    "notes": "March FX 4.5-28x52 FFP Tactical ships in switchable mil-tree variants. Default to loadout_mil_tree_medium (carried forward from prior mapping)."
+  },
+  {
+    "scope_id": "deon_optical_design_march_march_x_5_50x56_sfp_tactical",
+    "reticle_id": "loadout_moa_hash",
+    "notes": "March X 5-50x56 SFP Tactical ships with high-magnification MOA reticles \u2014 maps to loadout_moa_hash. Carried forward from prior mapping."
+  },
+  {
+    "scope_id": "eotech_512_holographic",
+    "reticle_id": "loadout_holographic_ring",
+    "notes": "EOTech 512 ships with the 65 MOA Ring + 1 MOA Dot holographic reticle \u2014 maps to loadout_holographic_ring per audit."
+  },
+  {
+    "scope_id": "eotech_exps3_0_holographic",
+    "reticle_id": "loadout_holographic_ring",
+    "notes": "EOTech EXPS3-0 ships with the 68 MOA Ring + 1 MOA Dot holographic reticle \u2014 maps to loadout_holographic_ring per audit."
+  },
+  {
+    "scope_id": "eotech_vudu_1_6x24_ffp",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "EOTech Vudu 1-6x24 FFP ships with HC3 (segmented BDC), SR1, or SR2. Default to loadout_mil_hash; the SR1/SR2 are FFP mil hashes (HC3 has no clean LoadOut equivalent, manual_research fallback)."
+  },
+  {
+    "scope_id": "eotech_vudu_5_25x50_ffp",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "EOTech Vudu 5-25x50 FFP ships with H59 (LoadOut interoperability calibration), MD3, or MD4. Default to loadout_mil_tree_flare for the H59-class flaring Christmas tree per audit."
+  },
+  {
+    "scope_id": "eotech_xps2_0_holographic",
+    "reticle_id": "loadout_holographic_ring",
+    "notes": "EOTech XPS2-0 ships with the 68 MOA Ring + 1 MOA Dot holographic reticle \u2014 maps to loadout_holographic_ring per audit."
+  },
+  {
+    "scope_id": "eotech_xps3_0_holographic",
+    "reticle_id": "loadout_holographic_ring",
+    "notes": "EOTech XPS3-0 ships with the 68 MOA Ring + 1 MOA Dot holographic reticle \u2014 maps to loadout_holographic_ring. Carried forward from prior mapping."
+  },
+  {
+    "scope_id": "element_optics_helix_6_24x50_ffp",
+    "reticle_id": "loadout_mil_tree_medium",
+    "notes": "Element Optics Helix 6-24x50 FFP ships in mil + MOA tactical variants with uniform-grid Christmas tree \u2014 maps to loadout_mil_tree_medium. Carried forward from prior mapping."
+  },
+  {
+    "scope_id": "hawke_optics_endurance_30_4_16x50",
+    "reticle_id": "loadout_holographic_ring",
+    "notes": "Hawke Endurance 30 ships with the LR Dot illuminated dot-in-ring reticle \u2014 maps to loadout_holographic_ring per audit."
+  },
+  {
+    "scope_id": "hawke_optics_frontier_30_sf_5_30x56",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Hawke Frontier 30 SF 5-30x56 ships with Mil Pro or MOA Pro \u2014 default to loadout_mil_hash per audit (FFP mil hash variant)."
+  },
+  {
+    "scope_id": "hawke_optics_frontier_34_ffp_5_30x56",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Hawke Frontier 34 FFP ships with MOA Pro Ext or Mil Pro Ext \u2014 default to loadout_mil_hash per audit."
+  },
+  {
+    "scope_id": "hawke_optics_sidewinder_30_ffp_4_16x50",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Hawke Sidewinder 30 FFP ships with MOA or Half Mil reticles (manual_research per audit). Default to loadout_mil_hash as the closest generic FFP mil hash archetype; the Half Mil pattern is a fine-graduation mil hash without flaring tree."
+  },
+  {
+    "scope_id": "hawke_optics_vantage_4_12x50_ao",
+    "reticle_id": "pd_mil_dot_usmc",
+    "notes": "Hawke Vantage 4-12x50 AO ships with a Mil Dot reticle \u2014 maps to pd_mil_dot_usmc (public-domain USMC mil dot) per audit."
+  },
+  {
+    "scope_id": "hensoldt_zf_4_16x56",
+    "reticle_id": "loadout_mil_tree_medium",
+    "notes": "Hensoldt ZF 4-16x56 ships in switchable Hensoldt mil reticle variants. Default to loadout_mil_tree_medium (carried forward from prior mapping); the smaller-magnification ZF body doesn't ship with the dense SKMR3 flaring tree variant \u2014 that's the bigger 6-24x72 ZF."
+  },
+  {
+    "scope_id": "hensoldt_zf_6_24x72",
+    "reticle_id": "loadout_mil_tree_medium",
+    "notes": "Hensoldt ZF 6-24x72 ships with SKMR3 / ABM / FFP mil tree variants. Default to loadout_mil_tree_medium (carried forward from prior mapping); the SKMR3 is closer to a uniform-grid tree than the modern flaring variants like EBR-7D, so loadout_mil_tree_medium is the better archetype match."
+  },
+  {
+    "scope_id": "holosun_aems",
+    "reticle_id": "loadout_red_dot_2moa",
+    "notes": "Holosun AEMS ships with selectable 2 MOA Dot / 65 MOA Ring. Default to loadout_red_dot_2moa (primary aiming dot) per audit."
+  },
+  {
+    "scope_id": "holosun_aems_core",
+    "reticle_id": "loadout_red_dot_2moa",
+    "notes": "Holosun AEMS Core ships with a 2 MOA Dot \u2014 exact match to loadout_red_dot_2moa per audit."
+  },
+  {
+    "scope_id": "holosun_he509t",
+    "reticle_id": "loadout_red_dot_circle",
+    "notes": "Holosun HE509T ships with a multi-reticle circle-and-dot pattern \u2014 maps to loadout_red_dot_circle. Carried forward from prior mapping."
+  },
+  {
+    "scope_id": "holosun_he509t_rd_x2",
+    "reticle_id": "loadout_red_dot_2moa",
+    "notes": "Holosun HE509T-RD X2 ships with 2 MOA Dot / 32 MOA Ring. Default to loadout_red_dot_2moa (primary aiming dot) per audit."
+  },
+  {
+    "scope_id": "holosun_hm3x_magnifier",
+    "reticle_id": "loadout_red_dot_2moa",
+    "notes": "Holosun HM3X is a passive 3x magnifier with no native reticle \u2014 it inherits whatever red dot it's paired with. Default to loadout_red_dot_2moa as the most common pairing partner (manual_research fallback; the magnifier itself has no stock reticle)."
+  },
+  {
+    "scope_id": "holosun_hs503cu",
+    "reticle_id": "loadout_red_dot_2moa",
+    "notes": "Holosun HS503CU ships with 2 MOA Dot / 65 MOA Ring. Default to loadout_red_dot_2moa per audit."
+  },
+  {
+    "scope_id": "holosun_hs510c",
+    "reticle_id": "loadout_holographic_ring",
+    "notes": "Holosun HS510C ships with 65 MOA circle + 2 MOA dot \u2014 maps to loadout_holographic_ring per Appendix G #35 (LoadOut v2.3 brief). Circle-dot reflex; the ring is the canonical holographic-style read. Phase 5 mapping correction: was `loadout_red_dot_2moa`."
+  },
+  {
+    "scope_id": "kahles_k318i_3_5_18x50",
+    "reticle_id": "loadout_mil_tree_medium",
+    "notes": "Kahles K318i ships in switchable SKMR3 / MSR / SKMR4 variants. Default to loadout_mil_tree_medium (carried forward from prior mapping); the K318i body is more compact than the K525i/K624i and ships predominantly with uniform-grid trees, not the modern flaring variants."
+  },
+  {
+    "scope_id": "kahles_k525i_5_25x56",
+    "reticle_id": "loadout_mil_tree_medium",
+    "notes": "Kahles K525i ships in switchable SKMR3 / MSR2 / SKMR4 variants. Default to loadout_mil_tree_medium (carried forward from prior mapping); the SKMR3/4 are uniform-grid trees rather than the modern flaring variants like EBR-7D."
+  },
+  {
+    "scope_id": "kahles_k624i_6_24x56",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "Kahles K624i 6-24x56 ships with SKMR3 / MSR. The K624i is the long-range tactical model in the Kahles lineup; per audit, the SKMR3-class flaring Christmas tree on this body maps to loadout_mil_tree_flare."
+  },
+  {
+    "scope_id": "leupold_mark_4hd_2_5_10x42",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Leupold Mark 4HD 2.5-10x42 ships with FFP TMR \u2014 FFP mil hash maps to loadout_mil_hash per audit."
+  },
+  {
+    "scope_id": "leupold_mark_4hd_4_5_18x52_m5c3_ffp",
+    "reticle_id": "loadout_mil_tree_medium",
+    "notes": "Leupold Mark 4HD 4.5-18x52 M5C3 FFP ships in switchable mil + MOA Christmas-tree variants. Default to loadout_mil_tree_medium (carried forward from prior mapping)."
+  },
+  {
+    "scope_id": "leupold_mark_4hd_6_24x52",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Leupold Mark 4HD 6-24x52 ships with PR2-MIL / PR1-MOA \u2014 FFP mil hash maps to loadout_mil_hash per audit."
+  },
+  {
+    "scope_id": "leupold_mark_5hd_3_6_18x44",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Leupold Mark 5HD 3.6-18x44 ships with PR1-MIL / TMR \u2014 both FFP mil hashes without flaring tree, maps to loadout_mil_hash per audit."
+  },
+  {
+    "scope_id": "leupold_mark_5hd_5_25x56_m5c3_ffp",
+    "reticle_id": "loadout_mil_tree_medium",
+    "notes": "Leupold Mark 5HD 5-25x56 M5C3 FFP ships in switchable mil + MOA Christmas-tree variants (PR1-MIL, TMR, H59 calibrated). Default to loadout_mil_tree_medium (carried forward from prior mapping); the PR1-MIL is a uniform-grid tree rather than the modern flaring variant."
+  },
+  {
+    "scope_id": "leupold_mark_5hd_7_35x56",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "Leupold Mark 5HD 7-35x56 ships with PR2-MOA / TMR / H59 (LoadOut interoperability calibration). Default to loadout_mil_tree_flare for the H59-class flaring Christmas tree per audit + Appendix G top-35 verification set (#14 TMOA-HD)."
+  },
+  {
+    "scope_id": "leupold_vx_3hd_3_5_10x40",
+    "reticle_id": "pd_plex",
+    "notes": "Leupold VX-3HD 3.5-10x40 ships with Duplex or CDS-ZL. Default to pd_plex (most-sold variant; SFP hunting plex) per audit."
+  },
+  {
+    "scope_id": "leupold_vx_3hd_4_5_14x40",
+    "reticle_id": "pd_plex",
+    "notes": "Leupold VX-3HD 4.5-14x40 ships with Duplex or CDS-ZL. Default to pd_plex (most-sold variant) per audit."
+  },
+  {
+    "scope_id": "leupold_vx_5hd_3_15x44_cds_zl2_side_focus",
+    "reticle_id": "pd_plex",
+    "notes": "Leupold VX-5HD 3-15x44 CDS-ZL2 ships with Duplex / FireDot Duplex. Default to pd_plex (most-sold variant; SFP hunting duplex). Prior mapping had loadout_moa_hash as default but pd_plex is the more accurate archetype for the Duplex stock reticle."
+  },
+  {
+    "scope_id": "leupold_vx_5hd_4_20x52",
+    "reticle_id": "loadout_hunting_bdc",
+    "notes": "Leupold VX-5HD 4-20x52 ships with Boone & Crockett (SFP hunting BDC) / TMOA. Default to loadout_hunting_bdc per audit."
+  },
+  {
+    "scope_id": "leupold_vx_6hd_2_12x42",
+    "reticle_id": "pd_plex",
+    "notes": "Leupold VX-6HD 2-12x42 ships with FireDot Duplex \u2014 SFP hunting duplex maps to pd_plex per audit + Appendix G top-35 verification set (#24)."
+  },
+  {
+    "scope_id": "leupold_vx_6hd_3_18x44",
+    "reticle_id": "loadout_red_dot_2moa",
+    "notes": "Leupold VX-6HD 3-18x44 ships with FireDot 4 \u2014 illuminated 4-dot reticle. Closest LoadOut archetype is loadout_red_dot_2moa per audit (manual_research fallback; the FireDot 4 lacks a clean LoadOut equivalent)."
+  },
+  {
+    "scope_id": "leupold_vx_freedom_3_9x40",
+    "reticle_id": "pd_plex",
+    "notes": "Leupold VX-Freedom 3-9x40 ships with Duplex \u2014 SFP hunting duplex maps to pd_plex per audit."
+  },
+  {
+    "scope_id": "leupold_vx_freedom_4_12x40",
+    "reticle_id": "loadout_moa_hash",
+    "notes": "Leupold VX-Freedom 4-12x40 ships with Tri-MOA \u2014 SFP MOA hash maps to loadout_moa_hash per audit."
+  },
+  {
+    "scope_id": "maven_rs_1_2_5_15x44",
+    "reticle_id": "loadout_moa_hash",
+    "notes": "Maven RS.1 ships with SHR-MOA / CSHR \u2014 SFP MOA hash variants map to loadout_moa_hash per audit."
+  },
+  {
+    "scope_id": "maven_rs_2_2_10x38",
+    "reticle_id": "loadout_moa_hash",
+    "notes": "Maven RS.2 ships with CSHR \u2014 SFP MOA hash maps to loadout_moa_hash per audit."
+  },
+  {
+    "scope_id": "maven_rs_3_5_30x50",
+    "reticle_id": "loadout_moa_hash",
+    "notes": "Maven RS.3 ships with MOA-1/2 or MIL-1/2 hash variants. Default to loadout_moa_hash (MOA is the primary US-market variant) per audit."
+  },
+  {
+    "scope_id": "maven_rs_4_5_30x56_ffp",
+    "reticle_id": "loadout_moa_hash",
+    "notes": "Maven RS.4 ships with MOA-2 / MIL-2 \u2014 FFP hash variants. Default to loadout_moa_hash per audit."
+  },
+  {
+    "scope_id": "maven_rs_5_4_24x50_ffp",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Maven RS.5 ships with CFR-MIL / CFR-MOA. Default to loadout_mil_hash per audit (mil is RS.5's headline variant)."
+  },
+  {
+    "scope_id": "meopta_optika6_4_5_27x50_rd_ffp",
+    "reticle_id": "loadout_mil_tree_compact",
+    "notes": "Meopta Optika6 4.5-27x50 RD FFP ships in switchable mil Christmas-tree variants. Default to loadout_mil_tree_compact (carried forward from prior mapping); the Optika6 tree is compact relative to the dense/medium variants."
+  },
+  {
+    "scope_id": "meopta_optika6_5_30x56_rd_ffp",
+    "reticle_id": "loadout_mil_tree_compact",
+    "notes": "Meopta Optika6 5-30x56 RD FFP ships in mil Christmas-tree variants. Default to loadout_mil_tree_compact (carried forward from prior mapping)."
+  },
+  {
+    "scope_id": "nightforce_optics_atacr_1_8x24_f1",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Nightforce ATACR 1-8x24 F1 ships with FC-Mil / FC-DMx (LPVO mil hash). Default to loadout_mil_hash per audit; FC-Mil is FFP mil hash without dense tree."
+  },
+  {
+    "scope_id": "nightforce_optics_atacr_4_16x42_f1",
+    "reticle_id": "loadout_mil_tree_dense",
+    "notes": "Nightforce ATACR 4-16x42 F1 ships in switchable MIL-R / MOAR variants. Default to loadout_mil_tree_dense (carried forward from prior mapping); the MIL-R is a denser uniform-grid Christmas tree distinct from the modern flaring MIL-XT used on the larger ATACR bodies."
+  },
+  {
+    "scope_id": "nightforce_optics_atacr_5_25x56_f1",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "Nightforce ATACR 5-25x56 F1 ships with MIL-XT / TReMoR3 / H59 (LoadOut interoperability calibration). All three are modern flaring Christmas trees \u2014 maps to loadout_mil_tree_flare per audit + Appendix G top-35 verification set (#12 MOAR-T equivalent)."
+  },
+  {
+    "scope_id": "nightforce_optics_atacr_7_35x56_f1",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "Drift fix: Nightforce ATACR 7-35x56 F1 ships with MIL-XT / Mil-C \u2014 re-mapped from loadout_mil_tree_dense to loadout_mil_tree_flare per Appendix J + Appendix G top-35 verification set (#4 MIL-XT)."
+  },
+  {
+    "scope_id": "nightforce_optics_beast_5_25x56_f1",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "Nightforce BEAST 5-25x56 F1 ships with H59 (LoadOut interoperability calibration) / MIL-R / TReMoR2. Default to loadout_mil_tree_flare per audit for the H59-class flaring Christmas tree."
+  },
+  {
+    "scope_id": "nightforce_optics_nx8_1_8x24_f1",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Nightforce NX8 1-8x24 F1 ships with FC-Mil / FC-DMx (LPVO mil hash). Default to loadout_mil_hash per audit."
+  },
+  {
+    "scope_id": "nightforce_optics_nx8_2_5_20x50_f1",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "Nightforce NX8 2.5-20x50 F1 ships with MIL-XT \u2014 modern flaring Christmas tree maps to loadout_mil_tree_flare per audit."
+  },
+  {
+    "scope_id": "nightforce_optics_nx8_4_32x50_f1",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "Drift fix: Nightforce NX8 4-32x50 F1 ships with MIL-XT / Mil-C \u2014 re-mapped from loadout_mil_tree_dense to loadout_mil_tree_flare per Appendix J + Appendix G top-35 verification set (#5 Mil-C)."
+  },
+  {
+    "scope_id": "nightforce_optics_nxs_3_5_15x50",
+    "reticle_id": "loadout_moa_hash",
+    "notes": "Nightforce NXS 3.5-15x50 ships with MOAR / MIL-R (SFP). Default to loadout_moa_hash per audit; MOAR is the primary US-market variant."
+  },
+  {
+    "scope_id": "nightforce_optics_nxs_5_5_22x56",
+    "reticle_id": "loadout_moa_hash",
+    "notes": "Nightforce NXS 5.5-22x56 ships with MOAR / MIL-R (SFP). Default to loadout_moa_hash per audit."
+  },
+  {
+    "scope_id": "nightforce_optics_shv_4_14x56",
+    "reticle_id": "loadout_moa_hash",
+    "notes": "Nightforce SHV 4-14x56 ships with MOAR or IHR (SFP hunting). Default to loadout_moa_hash per audit (MOAR is the tactical variant)."
+  },
+  {
+    "scope_id": "nightforce_optics_shv_5_20x56",
+    "reticle_id": "loadout_sfp_moa_drop",
+    "notes": "Nightforce SHV 5-20x56 ships with MOAR / IHR \u2014 maps to loadout_sfp_moa_drop (SFP MOA-drop hunting/tactical hybrid). Carried forward from prior mapping."
+  },
+  {
+    "scope_id": "primary_arms_glx_1_6x24",
+    "reticle_id": "loadout_sfp_lpvo_chevron",
+    "notes": "Primary Arms GLx 1-6x24 ships with ACSS Raptor. Per CLAUDE.md \u00a730, the ACSS-trademarked reticle is not surfaced; maps to LoadOut-original loadout_sfp_lpvo_chevron (SFP LPVO chevron with BDC ladder) per audit."
+  },
+  {
+    "scope_id": "primary_arms_glx_2_5_10x44",
+    "reticle_id": "loadout_sfp_lpvo_chevron",
+    "notes": "Primary Arms GLx 2.5-10x44 ships with ACSS Griffin Mil. Per CLAUDE.md \u00a730, maps to LoadOut-original loadout_sfp_lpvo_chevron per audit."
+  },
+  {
+    "scope_id": "primary_arms_glx_4_16x50_ffp",
+    "reticle_id": "loadout_combat_bdc",
+    "notes": "Primary Arms GLx 4-16x50 FFP ships with ACSS Athena BPR / Apollo (FFP variants). Per CLAUDE.md \u00a730, maps to LoadOut-original loadout_combat_bdc per audit. Carried forward from prior mapping."
+  },
+  {
+    "scope_id": "primary_arms_plx_1_8x24_ffp",
+    "reticle_id": "loadout_sfp_lpvo_chevron",
+    "notes": "Primary Arms PLx 1-8x24 FFP ships with ACSS Raptor M8 / Griffin. Per CLAUDE.md \u00a730, maps to LoadOut-original loadout_sfp_lpvo_chevron per audit."
+  },
+  {
+    "scope_id": "primary_arms_plx_6_30x56_ffp",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "Primary Arms PLx 6-30x56 FFP ships with ACSS Apollo / Athena BPR (FFP flaring Christmas tree). Per CLAUDE.md \u00a730, maps to LoadOut-original loadout_mil_tree_flare per audit."
+  },
+  {
+    "scope_id": "primary_arms_slx_1_6x24_gen_iv",
+    "reticle_id": "loadout_sfp_lpvo_chevron",
+    "notes": "Primary Arms SLx 1-6x24 Gen IV ships with ACSS Raptor / Griffin. Per CLAUDE.md \u00a730, maps to LoadOut-original loadout_sfp_lpvo_chevron per audit."
+  },
+  {
+    "scope_id": "primary_arms_slx_1_8x24",
+    "reticle_id": "loadout_sfp_lpvo_chevron",
+    "notes": "Primary Arms SLx 1-8x24 ships with ACSS Raptor M8. Per CLAUDE.md \u00a730, maps to LoadOut-original loadout_sfp_lpvo_chevron per audit."
+  },
+  {
+    "scope_id": "primary_arms_slx_4_14x44_ffp",
+    "reticle_id": "loadout_dmr_bdc",
+    "notes": "Primary Arms SLx 4-14x44 FFP ships with ACSS HUD DMR. Per CLAUDE.md \u00a730, maps to LoadOut-original loadout_dmr_bdc per audit. Carried forward from prior mapping."
+  },
+  {
+    "scope_id": "riton_optics_5_conquer_5_25x56_ffp",
+    "reticle_id": "loadout_mil_tree_medium",
+    "notes": "Riton 5 Conquer 5-25x56 FFP ships in switchable mil + MOA Christmas-tree variants. Default to loadout_mil_tree_medium (carried forward from prior mapping)."
+  },
+  {
+    "scope_id": "riton_optics_7_conquer_4_32x56_ffp",
+    "reticle_id": "loadout_mil_tree_medium",
+    "notes": "Riton 7 Conquer 4-32x56 FFP ships in switchable mil + MOA Christmas-tree variants. Default to loadout_mil_tree_medium (carried forward from prior mapping)."
+  },
+  {
+    "scope_id": "riton_optics_x3_primal_3_15x44",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Riton X3 Primal ships with OSR \u2014 SFP mil hash variant maps to loadout_mil_hash per audit."
+  },
+  {
+    "scope_id": "riton_optics_x5_conquer_5_25x50",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Riton X5 Conquer 5-25x50 ships with PSR Mil / PSR MOA. Default to loadout_mil_hash per audit (PSR Mil is the primary tactical variant; FFP mil hash without dense tree)."
+  },
+  {
+    "scope_id": "riton_optics_x7_conquer_3_24x50",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Riton X7 Conquer 3-24x50 ships with PSR Mil \u2014 FFP mil hash maps to loadout_mil_hash per audit."
+  },
+  {
+    "scope_id": "riton_optics_x7_conquer_5_25x56",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Riton X7 Conquer 5-25x56 ships with PSR Mil / PSR MOA. Default to loadout_mil_hash per audit."
+  },
+  {
+    "scope_id": "schmidt_bender_klassik_8x56",
+    "reticle_id": "pd_german_4",
+    "notes": "Schmidt & Bender Klassik 8x56 ships with L7 / A8 \u2014 both are European hunting reticles (manual_research per audit). Default to pd_german_4 as the closest public-domain bold-European-hunting archetype; the L7 and A8 are S&B-specific stadia patterns without exact LoadOut equivalents."
+  },
+  {
+    "scope_id": "schmidt_bender_pm_ii_1_8x24",
+    "reticle_id": "loadout_combat",
+    "notes": "S&B PM II 1-8x24 ships with CQB1 / FlashDot \u2014 SFP LPVO combat reticle maps to loadout_combat per audit."
+  },
+  {
+    "scope_id": "schmidt_bender_pm_ii_3_20x50",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "S&B PM II 3-20x50 standard-length variant. Same default reticle as the Ultra Short variant (P4F/H59 family \u2192 loadout_mil_tree_flare)."
+  },
+  {
+    "scope_id": "schmidt_bender_pm_ii_3_20x50_ultra_short",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "S&B PM II 3-20x50 Ultra Short ships with P4F / H59 / Tremor3 (LoadOut interoperability calibration). All three are modern flaring Christmas trees \u2014 maps to loadout_mil_tree_flare per audit + Appendix G top-35 verification set (#7 GR2ID-class)."
+  },
+  {
+    "scope_id": "schmidt_bender_pm_ii_5_25x56",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "S&B PM II 5-25x56 ships with H2CMR / P4F / Tremor3. Default to loadout_mil_tree_flare per audit + Appendix G top-35 verification set (#6 H-59)."
+  },
+  {
+    "scope_id": "schmidt_bender_pm_ii_5_45x56",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "S&B PM II 5-45x56 ships with GR2ID / Tremor3 / MSR2. All three are modern flaring Christmas trees \u2014 maps to loadout_mil_tree_flare per audit."
+  },
+  {
+    "scope_id": "schmidt_bender_polar_t96_3_20x50",
+    "reticle_id": "pd_german_4",
+    "notes": "Schmidt & Bender Polar T96 3-20x50 ships with D7 / L7 \u2014 European hunting reticles (manual_research per audit). Default to pd_german_4 as the closest archetype; D7 is a duplex-style hunting cross, L7 is a bold European stadia."
+  },
+  {
+    "scope_id": "schmidt_bender_stratos_1_5_8x42",
+    "reticle_id": "loadout_holographic_ring",
+    "notes": "S&B Stratos 1.5-8x42 ships with FlashDot L7 \u2014 illuminated dot-in-stadia hunting reticle. Closest LoadOut archetype is loadout_holographic_ring per audit (manual_research fallback)."
+  },
+  {
+    "scope_id": "schmidt_bender_stratos_2_5_13x56",
+    "reticle_id": "pd_german_4",
+    "notes": "S&B Stratos 2.5-13x56 ships with L7 / A8 \u2014 European hunting reticles (manual_research per audit). Default to pd_german_4 as the closest bold-European-hunting archetype."
+  },
+  {
+    "scope_id": "sig_sauer_sierra10_bdx_5_50x56",
+    "reticle_id": "loadout_sfp_moa_drop",
+    "notes": "Sig Sierra10 BDX 5-50x56 ships with BDX-R3 Digital \u2014 SFP digital BDC drop reticle maps to loadout_sfp_moa_drop per audit + Appendix G top-35 verification set (#19 BDX-R1)."
+  },
+  {
+    "scope_id": "sig_sauer_sierra3_bdx_4_5_14x44",
+    "reticle_id": "loadout_sfp_moa_drop",
+    "notes": "Sig Sierra3 BDX 4.5-14x44 ships with BDX-R1 Digital \u2014 SFP digital BDC drop reticle maps to loadout_sfp_moa_drop per audit + Appendix G top-35 verification set (#19)."
+  },
+  {
+    "scope_id": "sig_sauer_sierra6_bdx_5_30x56",
+    "reticle_id": "loadout_moa_hash",
+    "notes": "Sig Sierra6 BDX 5-30x56 ships with MOA Milling \u2014 FFP MOA hash maps to loadout_moa_hash per audit."
+  },
+  {
+    "scope_id": "sig_sauer_tango4_6_24x50",
+    "reticle_id": "loadout_moa_tree_flare",
+    "notes": "Sig Tango4 6-24x50 ships in BOTH MRAD Milling 2.0 (mil) and MOA Milling variants. Per Appendix G #17 (LoadOut v2.3 brief), the MOA variant is the canonical reference reticle; the flaring MOA tree (`loadout_moa_tree_flare`) is the \u00a77.3 launch-blocker target. Phase 5 mapping correction: was `loadout_mil_hash`."
+  },
+  {
+    "scope_id": "sig_sauer_tango6_5_30x56",
+    "reticle_id": "loadout_moa_hash",
+    "notes": "Sig Tango6 5-30x56 ships with MOA Milling 2.0 \u2014 FFP MOA hash maps to loadout_moa_hash per audit."
+  },
+  {
+    "scope_id": "sig_sauer_tango6t_1_6x24",
+    "reticle_id": "loadout_dmr_bdc",
+    "notes": "Sig Tango6T 1-6x24 ships with DWLR556 / Hellfire \u2014 SFP LPVO BDC maps to loadout_dmr_bdc per audit. Carried forward from prior mapping."
+  },
+  {
+    "scope_id": "sig_sauer_tango6t_dev_l_5_30x56",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "Sig Tango6T DEV-L 5-30x56 ships with the DEV-L tactical mil tree — flaring-branch variant per Sig's published spec. Phase 5 §7.3 launch-blocker remap: was `loadout_mil_tree_dense` (uniform grid) which would have failed the §7.3 launch-blocker check for FFP tactical. Updated to the canonical flaring tree per Appendix G top-35 verification."
+  },
+  {
+    "scope_id": "sig_sauer_tango8_1_8x28",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Sig Tango8 1-8x28 ships with DWLR-MOA / DWLR8 MIL. Default to loadout_mil_hash per audit (mil variant is primary)."
+  },
+  {
+    "scope_id": "sig_sauer_whiskey3_4_12x40",
+    "reticle_id": "pd_plex",
+    "notes": "Sig Whiskey3 4-12x40 ships with Quadplex \u2014 SFP hunting plex maps to pd_plex per audit."
+  },
+  {
+    "scope_id": "sig_sauer_whiskey5_3_15x44",
+    "reticle_id": "loadout_moa_hash",
+    "notes": "Sig Whiskey5 3-15x44 ships with HellFire MOA Milling \u2014 SFP MOA hash maps to loadout_moa_hash per audit."
+  },
+  {
+    "scope_id": "sightron_siii_plr_6_24x50_ffp_zero_stop",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Sightron SIII PLR 6-24x50 FFP Zero Stop ships in switchable mil + MOA variants. Default to loadout_mil_hash (carried forward from prior mapping); FFP mil hash without dense tree."
+  },
+  {
+    "scope_id": "sightron_sviii_5_40x56_ffp_ed_ir_zero_stop",
+    "reticle_id": "loadout_mil_tree_medium",
+    "notes": "Sightron SVIII 5-40x56 FFP ED IR Zero Stop ships in mil tactical Christmas-tree variants. Default to loadout_mil_tree_medium (carried forward from prior mapping)."
+  },
+  {
+    "scope_id": "steiner_m5xi_5_25x56",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "Steiner M5Xi 5-25x56 ships with MSR / MSR2 / SCR. The MSR2 is a modern flaring Christmas tree \u2014 maps to loadout_mil_tree_flare per audit."
+  },
+  {
+    "scope_id": "steiner_m7xi_4_28x56",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "Steiner M7Xi 4-28x56 ships with MSR / MSR2 \u2014 the MSR2 is a modern flaring Christmas tree, maps to loadout_mil_tree_flare per audit."
+  },
+  {
+    "scope_id": "steiner_p4xi_1_4x24",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Steiner P4Xi 1-4x24 ships with P3TR \u2014 SFP LPVO mil hash maps to loadout_mil_hash per audit."
+  },
+  {
+    "scope_id": "steiner_p4xi_4_16x56",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Steiner P4Xi 4-16x56 ships with SCR-Mil / Plex S1. Default to loadout_mil_hash per audit (SCR-Mil is the primary tactical variant)."
+  },
+  {
+    "scope_id": "steiner_t6xi_3_18x56",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "Steiner T6Xi 3-18x56 ships with MSR2 / SCR \u2014 MSR2 is a modern flaring Christmas tree, maps to loadout_mil_tree_flare per audit."
+  },
+  {
+    "scope_id": "steiner_t6xi_5_30x56",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "Steiner T6Xi 5-30x56 ships with MSR2 / SCR \u2014 MSR2 is a modern flaring Christmas tree, maps to loadout_mil_tree_flare per audit."
+  },
+  {
+    "scope_id": "swarovski_optik_x5_i_5_25x56_p",
+    "reticle_id": "loadout_mil_tree_medium",
+    "notes": "Swarovski X5(i) 5-25x56 P ships in switchable mil + BDC hunting variants. Default to loadout_mil_tree_medium (carried forward from prior mapping)."
+  },
+  {
+    "scope_id": "swarovski_optik_x5i_3_5_18x50",
+    "reticle_id": "pd_plex",
+    "notes": "Swarovski X5i 3.5-18x50 ships with 4WX / 4WXi \u2014 both are Swarovski-specific stadia hunting reticles (manual_research per audit). Default to pd_plex as the closest public-domain hunting-duplex archetype; 4WX is a bold-stadia plex variant."
+  },
+  {
+    "scope_id": "swarovski_optik_x5i_5_25x56",
+    "reticle_id": "loadout_moa_hash",
+    "notes": "Swarovski X5i 5-25x56 ships with 4WX / 4WXi / BRH. Default to loadout_moa_hash per audit; the BRH is a hash-based long-range hunting variant."
+  },
+  {
+    "scope_id": "swarovski_optik_z6i_2_5_15x56_p_gen_2",
+    "reticle_id": "pd_plex",
+    "notes": "Swarovski Z6i 2.5-15x56 P (Gen 2) ships with hunting-style reticles. Default to pd_plex (most-sold variant) per audit. Carried forward from prior mapping."
+  },
+  {
+    "scope_id": "swarovski_optik_z8i_1_8x24",
+    "reticle_id": "loadout_moa_hash",
+    "notes": "Swarovski Z8i 1-8x24 ships with BRT-I \u2014 SFP LPVO MOA hash maps to loadout_moa_hash per audit."
+  },
+  {
+    "scope_id": "swarovski_optik_z8i_2_16x50",
+    "reticle_id": "loadout_moa_hash",
+    "notes": "Swarovski Z8i 2-16x50 ships with 4A-IF / BRX-I. Default to loadout_moa_hash per audit (BRX-I is a hash-based long-range hunting variant)."
+  },
+  {
+    "scope_id": "swarovski_optik_ds_gen_ii_5_25x52",
+    "reticle_id": "loadout_holographic_ring",
+    "notes": "Swarovski dS Gen II 5-25x52 ships with a Smart digital reticle that overlays a holdover dot based on integrated ballistics (manual_research per audit). Closest LoadOut archetype is loadout_holographic_ring; the digital smart reticle has no direct LoadOut equivalent and the holographic ring archetype best captures the simple-dot aiming model the dS presents."
+  },
+  {
+    "scope_id": "tangent_theta_tt315m_3_15x50",
+    "reticle_id": "loadout_mil_tree_medium",
+    "notes": "Tangent Theta TT315M 3-15x50 ships in switchable mil tactical Christmas-tree variants. Default to loadout_mil_tree_medium (carried forward from prior mapping)."
+  },
+  {
+    "scope_id": "tangent_theta_tt525p_5_25x56",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "Tangent Theta TT525P 5-25x56 ships with Gen-2 XR Mil \u2014 a modern flaring Christmas tree per Appendix G top-35 verification set (#9). Re-mapped from the prior loadout_mil_tree_medium to loadout_mil_tree_flare to match the actual reticle pattern."
+  },
+  {
+    "scope_id": "trijicon_acog_ta02_4x32_led",
+    "reticle_id": "loadout_sfp_lpvo_chevron",
+    "notes": "Trijicon ACOG TA02 4x32 LED ships with the LED Chevron BDC. Per CLAUDE.md \u00a730, maps to LoadOut-original loadout_sfp_lpvo_chevron per audit + Appendix G top-35 verification set (#30 BAC Triangle)."
+  },
+  {
+    "scope_id": "trijicon_acog_ta31_4x32",
+    "reticle_id": "loadout_sfp_lpvo_chevron",
+    "notes": "Trijicon ACOG TA31 4x32 ships with the BAC Tritium / Fiber Chevron \u2014 the canonical chevron reticle. Phase 5 mapping correction: was `loadout_combat` (a generic SFP combat archetype) but the BAC IS the chevron variant. Updated to `loadout_sfp_lpvo_chevron` per Appendix G #30 of the LoadOut v2.3 brief."
+  },
+  {
+    "scope_id": "trijicon_acog_ta31f_4x32",
+    "reticle_id": "loadout_sfp_lpvo_chevron",
+    "notes": "Trijicon ACOG TA31F 4x32 ships with the Tritium/Fiber Chevron BDC. Per CLAUDE.md \u00a730, maps to LoadOut-original loadout_sfp_lpvo_chevron per audit."
+  },
+  {
+    "scope_id": "trijicon_accupoint_1_6x24",
+    "reticle_id": "loadout_sfp_lpvo_chevron",
+    "notes": "Trijicon AccuPoint 1-6x24 ships with BAC Triangle / German #4. Default to loadout_sfp_lpvo_chevron (BAC Triangle is the LPVO-defining variant) per audit."
+  },
+  {
+    "scope_id": "trijicon_accupoint_2_5_12_5x42",
+    "reticle_id": "loadout_sfp_lpvo_chevron",
+    "notes": "Trijicon AccuPoint 2.5-12.5x42 ships with BAC Triangle / Mil-Dot. Default to loadout_sfp_lpvo_chevron (BAC Triangle is the AccuPoint-defining variant) per audit."
+  },
+  {
+    "scope_id": "trijicon_credo_1_8x28",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Trijicon Credo 1-8x28 ships with a MRAD Segmented Circle \u2014 manual_research per audit. Default to loadout_mil_hash as the closest archetype; the segmented circle is a tactical mil hash with an additional close-quarters aiming circle."
+  },
+  {
+    "scope_id": "trijicon_credo_hx_2_5_15x56",
+    "reticle_id": "loadout_moa_hash",
+    "notes": "Trijicon Credo HX 2.5-15x56 ships with MOA Center Dot \u2014 SFP MOA hash maps to loadout_moa_hash per audit."
+  },
+  {
+    "scope_id": "trijicon_tenmile_4_5_30x56_ffp",
+    "reticle_id": "loadout_moa_hash",
+    "notes": "Trijicon Tenmile 4.5-30x56 FFP ships with MRAD / MOA Long Range. Default to loadout_moa_hash per audit (MOA Long Range is the primary tactical variant; the MRAD is also a hash-style FFP without flaring tree)."
+  },
+  {
+    "scope_id": "trijicon_tenmile_5_50x56_ed_ffp",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Trijicon Tenmile 5-50x56 ED/FFP ships with MRAD Long Range \u2014 FFP mil hash maps to loadout_mil_hash per audit."
+  },
+  {
+    "scope_id": "trijicon_tenmile_hx_6_24x50",
+    "reticle_id": "loadout_moa_hash",
+    "notes": "Trijicon Tenmile HX 6-24x50 ships with MOA Ranging \u2014 SFP MOA hash maps to loadout_moa_hash per audit."
+  },
+  {
+    "scope_id": "us_optics_b_east_5_25x52",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "US Optics B-EAST 5-25x52 ships with MGR / MPR. Default to loadout_mil_hash per audit (MGR is the mil variant)."
+  },
+  {
+    "scope_id": "us_optics_foundation_17x_3_2_17x50",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "US Optics Foundation 17X ships with MGR / MPR. Default to loadout_mil_hash per audit."
+  },
+  {
+    "scope_id": "us_optics_foundation_25x_5_25x52",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "US Optics Foundation 25X ships with MGR / MPR. Default to loadout_mil_hash per audit."
+  },
+  {
+    "scope_id": "us_optics_ts_12x_4_12x44",
+    "reticle_id": "pd_mil_dot_usmc",
+    "notes": "US Optics TS-12X ships with MIL Scale / Mil-D. Default to pd_mil_dot_usmc per audit (MIL Scale is a USMC mil-dot derivative)."
+  },
+  {
+    "scope_id": "us_optics_ts_20x_5_25x50",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "US Optics TS-20X 5-25x50 ships with MIL Scale / GenIIXR \u2014 the GenIIXR is a modern flaring Christmas tree, maps to loadout_mil_tree_flare per audit."
+  },
+  {
+    "scope_id": "vortex_optics_crossfire_ii_4_12x44",
+    "reticle_id": "loadout_hunting_bdc",
+    "notes": "Vortex Crossfire II 4-12x44 ships with Dead-Hold BDC \u2014 SFP hunting BDC maps to loadout_hunting_bdc per audit + Appendix G top-35 verification set (#20)."
+  },
+  {
+    "scope_id": "vortex_optics_diamondback_tactical_4_16x44_ffp",
+    "reticle_id": "loadout_mil_tree_christmas",
+    "notes": "Vortex Diamondback Tactical 4-16x44 FFP ships with EBR-2C MOA \u2014 older simpler FFP mil/MOA Christmas tree, maps to loadout_mil_tree_christmas per audit + README pattern table (EBR-2C \u2192 mil_tree_christmas)."
+  },
+  {
+    "scope_id": "vortex_optics_diamondback_tactical_6_24x50_ffp",
+    "reticle_id": "loadout_mil_tree_christmas",
+    "notes": "Vortex Diamondback Tactical 6-24x50 FFP ships with EBR-2C MRAD \u2014 older simpler FFP mil Christmas tree, maps to loadout_mil_tree_christmas per audit + README pattern table (EBR-2C \u2192 mil_tree_christmas)."
+  },
+  {
+    "scope_id": "vortex_optics_razor_hd_gen_ii_3_18x50",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "Vortex Razor HD Gen II 3-18x50 ships with EBR-7C MRAD \u2014 modern flaring Christmas tree maps to loadout_mil_tree_flare per audit + README pattern table (EBR-7C \u2192 mil_tree_flare)."
+  },
+  {
+    "scope_id": "vortex_optics_razor_hd_gen_ii_4_5_27x56_ffp",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "Drift fix: Vortex Razor HD Gen II 4.5-27x56 FFP ships with EBR-7C MRAD \u2014 re-mapped from loadout_mil_tree_medium to loadout_mil_tree_flare per Appendix J + Appendix G top-35 verification set (#2 EBR-2C MRAD; this scope ships with EBR-7C which is the flaring variant)."
+  },
+  {
+    "scope_id": "vortex_optics_razor_hd_gen_ii_e_1_6x24",
+    "reticle_id": "loadout_moa_hash",
+    "notes": "Vortex Razor HD Gen II-E 1-6x24 ships with VMR-2 MOA \u2014 SFP LPVO MOA hash maps to loadout_moa_hash per audit."
+  },
+  {
+    "scope_id": "vortex_optics_razor_hd_gen_iii_6_36x56_ffp",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "Drift fix: Vortex Razor HD Gen III 6-36x56 FFP ships with EBR-7D MOA/MRAD \u2014 re-mapped from loadout_mil_tree_dense to loadout_mil_tree_flare per Appendix J + Appendix G top-35 verification set (#1 EBR-7D MRAD)."
+  },
+  {
+    "scope_id": "vortex_optics_razor_lht_3_15x42",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Vortex Razor LHT 3-15x42 ships with HSR-5i MOA \u2014 FFP MOA/mil hash maps to loadout_mil_hash per audit (LoadOut-original mil hash archetype is closer to the HSR-5i geometry than the MOA hash)."
+  },
+  {
+    "scope_id": "vortex_optics_razor_lht_4_5_22x50",
+    "reticle_id": "loadout_mil_hash",
+    "notes": "Vortex Razor LHT 4.5-22x50 ships with XLR-2 MRAD \u2014 manual_research per audit. Default to loadout_mil_hash as the closest archetype; the XLR-2 is a FFP mil hash without dense Christmas tree."
+  },
+  {
+    "scope_id": "vortex_optics_strike_eagle_1_8x24",
+    "reticle_id": "loadout_combat_bdc",
+    "notes": "Vortex Strike Eagle 1-8x24 ships with AR-BDC3 MOA \u2014 SFP LPVO BDC maps to loadout_combat_bdc per audit + Appendix G top-35 verification set (#31 MRAD AR)."
+  },
+  {
+    "scope_id": "vortex_optics_strike_eagle_5_25x56_ffp",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "Vortex Strike Eagle 5-25x56 FFP ships with EBR-7C MRAD \u2014 modern flaring Christmas tree maps to loadout_mil_tree_flare per audit."
+  },
+  {
+    "scope_id": "vortex_optics_viper_pst_gen_ii_1_6x24",
+    "reticle_id": "loadout_moa_hash",
+    "notes": "Vortex Viper PST Gen II 1-6x24 ships with VMR-2 MOA \u2014 SFP LPVO MOA hash maps to loadout_moa_hash per audit."
+  },
+  {
+    "scope_id": "vortex_optics_viper_pst_gen_ii_3_15x44",
+    "reticle_id": "loadout_mil_tree_christmas",
+    "notes": "Vortex Viper PST Gen II 3-15x44 ships with EBR-2C MOA \u2014 older simpler FFP MOA Christmas tree, maps to loadout_mil_tree_christmas per audit + README pattern table (EBR-2C \u2192 mil_tree_christmas)."
+  },
+  {
+    "scope_id": "vortex_optics_viper_pst_gen_ii_5_25x50",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "Vortex Viper PST Gen II 5-25x50 ships with EBR-7C MRAD \u2014 modern flaring Christmas tree maps to loadout_mil_tree_flare per audit + Appendix G top-35 verification set (#3 EBR-7C MRAD)."
+  },
+  {
+    "scope_id": "zero_compromise_optic_zc527_5_27x56",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "Zero Compromise Optic ZC527 5-27x56 ships with the MPCT3 \u2014 modern flaring Christmas tree per Appendix G top-35 verification set (#10). Re-mapped from the prior loadout_mil_tree_medium to loadout_mil_tree_flare."
+  },
+  {
+    "scope_id": "zero_compromise_optic_zc840_8_40x56",
+    "reticle_id": "loadout_mil_tree_dense",
+    "notes": "Zero Compromise Optic ZC840 8-40x56 ships in MPCT-family Christmas-tree variants. Default to loadout_mil_tree_dense (carried forward from prior mapping); the ZC840 is the long-range body and ships with the MPCT2L/3L variants that are denser uniform-grid trees than the ZC527's MPCT3."
+  },
+  {
+    "scope_id": "zerotech_optics_trace_advanced_4_5_27x50_rmg_ffp",
+    "reticle_id": "loadout_mil_tree_medium",
+    "notes": "ZeroTech Trace Advanced 4.5-27x50 RMG FFP ships in mil tactical Christmas-tree variants. Default to loadout_mil_tree_medium (carried forward from prior mapping)."
+  },
+  {
+    "scope_id": "zerotech_optics_vengeance_4_20x50_sfp",
+    "reticle_id": "pd_plex",
+    "notes": "ZeroTech Vengeance 4-20x50 SFP ships with a hunting plex reticle \u2014 maps to pd_plex. Carried forward from prior mapping."
+  },
+  {
+    "scope_id": "vortex_optics_crossfire_ii_3_9x40",
+    "reticle_id": "loadout_hunting_bdc",
+    "notes": "Vortex Crossfire II 3-9x40 ships with Dead-Hold BDC \u2014 maps to loadout_hunting_bdc per Appendix G #27 (LoadOut v2.3 brief) and the \"find a reticle resembling yours\" launch claim."
+  },
+  {
+    "scope_id": "bushnell_engage_3_12x42",
+    "reticle_id": "pd_plex",
+    "notes": "Bushnell Engage 3-12x42 ships with Deploy MOA \u2014 maps to pd_plex per Appendix G #29 (LoadOut v2.3 brief) since the Engage Deploy MOA is a duplex variant."
+  },
+  {
+    "scope_id": "vortex_optics_strike_eagle_1_6x24",
+    "reticle_id": "loadout_combat_bdc",
+    "notes": "Vortex Strike Eagle 1-6x24 ships with AR-BDC3 \u2014 maps to loadout_combat_bdc per Appendix G #31 (LoadOut v2.3 brief). LPVO BDC."
+  },
+  {
+    "scope_id": "trijicon_credo_hx_2_5_15x42",
+    "reticle_id": "loadout_combat_bdc",
+    "notes": "Trijicon Credo HX 2.5-15x42 ships with MOA Center Dot \u2014 maps to loadout_combat_bdc per Appendix G #32 (LoadOut v2.3 brief). LPVO MOA."
+  },
+  {
+    "scope_id": "eotech_vudu_1_8x24_sfp",
+    "reticle_id": "loadout_combat",
+    "notes": "EOTech Vudu 1-8x24 SFP ships with HC3 holographic-style reticle \u2014 maps to loadout_combat per Appendix G #23 (LoadOut v2.3 brief)."
+  },
+  {
+    "scope_id": "hensoldt_zf_3_5_26x56",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "Hensoldt ZF 3.5-26x56 ships with Hensoldt mil tree (SKMR3 or MR-DOT variants) \u2014 maps to loadout_mil_tree_flare per the Phase 6 Appendix G erratum that substitutes 3.5-26x56 for the brief's nonexistent 5-25x56."
+  },
+  {
+    "scope_id": "zero_compromise_optic_zc527",
+    "reticle_id": "loadout_mil_tree_flare",
+    "notes": "ZCO ZC527 ships with MPCT3 \u2014 maps to loadout_mil_tree_flare per Appendix G #10 (LoadOut v2.3 brief). FFP flagship mil tree."
+  },
+  {
+    "scope_id": "burris_ar_332",
+    "reticle_id": "loadout_combat_bdc",
+    "notes": "Burris AR-332 ships with Ballistic CQ \u2014 maps to loadout_combat_bdc per Appendix G #22 (LoadOut v2.3 brief). LPVO-grade BDC for 5.56."
+  },
+  {
+    "scope_id": "nightforce_optics_atacr_5_25x56_f1_moar_t",
+    "reticle_id": "loadout_moa_tree_flare",
+    "notes": "Nightforce ATACR 5-25x56 F1 MOAR-T variant \u2014 maps to loadout_moa_tree_flare per Appendix G #12 (LoadOut v2.3 brief). The mil variant lives on the base row nightforce_optics_atacr_5_25x56_f1 mapped to loadout_mil_tree_flare; this is the Option A dual-reticle split per the Phase 5 directive."
+  },
+  {
+    "scope_id": "leupold_mark_5hd_7_35x56_tmoa",
+    "reticle_id": "loadout_moa_tree_flare",
+    "notes": "Leupold Mark 5HD 7-35x56 TMOA variant \u2014 maps to loadout_moa_tree_flare per Appendix G #14 (LoadOut v2.3 brief). The mil (Tremor3) variant lives on the base row mapped to loadout_mil_tree_flare; Option A dual-reticle split."
+  },
+  {
+    "scope_id": "leupold_vx_freedom_3_9x40_boone_crockett",
+    "reticle_id": "loadout_hunting_bdc",
+    "notes": "Leupold VX-Freedom 3-9x40 Boone & Crockett variant \u2014 maps to loadout_hunting_bdc per Appendix G #25 (LoadOut v2.3 brief). The duplex variant lives on the base row mapped to pd_plex; Option A dual-reticle split."
+  }
+]

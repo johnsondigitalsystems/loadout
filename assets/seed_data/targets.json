@@ -1,6 +1,7 @@
 [
   {
     "name": "Circle 1 in",
+    "category": "target",
     "shape": "circle",
     "widthIn": 1.0,
     "heightIn": 1.0,
@@ -9,6 +10,7 @@
   },
   {
     "name": "Circle 2 in",
+    "category": "target",
     "shape": "circle",
     "widthIn": 2.0,
     "heightIn": 2.0,
@@ -17,6 +19,7 @@
   },
   {
     "name": "Circle 3 in",
+    "category": "target",
     "shape": "circle",
     "widthIn": 3.0,
     "heightIn": 3.0,
@@ -25,6 +28,7 @@
   },
   {
     "name": "Circle 4 in",
+    "category": "target",
     "shape": "circle",
     "widthIn": 4.0,
     "heightIn": 4.0,
@@ -33,6 +37,7 @@
   },
   {
     "name": "Circle 5 in",
+    "category": "target",
     "shape": "circle",
     "widthIn": 5.0,
     "heightIn": 5.0,
@@ -41,6 +46,7 @@
   },
   {
     "name": "Circle 6 in",
+    "category": "target",
     "shape": "circle",
     "widthIn": 6.0,
     "heightIn": 6.0,
@@ -49,6 +55,7 @@
   },
   {
     "name": "Circle 8 in",
+    "category": "target",
     "shape": "circle",
     "widthIn": 8.0,
     "heightIn": 8.0,
@@ -57,6 +64,7 @@
   },
   {
     "name": "Circle 10 in",
+    "category": "target",
     "shape": "circle",
     "widthIn": 10.0,
     "heightIn": 10.0,
@@ -65,6 +73,7 @@
   },
   {
     "name": "Circle 12 in",
+    "category": "target",
     "shape": "circle",
     "widthIn": 12.0,
     "heightIn": 12.0,
@@ -73,6 +82,7 @@
   },
   {
     "name": "Circle 15 in",
+    "category": "target",
     "shape": "circle",
     "widthIn": 15.0,
     "heightIn": 15.0,
@@ -81,6 +91,7 @@
   },
   {
     "name": "Circle 18 in",
+    "category": "target",
     "shape": "circle",
     "widthIn": 18.0,
     "heightIn": 18.0,
@@ -89,6 +100,7 @@
   },
   {
     "name": "Circle 20 in",
+    "category": "target",
     "shape": "circle",
     "widthIn": 20.0,
     "heightIn": 20.0,
@@ -97,6 +109,7 @@
   },
   {
     "name": "Circle 24 in",
+    "category": "target",
     "shape": "circle",
     "widthIn": 24.0,
     "heightIn": 24.0,
@@ -105,6 +118,7 @@
   },
   {
     "name": "Square 4 in",
+    "category": "target",
     "shape": "square",
     "widthIn": 4.0,
     "heightIn": 4.0,
@@ -113,6 +127,7 @@
   },
   {
     "name": "Square 6 in",
+    "category": "target",
     "shape": "square",
     "widthIn": 6.0,
     "heightIn": 6.0,
@@ -121,6 +136,7 @@
   },
   {
     "name": "Square 8 in",
+    "category": "target",
     "shape": "square",
     "widthIn": 8.0,
     "heightIn": 8.0,
@@ -129,6 +145,7 @@
   },
   {
     "name": "Square 10 in",
+    "category": "target",
     "shape": "square",
     "widthIn": 10.0,
     "heightIn": 10.0,
@@ -137,6 +154,7 @@
   },
   {
     "name": "Square 12 in",
+    "category": "target",
     "shape": "square",
     "widthIn": 12.0,
     "heightIn": 12.0,
@@ -145,6 +163,7 @@
   },
   {
     "name": "Rectangle 12x18 in",
+    "category": "target",
     "shape": "rectangle",
     "widthIn": 12.0,
     "heightIn": 18.0,
@@ -153,6 +172,7 @@
   },
   {
     "name": "Rectangle 18x24 in",
+    "category": "target",
     "shape": "rectangle",
     "widthIn": 18.0,
     "heightIn": 24.0,
@@ -161,6 +181,7 @@
   },
   {
     "name": "Rectangle 24x30 in",
+    "category": "target",
     "shape": "rectangle",
     "widthIn": 24.0,
     "heightIn": 30.0,
@@ -169,6 +190,7 @@
   },
   {
     "name": "Rectangle 24x36 in",
+    "category": "target",
     "shape": "rectangle",
     "widthIn": 24.0,
     "heightIn": 36.0,
@@ -177,6 +199,7 @@
   },
   {
     "name": "Rectangle 36x48 in",
+    "category": "target",
     "shape": "rectangle",
     "widthIn": 36.0,
     "heightIn": 48.0,
@@ -185,6 +208,7 @@
   },
   {
     "name": "NRA SR-1 Reduced (100 yd)",
+    "category": "target",
     "shape": "rectangle",
     "widthIn": 12.71,
     "heightIn": 12.71,
@@ -193,6 +217,7 @@
   },
   {
     "name": "NRA SR-21 (200 yd)",
+    "category": "target",
     "shape": "rectangle",
     "widthIn": 19.0,
     "heightIn": 19.0,
@@ -201,6 +226,7 @@
   },
   {
     "name": "NRA MR-1 (300 yd)",
+    "category": "target",
     "shape": "rectangle",
     "widthIn": 21.0,
     "heightIn": 21.0,
@@ -209,6 +235,7 @@
   },
   {
     "name": "NRA LR (600 yd)",
+    "category": "target",
     "shape": "rectangle",
     "widthIn": 36.0,
     "heightIn": 36.0,
@@ -217,6 +244,7 @@
   },
   {
     "name": "F-Class F-Open (1000 yd)",
+    "category": "target",
     "shape": "rectangle",
     "widthIn": 72.0,
     "heightIn": 72.0,
@@ -225,6 +253,7 @@
   },
   {
     "name": "F-Class F-T/R (600 yd)",
+    "category": "target",
     "shape": "rectangle",
     "widthIn": 36.0,
     "heightIn": 36.0,
@@ -233,6 +262,7 @@
   },
   {
     "name": "Bullseye 25 yd Slow-Fire Pistol",
+    "category": "target",
     "shape": "rectangle",
     "widthIn": 10.5,
     "heightIn": 10.5,
@@ -241,6 +271,7 @@
   },
   {
     "name": "Bullseye 50 yd Slow-Fire Pistol",
+    "category": "target",
     "shape": "rectangle",
     "widthIn": 10.5,
     "heightIn": 10.5,
@@ -249,6 +280,7 @@
   },
   {
     "name": "Texas Star",
+    "category": "target",
     "shape": "star",
     "widthIn": 36.0,
     "heightIn": 36.0,
@@ -257,6 +289,7 @@
   },
   {
     "name": "Dueling Tree",
+    "category": "target",
     "shape": "rectangle",
     "widthIn": 36.0,
     "heightIn": 60.0,
@@ -265,6 +298,7 @@
   },
   {
     "name": "Bear",
+    "category": "target",
     "shape": "bear",
     "widthIn": 36.0,
     "heightIn": 40.0,
@@ -273,6 +307,7 @@
   },
   {
     "name": "Wild Boar",
+    "category": "target",
     "shape": "boar",
     "widthIn": 32.0,
     "heightIn": 22.0,
@@ -281,6 +316,7 @@
   },
   {
     "name": "Whitetail Deer",
+    "category": "target",
     "shape": "deer",
     "widthIn": 30.0,
     "heightIn": 24.0,
@@ -289,6 +325,7 @@
   },
   {
     "name": "Mule Deer",
+    "category": "target",
     "shape": "deer",
     "widthIn": 32.0,
     "heightIn": 26.0,
@@ -297,6 +334,7 @@
   },
   {
     "name": "Elk",
+    "category": "target",
     "shape": "elk",
     "widthIn": 48.0,
     "heightIn": 36.0,
@@ -305,6 +343,7 @@
   },
   {
     "name": "Coyote",
+    "category": "target",
     "shape": "coyote",
     "widthIn": 24.0,
     "heightIn": 14.0,
@@ -313,6 +352,7 @@
   },
   {
     "name": "Pronghorn Antelope",
+    "category": "target",
     "shape": "deer",
     "widthIn": 22.0,
     "heightIn": 14.0,
@@ -321,6 +361,7 @@
   },
   {
     "name": "Wild Hog",
+    "category": "target",
     "shape": "boar",
     "widthIn": 28.0,
     "heightIn": 18.0,
@@ -329,6 +370,7 @@
   },
   {
     "name": "IPSC USPSA Classic 18 x 30",
+    "category": "target",
     "shape": "silhouette",
     "widthIn": 18.0,
     "heightIn": 30.0,
@@ -337,6 +379,7 @@
   },
   {
     "name": "IPSC Classic Official 18.12 x 29.93",
+    "category": "target",
     "shape": "silhouette",
     "widthIn": 18.12,
     "heightIn": 29.93,
@@ -345,6 +388,7 @@
   },
   {
     "name": "IPSC Classic Mini 18.12 x 22.84",
+    "category": "target",
     "shape": "silhouette",
     "widthIn": 18.12,
     "heightIn": 22.84,
@@ -353,6 +397,7 @@
   },
   {
     "name": "IPSC Mini 12 x 20",
+    "category": "target",
     "shape": "silhouette",
     "widthIn": 12.0,
     "heightIn": 20.0,
@@ -361,6 +406,7 @@
   },
   {
     "name": "IPSC A4 11.81 x 23.62",
+    "category": "target",
     "shape": "silhouette",
     "widthIn": 11.81,
     "heightIn": 23.62,
@@ -369,6 +415,7 @@
   },
   {
     "name": "IPSC Head Box 5.91 x 11.02",
+    "category": "target",
     "shape": "silhouette",
     "widthIn": 5.91,
     "heightIn": 11.02,
@@ -377,6 +424,7 @@
   },
   {
     "name": "Pepper Popper Full 7.87 x 33.46",
+    "category": "target",
     "shape": "popper",
     "widthIn": 7.87,
     "heightIn": 33.46,
@@ -385,10 +433,219 @@
   },
   {
     "name": "Pepper Popper Mini 7.87 x 22.05",
+    "category": "target",
     "shape": "popper",
     "widthIn": 7.87,
     "heightIn": 22.05,
     "colorHex": "#ffffff",
     "notes": "Mini pepper popper — 56 cm tall, 20 cm wide at the head. Same silhouette as the full popper at a reduced height."
+  },
+  {
+    "id": "animal_deer",
+    "name": "Whitetail deer",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "deer_profile",
+    "width_in": 60,
+    "height_in": 32,
+    "color_hex": "#3D2F1E",
+    "rim_color_hex": "#1A1410",
+    "default_distance_yd": 200,
+    "category_tags": ["animal", "big-game", "north-america"]
+  },
+  {
+    "id": "animal_mule_deer",
+    "name": "Mule deer",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "mule_deer_profile",
+    "width_in": 60,
+    "height_in": 32,
+    "color_hex": "#3D2F1E",
+    "rim_color_hex": "#1A1410",
+    "default_distance_yd": 250,
+    "category_tags": ["animal", "big-game", "north-america", "western"]
+  },
+  {
+    "id": "animal_elk",
+    "name": "Elk",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "elk_profile",
+    "width_in": 100,
+    "height_in": 53,
+    "color_hex": "#3D2F1E",
+    "rim_color_hex": "#1A1410",
+    "default_distance_yd": 300,
+    "category_tags": ["animal", "big-game", "north-america", "western"]
+  },
+  {
+    "id": "animal_moose",
+    "name": "Moose",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "moose_profile",
+    "width_in": 120,
+    "height_in": 64,
+    "color_hex": "#2A1F14",
+    "rim_color_hex": "#1A1410",
+    "default_distance_yd": 200,
+    "category_tags": ["animal", "big-game", "north-america", "northern"]
+  },
+  {
+    "id": "animal_pronghorn",
+    "name": "Pronghorn antelope",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "pronghorn_profile",
+    "width_in": 60,
+    "height_in": 32,
+    "color_hex": "#A87D4E",
+    "rim_color_hex": "#3D2F1E",
+    "default_distance_yd": 300,
+    "category_tags": ["animal", "big-game", "north-america", "western", "open-country"]
+  },
+  {
+    "id": "animal_black_bear",
+    "name": "Black bear",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "bear_profile",
+    "width_in": 60,
+    "height_in": 32,
+    "color_hex": "#1A1410",
+    "rim_color_hex": "#000000",
+    "default_distance_yd": 150,
+    "category_tags": ["animal", "big-game", "north-america"]
+  },
+  {
+    "id": "animal_wild_boar",
+    "name": "Wild boar",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "boar_profile",
+    "width_in": 60,
+    "height_in": 33,
+    "color_hex": "#1A1410",
+    "rim_color_hex": "#000000",
+    "default_distance_yd": 150,
+    "category_tags": ["animal", "big-game", "north-america", "varmint"]
+  },
+  {
+    "id": "animal_mountain_lion",
+    "name": "Mountain lion",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "mountain_lion_profile",
+    "width_in": 84,
+    "height_in": 45,
+    "color_hex": "#8B6F47",
+    "rim_color_hex": "#3D2F1E",
+    "default_distance_yd": 100,
+    "category_tags": ["animal", "predator", "north-america"]
+  },
+  {
+    "id": "animal_coyote",
+    "name": "Coyote",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "coyote_profile",
+    "width_in": 48,
+    "height_in": 26,
+    "color_hex": "#5A4A36",
+    "rim_color_hex": "#1A1410",
+    "default_distance_yd": 300,
+    "category_tags": ["animal", "predator", "north-america"]
+  },
+  {
+    "id": "animal_red_fox",
+    "name": "Red fox",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "fox_profile",
+    "width_in": 36,
+    "height_in": 19,
+    "color_hex": "#8B4513",
+    "rim_color_hex": "#1A1410",
+    "default_distance_yd": 200,
+    "category_tags": ["animal", "predator", "small-game"]
+  },
+  {
+    "id": "animal_rabbit",
+    "name": "Rabbit",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "rabbit_profile",
+    "width_in": 18,
+    "height_in": 10,
+    "color_hex": "#7D6B53",
+    "rim_color_hex": "#1A1410",
+    "default_distance_yd": 100,
+    "category_tags": ["animal", "small-game"]
+  },
+  {
+    "id": "animal_groundhog",
+    "name": "Groundhog",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "groundhog_profile",
+    "width_in": 24,
+    "height_in": 13,
+    "color_hex": "#5A4A36",
+    "rim_color_hex": "#1A1410",
+    "default_distance_yd": 200,
+    "category_tags": ["animal", "varmint", "small-game"]
+  },
+  {
+    "id": "animal_prairie_dog",
+    "name": "Prairie dog (standing)",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "prairie_dog_profile",
+    "width_in": 12,
+    "height_in": 6,
+    "color_hex": "#A87D4E",
+    "rim_color_hex": "#3D2F1E",
+    "default_distance_yd": 400,
+    "category_tags": ["animal", "varmint", "long-range-plinking"]
+  },
+  {
+    "id": "animal_wild_turkey",
+    "name": "Wild turkey",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "wild_turkey_profile",
+    "width_in": 36,
+    "height_in": 19,
+    "color_hex": "#3D2F1E",
+    "rim_color_hex": "#1A1410",
+    "default_distance_yd": 40,
+    "category_tags": ["animal", "upland-bird", "game-bird"]
+  },
+  {
+    "id": "animal_pheasant",
+    "name": "Ring-necked pheasant",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "pheasant_profile",
+    "width_in": 36,
+    "height_in": 19,
+    "color_hex": "#8B4513",
+    "rim_color_hex": "#1A1410",
+    "default_distance_yd": 30,
+    "category_tags": ["animal", "upland-bird", "game-bird"]
+  },
+  {
+    "id": "animal_bigfoot",
+    "name": "Bigfoot (novelty)",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "bigfoot_profile",
+    "width_in": 84,
+    "height_in": 46,
+    "color_hex": "#2A1F14",
+    "rim_color_hex": "#000000",
+    "default_distance_yd": 400,
+    "category_tags": ["animal", "novelty", "cryptid"]
   }
 ]

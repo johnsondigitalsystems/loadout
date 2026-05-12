@@ -6,7 +6,9 @@
 // The firearm create / edit form. Captures every column the
 // `UserFirearms` Drift table exposes — name, manufacturer, model, type,
 // action, caliber, barrel length, twist rate, round count, optional
-// link to a reference firearm, and free-form notes.
+// link to a reference firearm, optional v2.3 "default scope & reticle"
+// pair from the merged scope catalog JSONs (string ids that Range Day
+// Realistic reads on firearm pick), and free-form notes.
 //
 // The form opens with a `SegmentedButton<bool>` toggle that controls how
 // the manufacturer / model / type / action fields are entered:
@@ -118,6 +120,7 @@ import '../../repositories/reticle_repository.dart';
 import '../ballistics/ballistics_screen.dart';
 import '../../services/auto_save_service.dart';
 import '../../services/cloud_sync_service.dart';
+import '../../services/scope_catalog_v2.dart';
 import '../../services/entitlement_notifier.dart';
 import '../../services/unit_service.dart';
 import '../../services/weather_service.dart';
@@ -321,6 +324,44 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
   int? _reticleId;
   bool _autoFilledReticleFromOptic = false;
 
+  // ── Default Scope & Reticle (added schema v35, v2.3 §6A.4) ──
+  // Two new picker states backed by string ids from the merged v2.3
+  // catalog JSONs (`scopes.json`, `reticles.json`,
+  // `scope_reticle_options.json`). Distinct from `_opticsId` /
+  // `_reticleId` above:
+  //
+  //   * `_opticsId` / `_reticleId` are integer FKs into the seeded
+  //     `Optics` / `Reticles` drift tables — the LEGACY mounted-scope
+  //     surface the form has carried since v7. Those tables predate
+  //     the v2.3 catalog merge and stay wired to the existing
+  //     `_opticsSection` builder.
+  //   * `_defaultScopeId` / `_defaultReticleId` are STRING ids from
+  //     the new v2.3 catalog (e.g. `vortex_razor_hd_gen_iii_6_36x56_ffp`
+  //     and `loadout_mil_tree_flare`). They drive Range Day Realistic's
+  //     pre-population of session scope+reticle when the user picks a
+  //     firearm — `_applyFirearmDefaults` in `range_day_detail_screen.dart`
+  //     reads them and seeds the session pickers, allowing
+  //     per-session overrides without touching the firearm row.
+  //
+  // The two pairs intentionally do NOT auto-sync: a user can have a
+  // legacy `_opticsId` set AND a v2.3 `_defaultScopeId` set without
+  // contradicting anything (the legacy field drives the Ballistics
+  // calculator's old scope picker; the new field drives Range Day
+  // Realistic). Future cleanup may collapse them into one surface
+  // once the v2.3 catalog is universally adopted, but that's not
+  // §6A.4's scope.
+  String? _defaultScopeId;
+  String? _defaultReticleId;
+  // Resolved row caches so the pickers can show the selected entry
+  // without async work on every rebuild. Populated lazily from the
+  // saved string ids by `_resolveDefaultScopeReticleSelections`.
+  ScopeV2Row? _defaultScopeRow;
+  ReticleV2Row? _defaultReticleRow;
+  // Future for the full catalog lists — resolved once on `initState`
+  // and re-used by every rebuild of the autocomplete pickers.
+  Future<List<ScopeV2Row>>? _v2ScopesFuture;
+  Future<List<ReticleV2Row>>? _v2ReticlesFuture;
+
   late final AutoSaveController _autoSave;
 
   @override
@@ -419,6 +460,18 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
     _reticleId = e?.reticleId;
     _loadInitialReticle();
 
+    // v2.3 §6A.4 — load the merged v2.3 catalog lists and resolve the
+    // saved string ids back to typed rows for picker initial state.
+    // The service caches both lists for the process lifetime, so
+    // repeated form opens hit the cache; this is the only place the
+    // futures fire.
+    final v2 = ScopeCatalogV2Service.instance;
+    _v2ScopesFuture = v2.allScopes();
+    _v2ReticlesFuture = v2.allReticles();
+    _defaultScopeId = e?.defaultScopeId;
+    _defaultReticleId = e?.defaultReticleId;
+    _resolveDefaultScopeReticleSelections();
+
     _autoSave = AutoSaveController(
       service: context.read<AutoSaveService>(),
       onSave: _runAutoSave,
@@ -485,6 +538,78 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
       _selectedReticle = row;
       _reticleId = row.id;
       _autoFilledReticleFromOptic = true;
+    });
+    _autoSave.notifyDirty();
+  }
+
+  /// Resolve `_defaultScopeId` / `_defaultReticleId` back to typed
+  /// rows so the v2.3 "Default Scope & Reticle" pickers can render the
+  /// previously-saved selection on edit. Silent no-op for new firearms
+  /// (`_defaultScopeId` / `_defaultReticleId` are null on insert).
+  ///
+  /// A saved id that no longer appears in the catalog (e.g. the
+  /// firearm was saved against an older `scopes.json`, then the
+  /// catalog was republished via SeedUpdater and that scope got
+  /// removed) resolves to null — the picker shows "None" and the
+  /// user can re-pick. The saved id is NOT cleared on the row: it
+  /// stays as breadcrumb history until the user overwrites it via
+  /// a new pick or "Clear".
+  Future<void> _resolveDefaultScopeReticleSelections() async {
+    final v2 = ScopeCatalogV2Service.instance;
+    final scopeId = _defaultScopeId;
+    final reticleId = _defaultReticleId;
+    if (scopeId == null && reticleId == null) return;
+    final scope = scopeId == null ? null : await v2.scopeById(scopeId);
+    final reticle = reticleId == null ? null : await v2.reticleById(reticleId);
+    if (!mounted) return;
+    setState(() {
+      _defaultScopeRow = scope;
+      _defaultReticleRow = reticle;
+    });
+  }
+
+  /// Handler for the "Default Scope" autocomplete's selection. Updates
+  /// the local state, persists the new scope id to the firearm row,
+  /// and auto-fills the reticle to the catalog-recommended one from
+  /// `scope_reticle_options.json` — but only when the user has NOT
+  /// already explicitly picked a reticle.
+  ///
+  /// Why the "user-hasn't-picked" guard exists: a user who picks
+  /// "Vortex Razor HD Gen III" then a different reticle ("LoadOut
+  /// Default Mil Tree"), then re-picks the same scope, should NOT
+  /// have their reticle reset to the recommended default. The flag
+  /// is `_defaultReticleId == null` — once a reticle id is set, the
+  /// user has expressed intent, and the scope re-pick leaves it
+  /// alone. Clearing the reticle ("None") re-enables the auto-fill.
+  Future<void> _onDefaultScopePicked(ScopeV2Row? scope) async {
+    setState(() {
+      _defaultScopeRow = scope;
+      _defaultScopeId = scope?.id;
+    });
+    _autoSave.notifyDirty();
+    if (scope == null) return;
+    // Auto-fill the reticle only when no reticle is currently set.
+    // A user who's already picked a custom reticle keeps it; a fresh
+    // pick (or a previously-cleared reticle) gets the catalog default.
+    if (_defaultReticleId != null) return;
+    final v2 = ScopeCatalogV2Service.instance;
+    final defaultId = await v2.defaultReticleIdForScope(scope.id);
+    if (defaultId == null || !mounted) return;
+    final reticle = await v2.reticleById(defaultId);
+    if (!mounted) return;
+    setState(() {
+      _defaultReticleRow = reticle;
+      _defaultReticleId = reticle?.id;
+    });
+    _autoSave.notifyDirty();
+  }
+
+  /// Handler for the "Default Reticle" autocomplete's selection.
+  /// Records the user's explicit pick (or clears it on null).
+  void _onDefaultReticlePicked(ReticleV2Row? reticle) {
+    setState(() {
+      _defaultReticleRow = reticle;
+      _defaultReticleId = reticle?.id;
     });
     _autoSave.notifyDirty();
   }
@@ -565,6 +690,17 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
       muzzleBrakeName: drift.Value(_nullIfEmpty(_muzzleBrakeName)),
       suppressorName: drift.Value(_nullIfEmpty(_suppressorName)),
       bipodName: drift.Value(_nullIfEmpty(_bipodName)),
+      // ── v2.3 §6A.4 — Range Day Realistic defaults ──
+      // String-id pair from the merged v2.3 catalog. `Value.absent()`
+      // is NOT used here: a user who deliberately clears the picker
+      // wants the saved null to overwrite a previous selection. The
+      // `defaultMagnification` column intentionally stays
+      // `Value.absent()` because there is no UI surface for it in
+      // this form (v2.3 ships scope + reticle only — magnification
+      // pre-fill is deferred per the brief's "optional" framing).
+      defaultMagnification: const drift.Value.absent(),
+      defaultScopeId: drift.Value(_defaultScopeId),
+      defaultReticleId: drift.Value(_defaultReticleId),
     );
   }
 
@@ -981,6 +1117,19 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
                       ],
                       const SizedBox(height: 16),
                       _opticsSection(context),
+                      const SizedBox(height: 16),
+                      // v2.3 §6A.4 — "Default Scope & Reticle" section.
+                      // Picks a scope + reticle from the merged v2.3
+                      // catalog JSONs (`scopes.json`,
+                      // `scope_reticle_options.json`,
+                      // `reticles.json`). Persisted to the firearm
+                      // row's `defaultScopeId` / `defaultReticleId`
+                      // columns and consumed by Range Day Realistic
+                      // to pre-populate the session's scope+reticle
+                      // pickers when this firearm is selected. The
+                      // user can still override per-session without
+                      // touching the firearm row.
+                      _defaultScopeReticleSection(context),
                       const SizedBox(height: 16),
                       // Components panel for Factory mode is the
                       // 3-component layout (Bipod / Trigger /
@@ -2165,6 +2314,361 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  /// v2.3 §6A.4 — "Default Scope & Reticle" section. Two autocomplete
+  /// pickers backed by the merged v2.3 catalog JSONs. Picking a scope
+  /// auto-fills the reticle from `scope_reticle_options.json` when no
+  /// reticle is already set; the user can override the reticle freely
+  /// from any row in `reticles.json`, or clear either picker via the
+  /// trailing close button.
+  ///
+  /// The section is intentionally separate from the legacy [_opticsSection]
+  /// above: that builder writes to `UserFirearms.opticsId` /
+  /// `UserFirearms.reticleId` (integer FKs into the seeded `Optics` /
+  /// `Reticles` drift tables, surfaced by the External Ballistics
+  /// calculator's old picker). This section writes to
+  /// `UserFirearms.defaultScopeId` / `UserFirearms.defaultReticleId`
+  /// — string ids consumed by Range Day Realistic for the v2.3
+  /// scope-view rendering pipeline.
+  Widget _defaultScopeReticleSection(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.center_focus_strong_outlined,
+                    size: 16, color: theme.colorScheme.primary),
+                const SizedBox(width: 6),
+                Text(
+                  'Default Scope & Reticle',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Optional. When set, Range Day pre-fills the scope and '
+              'reticle automatically when you pick this firearm. You '
+              'can still change them per session — only the firearm '
+              'row stores these defaults.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _defaultScopePicker(context),
+            const SizedBox(height: 12),
+            _defaultReticlePicker(context),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Scope autocomplete — type to filter across manufacturer + model.
+  /// Picking a row writes `_defaultScopeId` and, when no reticle is
+  /// currently set, auto-fills `_defaultReticleId` from
+  /// `scope_reticle_options.json` via `_onDefaultScopePicked`.
+  Widget _defaultScopePicker(BuildContext context) {
+    return FutureBuilder<List<ScopeV2Row>>(
+      future: _v2ScopesFuture,
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: LinearProgressIndicator(),
+          );
+        }
+        final scopes = snap.data ?? const <ScopeV2Row>[];
+        if (scopes.isEmpty) {
+          return Text(
+            'No scopes available. The scope catalog could not be '
+            'loaded; reinstall to re-seed reference data, or skip '
+            'this field.',
+            style: Theme.of(context).textTheme.bodySmall,
+          );
+        }
+        // Resolve the saved id to the current entry once the future
+        // has loaded (matches the optics picker's pattern). The cache
+        // is set inside `_resolveDefaultScopeReticleSelections` on
+        // initState; this fallback covers the race where the
+        // FutureBuilder fires before that helper completes.
+        if (_defaultScopeRow == null && _defaultScopeId != null) {
+          for (final s in scopes) {
+            if (s.id == _defaultScopeId) {
+              _defaultScopeRow = s;
+              break;
+            }
+          }
+        }
+        final initialText = _defaultScopeRow?.displayLabel ?? '';
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                'Default Scope',
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+            ),
+            Autocomplete<ScopeV2Row>(
+              initialValue: TextEditingValue(text: initialText),
+              displayStringForOption: (s) => s.displayLabel,
+              optionsBuilder: (te) {
+                final q = te.text.trim().toLowerCase();
+                if (q.isEmpty) return scopes;
+                final tokens = q
+                    .split(RegExp(r'\s+'))
+                    .where((t) => t.isNotEmpty)
+                    .toList(growable: false);
+                return scopes.where((s) {
+                  final hay = s.searchHaystack;
+                  for (final tk in tokens) {
+                    if (!hay.contains(tk)) return false;
+                  }
+                  return true;
+                });
+              },
+              fieldViewBuilder: (context, textCtrl, focusNode, onSubmit) {
+                return TextFormField(
+                  controller: textCtrl,
+                  focusNode: focusNode,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  decoration: InputDecoration(
+                    isDense: true,
+                    border: const OutlineInputBorder(),
+                    hintText: 'Search manufacturer or model',
+                    helperText:
+                        'Clear to remove the saved default.',
+                    prefixIcon: const Icon(Icons.search, size: 18),
+                    suffixIcon: textCtrl.text.isEmpty
+                        ? null
+                        : IconButton(
+                            icon: const Icon(Icons.close, size: 18),
+                            tooltip: 'Clear',
+                            onPressed: () {
+                              textCtrl.clear();
+                              // ignore: discarded_futures
+                              _onDefaultScopePicked(null);
+                            },
+                          ),
+                  ),
+                  onFieldSubmitted: (_) => onSubmit(),
+                );
+              },
+              onSelected: (s) {
+                // ignore: discarded_futures
+                _onDefaultScopePicked(s);
+              },
+              optionsViewBuilder: (context, onSelected, options) {
+                return Align(
+                  alignment: Alignment.topLeft,
+                  child: Material(
+                    elevation: 4,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 360),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        padding: EdgeInsets.zero,
+                        itemCount: options.length,
+                        itemBuilder: (context, i) {
+                          final s = options.elementAt(i);
+                          return ListTile(
+                            dense: true,
+                            title: Text(s.displayLabel),
+                            subtitle: s.secondaryLine.isEmpty
+                                ? null
+                                : Text(
+                                    s.secondaryLine,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall,
+                                  ),
+                            onTap: () => onSelected(s),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Reticle autocomplete — type to filter across manufacturer +
+  /// model + family. Picking a row writes `_defaultReticleId`
+  /// directly. When the user picks a scope first, this field is
+  /// auto-filled with the recommended reticle from
+  /// `scope_reticle_options.json`, but the user can override or
+  /// clear it without affecting the scope pick.
+  Widget _defaultReticlePicker(BuildContext context) {
+    return FutureBuilder<List<ReticleV2Row>>(
+      future: _v2ReticlesFuture,
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: LinearProgressIndicator(),
+          );
+        }
+        final reticles = snap.data ?? const <ReticleV2Row>[];
+        if (reticles.isEmpty) {
+          return Text(
+            'No reticles available. The reticle catalog could not be '
+            'loaded; reinstall to re-seed reference data, or skip '
+            'this field.',
+            style: Theme.of(context).textTheme.bodySmall,
+          );
+        }
+        if (_defaultReticleRow == null && _defaultReticleId != null) {
+          for (final r in reticles) {
+            if (r.id == _defaultReticleId) {
+              _defaultReticleRow = r;
+              break;
+            }
+          }
+        }
+        final initialText = _defaultReticleRow?.displayLabel ?? '';
+        // The text controller is owned by Autocomplete internally;
+        // we surface the current selection via `initialValue`. When
+        // the scope-pick auto-fills the reticle id, the picker
+        // rebuilds with the new initialText, so the displayed value
+        // tracks the auto-fill correctly.
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                'Default Reticle',
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+            ),
+            // Auto-filled note: when a scope is picked and the
+            // reticle was auto-selected (NOT explicitly chosen by
+            // the user), surface a small inline hint so the user
+            // knows the value came from the scope→reticle catalog
+            // rather than from their own pick.
+            if (_defaultScopeRow != null && _defaultReticleRow != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  'Auto-selected from the scope. Override below to '
+                  'pick a different reticle.',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurfaceVariant),
+                ),
+              ),
+            Autocomplete<ReticleV2Row>(
+              // `key` forces a rebuild when the auto-fill path
+              // changes `_defaultReticleId` — without it the
+              // Autocomplete keeps its stale internal text
+              // controller value after a scope pick auto-fills
+              // the reticle.
+              key: ValueKey<String?>(_defaultReticleId),
+              initialValue: TextEditingValue(text: initialText),
+              displayStringForOption: (r) => r.displayLabel,
+              optionsBuilder: (te) {
+                final q = te.text.trim().toLowerCase();
+                if (q.isEmpty) return reticles;
+                final tokens = q
+                    .split(RegExp(r'\s+'))
+                    .where((t) => t.isNotEmpty)
+                    .toList(growable: false);
+                return reticles.where((r) {
+                  final hay = r.searchHaystack;
+                  for (final tk in tokens) {
+                    if (!hay.contains(tk)) return false;
+                  }
+                  return true;
+                });
+              },
+              fieldViewBuilder: (context, textCtrl, focusNode, onSubmit) {
+                return TextFormField(
+                  controller: textCtrl,
+                  focusNode: focusNode,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  decoration: InputDecoration(
+                    isDense: true,
+                    border: const OutlineInputBorder(),
+                    hintText: 'Search manufacturer or model',
+                    helperText:
+                        'Clear to remove the saved default.',
+                    prefixIcon: const Icon(Icons.search, size: 18),
+                    suffixIcon: textCtrl.text.isEmpty
+                        ? null
+                        : IconButton(
+                            icon: const Icon(Icons.close, size: 18),
+                            tooltip: 'Clear',
+                            onPressed: () {
+                              textCtrl.clear();
+                              _onDefaultReticlePicked(null);
+                            },
+                          ),
+                  ),
+                  onFieldSubmitted: (_) => onSubmit(),
+                );
+              },
+              onSelected: _onDefaultReticlePicked,
+              optionsViewBuilder: (context, onSelected, options) {
+                return Align(
+                  alignment: Alignment.topLeft,
+                  child: Material(
+                    elevation: 4,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 360),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        padding: EdgeInsets.zero,
+                        itemCount: options.length,
+                        itemBuilder: (context, i) {
+                          final r = options.elementAt(i);
+                          return ListTile(
+                            dense: true,
+                            title: Text(r.displayLabel),
+                            subtitle: r.secondaryLine.isEmpty
+                                ? null
+                                : Text(
+                                    r.secondaryLine,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall,
+                                  ),
+                            onTap: () => onSelected(r),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 

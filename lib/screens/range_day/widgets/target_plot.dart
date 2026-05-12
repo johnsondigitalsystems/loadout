@@ -44,12 +44,27 @@
 //
 //   * Single target — pole rises from a soft dirt mound; target stands
 //     on top.
-//   * Rack target ([rackChildren] non-null) — horizontal cross-bar at
-//     top; each child hangs from a dashed chain. No dirt mound; grass
-//     runs to the bottom edge. The active child (by
-//     [activeRackChildIndex]) is rendered at full opacity with a
-//     bolder outline and gets the aim-point + shot-dots overlay; the
-//     other children render at 70% opacity.
+//   * Rack target ([rackChildren] non-null) — ground furniture varies
+//     by the active rack's [rackMountStyle] (§6A.3 of the v2.3
+//     brief):
+//       - `hanging_rail`     : horizontal cross-bar across the top
+//                              of the rack, each child hangs from a
+//                              short dashed chain (legacy v2.3
+//                              behaviour, also the fallback for
+//                              unknown / null mount style).
+//       - `standing_stakes`  : one thin wood-brown stake under each
+//                              child, running from the child's
+//                              bottom into the foreground mound.
+//       - `popper_base`      : concrete-grey trapezoidal base under
+//                              each child sitting on the grass line.
+//                              Shared mound suppressed (the per-
+//                              child bases ARE the ground furniture).
+//       - `individual_posts` : per-child wooden post + small earth-
+//                              berm oval. Shared mound suppressed.
+//     The active child (by [activeRackChildIndex]) is rendered at
+//     full opacity with a thicker outline ([kRackActiveStrokeWidth])
+//     and gets the aim-point + shot-dots overlay; the others render
+//     at 70% opacity with [kRackInactiveStrokeWidth].
 //
 // ============================================================================
 // WHY IT EXISTS IN THE ARCHITECTURE
@@ -223,6 +238,20 @@ class RackChildSpec {
   final String colorHex;
 }
 
+/// Top-level outline-stroke width for the ACTIVE rack child / single-
+/// target silhouette in realistic mode. Exposed at top level so the
+/// `test/rack_rendering_test.dart` regression can assert the ≥1.5×
+/// ratio against [kRackInactiveStrokeWidth] without breaking when the
+/// painter internals are refactored. Per
+/// `range_day_realistic_rewrite_v23.md` §6A.3 line 1244: the active
+/// plate renders with a "50% thicker stroke (e.g., 2.5px instead of
+/// 1.5px)."
+const double kRackActiveStrokeWidth = 2.5;
+
+/// Companion to [kRackActiveStrokeWidth]: outline-stroke width for
+/// NON-active rack children. Same rationale as the active constant.
+const double kRackInactiveStrokeWidth = 1.5;
+
 class TargetPlot extends StatelessWidget {
   const TargetPlot({
     super.key,
@@ -239,8 +268,10 @@ class TargetPlot extends StatelessWidget {
     this.reticleDisplayUnit = 'mil',
     this.rackChildren,
     this.activeRackChildIndex,
+    this.rackMountStyle,
     this.colorHexOverride,
     this.rangeYards,
+    this.lowLightMode = false,
   });
 
   /// Target geometry / color. In rack mode this is the active child's
@@ -299,6 +330,31 @@ class TargetPlot extends StatelessWidget {
   /// [rackChildren] is null. Out-of-range values are clamped.
   final int? activeRackChildIndex;
 
+  /// Mount-style discriminator for the active rack. Drives which
+  /// ground-furniture helper the realistic painter dispatches to when
+  /// [rackChildren] is non-null. Recognised values (matching the
+  /// v2.3 §6A.3 taxonomy stored on the `TargetRacks.rackKind` drift
+  /// column):
+  ///
+  ///   * `hanging_rail`     — horizontal cross-bar + chains per child
+  ///                          (default; also the fallback for unknown
+  ///                          values).
+  ///   * `standing_stakes`  — one thin wood stake per child rising
+  ///                          from the child's bottom into the
+  ///                          foreground mound region.
+  ///   * `popper_base`      — concrete trapezoidal base under each
+  ///                          child sitting on the grass line; the
+  ///                          shared mound is suppressed.
+  ///   * `individual_posts` — one wooden post + small individual
+  ///                          earth-berm oval per child; the shared
+  ///                          mound is suppressed.
+  ///
+  /// `rotating_hub` is deferred to v2.4 per Phase 2 errata; the
+  /// painter falls through to `hanging_rail` so the value renders
+  /// reasonably. `null` ignores mount-style dispatch entirely (used
+  /// by single-target rendering, where `rackChildren` is also null).
+  final String? rackMountStyle;
+
   /// User color override for the active target's tint. Hex string
   /// like `'#cc1f1f'`. When non-null, the target painters substitute
   /// this value for `target.colorHex` (single-target mode) or for
@@ -315,6 +371,16 @@ class TargetPlot extends StatelessWidget {
   /// scaling (kept so callers without distance context — e.g.
   /// component previews in onboarding — still render).
   final double? rangeYards;
+
+  /// When `true`, the realistic painter switches to the §6A.2 dusk
+  /// palette (dark blue sky gradient, darkened green grass, darkened
+  /// brown mound) and the target-focused mode's overlaid
+  /// [ReticleRenderer] renders illuminated elements in their
+  /// authored color. Toggled by the Range Day Realistic "Low Light"
+  /// AppBar control on the parent screen. Defaults to `false` so
+  /// every other caller (onboarding previews, picker preview)
+  /// behaves identically to before.
+  final bool lowLightMode;
 
   @override
   Widget build(BuildContext context) {
@@ -342,12 +408,13 @@ class TargetPlot extends StatelessWidget {
           // coordinate system is anchored to this rectangle in both
           // modes — that's what keeps tap behavior identical when the
           // user flips the toggle.
-          final layout = _RealisticLayout.compute(
+          final layout = RealisticLayout.compute(
             outerSize: outerSize,
             targetWidthIn: target.widthIn,
             targetHeightIn: target.heightIn,
             rackChildren: rackChildren,
             activeRackChildIndex: activeRackChildIndex,
+            rackMountStyle: rackMountStyle,
             rangeYards: rangeYards,
             reticle: reticle,
           );
@@ -387,6 +454,8 @@ class TargetPlot extends StatelessWidget {
                         errorColor: theme.colorScheme.error,
                         textColor: theme.colorScheme.onSurface,
                         colorHexOverride: colorHexOverride,
+                        lowLightMode: lowLightMode,
+                        rackMountStyle: rackMountStyle,
                       ),
                     )
                   else
@@ -413,6 +482,11 @@ class TargetPlot extends StatelessWidget {
                   // scope ring to match the reference exactly. When no
                   // aim point is set, the overlay sits at the geometric
                   // center of the target rectangle (NOT the outer box).
+                  // [lowLightMode] is plumbed through so a Range Day
+                  // user who flips the Low Light AppBar toggle while
+                  // looking at the target-focused view still sees
+                  // illuminated reticle elements in their authored
+                  // color.
                   if (reticle != null &&
                       viewMode == TargetPlotViewMode.targetFocused)
                     IgnorePointer(
@@ -425,6 +499,7 @@ class TargetPlot extends StatelessWidget {
                         aimPoint: aimPx ?? targetRect.center,
                         size: outerSize,
                         showUnitOverlay: false,
+                        lowLightMode: lowLightMode,
                       ),
                     ),
                 ],
@@ -509,8 +584,8 @@ class TargetPlot extends StatelessWidget {
 /// Why a value type and not raw fields on the painter: `shouldRepaint`
 /// equality stays trivial — when the layout's hash collides with the
 /// previous one, no relayout happened, no repaint needed.
-class _RealisticLayout {
-  const _RealisticLayout({
+class RealisticLayout {
+  const RealisticLayout({
     required this.outerSize,
     required this.scopeCenter,
     required this.scopeRadius,
@@ -539,12 +614,21 @@ class _RealisticLayout {
   /// real scope. When either is null, the painter falls back to the
   /// legacy fixed-fraction scaling (22% of canvas width) — keeps
   /// onboarding-deck previews working without distance context.
-  factory _RealisticLayout.compute({
+  ///
+  /// `rackMountStyle` is the §6A.3 mount-style discriminator (e.g.
+  /// `hanging_rail`, `popper_base`). For most mount styles the
+  /// rack layout is identical to v2.3 hanging-rail (children top at
+  /// 0.26H), but `popper_base` poppers sit on the grass line —
+  /// the layout puts each child's BOTTOM at 0.78H instead of its
+  /// top at 0.26H. Unknown / null mount styles fall through to the
+  /// hanging-rail layout.
+  factory RealisticLayout.compute({
     required Size outerSize,
     required double targetWidthIn,
     required double targetHeightIn,
     required List<RackChildSpec>? rackChildren,
     required int? activeRackChildIndex,
+    String? rackMountStyle,
     double? rangeYards,
     ReticleDefinition? reticle,
   }) {
@@ -606,7 +690,7 @@ class _RealisticLayout {
         // Legacy fixed-fraction fallback for callers without distance
         // context. 18% of canvas width: small enough that a tall
         // 18×30 IPSC silhouette (aspect 0.6 → height = 1.667× width)
-        // sits entirely above the dirt-mound crest at horizonY = 0.62,
+        // sits entirely above the dirt berm (mound at 0.82–0.92 H),
         // but large enough that the silhouette's head + shoulder
         // taper read as a recognisable bottle shape rather than a
         // featureless rectangle. The user's complaint that the
@@ -619,17 +703,37 @@ class _RealisticLayout {
         targetHeightPx = targetWidthPx / aspect;
       }
 
-      // ── Vertical positioning ──────────────────────────────────────
-      // Horizon sits LOWER than canvas-center now (was 0.50). At 0.62
-      // the scope view shows roughly 60% sky / 40% ground, which
-      // looks like a real prone / bench shooting picture and pushes
-      // the dirt mound + target into the lower half of the FOV — the
-      // user explicitly asked for this. The backdrop painter
-      // (`scope_daytime_backdrop.dart`) reads the same convention so
-      // the two stay aligned.
-      final horizonY = h * 0.62;
-      final crestY = horizonY - h * 0.12;
-      final targetBottom = crestY + h * 0.005;
+      // ── Vertical positioning (Range Day Realistic §6.2.1) ─────────
+      // Per `range_day_realistic_rewrite_v23.md` §6.2.1 the realistic
+      // scene composition uses these band coefficients:
+      //
+      //   Sky region   : 0      → 0.78 H
+      //   Grass region : 0.78 H → H
+      //   Target       : 0.12 H → 0.55 H (varies by aspect)
+      //   Post         : target_bottom → 0.85 H, width 0.025 W
+      //   Mound        : 0.82 H → 0.92 H, width 0.18 W
+      //
+      // The backdrop painter (`scope_daytime_backdrop.dart`) reads
+      // the SAME 0.78 horizon when constructed with
+      // `realisticMode: true`, so the two stay aligned. Picker /
+      // scope-view consumers default to `realisticMode: false` and
+      // keep the legacy 0.62 horizon.
+      //
+      // Default target bottom: 0.55 H. The brief specifies this as
+      // "varies by aspect ratio" because very-tall targets (e.g. a
+      // popper at high magnification) may push the top above the
+      // 0.12 H headroom line — we cap target height so target_top
+      // stays ≥ 0.12 H.
+      const targetBottomFraction = 0.55;
+      const targetHeadroomFraction = 0.12;
+      final targetBottom = h * targetBottomFraction;
+      final maxTargetHeight =
+          targetBottom - h * targetHeadroomFraction; // 0.43 H
+      if (targetHeightPx > maxTargetHeight) {
+        final scale = maxTargetHeight / targetHeightPx;
+        targetWidthPx *= scale;
+        targetHeightPx *= scale;
+      }
       final targetTop = targetBottom - targetHeightPx;
       final targetLeft = (w - targetWidthPx) / 2;
       final activeRect = Rect.fromLTWH(
@@ -638,11 +742,15 @@ class _RealisticLayout {
         targetWidthPx,
         targetHeightPx,
       );
-      // Pole drops from the target bottom into the dirt mound.
+      // Post drops from target bottom (~0.55 H) to 0.85 H, with the
+      // bottom 0.03 H tucked inside the mound (mound spans 0.82–0.92 H)
+      // so the post visibly reads as "planted in the dirt." Width is
+      // 0.025 W per the brief — derived in `_paintPole` from
+      // `outerSize.width`.
       final poleX = w / 2;
       final poleTop = targetBottom;
-      final poleBottom = horizonY + h * 0.05;
-      return _RealisticLayout(
+      final poleBottom = h * 0.85;
+      return RealisticLayout(
         outerSize: outerSize,
         scopeCenter: scopeCenter,
         scopeRadius: scopeRadius,
@@ -680,10 +788,83 @@ class _RealisticLayout {
     // is the more constraining).
     final pxPerInchByWidth = (w * 0.70) / rackTotalWidthIn;
     final pxPerInchByHeight = (h * 0.28) / math.max(rackMaxHeightIn, 0.1);
-    final pxPerInch = math.min(pxPerInchByWidth, pxPerInchByHeight);
+    double pxPerInch = math.min(pxPerInchByWidth, pxPerInchByHeight);
+
+    // Mount-style-specific vertical positioning. Per §6A.3 of the
+    // v2.3 brief:
+    //
+    //   * `popper_base` — poppers sit on the GRASS LINE (their bottom
+    //     edge at 0.78H). Tall poppers can therefore push their TOP
+    //     above the 0.12H headroom floor; if that happens we scale
+    //     the rack down (uniformly) until the tallest child fits.
+    //   * Everything else (`hanging_rail`, `standing_stakes`,
+    //     `individual_posts`, unknown) — child TOPS at the legacy
+    //     0.26H (cross-bar at 0.20H + a chain segment below it).
+    //     Stakes / individual posts go DOWN from the child bottom
+    //     into the foreground berm region.
+    //
+    // Mount-style strings are matched against the seed-data §6A.3
+    // taxonomy stored on `TargetRacks.rackKind`. Unknown strings
+    // (including `rotating_hub`, deferred to v2.4) fall through to
+    // the hanging-rail layout. See target_racks.json for the source
+    // of truth on which racks ship with which mount style.
+    final isPopperBase = rackMountStyle == 'popper_base';
 
     final crossBarY = h * 0.20;
     final rackCenterX = w / 2;
+
+    if (isPopperBase) {
+      // Popper-base mode: children bottom-align on the grass line
+      // (0.78H, where the foreground grass starts in realistic
+      // backdrops). Check headroom: if the tallest child would push
+      // its top above 0.12H, shrink the rack uniformly until it
+      // fits. This keeps the popper rendering proportional rather
+      // than letting one tall popper crop into the scope ring.
+      const grassLineFraction = 0.78;
+      const headroomFraction = 0.12;
+      final grassY = h * grassLineFraction;
+      final maxAllowedHeight = (grassLineFraction - headroomFraction) * h;
+      final tallestPx = rackMaxHeightIn * pxPerInch;
+      if (tallestPx > maxAllowedHeight && tallestPx > 0) {
+        pxPerInch *= maxAllowedHeight / tallestPx;
+      }
+      final rects = <Rect>[];
+      for (final c in children) {
+        final cw = math.max(c.widthIn, 0.1) * pxPerInch;
+        final ch = math.max(c.heightIn, 0.1) * pxPerInch;
+        final childBottom = grassY;
+        final childTop = childBottom - ch;
+        final childCenterX =
+            rackCenterX + c.offsetXFromCenterIn * pxPerInch;
+        final childLeft = childCenterX - cw / 2;
+        rects.add(Rect.fromLTWH(childLeft, childTop, cw, ch));
+      }
+      int activeIndex = (activeRackChildIndex ?? 0)
+          .clamp(0, children.length - 1)
+          .toInt();
+      final activeRect = rects[activeIndex];
+      return RealisticLayout(
+        outerSize: outerSize,
+        scopeCenter: scopeCenter,
+        scopeRadius: scopeRadius,
+        scopeRingThickness: scopeRingThickness,
+        activeChildRect: activeRect,
+        childRects: rects,
+        activeChildIndex: activeIndex,
+        isRack: true,
+        crossBarY: crossBarY,
+        poleX: 0,
+        poleTop: 0,
+        poleBottom: 0,
+      );
+    }
+
+    // Default rack layout (hanging_rail + standing_stakes +
+    // individual_posts + unknown): children top at 0.26H, hanging-
+    // rail-style positioning. Stakes / individual posts paint DOWN
+    // from each child's bottom into the foreground berm region in
+    // the painter, so the layout doesn't need to change per mount
+    // style at this stage.
     final rects = <Rect>[];
     for (final c in children) {
       final cw = math.max(c.widthIn, 0.1) * pxPerInch;
@@ -704,7 +885,7 @@ class _RealisticLayout {
         .toInt();
     final activeRect = rects[activeIndex];
 
-    return _RealisticLayout(
+    return RealisticLayout(
       outerSize: outerSize,
       scopeCenter: scopeCenter,
       scopeRadius: scopeRadius,
@@ -766,14 +947,38 @@ class _RealisticTargetPainter extends CustomPainter {
     required this.errorColor,
     required this.textColor,
     this.colorHexOverride,
+    this.lowLightMode = false,
+    this.rackMountStyle,
   })  : _backdropPainter = ScopeDaytimeBackdropPainter(
           // We render the target ourselves on top of the backdrop so
-          // the backdrop only paints the scenery layers.
+          // the backdrop only paints the scenery layers. [lowLightMode]
+          // is forwarded so the sky / grass / mound palette flips to
+          // the §6A.2 dusk variant in lockstep with the parent
+          // screen's AppBar toggle. `realisticMode: true` tells the
+          // backdrop to use the §6.2.1 band coefficients (horizon at
+          // 0.78 H, mound as a foreground berm at 0.82–0.92 H × 0.18 W)
+          // instead of the legacy picker / scope-view layout.
+          //
+          // [paintMound] is `false` ONLY for the two mount styles
+          // that bring their own per-child ground furniture — popper
+          // bases (concrete trapezoids on the grass line) and
+          // individual posts (per-child wooden post + earth berm).
+          // For every other mode (single target, hanging rail,
+          // standing stakes, unknown rack mount style) the shared
+          // foreground berm stays on so the post / stakes look
+          // planted in the dirt.
           target: BackdropTargetSilhouette.none,
           targetWidthFraction: 0,
           targetColor: const Color(0xff5e6552),
+          lowLightMode: lowLightMode,
+          realisticMode: true,
+          paintMound: !(rackMountStyle == 'popper_base' ||
+              rackMountStyle == 'individual_posts'),
         ),
-        _polePaint = Paint()..color = const Color(0xff3a3a3a),
+        // Wood-brown post per §6.2.1 of the v2.3 brief — the legacy
+        // dark-grey colour read as a steel pole; the realistic scene
+        // wants a lumber target stand.
+        _polePaint = Paint()..color = const Color(0xff6f5039),
         _crossBarPaint = Paint()..color = const Color(0xff2c2c2c),
         _chainPaint = Paint()
           ..color = const Color(0xff4a4a4a)
@@ -801,7 +1006,7 @@ class _RealisticTargetPainter extends CustomPainter {
   final List<ShotImpactRow> shots;
   final double? aimPointX;
   final double? aimPointY;
-  final _RealisticLayout layout;
+  final RealisticLayout layout;
   final Color primary;
   final Color errorColor;
   final Color textColor;
@@ -810,6 +1015,25 @@ class _RealisticTargetPainter extends CustomPainter {
   /// rack children retain their natural cream color so the override
   /// doesn't visually leak across the whole rack.
   final String? colorHexOverride;
+
+  /// When `true`, the painter's backdrop pulls the §6A.2 dusk palette
+  /// (forwarded into [_backdropPainter] via its [ScopeDaytimeBackdropPainter.lowLightMode]
+  /// field). The painter's own built-in precision-mil reticle stays
+  /// black — only the center dot (which simulates an illuminated
+  /// reticle in real scopes) is unaffected because it's already red
+  /// in both palettes. Defaults to `false`.
+  final bool lowLightMode;
+
+  /// §6A.3 mount-style discriminator for the active rack. Drives
+  /// which ground-furniture helper [paint] dispatches to in rack
+  /// mode (`hanging_rail` → `_paintHangingRail`, `standing_stakes`
+  /// → `_paintStakes`, `popper_base` → `_paintPopperBases`,
+  /// `individual_posts` → `_paintIndividualPosts`). Unknown values
+  /// — including `rotating_hub`, which is deferred to v2.4 per
+  /// Phase 2 errata — fall through to `_paintHangingRail`. Ignored
+  /// for single-target rendering; the field is just unused when
+  /// `layout.isRack` is false.
+  final String? rackMountStyle;
 
   // Cached painters / paint objects so paint() never allocates on the
   // hot path. ScopeDaytimeBackdropPainter is instantiated once per
@@ -832,11 +1056,46 @@ class _RealisticTargetPainter extends CustomPainter {
     // 1. Daytime backdrop — sky + grass + mound silhouette + haze.
     _backdropPainter.paint(canvas, size);
 
-    // 2. Pole or cross-bar + chains.
+    // 2. Pole (single mode) OR rack ground furniture (rack mode).
+    //
+    // Rack mount-style dispatch per §6A.3 of the v2.3 brief:
+    //
+    //   * `hanging_rail`     → horizontal cross-bar across the top
+    //                          of the children + a chain from the
+    //                          bar down to each child.
+    //   * `standing_stakes`  → one thin wood-brown stake under each
+    //                          child, running from the child's
+    //                          bottom down into the foreground mound.
+    //   * `popper_base`      → concrete trapezoidal base under each
+    //                          child sitting on the grass line; the
+    //                          shared mound is hidden upstream via
+    //                          [_backdropPainter]'s paintMound flag.
+    //   * `individual_posts` → one wooden post + small individual
+    //                          earth-berm oval under each child; the
+    //                          shared mound is hidden upstream as
+    //                          above.
+    //   * any other value (including `rotating_hub`, which is
+    //     deferred to v2.4 per Phase 2 errata) → falls through to
+    //     `hanging_rail` so the rack still renders sensibly.
     if (!layout.isRack) {
       _paintPole(canvas);
     } else {
-      _paintCrossBarAndChains(canvas, size);
+      switch (rackMountStyle) {
+        case 'standing_stakes':
+          _paintStakes(canvas, size);
+          break;
+        case 'popper_base':
+          _paintPopperBases(canvas, size);
+          break;
+        case 'individual_posts':
+          _paintIndividualPosts(canvas, size);
+          break;
+        case 'hanging_rail':
+        default:
+          // `rotating_hub` lands here too (v2.4 deferral).
+          _paintHangingRail(canvas, size);
+          break;
+      }
     }
 
     // 3. Target silhouettes. Non-active rack children render at 70%
@@ -881,9 +1140,22 @@ class _RealisticTargetPainter extends CustomPainter {
   }
 
   void _paintPole(Canvas canvas) {
-    // Single-target pole: 5px wide dark grey rectangle from the bottom
-    // of the target down into the dirt mound.
-    const poleHalfWidth = 2.5;
+    // Single-target post per §6.2.1 of the v2.3 brief:
+    //
+    //   * Width: 0.025 × canvas width (~ 1.6 % of canvas width on each
+    //     side of [poleX]). Reads as a 2×2 or 2×4 wooden upright at
+    //     typical scope-view canvas sizes.
+    //   * Vertical extent: from target_bottom (~ 0.55 H) down to
+    //     0.85 H, with the bottom 0.03 H tucked behind the foreground
+    //     berm (mound at 0.82–0.92 H) so the post visibly reads as
+    //     "planted in the dirt."
+    //   * Colour: wood brown ([_polePaint] set in the constructor).
+    //
+    // Sized off `layout.outerSize.width` (not a fixed pixel count) so
+    // the post stays proportional to the scope view across canvas
+    // sizes.
+    final w = layout.outerSize.width;
+    final poleHalfWidth = w * 0.025 * 0.5;
     final rect = Rect.fromLTWH(
       layout.poleX - poleHalfWidth,
       layout.poleTop,
@@ -893,7 +1165,13 @@ class _RealisticTargetPainter extends CustomPainter {
     canvas.drawRect(rect, _polePaint);
   }
 
-  void _paintCrossBarAndChains(Canvas canvas, Size size) {
+  /// Hanging-rail rack mount style — a horizontal dark cross-bar
+  /// runs above the children, and each child dangles from a short
+  /// dashed chain. Used by KYL, Equal, and Decreasing racks
+  /// (§6A.3 mount-style table). The legacy implementation from
+  /// Phase 4b; renamed from `_paintCrossBarAndChains` so the mount-
+  /// style dispatch reads cleanly at the call site.
+  void _paintHangingRail(Canvas canvas, Size size) {
     // Horizontal cross-bar across the rack's width — slightly wider
     // than the rack itself so chains visibly hang from a beam, not
     // float in space.
@@ -950,6 +1228,187 @@ class _RealisticTargetPainter extends CustomPainter {
     }
   }
 
+  /// Standing-stakes rack mount style — each child rides on its own
+  /// thin vertical wood-brown stake that runs from the child's
+  /// bottom down into the foreground mound region (which the shared
+  /// `_backdropPainter` is still drawing in this mode). Used by
+  /// Square Rack and other racks where each child sits on a single
+  /// stake instead of hanging from a rail (§6A.3 mount-style
+  /// table). Reuses [_polePaint] (wood brown) so the stakes match
+  /// the single-target post visually.
+  void _paintStakes(Canvas canvas, Size size) {
+    if (layout.childRects.isEmpty) return;
+    final w = size.width;
+    final h = size.height;
+    // Stake width: 0.012 of canvas width — half the 0.025W width
+    // used by the single-target post in `_paintPole`, because a
+    // standing-stakes rack has multiple stakes and a full-width
+    // post would crowd the scene. Bottom of each stake terminates
+    // at 0.85H (same convention as the single post) so the bottom
+    // 0.03H tucks behind the shared mound at 0.82–0.92H. Top of
+    // the stake starts at the child's bottom edge so it visibly
+    // supports the plate.
+    final stakeHalfWidth = w * 0.012 * 0.5;
+    final stakeBottomY = h * 0.85;
+    for (final r in layout.childRects) {
+      // Skip if the child's bottom is already below the mound
+      // (degenerate input); the stake would have zero or negative
+      // height and Flutter draws an inverted-Y rect as nothing —
+      // skipping is cleaner.
+      if (r.bottom >= stakeBottomY) continue;
+      final stakeRect = Rect.fromLTRB(
+        r.center.dx - stakeHalfWidth,
+        r.bottom,
+        r.center.dx + stakeHalfWidth,
+        stakeBottomY,
+      );
+      canvas.drawRect(stakeRect, _polePaint);
+    }
+  }
+
+  /// Popper-base rack mount style — each child sits on its own
+  /// concrete-grey trapezoidal base directly on the grass line.
+  /// The shared foreground mound is suppressed (via the
+  /// `paintMound: false` flag on [_backdropPainter]) so the scene
+  /// reads as "five poppers standing on the dirt" rather than
+  /// "five poppers in front of a brown blob." Used by the
+  /// Pepper Popper rack (§6A.3 mount-style table).
+  ///
+  /// Trapezoid geometry: top width = 1.5× child width, bottom width
+  /// = 2× child width, height = 6 inches converted to pixels. The
+  /// height is derived from the child's existing inch-to-pixel
+  /// scale (rect.width / spec width) so the base looks proportional
+  /// regardless of how big the popper renders against the FOV.
+  void _paintPopperBases(Canvas canvas, Size size) {
+    if (layout.childRects.isEmpty) return;
+    // We don't have direct access to the RackChildSpec list at the
+    // painter level — only the computed pixel rectangles. Derive a
+    // px-per-inch estimate from the popper rack's known spec: the
+    // canonical pepper popper is 8 inches wide. We deliberately use
+    // a coefficient on rect.width rather than referencing a magic
+    // constant because the rack may be scaled down for headroom
+    // (per the `popper_base` branch in `RealisticLayout.compute`).
+    // Concrete base height = ~0.75 × child width in pixels (a 6-in
+    // tall base on an 8-in wide popper → 0.75).
+    final basePaint = Paint()..color = const Color(0xff9a9a9a);
+    final baseShadow = Paint()..color = const Color(0xff666666);
+    for (final r in layout.childRects) {
+      final cw = r.width;
+      final ch = math.max(cw * 0.75, 6.0); // floor at 6 px so it never vanishes
+      // Trapezoid sits below the child with its top at r.bottom.
+      final topHalfW = cw * 0.75;  // top width = 1.5× child width / 2
+      final botHalfW = cw * 1.0;   // bottom width = 2× child width / 2
+      final cx = r.center.dx;
+      final topY = r.bottom;
+      final botY = r.bottom + ch;
+      final path = Path()
+        ..moveTo(cx - topHalfW, topY)
+        ..lineTo(cx + topHalfW, topY)
+        ..lineTo(cx + botHalfW, botY)
+        ..lineTo(cx - botHalfW, botY)
+        ..close();
+      canvas.drawPath(path, basePaint);
+
+      // Subtle shadow on the right side so the base reads as a
+      // 3-D wedge, matching the lit-from-upper-left convention used
+      // elsewhere in the realistic scene.
+      final shadowPath = Path()
+        ..moveTo(cx, topY)
+        ..lineTo(cx + topHalfW, topY)
+        ..lineTo(cx + botHalfW, botY)
+        ..lineTo(cx, botY)
+        ..close();
+      canvas.drawPath(shadowPath, baseShadow);
+    }
+    // Silently consume `size` so the unused-parameter analyzer
+    // info doesn't fire. (Other ground-furniture helpers do read
+    // `size`; keeping the signature uniform across the dispatch
+    // makes the call site straightforward.)
+    _consume(size);
+  }
+
+  /// Individual-posts rack mount style — each child gets its own
+  /// thin wooden post + a small individual earth-berm oval. The
+  /// shared foreground mound is suppressed (per [_backdropPainter]'s
+  /// `paintMound: false`) so each child's berm reads on its own.
+  /// Used by the IDPA Open Stage rack and similar layouts where
+  /// each child is "its own target on its own stand" (§6A.3 mount-
+  /// style table).
+  void _paintIndividualPosts(Canvas canvas, Size size) {
+    if (layout.childRects.isEmpty) return;
+    final w = size.width;
+    final h = size.height;
+    // Post: 0.012 W wide (half the single-target post — there are
+    // many of them), running from r.bottom down to 0.84 H. Berm:
+    // small earth oval centred under each child, width 1.4× child
+    // width, height 0.05 H, top at 0.82 H. The bottom 0.02 H of
+    // the post is hidden by the berm.
+    final postHalfWidth = w * 0.012 * 0.5;
+    final postBottomY = h * 0.84;
+    final bermTopY = h * 0.82;
+    final bermBottomY = h * 0.87;
+    final bermColor = lowLightMode
+        ? const Color(0xff3d2f1e) // dusk mound brown (matches backdrop)
+        : const Color(0xff7d6d58); // daytime mound brown (matches backdrop)
+    final bermShadowColor = lowLightMode
+        ? const Color(0xff1a1208).withValues(alpha: 0.55)
+        : const Color(0xff5d4f3d).withValues(alpha: 0.45);
+    final bermOutlinePaint = Paint()
+      ..color = (lowLightMode ? const Color(0xff1a1208) : const Color(0xff4a3d2c))
+          .withValues(alpha: 0.55)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+    // Pre-allocate paint objects reused per child.
+    final postPaint = _polePaint;
+    final bermPaint = Paint()..color = bermColor;
+    final bermShadowPaint = Paint()..color = bermShadowColor;
+
+    for (final r in layout.childRects) {
+      // Berm first (drawn UNDER the post so the post terminates
+      // visually inside the dirt). Width = 1.4× child width.
+      final cw = r.width;
+      final bermHalfW = cw * 0.70;
+      final cx = r.center.dx;
+      final bermRect = Rect.fromLTRB(
+        cx - bermHalfW,
+        bermTopY,
+        cx + bermHalfW,
+        bermBottomY,
+      );
+      canvas.drawOval(bermRect, bermPaint);
+      // Right-side shadow for the lit-from-upper-left look.
+      final shadowRect = Rect.fromLTRB(
+        cx + (bermRect.right - cx) * (-0.10),
+        bermTopY + (bermBottomY - bermTopY) * 0.15,
+        cx + bermHalfW,
+        bermBottomY,
+      );
+      canvas.drawOval(shadowRect, bermShadowPaint);
+      // Hairline outline on the top half of the berm so it reads
+      // distinct from the surrounding grass.
+      final topArc = Path()
+        ..addArc(bermRect, math.pi, math.pi);
+      canvas.drawPath(topArc, bermOutlinePaint);
+
+      // Post: terminates at 0.84H (above the berm bottom at 0.87H)
+      // so the post visibly sinks into the dirt. Skip if degenerate.
+      if (r.bottom >= postBottomY) continue;
+      final postRect = Rect.fromLTRB(
+        cx - postHalfWidth,
+        r.bottom,
+        cx + postHalfWidth,
+        postBottomY,
+      );
+      canvas.drawRect(postRect, postPaint);
+    }
+  }
+
+  /// Throwaway helper: silently consume an argument so the analyzer
+  /// doesn't flag an unused-parameter info. Cheaper than a per-method
+  /// `// ignore: unused_local_variable` comment and keeps the dispatch
+  /// signatures uniform.
+  void _consume(Object? _) {}
+
   void _paintTargetSilhouette(
     Canvas canvas,
     Rect rect, {
@@ -958,9 +1417,19 @@ class _RealisticTargetPainter extends CustomPainter {
   }) {
     // Mutate the cached paint objects' alpha + stroke width per call
     // instead of allocating new paints. Active child = full opacity +
-    // 1.6px outline. Inactive = 70% opacity + 1.2px outline.
+    // [kRackActiveStrokeWidth]px outline. Inactive = 70% opacity +
+    // [kRackInactiveStrokeWidth]px outline. Per §6A.3 of the v2.3
+    // brief the active child renders with a 50% thicker stroke so
+    // it visually pops vs the other children in a rack — the two
+    // constants live at the top of this file and are also asserted
+    // in `test/rack_rendering_test.dart`. The single-target mode
+    // always renders with `isActive: true` because there's nothing
+    // for it NOT to be active relative to; the single target picks
+    // up the same thicker stroke, which reads as a subtle weight
+    // bump and is acceptable.
     final fillAlpha = isActive ? 1.0 : 0.70;
-    final outlineWidth = isActive ? 1.6 : 1.2;
+    final outlineWidth =
+        isActive ? kRackActiveStrokeWidth : kRackInactiveStrokeWidth;
     // The override only paints the ACTIVE target (single or active
     // rack child). Inactive rack children keep the cream default so
     // the user's color choice doesn't leak across the whole rack.
@@ -1001,95 +1470,13 @@ class _RealisticTargetPainter extends CustomPainter {
   }
 
   void _paintIpscSilhouette(Canvas canvas, Rect rect) {
-    // Real IPSC / USPSA Classic silhouette path. Per official USPSA
-    // dimensions the target is 18" wide × 30" tall with the head
-    // measuring 6" wide × 6" tall and the shoulders tapering from
-    // the 6" neck out to the 18" body across a roughly 4" vertical
-    // span. We bake those proportions directly into a `Path` so the
-    // result reads as a recognisable IPSC bottle at any size — the
-    // previous "two separate rounded rects" version looked like a
-    // single rounded rectangle once the target got small enough for
-    // the gap and head to disappear visually.
-    //
-    // Coordinate breakdown (fractions of widthPx / heightPx, where
-    // rect.top is the top of the head and rect.bottom is the base
-    // sitting on the dirt mound):
-    //
-    //   y = 0.000          head top
-    //   y = 0.200          head bottom / neck top  (head occupies top 20%)
-    //   y = 0.333          shoulder line — taper from head width out
-    //                      to body width
-    //   y = 1.000          body base
-    //
-    //   x = 0.000          left edge of body
-    //   x = 0.333          left edge of head (= width × 0.333)
-    //   x = 0.667          right edge of head
-    //   x = 1.000          right edge of body
-    final widthPx = rect.width;
-    final heightPx = rect.height;
-    final left = rect.left;
-    final top = rect.top;
-
-    // Pre-compute the eight key points along the silhouette outline,
-    // walked clockwise from the top-left corner of the head.
-    final headLeft = left + widthPx * 0.333;
-    final headRight = left + widthPx * 0.667;
-    final headTop = top;
-    final headBottomY = top + heightPx * 0.20;
-    final shoulderY = top + heightPx * 0.30;
-    final bodyLeft = left;
-    final bodyRight = left + widthPx;
-    final bodyBottom = top + heightPx;
-
-    // Cornering radii — head gets a generous round (looks like a
-    // real cardboard head box) and the body's bottom corners get a
-    // tiny round so the silhouette doesn't read as sharp-cornered
-    // (real USPSA targets are mildly rounded too).
-    final headCornerR = widthPx * 0.06;
-    final bodyCornerR = widthPx * 0.04;
-
-    final path = Path()
-      // Start at top-left of head, just below the head's top corner
-      // so we can arc into the corner cleanly.
-      ..moveTo(headLeft, headTop + headCornerR)
-      // Top-left rounded corner of head.
-      ..quadraticBezierTo(
-        headLeft, headTop, // control = corner
-        headLeft + headCornerR, headTop, // end = top edge
-      )
-      // Top edge of head.
-      ..lineTo(headRight - headCornerR, headTop)
-      // Top-right rounded corner of head.
-      ..quadraticBezierTo(
-        headRight, headTop,
-        headRight, headTop + headCornerR,
-      )
-      // Right side of head down to the neck.
-      ..lineTo(headRight, headBottomY)
-      // Diagonal shoulder line tapering out to body width.
-      ..lineTo(bodyRight, shoulderY)
-      // Right side of body straight down.
-      ..lineTo(bodyRight, bodyBottom - bodyCornerR)
-      // Bottom-right rounded corner.
-      ..quadraticBezierTo(
-        bodyRight, bodyBottom,
-        bodyRight - bodyCornerR, bodyBottom,
-      )
-      // Bottom edge across to the left.
-      ..lineTo(bodyLeft + bodyCornerR, bodyBottom)
-      // Bottom-left rounded corner.
-      ..quadraticBezierTo(
-        bodyLeft, bodyBottom,
-        bodyLeft, bodyBottom - bodyCornerR,
-      )
-      // Left side of body up to the shoulder.
-      ..lineTo(bodyLeft, shoulderY)
-      // Diagonal shoulder line tapering in toward the neck.
-      ..lineTo(headLeft, headBottomY)
-      // Left side of head up to the top-left corner radius.
-      ..lineTo(headLeft, headTop + headCornerR)
-      ..close();
-
+    // Delegate to the standalone `buildIpscPath(rect)` helper. Keeping
+    // the geometry in a top-level function means the same path used
+    // by the realistic painter is testable in isolation (regression
+    // fixture in `test/ipsc_path_test.dart` asserts the path always
+    // fits inside its bounds for 10 different aspect ratios — see
+    // §6.2.6 acceptance test #1 in the v2.3 brief).
+    final path = buildIpscPath(rect);
     canvas.drawPath(path, _targetFillPaint);
     canvas.drawPath(path, _targetOutlinePaint);
   }
@@ -1304,6 +1691,8 @@ class _RealisticTargetPainter extends CustomPainter {
     if (old.target.widthIn != target.widthIn) return true;
     if (old.target.heightIn != target.heightIn) return true;
     if (old.colorHexOverride != colorHexOverride) return true;
+    if (old.lowLightMode != lowLightMode) return true;
+    if (old.rackMountStyle != rackMountStyle) return true;
     if (old.aimPointX != aimPointX || old.aimPointY != aimPointY) {
       return true;
     }

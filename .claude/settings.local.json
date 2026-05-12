@@ -343,7 +343,23 @@
       "Bash(zip -r /tmp/loadout-runner-dsym.zip Runner.app.dSYM)",
       "Bash(xcodebuild -workspace Runner.xcworkspace -scheme Runner -showBuildSettings)",
       "Bash(xcodebuild -workspace Runner.xcworkspace -scheme Runner -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' build)",
-      "Bash(awk '/\"id\": \"loadout_mil_tree_christmas\"/,/^  \\\\},?$/' /Users/general/Development/Applications/LoadOut/assets/seed_data/reticles_v2.json)"
+      "Bash(awk '/\"id\": \"loadout_mil_tree_christmas\"/,/^  \\\\},?$/' /Users/general/Development/Applications/LoadOut/assets/seed_data/reticles_v2.json)",
+      "Bash(unzip -l /Users/general/Downloads/loadout_range_day_v23.zip)",
+      "Bash(rm -rf loadout_range_day_v23 __MACOSX)",
+      "Bash(unzip -q /Users/general/Downloads/loadout_range_day_v23.zip)",
+      "Bash(firebase use *)",
+      "Bash(firebase storage:rules:get)",
+      "Bash(awk '/class RangeDaySessions extends Table {/,/^}/' /Users/general/Development/Applications/LoadOut/lib/database/database.dart)",
+      "Bash(awk '/class UserFirearms extends Table {/,/^}/' /Users/general/Development/Applications/LoadOut/lib/database/database.dart)",
+      "Bash(chmod +x /Users/general/Development/Applications/LoadOut/scripts/derive_subtensions.py)",
+      "Bash(python3 /Users/general/Development/Applications/LoadOut/scripts/derive_subtensions.py /tmp/_test_reticle.json)",
+      "Bash(python3.11 --version)",
+      "Bash(python3.12 --version)",
+      "Bash(grep -cE \"\\\\[E\\\\]\\\\s*$\")",
+      "Bash(grep -rn \"_targetSizeText\\\\|widthIn.*toString\\\\|\\\\${spec.widthIn}\\\\|\\\\${target.widthIn}\\\\|widthIn.*' in'\\\\|widthIn.*'\\\\\"'\" lib/screens/ lib/widgets/)",
+      "Bash(python3 -c \"import json; print\\('scope count:', len\\(json.load\\(open\\('assets/seed_data/scopes.json'\\)\\)\\)\\)\")",
+      "Bash(/Users/general/Development/Applications/LoadOut/scripts/upload_seed_data.sh --dry-run)",
+      "Bash(/Users/general/Development/Applications/LoadOut/scripts/upload_seed_data.sh)"
     ]
   }
 }

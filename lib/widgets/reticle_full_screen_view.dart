@@ -201,16 +201,23 @@ class _ReticleFullScreenView extends StatelessWidget {
                       ),
                       const SizedBox(height: 12),
                       // Interoperability caption — directly under the
-                      // FOV per CLAUDE.md § 30. Width-bounded to the
+                      // FOV per CLAUDE.md § 30. The label resolves the
+                      // §7.7 per-origin template (LoadOut Original /
+                      // Public Domain Reticle / Calibrated to ...) from
+                      // the active reticle's `subtensionOrigin` +
+                      // `calibrationProvenance`. Width-bounded to the
                       // preview so it wraps cleanly on narrow phones
                       // rather than running edge-to-edge.
                       ConstrainedBox(
                         constraints: BoxConstraints(maxWidth: fovSide),
-                        child: const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: ReticleInteroperabilityLabel(
                             align: TextAlign.center,
                             inverse: true,
+                            subtensionOrigin: reticle.subtensionOrigin,
+                            calibrationProvenance:
+                                reticle.calibrationProvenance,
                           ),
                         ),
                       ),

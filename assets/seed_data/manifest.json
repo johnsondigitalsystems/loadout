@@ -1,6 +1,6 @@
 {
-  "manifest_version": 4,
-  "generated_at": "2026-05-10T22:00:00Z",
+  "manifest_version": 6,
+  "generated_at": "2026-05-12T20:00:00Z",
   "files": {
     "cartridges": {
       "version": 1,
@@ -30,16 +30,12 @@
       "version": 1,
       "filename": "firearm_parts.json"
     },
-    "optics": {
-      "version": 1,
-      "filename": "optics.json"
-    },
     "targets": {
-      "version": 2,
+      "version": 3,
       "filename": "targets.json"
     },
     "reticles": {
-      "version": 4,
+      "version": 5,
       "filename": "reticles.json"
     },
     "drag_curves": {
@@ -51,19 +47,15 @@
       "filename": "factory_loads.json"
     },
     "target_racks": {
-      "version": 1,
+      "version": 2,
       "filename": "target_racks.json"
     },
     "scopes_v2": {
-      "version": 4,
+      "version": 5,
       "filename": "scopes.json"
     },
-    "reticles_v2": {
-      "version": 5,
-      "filename": "reticles_v2.json"
-    },
     "scope_reticle_options": {
-      "version": 5,
+      "version": 6,
       "filename": "scope_reticle_options.json"
     },
     "manufactured_ammo": {

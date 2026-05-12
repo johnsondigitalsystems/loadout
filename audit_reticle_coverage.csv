@@ -1,0 +1,184 @@
+scope_id,manufacturer,model_name,stock_reticle,reticle_id,classification
+aimpoint_acro_p_2,Aimpoint,Acro P-2,3.5 MOA Dot,loadout_red_dot_2moa,auto_proposed
+aimpoint_compm4s,Aimpoint,CompM4s,2 MOA Dot,loadout_red_dot_2moa,auto_proposed
+aimpoint_compm5,Aimpoint,CompM5,2 MOA Dot,loadout_red_dot_2moa,already_mapped
+aimpoint_compm5s,Aimpoint,CompM5s,2 MOA Dot,loadout_red_dot_2moa,auto_proposed
+aimpoint_micro_h_2,Aimpoint,Micro H-2,2 MOA Dot,loadout_red_dot_2moa,auto_proposed
+aimpoint_micro_t_2,Aimpoint,Micro T-2,2 MOA Dot,loadout_red_dot_2moa,auto_proposed
+aimpoint_pro_patrol_rifle_optic,Aimpoint,PRO Patrol Rifle Optic,2 MOA Dot,loadout_red_dot_2moa,auto_proposed
+arken_optics_ep5_5_25x56_ffp,Arken Optics,EP5 5-25x56 FFP,,loadout_mil_tree_medium,already_mapped
+arken_optics_sh4_6_24x50_ffp,Arken Optics,SH4 6-24x50 FFP,,loadout_mil_tree_medium,already_mapped
+athlon_optics_ares_btr_gen2_2_5_15x50,Athlon Optics,Ares BTR Gen2 2.5-15x50,APRS3 MIL / APLR3 MOA,loadout_mil_hash,auto_proposed
+athlon_optics_ares_etr_uhd_4_5_30x56,Athlon Optics,Ares ETR UHD 4.5-30x56,APRS3 MIL / APLR3 MOA,loadout_mil_hash,auto_proposed
+athlon_optics_argos_btr_gen2_6_24x50,Athlon Optics,Argos BTR Gen2 6-24x50,APMR2 MIL / APMR2 MOA,loadout_mil_hash,auto_proposed
+athlon_optics_cronus_btr_4_5_29x56,Athlon Optics,Cronus BTR 4.5-29x56,APRS1 MIL / APLR1 MOA,loadout_mil_hash,auto_proposed
+athlon_optics_cronus_btr_gen2_4_5_29x56,Athlon Optics,Cronus BTR Gen2 4.5-29x56,APRS6 MIL / APLR6 MOA,loadout_mil_tree_flare,drift_fix_to_flare
+athlon_optics_helos_btr_gen2_2_12x42,Athlon Optics,Helos BTR Gen2 2-12x42,APRS6 MIL / APLR6 MOA,loadout_mil_hash,auto_proposed
+athlon_optics_midas_btr_gen2_4_5_27x50,Athlon Optics,Midas BTR Gen2 4.5-27x50,APRS3 MIL / APLR3 MOA,loadout_mil_hash,auto_proposed
+athlon_optics_midas_tac_hd_6_24x50,Athlon Optics,Midas TAC HD 6-24x50,APRS3 MIL / APLR3 MOA,loadout_mil_hash,auto_proposed
+burris_eliminator_6_4_20x52,Burris,Eliminator 6 4-20x52,Eliminator 6 X96,loadout_hunting_bdc,manual_research
+burris_fullfield_iv_3_12x42,Burris,Fullfield IV 3-12x42,Ballistic Plex E1,loadout_hunting_bdc,auto_proposed
+burris_fullfield_iv_4_16x50,Burris,Fullfield IV 4-16x50,E3 / Ballistic Plex E1,loadout_hunting_bdc,manual_research
+burris_veracity_ph_3_15x44,Burris,Veracity PH 3-15x44,PEK,loadout_mil_hash,auto_proposed
+burris_veracity_ph_4_20x50,Burris,Veracity PH 4-20x50,PEK / Wind MOA,loadout_mil_hash,auto_proposed
+burris_xtr_iii_3_3_18x50,Burris,XTR III 3.3-18x50,SCR 2 MIL,loadout_mil_hash,auto_proposed
+burris_xtr_iii_5_5_30x56,Burris,XTR III 5.5-30x56,SCR 2 MIL / SCR 2 MOA,loadout_mil_tree_medium,already_mapped
+burris_xtr_pro_5_5_30x56,Burris,XTR Pro 5.5-30x56,SCR 2 MIL / Tremor3,loadout_mil_tree_flare,auto_proposed
+bushnell_elite_tactical_dmr3_3_5_21x50,Bushnell,Elite Tactical DMR3 3.5-21x50,G3 MIL / EQL,loadout_mil_tree_flare,auto_proposed
+bushnell_elite_tactical_xrs3_6_36x56,Bushnell,Elite Tactical XRS3 6-36x56,G4P MIL,loadout_mil_hash,auto_proposed
+bushnell_engage_3_9x40,Bushnell,Engage 3-9x40,Deploy MOA,loadout_moa_hash,auto_proposed
+bushnell_engage_4_16x44,Bushnell,Engage 4-16x44,Deploy MOA,loadout_moa_hash,auto_proposed
+bushnell_forge_4_5_27x50,Bushnell,Forge 4.5-27x50,Deploy MOA,loadout_moa_hash,auto_proposed
+bushnell_match_pro_6_24x50,Bushnell,Match Pro 6-24x50,Deploy MIL,loadout_mil_hash,auto_proposed
+bushnell_match_pro_ed_5_30x56,Bushnell,Match Pro ED 5-30x56,DM2 MIL / Deploy MOA,loadout_mil_tree_medium,already_mapped
+carl_zeiss_conquest_v4_4_16x44,Carl Zeiss,Conquest V4 4-16x44,Plex / ZBR-1,pd_plex,auto_proposed
+carl_zeiss_conquest_v4_6_24x50,Carl Zeiss,Conquest V4 6-24x50,ZBR-1 / ZMOAi,loadout_mil_hash,auto_proposed
+carl_zeiss_conquest_v6_3_18x50,Carl Zeiss,Conquest V6 3-18x50,ZBi / ZMOA,loadout_mil_hash,auto_proposed
+carl_zeiss_lrp_s3_4_25x50,Carl Zeiss,LRP S3 4-25x50,ZF-MRi / ZF-MOAi,loadout_mil_hash,auto_proposed
+carl_zeiss_lrp_s3_6_36x56,Carl Zeiss,LRP S3 6-36x56,ZF-MRi,loadout_mil_hash,auto_proposed
+carl_zeiss_lrp_s5_3_6_18x50,Carl Zeiss,LRP S5 3.6-18x50,ZF-MRi / ZF-MOAi,loadout_mil_hash,auto_proposed
+carl_zeiss_lrp_s5_5_25x56,Carl Zeiss,LRP S5 5-25x56,ZF-MRi / ZF-MOAi,loadout_mil_tree_medium,already_mapped
+carl_zeiss_victory_v8_2_8_20x56,Carl Zeiss,Victory V8 2.8-20x56,60 / ASV,loadout_holographic_ring,manual_research
+carl_zeiss_victory_v8_4_8_35x60,Carl Zeiss,Victory V8 4.8-35x60,,pd_plex,already_mapped
+deon_optical_design_march_march_fx_4_5_28x52_ffp_tactical_high_master_wide_angle,DEON Optical Design (March),March-FX 4.5-28x52 FFP Tactical High Master Wide-Angle,,loadout_mil_tree_medium,already_mapped
+deon_optical_design_march_march_x_5_50x56_sfp_tactical,DEON Optical Design (March),March-X 5-50x56 SFP Tactical,,loadout_moa_hash,already_mapped
+eotech_512_holographic,EOTech,512 Holographic,65 MOA Ring / 1 MOA Dot,loadout_holographic_ring,auto_proposed
+eotech_exps3_0_holographic,EOTech,EXPS3-0 Holographic,68 MOA Ring / 1 MOA Dot,loadout_holographic_ring,auto_proposed
+eotech_vudu_1_6x24_ffp,EOTech,VUDU 1-6x24 FFP,HC3 / SR1 / SR2,loadout_mil_hash,manual_research
+eotech_vudu_5_25x50_ffp,EOTech,VUDU 5-25x50 FFP,H59 / MD3 / MD4,loadout_mil_tree_flare,manual_research
+eotech_xps2_0_holographic,EOTech,XPS2-0 Holographic,68 MOA Ring / 1 MOA Dot,loadout_holographic_ring,auto_proposed
+eotech_xps3_0_holographic,EOTech,XPS3-0 Holographic,,loadout_holographic_ring,already_mapped
+element_optics_helix_6_24x50_ffp,Element Optics,Helix 6-24x50 FFP,,loadout_mil_tree_medium,already_mapped
+hawke_optics_endurance_30_4_16x50,Hawke Optics,Endurance 30 4-16x50,LR Dot,loadout_holographic_ring,auto_proposed
+hawke_optics_frontier_30_sf_5_30x56,Hawke Optics,Frontier 30 SF 5-30x56,Mil Pro / MOA Pro,loadout_mil_hash,auto_proposed
+hawke_optics_frontier_34_ffp_5_30x56,Hawke Optics,Frontier 34 FFP 5-30x56,MOA Pro Ext / Mil Pro Ext,loadout_mil_hash,auto_proposed
+hawke_optics_sidewinder_30_ffp_4_16x50,Hawke Optics,Sidewinder 30 FFP 4-16x50,MOA / Half Mil,loadout_mil_hash,manual_research
+hawke_optics_vantage_4_12x50_ao,Hawke Optics,Vantage 4-12x50 AO,Mil Dot,pd_mil_dot_usmc,auto_proposed
+hensoldt_zf_4_16x56,Hensoldt,ZF 4-16x56,,loadout_mil_tree_medium,already_mapped
+hensoldt_zf_6_24x72,Hensoldt,ZF 6-24x72,,loadout_mil_tree_medium,already_mapped
+holosun_aems,Holosun,AEMS,2 MOA Dot / 65 MOA Ring,loadout_red_dot_2moa,auto_proposed
+holosun_aems_core,Holosun,AEMS Core,2 MOA Dot,loadout_red_dot_2moa,auto_proposed
+holosun_he509t,Holosun,HE509T,,loadout_red_dot_circle,already_mapped
+holosun_he509t_rd_x2,Holosun,HE509T-RD X2,2 MOA Dot / 32 MOA Ring,loadout_red_dot_2moa,auto_proposed
+holosun_hm3x_magnifier,Holosun,HM3X Magnifier,n/a (passive magnifier),loadout_red_dot_2moa,manual_research
+holosun_hs503cu,Holosun,HS503CU,2 MOA Dot / 65 MOA Ring,loadout_red_dot_2moa,auto_proposed
+holosun_hs510c,Holosun,HS510C,2 MOA Dot / 65 MOA Ring,loadout_red_dot_2moa,auto_proposed
+kahles_k318i_3_5_18x50,Kahles,K318i 3.5-18x50,SKMR3 / MSR / SKMR4,loadout_mil_tree_medium,already_mapped
+kahles_k525i_5_25x56,Kahles,K525i 5-25x56,SKMR3 / MSR2 / SKMR4,loadout_mil_tree_medium,already_mapped
+kahles_k624i_6_24x56,Kahles,K624i 6-24x56,SKMR3 / MSR,loadout_mil_tree_flare,manual_research
+leupold_mark_4hd_2_5_10x42,Leupold,Mark 4HD 2.5-10x42,FFP TMR,loadout_mil_hash,auto_proposed
+leupold_mark_4hd_4_5_18x52_m5c3_ffp,Leupold,Mark 4HD 4.5-18x52 M5C3 FFP,,loadout_mil_tree_medium,already_mapped
+leupold_mark_4hd_6_24x52,Leupold,Mark 4HD 6-24x52,PR2-MIL / PR1-MOA,loadout_mil_hash,auto_proposed
+leupold_mark_5hd_3_6_18x44,Leupold,Mark 5HD 3.6-18x44,PR1-MIL / TMR,loadout_mil_hash,auto_proposed
+leupold_mark_5hd_5_25x56_m5c3_ffp,Leupold,Mark 5HD 5-25x56 M5C3 FFP,,loadout_mil_tree_medium,already_mapped
+leupold_mark_5hd_7_35x56,Leupold,Mark 5HD 7-35x56,PR2-MOA / TMR / H59,loadout_mil_tree_flare,auto_proposed
+leupold_vx_3hd_3_5_10x40,Leupold,VX-3HD 3.5-10x40,Duplex / CDS-ZL,pd_plex,auto_proposed
+leupold_vx_3hd_4_5_14x40,Leupold,VX-3HD 4.5-14x40,Duplex / CDS-ZL,pd_plex,auto_proposed
+leupold_vx_5hd_3_15x44_cds_zl2_side_focus,Leupold,VX-5HD 3-15x44 CDS-ZL2 Side Focus,Duplex / FireDot Duplex,pd_plex,already_mapped
+leupold_vx_5hd_4_20x52,Leupold,VX-5HD 4-20x52,Boone & Crockett / TMOA,loadout_hunting_bdc,auto_proposed
+leupold_vx_6hd_2_12x42,Leupold,VX-6HD 2-12x42,FireDot Duplex,pd_plex,auto_proposed
+leupold_vx_6hd_3_18x44,Leupold,VX-6HD 3-18x44,FireDot 4,loadout_red_dot_2moa,auto_proposed
+leupold_vx_freedom_3_9x40,Leupold,VX-Freedom 3-9x40,Duplex,pd_plex,auto_proposed
+leupold_vx_freedom_4_12x40,Leupold,VX-Freedom 4-12x40,Tri-MOA,loadout_moa_hash,auto_proposed
+maven_rs_1_2_5_15x44,Maven,RS.1 2.5-15x44,SHR-MOA / CSHR,loadout_moa_hash,auto_proposed
+maven_rs_2_2_10x38,Maven,RS.2 2-10x38,CSHR,loadout_moa_hash,auto_proposed
+maven_rs_3_5_30x50,Maven,RS.3 5-30x50,MOA-1 / MOA-2 / MIL-1 / MIL-2,loadout_moa_hash,auto_proposed
+maven_rs_4_5_30x56_ffp,Maven,RS.4 5-30x56 FFP,MOA-2 / MIL-2,loadout_moa_hash,auto_proposed
+maven_rs_5_4_24x50_ffp,Maven,RS.5 4-24x50 FFP,CFR-MIL / CFR-MOA,loadout_mil_hash,auto_proposed
+meopta_optika6_4_5_27x50_rd_ffp,Meopta,Optika6 4.5-27x50 RD FFP,,loadout_mil_tree_compact,already_mapped
+meopta_optika6_5_30x56_rd_ffp,Meopta,Optika6 5-30x56 RD FFP,,loadout_mil_tree_compact,already_mapped
+nightforce_optics_atacr_1_8x24_f1,Nightforce Optics,ATACR 1-8x24 F1,FC-Mil / FC-DMx,loadout_mil_hash,auto_proposed
+nightforce_optics_atacr_4_16x42_f1,Nightforce Optics,ATACR 4-16x42 F1,MIL-R / MOAR,loadout_mil_tree_dense,already_mapped
+nightforce_optics_atacr_5_25x56_f1,Nightforce Optics,ATACR 5-25x56 F1,MIL-XT / TReMoR3 / H59,loadout_mil_tree_flare,auto_proposed
+nightforce_optics_atacr_7_35x56_f1,Nightforce Optics,ATACR 7-35x56 F1,MIL-XT / Mil-C,loadout_mil_tree_flare,drift_fix_to_flare
+nightforce_optics_beast_5_25x56_f1,Nightforce Optics,BEAST 5-25x56 F1,H59 / MIL-R / TReMoR2,loadout_mil_tree_flare,auto_proposed
+nightforce_optics_nx8_1_8x24_f1,Nightforce Optics,NX8 1-8x24 F1,FC-Mil / FC-DMx,loadout_mil_hash,auto_proposed
+nightforce_optics_nx8_2_5_20x50_f1,Nightforce Optics,NX8 2.5-20x50 F1,MIL-XT,loadout_mil_tree_flare,auto_proposed
+nightforce_optics_nx8_4_32x50_f1,Nightforce Optics,NX8 4-32x50 F1,MIL-XT / Mil-C,loadout_mil_tree_flare,drift_fix_to_flare
+nightforce_optics_nxs_3_5_15x50,Nightforce Optics,NXS 3.5-15x50,MOAR / MIL-R,loadout_moa_hash,auto_proposed
+nightforce_optics_nxs_5_5_22x56,Nightforce Optics,NXS 5.5-22x56,MOAR / MIL-R,loadout_moa_hash,auto_proposed
+nightforce_optics_shv_4_14x56,Nightforce Optics,SHV 4-14x56,MOAR / IHR,loadout_moa_hash,auto_proposed
+nightforce_optics_shv_5_20x56,Nightforce Optics,SHV 5-20x56,MOAR / IHR,loadout_sfp_moa_drop,already_mapped
+primary_arms_glx_1_6x24,Primary Arms,GLx 1-6x24,ACSS Raptor,loadout_sfp_lpvo_chevron,auto_proposed
+primary_arms_glx_2_5_10x44,Primary Arms,GLx 2.5-10x44,ACSS Griffin Mil,loadout_sfp_lpvo_chevron,auto_proposed
+primary_arms_glx_4_16x50_ffp,Primary Arms,GLx 4-16x50 FFP,ACSS Athena BPR / Apollo,loadout_combat_bdc,already_mapped
+primary_arms_plx_1_8x24_ffp,Primary Arms,PLx 1-8x24 FFP,ACSS Raptor M8 / Griffin,loadout_sfp_lpvo_chevron,manual_research
+primary_arms_plx_6_30x56_ffp,Primary Arms,PLx 6-30x56 FFP,ACSS Apollo / Athena BPR,loadout_mil_tree_flare,auto_proposed
+primary_arms_slx_1_6x24_gen_iv,Primary Arms,SLx 1-6x24 Gen IV,ACSS Raptor / Griffin,loadout_sfp_lpvo_chevron,manual_research
+primary_arms_slx_1_8x24,Primary Arms,SLx 1-8x24,ACSS Raptor M8,loadout_sfp_lpvo_chevron,auto_proposed
+primary_arms_slx_4_14x44_ffp,Primary Arms,SLx 4-14x44 FFP,ACSS HUD DMR,loadout_dmr_bdc,already_mapped
+riton_optics_5_conquer_5_25x56_ffp,Riton Optics,5 Conquer 5-25x56 FFP,,loadout_mil_tree_medium,already_mapped
+riton_optics_7_conquer_4_32x56_ffp,Riton Optics,7 Conquer 4-32x56 FFP,,loadout_mil_tree_medium,already_mapped
+riton_optics_x3_primal_3_15x44,Riton Optics,X3 Primal 3-15x44,OSR,loadout_mil_hash,auto_proposed
+riton_optics_x5_conquer_5_25x50,Riton Optics,X5 Conquer 5-25x50,PSR Mil / PSR MOA,loadout_mil_hash,auto_proposed
+riton_optics_x7_conquer_3_24x50,Riton Optics,X7 Conquer 3-24x50,PSR Mil,loadout_mil_hash,auto_proposed
+riton_optics_x7_conquer_5_25x56,Riton Optics,X7 Conquer 5-25x56,PSR Mil / PSR MOA,loadout_mil_hash,auto_proposed
+schmidt_bender_klassik_8x56,Schmidt & Bender,Klassik 8x56,L7 / A8,pd_german_4,manual_research
+schmidt_bender_pm_ii_1_8x24,Schmidt & Bender,PM II 1-8x24,CQB1 / FlashDot,loadout_combat,auto_proposed
+schmidt_bender_pm_ii_3_20x50,Schmidt & Bender,PM II 3-20x50,P4F / H59 / Tremor3,loadout_mil_tree_flare,manual_research
+schmidt_bender_pm_ii_3_20x50_ultra_short,Schmidt & Bender,PM II 3-20x50 Ultra Short,P4F / H59 / Tremor3,loadout_mil_tree_flare,drift_fix_to_flare
+schmidt_bender_pm_ii_5_25x56,Schmidt & Bender,PM II 5-25x56,H2CMR / P4F / Tremor3,loadout_mil_tree_flare,drift_fix_to_flare
+schmidt_bender_pm_ii_5_45x56,Schmidt & Bender,PM II 5-45x56,GR2ID / Tremor3 / MSR2,loadout_mil_tree_flare,auto_proposed
+schmidt_bender_polar_t96_3_20x50,Schmidt & Bender,Polar T96 3-20x50,D7 / L7,pd_german_4,manual_research
+schmidt_bender_stratos_1_5_8x42,Schmidt & Bender,Stratos 1.5-8x42,FlashDot L7,loadout_holographic_ring,auto_proposed
+schmidt_bender_stratos_2_5_13x56,Schmidt & Bender,Stratos 2.5-13x56,L7 / A8,pd_german_4,manual_research
+sig_sauer_sierra10_bdx_5_50x56,Sig Sauer,Sierra10 BDX 5-50x56,BDX-R3 Digital,loadout_sfp_moa_drop,auto_proposed
+sig_sauer_sierra3_bdx_4_5_14x44,Sig Sauer,Sierra3 BDX 4.5-14x44,BDX-R1 Digital,loadout_sfp_moa_drop,auto_proposed
+sig_sauer_sierra6_bdx_5_30x56,Sig Sauer,Sierra6 BDX 5-30x56,MOA Milling,loadout_moa_hash,auto_proposed
+sig_sauer_tango4_6_24x50,Sig Sauer,Tango4 6-24x50,MRAD Milling 2.0,loadout_mil_hash,manual_research
+sig_sauer_tango6_5_30x56,Sig Sauer,Tango6 5-30x56,MOA Milling 2.0,loadout_moa_hash,auto_proposed
+sig_sauer_tango6t_1_6x24,Sig Sauer,Tango6T 1-6x24,DWLR556 / Hellfire,loadout_dmr_bdc,already_mapped
+sig_sauer_tango6t_dev_l_5_30x56,Sig Sauer,Tango6T DEV-L 5-30x56,,loadout_mil_tree_dense,already_mapped
+sig_sauer_tango8_1_8x28,Sig Sauer,Tango8 1-8x28,DWLR-MOA / DWLR8 MIL,loadout_mil_hash,auto_proposed
+sig_sauer_whiskey3_4_12x40,Sig Sauer,Whiskey3 4-12x40,Quadplex,pd_plex,auto_proposed
+sig_sauer_whiskey5_3_15x44,Sig Sauer,Whiskey5 3-15x44,HellFire MOA Milling,loadout_moa_hash,auto_proposed
+sightron_siii_plr_6_24x50_ffp_zero_stop,Sightron,SIII PLR 6-24x50 FFP Zero Stop,,loadout_mil_hash,already_mapped
+sightron_sviii_5_40x56_ffp_ed_ir_zero_stop,Sightron,SVIII 5-40x56 FFP ED IR Zero Stop,,loadout_mil_tree_medium,already_mapped
+steiner_m5xi_5_25x56,Steiner,M5Xi 5-25x56,MSR / MSR2 / SCR,loadout_mil_tree_flare,manual_research
+steiner_m7xi_4_28x56,Steiner,M7Xi 4-28x56,MSR / MSR2,loadout_mil_tree_flare,manual_research
+steiner_p4xi_1_4x24,Steiner,P4Xi 1-4x24,P3TR,loadout_mil_hash,auto_proposed
+steiner_p4xi_4_16x56,Steiner,P4Xi 4-16x56,SCR-Mil / Plex S1,loadout_mil_hash,auto_proposed
+steiner_t6xi_3_18x56,Steiner,T6Xi 3-18x56,MSR2 / SCR,loadout_mil_tree_flare,manual_research
+steiner_t6xi_5_30x56,Steiner,T6Xi 5-30x56,MSR2 / SCR,loadout_mil_tree_flare,manual_research
+swarovski_optik_x5_i_5_25x56_p,Swarovski Optik,X5(i) 5-25x56 P,,loadout_mil_tree_medium,already_mapped
+swarovski_optik_x5i_3_5_18x50,Swarovski Optik,X5i 3.5-18x50,4WX / 4WXi,pd_plex,manual_research
+swarovski_optik_x5i_5_25x56,Swarovski Optik,X5i 5-25x56,4WX / 4WXi / BRH,loadout_moa_hash,manual_research
+swarovski_optik_z6i_2_5_15x56_p_gen_2,Swarovski Optik,Z6i 2.5-15x56 P (Gen 2),,pd_plex,already_mapped
+swarovski_optik_z8i_1_8x24,Swarovski Optik,Z8i 1-8x24,BRT-I,loadout_moa_hash,auto_proposed
+swarovski_optik_z8i_2_16x50,Swarovski Optik,Z8i 2-16x50,4A-IF / BRX-I,loadout_moa_hash,auto_proposed
+swarovski_optik_ds_gen_ii_5_25x52,Swarovski Optik,dS Gen II 5-25x52,Smart reticle (digital),loadout_holographic_ring,manual_research
+tangent_theta_tt315m_3_15x50,Tangent Theta,TT315M 3-15x50,,loadout_mil_tree_medium,already_mapped
+tangent_theta_tt525p_5_25x56,Tangent Theta,TT525P 5-25x56,,loadout_mil_tree_flare,drift_fix_to_flare
+trijicon_acog_ta02_4x32_led,Trijicon,ACOG TA02 4x32 LED,LED Chevron,loadout_sfp_lpvo_chevron,auto_proposed
+trijicon_acog_ta31_4x32,Trijicon,ACOG TA31 4x32,,loadout_combat,already_mapped
+trijicon_acog_ta31f_4x32,Trijicon,ACOG TA31F 4x32,Tritium/Fiber Chevron,loadout_sfp_lpvo_chevron,auto_proposed
+trijicon_accupoint_1_6x24,Trijicon,AccuPoint 1-6x24,BAC Triangle / German #4,loadout_sfp_lpvo_chevron,auto_proposed
+trijicon_accupoint_2_5_12_5x42,Trijicon,AccuPoint 2.5-12.5x42,BAC Triangle / Mil-Dot,loadout_sfp_lpvo_chevron,auto_proposed
+trijicon_credo_1_8x28,Trijicon,Credo 1-8x28,MRAD Segmented Circle,loadout_mil_hash,manual_research
+trijicon_credo_hx_2_5_15x56,Trijicon,Credo HX 2.5-15x56,MOA Center Dot,loadout_moa_hash,auto_proposed
+trijicon_tenmile_4_5_30x56_ffp,Trijicon,Tenmile 4.5-30x56 FFP,MRAD / MOA Long Range,loadout_moa_hash,manual_research
+trijicon_tenmile_5_50x56_ed_ffp,Trijicon,Tenmile 5-50x56 ED/FFP,MRAD Long Range,loadout_mil_hash,auto_proposed
+trijicon_tenmile_hx_6_24x50,Trijicon,Tenmile HX 6-24x50,MOA Ranging,loadout_moa_hash,auto_proposed
+us_optics_b_east_5_25x52,US Optics,B-EAST 5-25x52,MGR / MPR,loadout_mil_hash,auto_proposed
+us_optics_foundation_17x_3_2_17x50,US Optics,Foundation 17X 3.2-17x50,MGR / MPR,loadout_mil_hash,auto_proposed
+us_optics_foundation_25x_5_25x52,US Optics,Foundation 25X 5-25x52,MGR / MPR,loadout_mil_hash,auto_proposed
+us_optics_ts_12x_4_12x44,US Optics,TS-12X 4-12x44,MIL Scale / Mil-D,pd_mil_dot_usmc,auto_proposed
+us_optics_ts_20x_5_25x50,US Optics,TS-20X 5-25x50,MIL Scale / GenIIXR,loadout_mil_tree_flare,auto_proposed
+vortex_optics_crossfire_ii_4_12x44,Vortex Optics,Crossfire II 4-12x44,Dead-Hold BDC,loadout_hunting_bdc,auto_proposed
+vortex_optics_diamondback_tactical_4_16x44_ffp,Vortex Optics,Diamondback Tactical 4-16x44 FFP,EBR-2C MOA,loadout_mil_tree_christmas,auto_proposed
+vortex_optics_diamondback_tactical_6_24x50_ffp,Vortex Optics,Diamondback Tactical 6-24x50 FFP,EBR-2C MRAD,loadout_mil_tree_christmas,auto_proposed
+vortex_optics_razor_hd_gen_ii_3_18x50,Vortex Optics,Razor HD Gen II 3-18x50,EBR-7C MRAD,loadout_mil_tree_flare,auto_proposed
+vortex_optics_razor_hd_gen_ii_4_5_27x56_ffp,Vortex Optics,Razor HD Gen II 4.5-27x56 FFP,EBR-7C MRAD,loadout_mil_tree_flare,drift_fix_to_flare
+vortex_optics_razor_hd_gen_ii_e_1_6x24,Vortex Optics,Razor HD Gen II-E 1-6x24,VMR-2 MOA,loadout_moa_hash,auto_proposed
+vortex_optics_razor_hd_gen_iii_6_36x56_ffp,Vortex Optics,Razor HD Gen III 6-36x56 FFP,EBR-7D MOA/MRAD,loadout_mil_tree_flare,drift_fix_to_flare
+vortex_optics_razor_lht_3_15x42,Vortex Optics,Razor LHT 3-15x42,HSR-5i MOA,loadout_mil_hash,auto_proposed
+vortex_optics_razor_lht_4_5_22x50,Vortex Optics,Razor LHT 4.5-22x50,XLR-2 MRAD,loadout_mil_hash,manual_research
+vortex_optics_strike_eagle_1_8x24,Vortex Optics,Strike Eagle 1-8x24,AR-BDC3 MOA,loadout_combat_bdc,auto_proposed
+vortex_optics_strike_eagle_5_25x56_ffp,Vortex Optics,Strike Eagle 5-25x56 FFP,EBR-7C MRAD,loadout_mil_tree_flare,auto_proposed
+vortex_optics_viper_pst_gen_ii_1_6x24,Vortex Optics,Viper PST Gen II 1-6x24,VMR-2 MOA,loadout_moa_hash,auto_proposed
+vortex_optics_viper_pst_gen_ii_3_15x44,Vortex Optics,Viper PST Gen II 3-15x44,EBR-2C MOA,loadout_mil_tree_christmas,auto_proposed
+vortex_optics_viper_pst_gen_ii_5_25x50,Vortex Optics,Viper PST Gen II 5-25x50,EBR-7C MRAD,loadout_mil_tree_flare,auto_proposed
+zero_compromise_optic_zc527_5_27x56,Zero Compromise Optic,ZC527 5-27x56,,loadout_mil_tree_flare,drift_fix_to_flare
+zero_compromise_optic_zc840_8_40x56,Zero Compromise Optic,ZC840 8-40x56,,loadout_mil_tree_dense,already_mapped
+zerotech_optics_trace_advanced_4_5_27x50_rmg_ffp,ZeroTech Optics,Trace Advanced 4.5-27x50 RMG FFP,,loadout_mil_tree_medium,already_mapped
+zerotech_optics_vengeance_4_20x50_sfp,ZeroTech Optics,Vengeance 4-20x50 SFP,,pd_plex,already_mapped

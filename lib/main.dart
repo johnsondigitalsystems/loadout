@@ -123,6 +123,8 @@ import 'services/device_compatibility_service.dart';
 import 'services/hang_detector.dart';
 import 'services/purchases_service.dart';
 import 'services/seed_updater.dart';
+import 'widgets/animal_silhouettes.dart';
+import 'widgets/target_silhouettes.dart';
 
 /// SharedPreferences key driving the Crashlytics opt-in.
 ///
@@ -155,6 +157,33 @@ const bool kCrashlyticsEnabledDefault = true;
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Preload all 16 animal silhouettes so they render instantly when picked.
+  // (Per Appendix H.4 of the Range Day Realistic v2.3 rewrite.) Total
+  // payload ~250 KB; preload completes in ~80ms on a mid-tier device.
+  unawaited(Future.wait([
+    AnimalSilhouettes.loadAnimalPath('deer_profile'),
+    AnimalSilhouettes.loadAnimalPath('mule_deer_profile'),
+    AnimalSilhouettes.loadAnimalPath('elk_profile'),
+    AnimalSilhouettes.loadAnimalPath('moose_profile'),
+    AnimalSilhouettes.loadAnimalPath('pronghorn_profile'),
+    AnimalSilhouettes.loadAnimalPath('bear_profile'),
+    AnimalSilhouettes.loadAnimalPath('boar_profile'),
+    AnimalSilhouettes.loadAnimalPath('mountain_lion_profile'),
+    AnimalSilhouettes.loadAnimalPath('coyote_profile'),
+    AnimalSilhouettes.loadAnimalPath('fox_profile'),
+    AnimalSilhouettes.loadAnimalPath('rabbit_profile'),
+    AnimalSilhouettes.loadAnimalPath('groundhog_profile'),
+    AnimalSilhouettes.loadAnimalPath('prairie_dog_profile'),
+    AnimalSilhouettes.loadAnimalPath('wild_turkey_profile'),
+    AnimalSilhouettes.loadAnimalPath('pheasant_profile'),
+    AnimalSilhouettes.loadAnimalPath('bigfoot_profile'),
+  ]));
+
+  // Preload competition target SVGs (per Appendix M).
+  unawaited(Future.wait([
+    TargetSilhouettes.loadTargetPath('pepper_popper'),
+  ]));
 
   // Detect the very first launch on this install (or a launch after a
   // fresh reinstall on iOS, where Firebase's refresh token persists in

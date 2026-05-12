@@ -123,17 +123,39 @@ enum HashAxis { horizontal, vertical }
 
 /// One drawable element inside a reticle definition. Sealed so the
 /// renderer can `switch` on the runtime type without a default branch.
+///
+/// Every concrete subclass carries an optional [illuminatedColorHex]
+/// field — a CSS-style hex string (e.g. `'#E03D2D'`) that the renderer
+/// honours when the parent has flipped the scene into "low light" mode.
+/// In low-light mode, elements that publish a non-null
+/// [illuminatedColorHex] render in that color (simulating an illuminated
+/// reticle in dusk conditions); every other element renders in the
+/// default reticle color (typically black) — they're still visible
+/// against the dusk backdrop but understated, which matches what a
+/// shooter actually sees through their scope at twilight. See
+/// `range_day_realistic_rewrite_v23.md` §6A.2 for the visual spec.
 sealed class ReticleElement {
-  const ReticleElement();
+  const ReticleElement({this.illuminatedColorHex});
+
+  /// Optional CSS-style hex color (e.g. `'#E03D2D'`) the element should
+  /// render with when the parent renderer is in low-light mode. Null =
+  /// the element is not illuminated (default reticle color is used
+  /// regardless of low-light state). See class docstring + § 6A.2 of
+  /// `range_day_realistic_rewrite_v23.md`.
+  final String? illuminatedColorHex;
 
   /// Encode this element as a JSON-compatible map. The `type` field
   /// distinguishes subtypes for `ReticleElement.fromJson(...)`.
   Map<String, dynamic> toJson();
 
   /// Parse one element from the seed JSON. Returns the right concrete
-  /// subtype based on the `type` field.
+  /// subtype based on the `type` field. The optional
+  /// `illuminated_color_hex` field (snake_case in JSON; see
+  /// `assets/seed_data/reticles.json`) maps to the
+  /// [illuminatedColorHex] field on every concrete subtype.
   static ReticleElement fromJson(Map<String, dynamic> json) {
     final type = json['type'] as String;
+    final illuminatedColorHex = json['illuminated_color_hex'] as String?;
     switch (type) {
       case 'crosshair':
         return CrosshairLine(
@@ -143,6 +165,27 @@ sealed class ReticleElement {
           endY: (json['endY'] as num).toDouble(),
           thicknessMil: (json['thickness'] as num?)?.toDouble() ?? 0.04,
           primary: json['primary'] as bool? ?? true,
+          illuminatedColorHex: illuminatedColorHex,
+        );
+      case 'line':
+        // v2.3 Range Day Realistic generator scripts (Appendices A/B
+        // of `range_day_realistic_rewrite_v23.md`) emit straight line
+        // segments as `{"type": "line", "x1": …, "y1": …, "x2": …,
+        // "y2": …}` — semantically identical to `crosshair` but with
+        // `x1/y1/x2/y2` field naming instead of
+        // `startX/startY/endX/endY`. Map to `CrosshairLine` so the
+        // existing renderer + serializer handle both spellings. The
+        // brief's §6 Phase 4 note ("already supported by the
+        // existing switch") was missing this synonym — flagged in
+        // the Phase 2 completion report.
+        return CrosshairLine(
+          startX: (json['x1'] as num).toDouble(),
+          startY: (json['y1'] as num).toDouble(),
+          endX: (json['x2'] as num).toDouble(),
+          endY: (json['y2'] as num).toDouble(),
+          thicknessMil: (json['thickness'] as num?)?.toDouble() ?? 0.04,
+          primary: json['primary'] as bool? ?? true,
+          illuminatedColorHex: illuminatedColorHex,
         );
       case 'hash':
         return HashMark(
@@ -153,6 +196,7 @@ sealed class ReticleElement {
           axis: (json['axis'] as String? ?? 'horizontal') == 'vertical'
               ? HashAxis.vertical
               : HashAxis.horizontal,
+          illuminatedColorHex: illuminatedColorHex,
         );
       case 'dot':
         return CenterDot(
@@ -160,6 +204,7 @@ sealed class ReticleElement {
           y: (json['y'] as num?)?.toDouble() ?? 0.0,
           radiusUnits: (json['radius'] as num).toDouble(),
           open: json['open'] as bool? ?? false,
+          illuminatedColorHex: illuminatedColorHex,
         );
       case 'number':
         return FloatingNumber(
@@ -167,12 +212,14 @@ sealed class ReticleElement {
           y: (json['y'] as num).toDouble(),
           text: json['text'] as String,
           fontSizeUnits: (json['size'] as num?)?.toDouble() ?? 0.5,
+          illuminatedColorHex: illuminatedColorHex,
         );
       case 'holdover':
         return HoldoverDot(
           x: (json['x'] as num).toDouble(),
           y: (json['y'] as num).toDouble(),
           radiusUnits: (json['radius'] as num?)?.toDouble() ?? 0.06,
+          illuminatedColorHex: illuminatedColorHex,
         );
       default:
         throw ArgumentError('Unknown reticle element type: $type');
@@ -196,6 +243,7 @@ class CrosshairLine extends ReticleElement {
     required this.endY,
     this.thicknessMil = 0.04,
     this.primary = true,
+    super.illuminatedColorHex,
   });
 
   final double startX;
@@ -221,6 +269,8 @@ class CrosshairLine extends ReticleElement {
         'endY': endY,
         'thickness': thicknessMil,
         'primary': primary,
+        if (illuminatedColorHex != null)
+          'illuminated_color_hex': illuminatedColorHex,
       };
 }
 
@@ -236,6 +286,7 @@ class HashMark extends ReticleElement {
     required this.lengthUnits,
     this.thicknessUnits = 0.04,
     required this.axis,
+    super.illuminatedColorHex,
   });
 
   final double x;
@@ -255,6 +306,8 @@ class HashMark extends ReticleElement {
         'length': lengthUnits,
         'thickness': thicknessUnits,
         'axis': axis == HashAxis.horizontal ? 'horizontal' : 'vertical',
+        if (illuminatedColorHex != null)
+          'illuminated_color_hex': illuminatedColorHex,
       };
 }
 
@@ -267,6 +320,7 @@ class CenterDot extends ReticleElement {
     this.y = 0.0,
     required this.radiusUnits,
     this.open = false,
+    super.illuminatedColorHex,
   });
 
   final double x;
@@ -281,6 +335,8 @@ class CenterDot extends ReticleElement {
         'y': y,
         'radius': radiusUnits,
         'open': open,
+        if (illuminatedColorHex != null)
+          'illuminated_color_hex': illuminatedColorHex,
       };
 }
 
@@ -294,6 +350,7 @@ class FloatingNumber extends ReticleElement {
     required this.y,
     required this.text,
     this.fontSizeUnits = 0.5,
+    super.illuminatedColorHex,
   });
 
   final double x;
@@ -308,6 +365,8 @@ class FloatingNumber extends ReticleElement {
         'y': y,
         'text': text,
         'size': fontSizeUnits,
+        if (illuminatedColorHex != null)
+          'illuminated_color_hex': illuminatedColorHex,
       };
 }
 
@@ -320,6 +379,7 @@ class HoldoverDot extends ReticleElement {
     required this.x,
     required this.y,
     this.radiusUnits = 0.06,
+    super.illuminatedColorHex,
   });
 
   final double x;
@@ -332,6 +392,8 @@ class HoldoverDot extends ReticleElement {
         'x': x,
         'y': y,
         'radius': radiusUnits,
+        if (illuminatedColorHex != null)
+          'illuminated_color_hex': illuminatedColorHex,
       };
 }
 
@@ -369,6 +431,8 @@ class ReticleDefinition {
     this.designer,
     this.license,
     this.subtensions,
+    this.subtensionOrigin = 'original',
+    this.calibrationProvenance,
   });
 
   /// Stable string id used as a join key elsewhere (custom reticles
@@ -428,6 +492,31 @@ class ReticleDefinition {
   /// to the rendered diagram.
   final Map<String, dynamic>? subtensions;
 
+  /// IP-posture discriminator. One of:
+  ///   * `'original'`       — LoadOut original artwork, original subtensions
+  ///   * `'published_spec'` — LoadOut original artwork, subtensions calibrated
+  ///                          to match a manufacturer's published spec
+  ///   * `'public_domain'`  — A public-domain reticle design (e.g. plex,
+  ///                          USMC mil-dot)
+  ///
+  /// Drives the per-origin disclaimer rendered by
+  /// [ReticleInteroperabilityLabel] under every preview surface. Required
+  /// by the dual-track IP posture documented in CLAUDE.md § 30. Defaults
+  /// to `'original'` so legacy JSON entries / drift rows that pre-date
+  /// schema v35 keep flowing through the LoadOut-Original disclaimer
+  /// path safely.
+  final String subtensionOrigin;
+  /// Internal-only provenance for `subtensionOrigin == 'published_spec'`
+  /// rows. Decoded from the seed JSON's `calibration_provenance` blob
+  /// (or the drift column of the same name). Keys: `manufacturer`,
+  /// `reticle_name`, `published_url`, `verified_at`. Null for `original`
+  /// and `public_domain` rows. The provenance dictionary is internal-only
+  /// and never shipped to a marketing surface or store description
+  /// (CLAUDE.md § 30 rule 6) — its only consumer today is the
+  /// "Calibrated to [Manufacturer] [Reticle Name]" disclaimer template
+  /// rendered by [ReticleInteroperabilityLabel].
+  final Map<String, dynamic>? calibrationProvenance;
+
   /// Decode a `ReticleDefinition` from one entry in `reticles.json`
   /// or `reticles_v2.json`. The verified-data fields (`verified`,
   /// `sourceUrl`, `verifiedAt`, `designer`, `license`, `subtensions`)
@@ -436,6 +525,17 @@ class ReticleDefinition {
   /// defaults.
   factory ReticleDefinition.fromJson(Map<String, dynamic> json) {
     final verifiedAtStr = json['verifiedAt'] as String?;
+    // The seed JSON uses snake_case for the disclosure-metadata fields
+    // (`subtension_origin`, `calibration_provenance`); the database column
+    // names and Dart fields use camelCase. Read snake_case first and
+    // fall back to camelCase so this constructor works for either source
+    // shape (the asset bundle uses snake_case; round-tripped `toJson()`
+    // output uses camelCase).
+    final origin = (json['subtension_origin'] as String?) ??
+        (json['subtensionOrigin'] as String?) ??
+        'original';
+    final provenance = (json['calibration_provenance'] as Map<String, dynamic>?) ??
+        (json['calibrationProvenance'] as Map<String, dynamic>?);
     return ReticleDefinition(
       id: json['id'] as String,
       manufacturer: json['manufacturer'] as String,
@@ -454,6 +554,8 @@ class ReticleDefinition {
       designer: json['designer'] as String?,
       license: json['license'] as String?,
       subtensions: json['subtensions'] as Map<String, dynamic>?,
+      subtensionOrigin: origin,
+      calibrationProvenance: provenance,
     );
   }
 
@@ -484,11 +586,31 @@ class ReticleDefinition {
     String? designer,
     String? license,
     String? subtensionsJson,
+    String subtensionOrigin = 'original',
+    String? calibrationProvenanceJson,
   }) {
     final elementsJson = json.decode(definitionJson) as List<dynamic>;
     final subtensions = subtensionsJson != null
         ? (json.decode(subtensionsJson) as Map<String, dynamic>)
         : null;
+    // Safe-decode the provenance blob. A malformed or non-object payload
+    // collapses to null so the disclaimer surface can fall back to the
+    // generic "Calibrated to manufacturer specification" string rather
+    // than throw — the IP-posture rule (CLAUDE.md § 30) is that we
+    // ALWAYS surface SOME interoperability disclaimer, never an empty
+    // caption or a crash.
+    Map<String, dynamic>? provenance;
+    if (calibrationProvenanceJson != null &&
+        calibrationProvenanceJson.isNotEmpty) {
+      try {
+        final decoded = json.decode(calibrationProvenanceJson);
+        if (decoded is Map<String, dynamic>) {
+          provenance = decoded;
+        }
+      } catch (_) {
+        provenance = null;
+      }
+    }
     return ReticleDefinition(
       id: id,
       manufacturer: manufacturer,
@@ -507,6 +629,8 @@ class ReticleDefinition {
       designer: designer,
       license: license,
       subtensions: subtensions,
+      subtensionOrigin: subtensionOrigin,
+      calibrationProvenance: provenance,
     );
   }
 
@@ -534,6 +658,9 @@ class ReticleDefinition {
         if (designer != null) 'designer': designer,
         if (license != null) 'license': license,
         if (subtensions != null) 'subtensions': subtensions,
+        'subtensionOrigin': subtensionOrigin,
+        if (calibrationProvenance != null)
+          'calibrationProvenance': calibrationProvenance,
       };
 
   /// Parse the seed-file/database string for `type` into the enum.

@@ -2500,3 +2500,175 @@ takedown notices arrive, we flip the toggle's default to ON and
 ship a build that uses purely original subtensions on the same
 LoadOut-original artwork. **The toggle's existence is the
 load-bearing safety mechanism — do not remove it.**
+
+### Phase 2 / Phase 5 update (v2.3) — data model simplified
+
+The dual-track `subtensionsOriginal` / `subtensionsCalibrated`
+schema described above was **simplified during the v2.3 rewrite**.
+The current production schema in `assets/seed_data/reticles.json`
+(v2.3 catalog, 52 reticles) collapses the dual subtension blob into
+a single `subtensions` block on each row, plus a `subtension_origin`
+discriminator enum:
+
+| `subtension_origin` value | Population (v2.3) | What it means |
+|---|---|---|
+| `original` | 21 | LoadOut-authored geometry, no external reference spec |
+| `public_domain` | 21 | Traditional pre-modern patterns (duplex, German, plex, mil-dot) |
+| `published_spec` | 10 | LoadOut-original artwork; subtensions calibrated to a manufacturer's published spec. `calibration_provenance` JSON blob carries the citation. |
+
+The legacy `reticles_v2.json` filename was retired in Phase 2 — the
+catalog lives at `assets/seed_data/reticles.json` now.
+
+The "Use Original Subtensions (Debug)" toggle described above is
+**not present** in the v2.3 production build; the dual-track
+runtime switch was deemed unnecessary once the schema collapsed.
+If a future takedown letter requires reverting to purely-original
+subtensions, the relevant change is to bulk-rewrite the 10
+`published_spec` rows' subtension blocks rather than flipping a
+single setting. The data layer makes that mechanical (one Python
+script over the JSON catalog); the architectural safety net is
+still present, just implemented as catalog-edit rather than
+runtime flag.
+
+**Phase 6 disclaimer template addition (v2.3).** The single fixed
+caption "LoadOut Original — Interoperability Calibration" described
+above is now **per-origin variable** as of Phase 6 §C:
+
+| `subtension_origin` | Caption | Tooltip |
+|---|---|---|
+| `original` | "LoadOut Original" | "Engineered for your scope's subtensions" |
+| `public_domain` | "Public Domain Reticle" | "Traditional duplex / hash / dot pattern; not subject to trademark or copyright" |
+| `published_spec` | "Calibrated to [Manufacturer] [Reticle Name]" (filled from `calibration_provenance`) | "Subtensions calibrated to the published manufacturer specification. Not a reproduction. Verify against your scope's specification sheet for precision use." |
+
+The "Not a reproduction" framing on `published_spec` is load-bearing
+legal posture per `docs/IP_POSTURE.md`. Marketing and engineering
+docs that reference the single fixed caption are stale; the
+authoritative per-origin templates live in
+`lib/widgets/reticle_renderer.dart`'s `ReticleInteroperabilityLabel`.
+
+For the full Phase 5 / 6 IP posture writeup including patent
+landscape and FTO scoping, see `docs/IP_POSTURE.md`. For the v2.3
+brief errata (the discovery and resolution log), see
+`docs/v2.3_BRIEF_ERRATA.md`.
+
+---
+
+## 31. Range Day Realistic painter architecture (v2.3)
+
+The v2.3 rewrite added a "Realistic mode" scope view that renders a
+procedural scene (sky / grass / mound / post / target / reticle / lighting)
+matching reference images. The architecture is documented here because
+several factoring decisions are non-obvious and easy to misread.
+
+### Three painters cooperate inside the scope view
+
+| Painter | File | Responsibility |
+|---|---|---|
+| `ScopeDaytimeBackdropPainter` | `lib/widgets/scope_daytime_backdrop.dart` | Sky, grass, mound, optional target silhouette, atmospheric haze. Used by reticle picker preview AND scope view AND Range Day Realistic. |
+| `_RealisticTargetPainter` | `lib/screens/range_day/widgets/target_plot.dart` | The Range Day Realistic painter. Composes the backdrop + post / cross-bar + target silhouettes + aim point + scope ring + reticle on top. |
+| `_ReticlePainter` | `lib/widgets/reticle_renderer.dart` | Just the reticle (lines / hashes / dots / labels). Used inside the scope ring. |
+
+### Two `bool` flags on `ScopeDaytimeBackdropPainter`
+
+The backdrop painter has three consumers (reticle picker preview,
+scope view preview, Range Day Realistic). Range Day Realistic
+needs DIFFERENT band coefficients (per the v2.3 brief §6.2.1):
+
+- Horizon at 0.78 H instead of legacy 0.62 H
+- Mound rendered as a foreground brown-oval berm at 0.82–0.92 H ×
+  0.18 W instead of a hill silhouette rising above the horizon
+- Post at 0.025 W from target_bottom (~0.55 H) to 0.85 H
+
+Two flags select the variant rather than introducing a separate
+painter class:
+
+| Flag | Default | When `true` |
+|---|---|---|
+| `realisticMode` | `false` | Use §6.2.1 band coefficients (Range Day Realistic). Default `false` preserves picker preview + scope view legacy 0.62 horizon. |
+| `paintMound` | `true` | Suppress the shared mound when the rack mount style is `popper_base` or `individual_posts` (Range Day Realistic rack modes that render per-child support graphics on grass instead of a shared berm). |
+
+Decision NOT to make these an enum: `realisticMode` is binary;
+`paintMound` is orthogonal (rack mode independent of horizon
+position). Two flags is the lower-coupling factoring.
+
+### `RealisticLayout` is public for testability
+
+`_RealisticLayout` → `RealisticLayout` (rename without
+underscore prefix) so `test/scene_composition_test.dart` can
+directly construct layouts and assert band coefficients without
+spinning up a full widget paint. The class is a pure value type
+(no mutable state, no side effects in the constructor) so
+widening its scope has zero behavioural risk.
+
+### `shouldRenderReticleElement` is a public top-level function
+
+The §6A.1 adaptive LOD gate. Was originally `_shouldRenderReticleElement`
+(library-private). Made public so `test/reticle_lod_test.dart` can
+verify the gate downshifts at the prescribed thresholds:
+
+- `CrosshairLine` → always renders
+- `HashMark` → skip when `length × pxPerUnit < 1.5`
+- `CenterDot` / `HoldoverDot` → skip when `radius × pxPerUnit < 0.5`
+- `FloatingNumber` → skip when `fontSize × pxPerUnit < 6.0`
+
+Pure function; no painter state; widening scope is safe.
+
+**Critically, the gate is invoked from `_ReticlePainter.paint`'s
+element loop** via `if (!shouldRenderReticleElement(el, pxPerUnit))
+continue;` so the v2.3 DoD warning ("Adaptive LOD code path exists
+is not the same as adaptive LOD actually downshifts on slow
+devices") is satisfied.
+
+### `scope_catalog_v2` lazy-loaded read-only service
+
+`lib/services/scope_catalog_v2.dart` is the runtime accessor for
+the merged v2.3 catalog JSONs (`scopes.json` / `reticles.json` /
+`scope_reticle_options.json`). It exposes `allScopes()`,
+`allReticles()`, `scopeById()`, `reticleById()`,
+`defaultReticleIdForScope()`. Singleton with `debugResetCache()`
+for tests.
+
+Consumed by the per-firearm default scope+reticle UI on the firearm
+form (`lib/screens/firearms/firearm_form_screen.dart` —
+`_defaultScopePicker` / `_defaultReticlePicker`) and by the Range
+Day pre-population logic
+(`lib/screens/range_day/range_day_detail_screen.dart`
+`_applyV2DefaultsFromFirearm`).
+
+Soft-fails to empty list on missing / malformed assets. Replaces
+the older `lib/services/scope_catalog_service.dart` for v2.3-aware
+call sites; the legacy service still backs the old "Find by My
+Scope" picker until that's migrated (a v2.4 task).
+
+### Rack rendering — four mount-style dispatch
+
+`_RealisticTargetPainter.paint` dispatches on the rack mount style
+(forwarded from `TargetPlot.rackMountStyle` → ultimately from
+`TargetRackRow.rackKind` in drift):
+
+| Mount style | Painter | Mound? |
+|---|---|---|
+| `hanging_rail` (KYL, Equal, Decreasing) | `_paintHangingRail` (renamed from legacy `_paintCrossBarAndChains`) | Shared berm |
+| `standing_stakes` (Square Rack) | `_paintStakes` | Shared berm |
+| `popper_base` (Pepper Popper) | `_paintPopperBases` | **No shared mound** — each popper has a trapezoidal concrete base on grass; `paintMound: false` |
+| `individual_posts` (IDPA Open Stage) | `_paintIndividualPosts` | **No shared mound** — each child has its own post + mini brown-oval berm; `paintMound: false` |
+| anything else (e.g. `rotating_hub` for Texas Star) | falls through to `_paintHangingRail` | Shared berm |
+
+Active-child highlighting: `kRackActiveStrokeWidth = 2.5` /
+`kRackInactiveStrokeWidth = 1.5` (top-level constants). Active
+plate gets the thicker stroke; inactive plates the thinner. No
+fill change, no other visual treatment.
+
+### Files-of-record for the painter architecture
+
+- `lib/widgets/scope_daytime_backdrop.dart` — backdrop painter (sky / grass / mound + the two flags)
+- `lib/screens/range_day/widgets/target_plot.dart` — Range Day Realistic painter (composes backdrop, renders rack / single target, scope ring + reticle)
+- `lib/widgets/reticle_renderer.dart` — reticle painter (LOD gate, per-origin disclaimer label)
+- `lib/services/scope_catalog_v2.dart` — v2.3 catalog accessor
+- `test/scene_composition_test.dart` — band coefficient regression
+- `test/ipsc_path_test.dart` — IPSC silhouette geometry regression
+- `test/reticle_lod_test.dart` — LOD gate threshold regression
+- `test/rack_rendering_test.dart` — mount-style dispatch + headroom regression
+- `test/reticle_disclaimer_templates_test.dart` — per-origin disclaimer regression
+- `test/reticle_mapping_top35_test.dart` — Appendix G top-35 reticle reference set
+- `test/scope_catalog_v2_test.dart` — scope catalog service tests

@@ -1,0 +1,184 @@
+id,manufacturer,model_name,fov_at_100yd_ft,fov_source,source_url
+aimpoint_acro_p_2,Aimpoint,Acro P-2,,unlimited,
+aimpoint_compm4s,Aimpoint,CompM4s,,unlimited,
+aimpoint_compm5,Aimpoint,CompM5,,unlimited,https://www.aimpoint.us/sights/red-dot-sights/compm5/
+aimpoint_compm5s,Aimpoint,CompM5s,,unlimited,
+aimpoint_micro_h_2,Aimpoint,Micro H-2,,unlimited,
+aimpoint_micro_t_2,Aimpoint,Micro T-2,,unlimited,
+aimpoint_pro_patrol_rifle_optic,Aimpoint,PRO Patrol Rifle Optic,,unlimited,
+arken_optics_ep5_5_25x56_ffp,Arken Optics,EP5 5-25x56 FFP,21.0,manufacturer,https://arkenoptics.com/products/ep-5-5-25x56-ffp-glass-etched-illuminated-tactical-rifle-scope-with-zero-stop-side-parallax-34mm-tube-with-rings
+arken_optics_sh4_6_24x50_ffp,Arken Optics,SH4 6-24x50 FFP,17.7,manufacturer,https://arkenoptics.com/products/sh4-gen-2-6-24x50-ffp
+athlon_optics_ares_btr_gen2_2_5_15x50,Athlon Optics,Ares BTR Gen2 2.5-15x50,40.7,manufacturer,https://www.athlonoptics.com/product/ares-btr-gen2-2-5-15x50-direct-dial-illumination-side-focus-30mm-ffp-riflescope/
+athlon_optics_ares_etr_uhd_4_5_30x56,Athlon Optics,Ares ETR UHD 4.5-30x56,24.0,manufacturer,https://www.athlonoptics.com/product/ares-etr-uhd-4-5-30x56-direct-dial-illumination-34mm-ffp-riflescope/
+athlon_optics_argos_btr_gen2_6_24x50,Athlon Optics,Argos BTR Gen2 6-24x50,17.6,manufacturer,https://www.athlonoptics.com/product/argos-btr-gen2-6-24x50-direct-dial-illumination-30mm-ffp-riflescope/
+athlon_optics_cronus_btr_4_5_29x56,Athlon Optics,Cronus BTR 4.5-29x56,23.6,manufacturer,https://www.athlonoptics.com/product/cronus-btr-4-5-29x56-direct-dial-illumination-side-focus-34mm-ffp-riflescope/
+athlon_optics_cronus_btr_gen2_4_5_29x56,Athlon Optics,Cronus BTR Gen2 4.5-29x56,23.6,manufacturer,https://www.athlonoptics.com/product/cronus-btr-gen2-4-5-29x56-direct-dial-illumination-side-focus-34mm-ffp-riflescope/
+athlon_optics_helos_btr_gen2_2_12x42,Athlon Optics,Helos BTR Gen2 2-12x42,51.6,manufacturer,https://www.athlonoptics.com/product/helos-btr-gen2-2-12x42-direct-dial-illumination-side-focus-30mm-ffp-riflescope/
+athlon_optics_midas_btr_gen2_4_5_27x50,Athlon Optics,Midas BTR Gen2 4.5-27x50,24.7,manufacturer,https://www.athlonoptics.com/product/midas-btr-gen2-4-5-27x50-direct-dial-illumination-30mm-ffp-riflescope/
+athlon_optics_midas_tac_hd_6_24x50,Athlon Optics,Midas TAC HD 6-24x50,16.7,manufacturer,https://www.athlonoptics.com/product/midas-tac-hd-6-24x50-30mm-ffp-mil-riflescope/
+burris_eliminator_6_4_20x52,Burris,Eliminator 6 4-20x52,20.0,manufacturer,https://www.burrisoptics.com/scopes/eliminator-6-4-20x52mm
+burris_fullfield_iv_3_12x42,Burris,Fullfield IV 3-12x42,37.0,manufacturer,https://www.burrisoptics.com/scopes/fullfield-iv-3-12x42mm
+burris_fullfield_iv_4_16x50,Burris,Fullfield IV 4-16x50,25.0,manufacturer,https://www.burrisoptics.com/scopes/fullfield-iv-4-16x50mm
+burris_veracity_ph_3_15x44,Burris,Veracity PH 3-15x44,33.0,manufacturer,https://www.burrisoptics.com/scopes/veracity-ph-3-15x44mm
+burris_veracity_ph_4_20x50,Burris,Veracity PH 4-20x50,20.0,manufacturer,https://www.burrisoptics.com/scopes/veracity-ph-4-20x50mm
+burris_xtr_iii_3_3_18x50,Burris,XTR III 3.3-18x50,37.0,manufacturer,https://www.burrisoptics.com/scopes/xtr-iii-3-3-18x50mm
+burris_xtr_iii_5_5_30x56,Burris,XTR III 5.5-30x56,20.0,manufacturer,https://www.burrisoptics.com/scopes/xtr-iii-5-5-30x56mm
+burris_xtr_pro_5_5_30x56,Burris,XTR Pro 5.5-30x56,20.0,manufacturer,https://www.burrisoptics.com/scopes/xtr-pro-5-5-30x56
+bushnell_elite_tactical_dmr3_3_5_21x50,Bushnell,Elite Tactical DMR3 3.5-21x50,33.0,manufacturer,https://www.bushnell.com/optics/rifle-scopes/elite-tactical/elite-tactical-dmr3-3-5-21x50-riflescope/ET35215G3.html
+bushnell_elite_tactical_xrs3_6_36x56,Bushnell,Elite Tactical XRS3 6-36x56,17.5,manufacturer,https://www.bushnell.com/optics/rifle-scopes/elite-tactical/elite-tactical-xrs3-6-36x56-riflescope/ET63656G4.html
+bushnell_engage_3_9x40,Bushnell,Engage 3-9x40,39.0,manufacturer,https://www.bushnell.com/optics/rifle-scopes/engage/engage-3-9x40-riflescope/RE3940BS3.html
+bushnell_engage_4_16x44,Bushnell,Engage 4-16x44,25.0,manufacturer,https://www.bushnell.com/optics/rifle-scopes/engage/engage-4-16x44-riflescope/RE4164BS3.html
+bushnell_forge_4_5_27x50,Bushnell,Forge 4.5-27x50,23.0,manufacturer,https://www.bushnell.com/optics/rifle-scopes/forge/forge-4-5-27x50-riflescope/RF4275BS3.html
+bushnell_match_pro_6_24x50,Bushnell,Match Pro 6-24x50,17.0,manufacturer,https://www.bushnell.com/optics/rifle-scopes/match-pro/match-pro-6-24x50-riflescope/MP6245BF1.html
+bushnell_match_pro_ed_5_30x56,Bushnell,Match Pro ED 5-30x56,22.5,manufacturer,https://www.bushnell.com/optics/rifle-scopes/match-pro/match-pro-ed-5-30x56-riflescope/MP63056ED.html
+carl_zeiss_conquest_v4_4_16x44,Carl Zeiss,Conquest V4 4-16x44,24.0,manufacturer,https://www.zeiss.com/consumer-products/us/hunting/riflescopes/conquest-v4/conquest-v4-4-16x44.html
+carl_zeiss_conquest_v4_6_24x50,Carl Zeiss,Conquest V4 6-24x50,18.0,manufacturer,https://www.zeiss.com/consumer-products/us/hunting/riflescopes/conquest-v4/conquest-v4-6-24x50.html
+carl_zeiss_conquest_v6_3_18x50,Carl Zeiss,Conquest V6 3-18x50,34.0,manufacturer,https://www.zeiss.com/consumer-products/us/hunting/riflescopes/conquest-v6/conquest-v6-3-18x50.html
+carl_zeiss_lrp_s3_4_25x50,Carl Zeiss,LRP S3 4-25x50,24.0,manufacturer,https://www.zeiss.com/consumer-products/us/precision-shooting/first-focal-plane-riflescopes/lrp-s3/lrp-s3-425-50.html
+carl_zeiss_lrp_s3_6_36x56,Carl Zeiss,LRP S3 6-36x56,15.0,manufacturer,https://www.zeiss.com/consumer-products/us/precision-shooting/first-focal-plane-riflescopes/lrp-s3/lrp-s3-636-56.html
+carl_zeiss_lrp_s5_3_6_18x50,Carl Zeiss,LRP S5 3.6-18x50,28.5,manufacturer,https://www.zeiss.com/consumer-products/us/precision-shooting/first-focal-plane-riflescopes/lrp-s5/lrp-s5-3618-50.html
+carl_zeiss_lrp_s5_5_25x56,Carl Zeiss,LRP S5 5-25x56,20.1,manufacturer,https://www.zeiss.com/consumer-products/us/precision-shooting/first-focal-plane-riflescopes/lrp-s5/lrp-s5-525-56.html
+carl_zeiss_victory_v8_2_8_20x56,Carl Zeiss,Victory V8 2.8-20x56,42.0,manufacturer,https://www.zeiss.com/consumer-products/int/hunting/riflescopes/v8/v8-2-8-20x56.html
+carl_zeiss_victory_v8_4_8_35x60,Carl Zeiss,Victory V8 4.8-35x60,24.6,manufacturer,https://www.zeiss.com/consumer-products/int/hunting/riflescopes/v8/v8-4-8-35x60.html
+deon_optical_design_march_march_fx_4_5_28x52_ffp_tactical_high_master_wide_angle,DEON Optical Design (March),March-FX 4.5-28x52 FFP Tactical High Master Wide-Angle,24.6,manufacturer,https://marchscopes.com/scopes/d28hv52wfimlx/
+deon_optical_design_march_march_x_5_50x56_sfp_tactical,DEON Optical Design (March),March-X 5-50x56 SFP Tactical,21.0,manufacturer,https://marchscopes.com/scopes/d50v56ti/
+eotech_512_holographic,EOTech,512 Holographic,,unlimited,
+eotech_exps3_0_holographic,EOTech,EXPS3-0 Holographic,,unlimited,
+eotech_vudu_1_6x24_ffp,EOTech,VUDU 1-6x24 FFP,101.0,manufacturer,https://www.eotechinc.com/scopes/vudu-1-6x24mm-ffp
+eotech_vudu_5_25x50_ffp,EOTech,VUDU 5-25x50 FFP,22.0,manufacturer,https://www.eotechinc.com/scopes/vudu-5-25x50-ffp
+eotech_xps2_0_holographic,EOTech,XPS2-0 Holographic,,unlimited,
+eotech_xps3_0_holographic,EOTech,XPS3-0 Holographic,,unlimited,https://www.eotechinc.com/holographic-weapon-sights/xps3-0
+element_optics_helix_6_24x50_ffp,Element Optics,Helix 6-24x50 FFP,16.8,manufacturer,https://www.elementoptics.com/helix-6-24x50-ffp
+hawke_optics_endurance_30_4_16x50,Hawke Optics,Endurance 30 4-16x50,24.1,manufacturer,https://us.hawkeoptics.com/endurance-30-4-16x50-lr-dot-reticle.html
+hawke_optics_frontier_30_sf_5_30x56,Hawke Optics,Frontier 30 SF 5-30x56,21.6,manufacturer,https://us.hawkeoptics.com/frontier-30-sf-5-30x56-mil-pro-reticle.html
+hawke_optics_frontier_34_ffp_5_30x56,Hawke Optics,Frontier 34 FFP 5-30x56,21.6,manufacturer,https://us.hawkeoptics.com/frontier-34-ffp-5-30x56-mil-pro-ext-reticle.html
+hawke_optics_sidewinder_30_ffp_4_16x50,Hawke Optics,Sidewinder 30 FFP 4-16x50,25.3,manufacturer,https://us.hawkeoptics.com/sidewinder-30-ffp-4-16x50-half-mil-reticle.html
+hawke_optics_vantage_4_12x50_ao,Hawke Optics,Vantage 4-12x50 AO,26.0,manufacturer,https://us.hawkeoptics.com/vantage-4-12x50-ao-mil-dot-reticle.html
+hensoldt_zf_4_16x56,Hensoldt,ZF 4-16x56,24.6,manufacturer,https://www.hensoldt.net/products/optronics/sights/sniper-and-extreme-long-range-rifle-scopes/zf-4-16x56-fftpm/
+hensoldt_zf_6_24x72,Hensoldt,ZF 6-24x72,16.5,manufacturer,https://www.hensoldt.net/products/optronics/sights/sniper-and-extreme-long-range-rifle-scopes/zf-6-24x72-fftpm/
+holosun_aems,Holosun,AEMS,,unlimited,
+holosun_aems_core,Holosun,AEMS Core,,unlimited,
+holosun_he509t,Holosun,HE509T,,unlimited,https://holosun.com/products/red-dot-sights/he509t-rd.html
+holosun_he509t_rd_x2,Holosun,HE509T-RD X2,,unlimited,
+holosun_hm3x_magnifier,Holosun,HM3X Magnifier,,unlimited,
+holosun_hs503cu,Holosun,HS503CU,,unlimited,
+holosun_hs510c,Holosun,HS510C,,unlimited,
+kahles_k318i_3_5_18x50,Kahles,K318i 3.5-18x50,34.5,manufacturer,https://www.kahles.at/en/riflescope-k318i-3-5-18x50/
+kahles_k525i_5_25x56,Kahles,K525i 5-25x56,24.0,manufacturer,https://www.kahles.at/en/riflescope-k525i-5-25x56/
+kahles_k624i_6_24x56,Kahles,K624i 6-24x56,20.4,manufacturer,https://www.kahles.at/en/riflescope-k624i-6-24x56/
+leupold_mark_4hd_2_5_10x42,Leupold,Mark 4HD 2.5-10x42,43.5,manufacturer,https://www.leupold.com/mark-4hd-2-5-10x42-m5c3-side-focus-ffp-tmr-illum
+leupold_mark_4hd_4_5_18x52_m5c3_ffp,Leupold,Mark 4HD 4.5-18x52 M5C3 FFP,22.0,manufacturer,https://www.leupold.com/mark-4hd-4-5-18x52-m5c3-side-focus-ffp-pr2-mil-riflescope
+leupold_mark_4hd_6_24x52,Leupold,Mark 4HD 6-24x52,16.7,manufacturer,https://www.leupold.com/mark-4hd-6-24x52-m5c3-side-focus-ffp-pr1-mil-illum
+leupold_mark_5hd_3_6_18x44,Leupold,Mark 5HD 3.6-18x44,28.6,manufacturer,https://www.leupold.com/mark-5hd-3-6-18x44-m5c3-illum-tmr-riflescope
+leupold_mark_5hd_5_25x56_m5c3_ffp,Leupold,Mark 5HD 5-25x56 M5C3 FFP,20.5,manufacturer,https://www.leupold.com/mark-5hd-5-25x56-m5c3-ffp-pr2-mil-riflescope
+leupold_mark_5hd_7_35x56,Leupold,Mark 5HD 7-35x56,14.7,manufacturer,https://www.leupold.com/mark-5hd-7-35x56-m5c3-pr-2-mil-illum
+leupold_vx_3hd_3_5_10x40,Leupold,VX-3HD 3.5-10x40,29.8,manufacturer,https://www.leupold.com/vx-3hd-3-5-10x40-cds-zl-duplex-riflescope
+leupold_vx_3hd_4_5_14x40,Leupold,VX-3HD 4.5-14x40,20.3,manufacturer,https://www.leupold.com/vx-3hd-4-5-14x40-cds-zl-duplex-riflescope
+leupold_vx_5hd_3_15x44_cds_zl2_side_focus,Leupold,VX-5HD 3-15x44 CDS-ZL2 Side Focus,37.5,manufacturer,https://www.leupold.com/vx-5hd-3-15x44-cds-zl2-side-focus-htmr-riflescope
+leupold_vx_5hd_4_20x52,Leupold,VX-5HD 4-20x52,24.0,manufacturer,https://www.leupold.com/vx-5hd-4-20x52-cds-zl2-side-focus-firedot-duplex-riflescope
+leupold_vx_6hd_2_12x42,Leupold,VX-6HD 2-12x42,55.6,manufacturer,https://www.leupold.com/vx-6hd-2-12x42-cds-zl2-side-focus-firedot-duplex-riflescope
+leupold_vx_6hd_3_18x44,Leupold,VX-6HD 3-18x44,37.5,manufacturer,https://www.leupold.com/vx-6hd-3-18x44-cds-zl2-side-focus-firedot-4-riflescope
+leupold_vx_freedom_3_9x40,Leupold,VX-Freedom 3-9x40,33.7,manufacturer,https://www.leupold.com/vx-freedom-3-9x40-duplex-riflescope
+leupold_vx_freedom_4_12x40,Leupold,VX-Freedom 4-12x40,24.0,manufacturer,https://www.leupold.com/vx-freedom-4-12x40-tri-moa-riflescope
+maven_rs_1_2_5_15x44,Maven,RS.1 2.5-15x44,44.5,manufacturer,https://mavenbuilt.com/products/rs-1-2-5-15x44-ffp-rifle-scope
+maven_rs_2_2_10x38,Maven,RS.2 2-10x38,52.5,manufacturer,https://mavenbuilt.com/products/rs-2-2-10x38-sfp-rifle-scope
+maven_rs_3_5_30x50,Maven,RS.3 5-30x50,21.6,manufacturer,https://mavenbuilt.com/products/rs-3-5-30x50-ffp-rifle-scope
+maven_rs_4_5_30x56_ffp,Maven,RS.4 5-30x56 FFP,21.5,manufacturer,https://mavenbuilt.com/products/rs-4-5-30x56-ffp-rifle-scope
+maven_rs_5_4_24x50_ffp,Maven,RS.5 4-24x50 FFP,27.0,manufacturer,https://mavenbuilt.com/products/rs-5-4-24x50-ffp-rifle-scope
+meopta_optika6_4_5_27x50_rd_ffp,Meopta,Optika6 4.5-27x50 RD FFP,23.6,manufacturer,https://www.meopta.com/en/optika6-4-5-27x50-rd-ffp/
+meopta_optika6_5_30x56_rd_ffp,Meopta,Optika6 5-30x56 RD FFP,22.5,manufacturer,https://www.meopta.com/en/optika6-5-30x56-rd-ffp/
+nightforce_optics_atacr_1_8x24_f1,Nightforce Optics,ATACR 1-8x24 F1,107.5,manufacturer,https://www.nightforceoptics.com/riflescopes/atacr/atacr-1-8x24-f1
+nightforce_optics_atacr_4_16x42_f1,Nightforce Optics,ATACR 4-16x42 F1,26.9,manufacturer,https://www.nightforceoptics.com/riflescopes/atacr/atacr-4-16x42-f1
+nightforce_optics_atacr_5_25x56_f1,Nightforce Optics,ATACR 5-25x56 F1,19.0,manufacturer,https://www.nightforceoptics.com/riflescopes/atacr/atacr-5-25x56-f1
+nightforce_optics_atacr_7_35x56_f1,Nightforce Optics,ATACR 7-35x56 F1,15.0,manufacturer,https://www.nightforceoptics.com/riflescopes/atacr/atacr-7-35x56-f1
+nightforce_optics_beast_5_25x56_f1,Nightforce Optics,BEAST 5-25x56 F1,19.0,manufacturer,https://www.nightforceoptics.com/riflescopes/beast/beast-5-25x56-f1
+nightforce_optics_nx8_1_8x24_f1,Nightforce Optics,NX8 1-8x24 F1,107.5,manufacturer,https://www.nightforceoptics.com/riflescopes/nx8/nx8-1-8x24-f1
+nightforce_optics_nx8_2_5_20x50_f1,Nightforce Optics,NX8 2.5-20x50 F1,40.5,manufacturer,https://www.nightforceoptics.com/riflescopes/nx8/nx8-2-5-20x50-f1
+nightforce_optics_nx8_4_32x50_f1,Nightforce Optics,NX8 4-32x50 F1,26.9,manufacturer,https://www.nightforceoptics.com/riflescopes/nx8/nx8-4-32x50-f1
+nightforce_optics_nxs_3_5_15x50,Nightforce Optics,NXS 3.5-15x50,27.6,manufacturer,https://www.nightforceoptics.com/riflescopes/nxs/nxs-3-5-15x50
+nightforce_optics_nxs_5_5_22x56,Nightforce Optics,NXS 5.5-22x56,17.5,manufacturer,https://www.nightforceoptics.com/riflescopes/nxs/nxs-5-5-22x56
+nightforce_optics_shv_4_14x56,Nightforce Optics,SHV 4-14x56,24.9,manufacturer,https://www.nightforceoptics.com/riflescopes/shv/shv-4-14x56
+nightforce_optics_shv_5_20x56,Nightforce Optics,SHV 5-20x56,19.4,manufacturer,https://www.nightforceoptics.com/riflescopes/shv/shv-5-20x56
+primary_arms_glx_1_6x24,Primary Arms,GLx 1-6x24,113.0,manufacturer,https://www.primaryarms.com/primary-arms-glx-1-6x24mm-sfp-rifle-scope-illuminated-acss-raptor-m6
+primary_arms_glx_2_5_10x44,Primary Arms,GLx 2.5-10x44,44.7,manufacturer,https://www.primaryarms.com/primary-arms-glx-2.5-10x44-ffp-rifle-scope-illuminated-acss-griffin-mil-reticle
+primary_arms_glx_4_16x50_ffp,Primary Arms,GLx 4-16x50 FFP,28.4,manufacturer,https://www.primaryarms.com/primary-arms-glx-4-16x50ff-rifle-scope-illuminated-acss-griffin-mil-r2-reticle-25-yds
+primary_arms_plx_1_8x24_ffp,Primary Arms,PLx 1-8x24 FFP,108.0,manufacturer,https://www.primaryarms.com/primary-arms-plx-1-8x24-mil-ffp-rifle-scope-illuminated-acss-raptor-m8
+primary_arms_plx_6_30x56_ffp,Primary Arms,PLx 6-30x56 FFP,19.0,manufacturer,https://www.primaryarms.com/primary-arms-plx-6-30x56-ffp-rifle-scope-illuminated-acss-apollo-6.5-grendel-creedmoor-reticle
+primary_arms_slx_1_6x24_gen_iv,Primary Arms,SLx 1-6x24 Gen IV,110.0,manufacturer,https://www.primaryarms.com/primary-arms-slx-1-6x24-gen-iv-sfp-rifle-scope-illuminated-acss-raptor
+primary_arms_slx_1_8x24,Primary Arms,SLx 1-8x24,102.0,manufacturer,https://www.primaryarms.com/primary-arms-slx-1-8x24-ffp-rifle-scope-illuminated-acss-raptor-m8
+primary_arms_slx_4_14x44_ffp,Primary Arms,SLx 4-14x44 FFP,24.5,manufacturer,https://www.primaryarms.com/primary-arms-slx-4-14x44mm-ffp-rifle-scope-illuminated-acss-hud-dmr-308-reticle
+riton_optics_5_conquer_5_25x56_ffp,Riton Optics,5 Conquer 5-25x56 FFP,22.5,manufacturer,https://ritonoptics.com/product/5-conquer-5-25x56-v2/
+riton_optics_7_conquer_4_32x56_ffp,Riton Optics,7 Conquer 4-32x56 FFP,24.7,manufacturer,https://ritonoptics.com/product/7-conquer-4-32x56-v2/
+riton_optics_x3_primal_3_15x44,Riton Optics,X3 Primal 3-15x44,36.0,manufacturer,https://ritonoptics.com/product/3-primal-3-15x44/
+riton_optics_x5_conquer_5_25x50,Riton Optics,X5 Conquer 5-25x50,22.5,manufacturer,https://ritonoptics.com/product/5-conquer-5-25x50/
+riton_optics_x7_conquer_3_24x50,Riton Optics,X7 Conquer 3-24x50,39.0,manufacturer,https://ritonoptics.com/product/7-conquer-3-24x50/
+riton_optics_x7_conquer_5_25x56,Riton Optics,X7 Conquer 5-25x56,22.5,manufacturer,https://ritonoptics.com/product/7-conquer-5-25x56/
+schmidt_bender_klassik_8x56,Schmidt & Bender,Klassik 8x56,14.4,manufacturer,https://www.schmidtundbender.de/en/8x56-Klassik-LM/803-973-981-A5-A5
+schmidt_bender_pm_ii_1_8x24,Schmidt & Bender,PM II 1-8x24,123.0,manufacturer,https://www.schmidtundbender.de/en/1-8x24-PM-II-ShortDot-Dual-CC
+schmidt_bender_pm_ii_3_20x50,Schmidt & Bender,PM II 3-20x50,37.5,manufacturer,https://www.schmidtundbender.de/en/3-20x50-PM-II-Ultra-Short-LP-GR2ID-1cm-cw-DT27-MTC-LT-ST-ZC-CT/667-911-422-G8-E8
+schmidt_bender_pm_ii_3_20x50_ultra_short,Schmidt & Bender,PM II 3-20x50 Ultra Short,37.5,manufacturer,https://www.schmidtundbender.de/en/3-20x50-PM-II-Ultra-Short-LP-GR2ID-1cm-cw-DT27-MTC-LT-ST-ZC-CT/667-911-422-G8-E8
+schmidt_bender_pm_ii_5_25x56,Schmidt & Bender,PM II 5-25x56,17.4,manufacturer,https://www.schmidtundbender.de/en/5-25x56-PM-II-LP-TREMOR3-1cm-cw-DT27-MTC-LT-ST-ZC-CT/689-911-552-G9-E9
+schmidt_bender_pm_ii_5_45x56,Schmidt & Bender,PM II 5-45x56,13.7,manufacturer,https://www.schmidtundbender.de/en/5-45x56-PM-II-High-Power
+schmidt_bender_polar_t96_3_20x50,Schmidt & Bender,Polar T96 3-20x50,37.5,manufacturer,https://www.schmidtundbender.de/en/3-20x50-Polar-T96-LP-CW-iLR/667-913-402-A8-E9
+schmidt_bender_stratos_1_5_8x42,Schmidt & Bender,Stratos 1.5-8x42,68.4,manufacturer,https://www.schmidtundbender.de/en/1-5-8x42-Stratos/838-963-981-A8-A8
+schmidt_bender_stratos_2_5_13x56,Schmidt & Bender,Stratos 2.5-13x56,40.5,manufacturer,https://www.schmidtundbender.de/en/2-5-13x56-Stratos/943-993-981-A1-A8
+sig_sauer_sierra10_bdx_5_50x56,Sig Sauer,Sierra10 BDX 5-50x56,21.6,manufacturer,https://www.sigsauer.com/sierra10-bdx-riflescope.html
+sig_sauer_sierra3_bdx_4_5_14x44,Sig Sauer,Sierra3 BDX 4.5-14x44,23.5,manufacturer,https://www.sigsauer.com/sierra3-bdx-riflescope.html
+sig_sauer_sierra6_bdx_5_30x56,Sig Sauer,Sierra6 BDX 5-30x56,20.0,manufacturer,https://www.sigsauer.com/sierra6-bdx-riflescope.html
+sig_sauer_tango4_6_24x50,Sig Sauer,Tango4 6-24x50,19.0,manufacturer,https://www.sigsauer.com/tango4-riflescope.html
+sig_sauer_tango6_5_30x56,Sig Sauer,Tango6 5-30x56,22.6,manufacturer,https://www.sigsauer.com/tango6-riflescope.html
+sig_sauer_tango6t_1_6x24,Sig Sauer,Tango6T 1-6x24,97.0,manufacturer,https://www.sigsauer.com/tango6t-riflescope.html
+sig_sauer_tango6t_dev_l_5_30x56,Sig Sauer,Tango6T DEV-L 5-30x56,22.5,manufacturer,https://www.sigsauer.com/tango6t-dev-l-riflescope.html
+sig_sauer_tango8_1_8x28,Sig Sauer,Tango8 1-8x28,122.0,manufacturer,https://www.sigsauer.com/tango8-riflescope.html
+sig_sauer_whiskey3_4_12x40,Sig Sauer,Whiskey3 4-12x40,24.0,manufacturer,https://www.sigsauer.com/whiskey3-riflescope.html
+sig_sauer_whiskey5_3_15x44,Sig Sauer,Whiskey5 3-15x44,38.5,manufacturer,https://www.sigsauer.com/whiskey5-riflescope.html
+sightron_siii_plr_6_24x50_ffp_zero_stop,Sightron,SIII PLR 6-24x50 FFP Zero Stop,16.4,manufacturer,https://sightron.com/products/siii-precision-long-range-ffp-6-24x50-zero-stop
+sightron_sviii_5_40x56_ffp_ed_ir_zero_stop,Sightron,SVIII 5-40x56 FFP ED IR Zero Stop,22.5,manufacturer,https://sightron.com/products/sviii-ed-5-40x56-ffp-ir-zero-stop
+steiner_m5xi_5_25x56,Steiner,M5Xi 5-25x56,22.5,manufacturer,https://www.steiner-optics.com/military/military-riflescopes/m5xi-tactical-riflescopes
+steiner_m7xi_4_28x56,Steiner,M7Xi 4-28x56,29.7,manufacturer,https://www.steiner-optics.com/military/military-riflescopes/m7xi-tactical-riflescopes
+steiner_p4xi_1_4x24,Steiner,P4Xi 1-4x24,108.0,manufacturer,https://www.steiner-optics.com/sport-optics/sporting-riflescopes/p4xi-riflescopes
+steiner_p4xi_4_16x56,Steiner,P4Xi 4-16x56,23.0,manufacturer,https://www.steiner-optics.com/sport-optics/sporting-riflescopes/p4xi-riflescopes
+steiner_t6xi_3_18x56,Steiner,T6Xi 3-18x56,38.3,manufacturer,https://www.steiner-optics.com/sport-optics/sporting-riflescopes/t6xi-riflescopes
+steiner_t6xi_5_30x56,Steiner,T6Xi 5-30x56,22.5,manufacturer,https://www.steiner-optics.com/sport-optics/sporting-riflescopes/t6xi-riflescopes
+swarovski_optik_x5_i_5_25x56_p,Swarovski Optik,X5(i) 5-25x56 P,22.5,manufacturer,https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/x5
+swarovski_optik_x5i_3_5_18x50,Swarovski Optik,X5i 3.5-18x50,33.0,manufacturer,https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/x5
+swarovski_optik_x5i_5_25x56,Swarovski Optik,X5i 5-25x56,22.5,manufacturer,https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/x5
+swarovski_optik_z6i_2_5_15x56_p_gen_2,Swarovski Optik,Z6i 2.5-15x56 P (Gen 2),44.4,manufacturer,https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z6i
+swarovski_optik_z8i_1_8x24,Swarovski Optik,Z8i 1-8x24,127.0,manufacturer,https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z8i
+swarovski_optik_z8i_2_16x50,Swarovski Optik,Z8i 2-16x50,61.5,manufacturer,https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/z8i
+swarovski_optik_ds_gen_ii_5_25x52,Swarovski Optik,dS Gen II 5-25x52,22.5,manufacturer,https://www.swarovskioptik.com/us/en/hunting/products/rifle-scopes/ds
+tangent_theta_tt315m_3_15x50,Tangent Theta,TT315M 3-15x50,38.4,manufacturer,https://tangenttheta.com/products/tt315m/
+tangent_theta_tt525p_5_25x56,Tangent Theta,TT525P 5-25x56,23.4,manufacturer,https://tangenttheta.com/products/tt525p/
+trijicon_acog_ta02_4x32_led,Trijicon,ACOG TA02 4x32 LED,36.8,manufacturer,https://www.trijicon.com/products/details/acog-4x32-led-mil-army-illum-reticles
+trijicon_acog_ta31_4x32,Trijicon,ACOG TA31 4x32,36.8,manufacturer,https://www.trijicon.com/products/details/acog-4x32-bac-riflescope-223-rem-55-grain
+trijicon_acog_ta31f_4x32,Trijicon,ACOG TA31F 4x32,36.8,manufacturer,https://www.trijicon.com/products/details/acog-4x32-bac-riflescope-223-rem-55-grain
+trijicon_accupoint_1_6x24,Trijicon,AccuPoint 1-6x24,102.0,manufacturer,https://www.trijicon.com/products/details/accupoint-1-6x24
+trijicon_accupoint_2_5_12_5x42,Trijicon,AccuPoint 2.5-12.5x42,38.7,manufacturer,https://www.trijicon.com/products/details/accupoint-2-5-12-5x42
+trijicon_credo_1_8x28,Trijicon,Credo 1-8x28,123.0,manufacturer,https://www.trijicon.com/products/details/credo-1-8x28
+trijicon_credo_hx_2_5_15x56,Trijicon,Credo HX 2.5-15x56,45.0,manufacturer,https://www.trijicon.com/products/details/credo-hx-2-5-15x56
+trijicon_tenmile_4_5_30x56_ffp,Trijicon,Tenmile 4.5-30x56 FFP,24.4,manufacturer,https://www.trijicon.com/products/details/tenmile-4-5-30x56
+trijicon_tenmile_5_50x56_ed_ffp,Trijicon,Tenmile 5-50x56 ED/FFP,21.5,manufacturer,https://www.trijicon.com/products/details/tenmile-5-50x56
+trijicon_tenmile_hx_6_24x50,Trijicon,Tenmile HX 6-24x50,16.7,manufacturer,https://www.trijicon.com/products/details/tenmile-hx-6-24x50
+us_optics_b_east_5_25x52,US Optics,B-EAST 5-25x52,21.6,manufacturer,https://usoptics.com/products/b-east-1
+us_optics_foundation_17x_3_2_17x50,US Optics,Foundation 17X 3.2-17x50,33.0,manufacturer,https://usoptics.com/products/foundation-17x
+us_optics_foundation_25x_5_25x52,US Optics,Foundation 25X 5-25x52,21.6,manufacturer,https://usoptics.com/products/foundation-25x
+us_optics_ts_12x_4_12x44,US Optics,TS-12X 4-12x44,29.5,manufacturer,https://usoptics.com/products/ts-12x
+us_optics_ts_20x_5_25x50,US Optics,TS-20X 5-25x50,22.0,manufacturer,https://usoptics.com/products/ts-20x
+vortex_optics_crossfire_ii_4_12x44,Vortex Optics,Crossfire II 4-12x44,24.7,manufacturer,https://vortexoptics.com/crossfire-ii-4-12x44.html
+vortex_optics_diamondback_tactical_4_16x44_ffp,Vortex Optics,Diamondback Tactical 4-16x44 FFP,27.4,manufacturer,https://vortexoptics.com/diamondback-tactical-4-16x44-ffp.html
+vortex_optics_diamondback_tactical_6_24x50_ffp,Vortex Optics,Diamondback Tactical 6-24x50 FFP,17.7,manufacturer,https://vortexoptics.com/diamondback-tactical-6-24x50-ffp.html
+vortex_optics_razor_hd_gen_ii_3_18x50,Vortex Optics,Razor HD Gen II 3-18x50,37.7,manufacturer,https://vortexoptics.com/vortex-razor-hd-gen-2-3-18x50-riflescope.html
+vortex_optics_razor_hd_gen_ii_4_5_27x56_ffp,Vortex Optics,Razor HD Gen II 4.5-27x56 FFP,23.1,manufacturer,https://vortexoptics.com/vortex-razor-hd-gen-2-45-27x56-riflescope.html
+vortex_optics_razor_hd_gen_ii_e_1_6x24,Vortex Optics,Razor HD Gen II-E 1-6x24,115.8,manufacturer,https://vortexoptics.com/vortex-razor-hd-gen-ii-e-1-6x24-riflescope.html
+vortex_optics_razor_hd_gen_iii_6_36x56_ffp,Vortex Optics,Razor HD Gen III 6-36x56 FFP,18.4,manufacturer,https://vortexoptics.com/razor-hd-gen-iii-6-36x56.html
+vortex_optics_razor_lht_3_15x42,Vortex Optics,Razor LHT 3-15x42,38.3,manufacturer,https://vortexoptics.com/vortex-razor-lht-3-15x42-riflescope.html
+vortex_optics_razor_lht_4_5_22x50,Vortex Optics,Razor LHT 4.5-22x50,24.1,manufacturer,https://vortexoptics.com/vortex-razor-lht-4-5-22x50-riflescope.html
+vortex_optics_strike_eagle_1_8x24,Vortex Optics,Strike Eagle 1-8x24,108.0,manufacturer,https://vortexoptics.com/strike-eagle-1-8x24.html
+vortex_optics_strike_eagle_5_25x56_ffp,Vortex Optics,Strike Eagle 5-25x56 FFP,24.1,manufacturer,https://vortexoptics.com/strike-eagle-5-25x56.html
+vortex_optics_viper_pst_gen_ii_1_6x24,Vortex Optics,Viper PST Gen II 1-6x24,107.0,manufacturer,https://vortexoptics.com/viper-pst-gen-ii-1-6x24-riflescope.html
+vortex_optics_viper_pst_gen_ii_3_15x44,Vortex Optics,Viper PST Gen II 3-15x44,41.2,manufacturer,https://vortexoptics.com/viper-pst-gen-ii-3-15x44-riflescope.html
+vortex_optics_viper_pst_gen_ii_5_25x50,Vortex Optics,Viper PST Gen II 5-25x50,24.1,manufacturer,https://vortexoptics.com/viper-pst-gen-ii-5-25x50-riflescope.html
+zero_compromise_optic_zc527_5_27x56,Zero Compromise Optic,ZC527 5-27x56,21.6,manufacturer,https://zerocompromise-optic.com/products/zc527/
+zero_compromise_optic_zc840_8_40x56,Zero Compromise Optic,ZC840 8-40x56,13.5,manufacturer,https://zerocompromise-optic.com/products/zc840/
+zerotech_optics_trace_advanced_4_5_27x50_rmg_ffp,ZeroTech Optics,Trace Advanced 4.5-27x50 RMG FFP,22.5,manufacturer,https://zerotechoptics.com/p/4-5-27x50mm-rmg-trace-riflescope/
+zerotech_optics_vengeance_4_20x50_sfp,ZeroTech Optics,Vengeance 4-20x50 SFP,27.0,manufacturer,https://zerotechoptics.com/p/4-20x50mm-phr-ii/

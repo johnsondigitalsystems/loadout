@@ -181,6 +181,84 @@ ship JSON corrections without a store release. See
 - [ ] Same consideration for Google Play: enroll Play Console as a
   business once EIN/DUNS are in place.
 
+## Intellectual property & legal review
+
+Pre-launch IP work for the reticle catalog. The full posture is in
+`docs/IP_POSTURE.md` — that's the single entry point for the
+attorney engagement. Hand that file to the attorney first.
+
+- [ ] **Engage IP attorney specializing in firearms / optics for a
+  Freedom-to-Operate (FTO) opinion on the LoadOut reticle catalog.**
+  Required before App Store / Play Store submission.
+
+  Specific scope: confirm patent expiration status for the
+  foundational Horus Vision / HVRT Corp Christmas Tree patents
+  (US 6,453,595, US 8,109,029, and the Sammut priority chain).
+  Then review LoadOut's `loadout_*_tree_christmas` and
+  `loadout_*_tree_flare` variants against HVRT Corp's currently-
+  active patent portfolio (post-2010 filings, starting with
+  US 9,068,794).
+
+  With foundational patents likely expired (initial research May
+  2026), the FTO scope is narrower than a from-scratch review.
+  Estimated engagement: **$5k–$10k** for a focused FTO opinion.
+  Save the written opinion — it's part of the good-faith defense
+  if a cease-and-desist arrives later.
+
+- [ ] **Verify no `published_spec` reticle is calibrated to a
+  Horus / HVRT-licensed design.** Cross-reference the 10
+  `published_spec` reticles in `assets/seed_data/reticles.json`
+  (each has a `calibration_provenance` JSON blob with `manufacturer`
+  + `reticle_name`) against current HVRT Corp licensing
+  relationships. HVRT reticles are licensed to several major optics
+  manufacturers; a "Leupold" or "Bushnell" reticle could be Horus-
+  derived without naming Horus. The patent attorney is the right
+  person to check this. Quick reference query to extract the 10
+  provenance blobs:
+
+  ```sh
+  jq '.[] | select(.subtension_origin=="published_spec") | .calibration_provenance' assets/seed_data/reticles.json
+  ```
+
+- [ ] **Marketing copy IP review.** Attorney review of:
+  - `marketing/CLAUDE.md` (marketing reference) — §9 reticle posture
+    and §23 stats. Phase 6 sweep (2026-05-12) sanitized
+    workaround-signaling phrases; one explicit replacement was made,
+    full audit log in `PHASE_6_COMPLETION_REPORT.md`.
+  - App Store Connect listing (when drafted).
+  - Play Store Console listing (when drafted).
+  - Any landing pages on `https://loadout-precision-reloading.web.app`.
+
+  Verify no language could be characterized as (a) reproducing
+  trademarked names, (b) claiming endorsement / affiliation, or
+  (c) inducement to infringe through substitution positioning.
+
+- [ ] **Hornady 4DOF data redistribution license review.**
+  Attorney review of Hornady's published terms for the 4DOF
+  drag-curve data redistributed in the LoadOut catalog
+  (`assets/seed_data/drag_curves/curves.json`, a Pro feature).
+  Confirm permitted use; identify any attribution or licensing
+  requirements; flag any restrictions.
+
+- [ ] **Document independent creation provenance for the 21
+  `subtension_origin: original` LoadOut reticles.** Compile dated
+  authoring records (design rationale from `docs/DECISIONS.md`,
+  authoring methodology from `docs/RETICLE_AUTHORING_GUIDE.md`,
+  git commit history with author + timestamp). Store somewhere
+  durable (notarized PDF, dated git tag with documentation
+  bundle). This is part of the "we independently developed these
+  archetypes" defense if anyone ever asserts derivation. The
+  shipped catalog at `assets/seed_data/reticles.json` is the
+  authoritative artwork; the docs are the provenance chain.
+
+- [ ] **Cross-reference `docs/RETICLE_LICENSING.md`** — the
+  existing IP-licensing policy document referenced from marketing
+  CLAUDE.md §9. Confirm its content is consistent with
+  `docs/IP_POSTURE.md`; if there's drift, reconcile before the
+  attorney engagement. (Don't auto-edit `RETICLE_LICENSING.md` —
+  the project lead authored it; flag any inconsistencies for
+  manual review.)
+
 ## iOS submission
 
 - [ ] **Add the iOS Share Extension target in Xcode.** The Apple Notes /

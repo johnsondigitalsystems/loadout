@@ -136,6 +136,109 @@ enum BackdropTargetSilhouette {
   none,
 }
 
+/// Build the IPSC USPSA "metric" silhouette as a `Path` scaled to fit
+/// exactly inside [bounds]. Implements D-010 from
+/// `docs/DECISIONS.md` and §6.2.2 of `range_day_realistic_rewrite_v23.md`
+/// — uses the published USPSA target geometry rather than an
+/// ad-hoc approximation so:
+///
+///   * The bug it fixes (head clipping above its bounding rect) is
+///     STRUCTURALLY IMPOSSIBLE: every coordinate is derived from
+///     `bounds.center` ± a scaled offset that's clipped to
+///     `bounds.width / 2` and `bounds.height / 2`.
+///   * The angular subtension matches a real IPSC target so distance-
+///     based hit-probability math reads back believable answers.
+///   * Aspect-ratio mismatch between input rect and the target's
+///     natural 12:28 (0.4286) ratio resolves cleanly: we pick the
+///     dimension that constrains tighter and centre the silhouette
+///     on the other axis.
+///
+/// USPSA "metric" target dimensions (inches):
+///
+/// ```
+///   Head:        4 wide ×  6 tall   (rectangle at top)
+///   Neck:        2 wide ×  2 tall   (connects head to shoulders)
+///   Shoulders:   bevel from 2 → 12 wide over 4 tall
+///   Body:       12 wide × 12 tall   (rectangle below shoulders)
+///   Foot:        bevel from 12 →  4 wide over 4 tall
+///
+///   Total:      12 wide × 28 tall   (aspect 0.4286)
+/// ```
+///
+/// The path is walked clockwise from the top-left corner of the head.
+/// Returns a closed Path ready for `canvas.drawPath(...)`. Bottom-
+/// aligns within `bounds` (path's foot sits on `bounds.bottom`) so
+/// the realistic painter can render the target with its feet on the
+/// dirt mound crest without an offset hack.
+///
+/// Consumed by `_paintIpscSilhouette` in
+/// `lib/screens/range_day/widgets/target_plot.dart` (realistic-mode
+/// painter) AND by the `BackdropTargetSilhouette.ipsc` case in
+/// `_paintTarget` below (standalone backdrop painter). Both call sites
+/// produce identical silhouettes.
+Path buildIpscPath(Rect bounds) {
+  // Natural IPSC dimensions in target inches (see ASCII art above).
+  // The integer constants below are *exact* USPSA "metric" geometry —
+  // do not tweak them. Adjusting these would change the IP-friendly
+  // "real target shape" property documented in D-010.
+  const naturalWidth = 12.0;
+  const naturalHeight = 28.0;
+  const naturalAspect = naturalWidth / naturalHeight; // 0.4286
+
+  // Pick the constraining axis. If `bounds` is wider than the natural
+  // aspect, height limits us — vice versa. Either way `scale` is the
+  // multiplier that converts natural inches into pixels.
+  final boundsAspect = bounds.width / bounds.height;
+  final double scale;
+  if (boundsAspect > naturalAspect) {
+    scale = bounds.height / naturalHeight;
+  } else {
+    scale = bounds.width / naturalWidth;
+  }
+
+  // Bottom-align the silhouette within `bounds` (centre horizontally,
+  // foot on `bounds.bottom`). This places the target's "feet" at the
+  // dirt-mound crest line in the realistic painter without any extra
+  // offset math at the call site.
+  final actualHeight = naturalHeight * scale;
+  final centerX = bounds.center.dx;
+  final topY = bounds.bottom - actualHeight;
+
+  // Helper offsets in the local target-inch grid → pixel space.
+  double x(double inchesFromCenter) => centerX + inchesFromCenter * scale;
+  double y(double inchesFromTop) => topY + inchesFromTop * scale;
+
+  // Walk the outline clockwise from the top-left corner of the head.
+  // The path traces:
+  //   1. Head top-left → top-right          (4" wide)
+  //   2. Down the right side of the head     (6" tall)
+  //   3. In to the neck                      (right side, 1" inward)
+  //   4. Down the neck                       (2" tall)
+  //   5. Diagonal shoulder bevel             (1" → 6" wide over 4" tall)
+  //   6. Down the right side of the body     (12" tall)
+  //   7. Diagonal foot bevel                 (6" → 2" wide over 4" tall)
+  //   8. Across the foot bottom              (4" wide)
+  //   9. Mirror back up the left side
+  //  10. Close
+  final path = Path()
+    ..moveTo(x(-2), y(0))            // 1a. top-left of head
+    ..lineTo(x(2), y(0))             // 1b. top-right of head
+    ..lineTo(x(2), y(6))             // 2.  right of head down 6"
+    ..lineTo(x(1), y(6))             // 3.  in 1" to neck
+    ..lineTo(x(1), y(8))             // 4.  down the neck 2"
+    ..lineTo(x(6), y(12))            // 5.  right shoulder bevel
+    ..lineTo(x(6), y(24))            // 6.  down the right side of body
+    ..lineTo(x(2), y(28))            // 7.  right foot bevel
+    ..lineTo(x(-2), y(28))           // 8.  across foot bottom
+    ..lineTo(x(-6), y(24))           // 9a. left foot bevel
+    ..lineTo(x(-6), y(12))           // 9b. up left side of body
+    ..lineTo(x(-1), y(8))            // 9c. left shoulder bevel
+    ..lineTo(x(-1), y(6))            // 9d. up the neck
+    ..lineTo(x(-2), y(6))            // 9e. out to head
+    ..close();
+  return path;
+}
+
 /// Stateless widget that fills its constraints with the procedural
 /// daytime backdrop. Place it as the bottom layer of a `Stack` and
 /// stack other reticle / target painters on top.
@@ -146,6 +249,8 @@ class ScopeDaytimeBackdrop extends StatelessWidget {
     this.targetWidthFraction = 0.16,
     this.targetColor = const Color(0xff5e6552),
     this.size,
+    this.lowLightMode = false,
+    this.realisticMode = false,
   });
 
   /// Which target silhouette to draw, or [BackdropTargetSilhouette.none]
@@ -166,12 +271,35 @@ class ScopeDaytimeBackdrop extends StatelessWidget {
   /// constraints.
   final Size? size;
 
+  /// When `true`, the backdrop renders the dusk variant: dark-blue sky
+  /// gradient, darkened green grass, darkened brown mound, and the
+  /// atmospheric-haze overlay shifts to a low-alpha grey instead of
+  /// white. The target silhouette is also dimmed via the ambient
+  /// brightness multiplier so it reads as "downrange in fading light"
+  /// instead of "bright noon". Toggled by the Range Day Realistic
+  /// "Low Light" AppBar control. See
+  /// `range_day_realistic_rewrite_v23.md` §6A.2.
+  final bool lowLightMode;
+
+  /// When `true`, the backdrop uses the §6.2.1 Range Day Realistic
+  /// scene-composition coefficients: horizon at 0.78 × canvas height
+  /// (instead of the legacy 0.62 picker / scope-view preference), and
+  /// the mound rendered as a foreground earth-berm oval at
+  /// `0.82H – 0.92H` × `0.18W` sitting on the grass (instead of the
+  /// legacy hill silhouette rising above the horizon). Range Day
+  /// Realistic mode passes `true`; the reticle picker preview and
+  /// scope-view screen leave it `false` to preserve their existing
+  /// composition.
+  final bool realisticMode;
+
   @override
   Widget build(BuildContext context) {
     final painter = ScopeDaytimeBackdropPainter(
       target: target,
       targetWidthFraction: targetWidthFraction,
       targetColor: targetColor,
+      lowLightMode: lowLightMode,
+      realisticMode: realisticMode,
     );
     if (size != null) {
       return SizedBox(
@@ -193,25 +321,102 @@ class ScopeDaytimeBackdropPainter extends CustomPainter {
     required this.target,
     required this.targetWidthFraction,
     required this.targetColor,
+    this.lowLightMode = false,
+    this.realisticMode = false,
+    this.paintMound = true,
   });
 
   final BackdropTargetSilhouette target;
   final double targetWidthFraction;
   final Color targetColor;
 
-  // Sky palette — light blue at zenith fading to a hazy near-horizon.
-  // Values from a quick sample of typical mid-day clear-sky photographs.
+  /// When `true`, the painter substitutes the dusk palette for the
+  /// daytime palette and darkens the target silhouette via
+  /// [_kAmbientBrightnessLowLight]. See class field doc on
+  /// [ScopeDaytimeBackdrop.lowLightMode] for the full rationale.
+  final bool lowLightMode;
+
+  /// When `true`, the painter uses the §6.2.1 Range Day Realistic
+  /// scene-composition coefficients (horizon at 0.78H; mound as a
+  /// foreground berm oval at 0.82–0.92H × 0.18W). When `false` the
+  /// legacy coefficients (horizon at 0.62H; mound as a hill rising
+  /// above the horizon) are used to preserve back-compat with the
+  /// reticle picker and scope-view preview surfaces. See class field
+  /// doc on [ScopeDaytimeBackdrop.realisticMode] for the full
+  /// rationale.
+  final bool realisticMode;
+
+  /// When `false`, the backdrop skips drawing the dirt mound (legacy
+  /// hill silhouette OR the realistic-mode foreground berm). Used by
+  /// the rack-mode realistic painter when a mount style supplies its
+  /// own ground furniture per child (e.g. `popper_base`, where each
+  /// child sits on its own concrete trapezoidal base, and
+  /// `individual_posts`, where each child gets its own dirt mound).
+  /// Defaults to `true` so every existing caller (single-target
+  /// realistic, picker preview, scope-view preview) keeps drawing
+  /// the mound the way it always has. See §6A.3 of
+  /// `range_day_realistic_rewrite_v23.md`.
+  final bool paintMound;
+
+  // Daytime sky palette — light blue at zenith fading to a hazy
+  // near-horizon. Values from a quick sample of typical mid-day
+  // clear-sky photographs.
   static const Color _skyTop = Color(0xffa8d4ff);
   static const Color _skyHorizon = Color(0xffc8dcfa);
 
-  // Grass palette — slightly desaturated natural green that doesn't
-  // fight the reticle's bright color when overlaid.
+  // Daytime grass palette — slightly desaturated natural green that
+  // doesn't fight the reticle's bright color when overlaid.
   static const Color _grassNear = Color(0xff8aa970);
   static const Color _grassFar = Color(0xff96b078);
 
-  // Dirt mound color (warm tan-brown that contrasts both sky and grass).
+  // Daytime dirt mound color (warm tan-brown that contrasts both sky
+  // and grass).
   static const Color _mound = Color(0xff7d6d58);
   static const Color _moundShadow = Color(0xff5d4f3d);
+
+  // ─────────────────────── Low-light (dusk) palette ───────────────────────
+  // Values per `range_day_realistic_rewrite_v23.md` §6A.2 lines
+  // 1121-1125. The sky gradient goes from a dark slate-blue at the
+  // zenith to a slightly lighter slate-blue at the horizon (the
+  // opposite-feeling gradient direction from daytime, where the
+  // horizon is the bright haze and the zenith is the deep blue —
+  // that flipped feel is intentional, sunset light comes from below
+  // the horizon, not from above).
+  static const Color _skyTopDusk = Color(0xff2c3e50);
+  static const Color _skyHorizonDusk = Color(0xff34495e);
+  // Single darkened green for the grass; we collapse the daytime
+  // far/near pair to the same value because at dusk the grass-far
+  // contrast against the horizon line is mostly gone (the eye reads
+  // the whole foreground as "dark green").
+  static const Color _grassFarDusk = Color(0xff3d4a2c);
+  static const Color _grassNearDusk = Color(0xff3d4a2c);
+  // Dusk mound: darkened brown. Shadow is derived from the mound by
+  // multiplying through [_darken] so the shading ratio stays the
+  // same in both palettes.
+  static const Color _moundDusk = Color(0xff3d2f1e);
+  static Color get _moundShadowDusk =>
+      _darken(_moundDusk, _kAmbientBrightnessLowLight);
+
+  /// Ambient brightness multiplier applied to the target silhouette
+  /// (and indirectly to the mound shadow) in low-light mode. Per the
+  /// §6A.2 spec, the dusk scene runs at roughly 40% ambient light;
+  /// the rest of the dusk palette is hand-tuned so the mult is only
+  /// needed for surfaces that don't have an explicit dusk color.
+  static const double _kAmbientBrightnessLowLight = 0.4;
+
+  /// Multiply each RGB channel by [mult] (alpha preserved). Used for
+  /// surfaces that don't have a hand-tuned dusk palette entry — we
+  /// dim them via the ambient brightness multiplier instead. Uses
+  /// the Flutter Color API's `.r`, `.g`, `.b`, `.a` accessors
+  /// (each returns a double in 0.0–1.0; see Flutter 3.27 / Dart 3.6
+  /// migration note about replacing `.red`, `.green`, `.blue`).
+  static Color _darken(Color c, double mult) {
+    final r = ((c.r * 255.0) * mult).round().clamp(0, 255);
+    final g = ((c.g * 255.0) * mult).round().clamp(0, 255);
+    final b = ((c.b * 255.0) * mult).round().clamp(0, 255);
+    final a = (c.a * 255.0).round().clamp(0, 255);
+    return Color.fromARGB(a, r, g, b);
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -219,47 +424,78 @@ class ScopeDaytimeBackdropPainter extends CustomPainter {
     final w = size.width;
     final h = size.height;
 
-    // Horizon at 62% canvas height. Above is sky, below is grass +
-    // mound. Lower-than-center horizon matches a real prone / bench
-    // shooting picture (you look slightly UP at distant targets) and
-    // pushes the dirt mound + target into the lower portion of the
-    // FOV — the user explicitly requested this. The realistic-mode
-    // target painter at `lib/screens/range_day/widgets/target_plot.dart`
-    // (`_RealisticLayout.compute`) reads the same convention so the
-    // two stay aligned.
-    final horizonY = h * 0.62;
+    // Horizon position is mode-dependent.
+    //
+    //   * Legacy (picker / scope-view preview): 0.62 × h. Below center
+    //     so the scene shows ~62% sky / ~38% ground, matching a real
+    //     prone / bench shooting picture (you look slightly UP at
+    //     distant targets). User-requested convention.
+    //   * Realistic (Range Day Realistic mode): 0.78 × h per
+    //     `range_day_realistic_rewrite_v23.md` §6.2.1. More sky room
+    //     for the target, and the mound shifts BELOW the horizon as a
+    //     foreground berm rather than a distant hill silhouette.
+    //
+    // The realistic-mode target painter at
+    // `lib/screens/range_day/widgets/target_plot.dart`
+    // (`RealisticLayout.compute`) reads the SAME 0.78 convention when
+    // `realisticMode` is on, so the two stay aligned.
+    final horizonY = realisticMode ? h * 0.78 : h * 0.62;
 
     _paintSky(canvas, w, horizonY);
     _paintGrass(canvas, w, h, horizonY);
-    _paintMound(canvas, w, h, horizonY);
+    // [paintMound] is the rack-mount-style escape hatch. When a
+    // multi-target rack supplies its own per-child ground furniture
+    // (popper bases, individual posts + mini-berms), the shared mound
+    // would render BEHIND that furniture as a distracting brown blob.
+    // Skipping the mound in those modes lets the per-child ground
+    // furniture be the only earth-coloured shape in the scene.
+    if (paintMound) {
+      if (realisticMode) {
+        _paintMoundBerm(canvas, w, h);
+      } else {
+        _paintMound(canvas, w, h, horizonY);
+      }
+    }
     _paintTarget(canvas, w, h, horizonY);
     _paintAtmosphericHaze(canvas, w, h, horizonY);
   }
 
   /// Sky gradient: vivid blue at top fading to a hazy pale blue at the
   /// horizon. Drawn as a single rectangle so the entire upper half
-  /// shares the gradient, keeping the painting cheap.
+  /// shares the gradient, keeping the painting cheap. In low-light
+  /// mode the gradient swaps to the §6A.2 dusk palette
+  /// (`#2C3E50 → #34495E` — a dark blue dusk).
   void _paintSky(Canvas canvas, double w, double horizonY) {
     final rect = Rect.fromLTWH(0, 0, w, horizonY);
+    final colors = lowLightMode
+        ? const [_skyTopDusk, _skyHorizonDusk]
+        : const [_skyTop, _skyHorizon];
     final paint = Paint()
-      ..shader = const LinearGradient(
+      ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [_skyTop, _skyHorizon],
+        colors: colors,
       ).createShader(rect);
     canvas.drawRect(rect, paint);
   }
 
   /// Grass — gradient from a far / hazy green at the horizon to a
   /// closer / saturated green at the bottom of the canvas. Plus a
-  /// subtle horizon line so the sky / grass meet cleanly.
+  /// subtle horizon line so the sky / grass meet cleanly. In low-
+  /// light mode the gradient collapses to a single darkened green
+  /// (`#3D4A2C`) — at dusk the eye can't distinguish near / far
+  /// grass contrast — and the horizon hairline shifts to a dim
+  /// slate so the tree-line still reads.
   void _paintGrass(Canvas canvas, double w, double h, double horizonY) {
     final rect = Rect.fromLTWH(0, horizonY, w, h - horizonY);
+    final colors = lowLightMode
+        ? const [_grassFarDusk, _grassNearDusk]
+        : const [_grassFar, _grassNear];
     final paint = Paint()
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: const [_grassFar, _grassNear],
+        colors: colors,
       ).createShader(rect);
     canvas.drawRect(rect, paint);
 
@@ -267,7 +503,9 @@ class ScopeDaytimeBackdropPainter extends CustomPainter {
     // so the visual seam looks deliberate (a faraway tree-line, not a
     // gradient cut).
     final hairline = Paint()
-      ..color = const Color(0xff7a8c66)
+      ..color = lowLightMode
+          ? const Color(0xff2a3320) // dusk: a shade darker than the grass
+          : const Color(0xff7a8c66)
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
     canvas.drawLine(
@@ -315,8 +553,12 @@ class ScopeDaytimeBackdropPainter extends CustomPainter {
       )
       ..close();
 
-    // Mound body.
-    final mound = Paint()..color = _mound;
+    // Mound body. In low-light mode swap to the dusk brown
+    // (`#3D2F1E`); shadow is derived from the same dusk color via
+    // [_darken] so the shading ratio stays consistent across both
+    // palettes.
+    final moundColor = lowLightMode ? _moundDusk : _mound;
+    final mound = Paint()..color = moundColor;
     canvas.drawPath(path, mound);
 
     // Right-side shadow (the mound is lit from the upper left). Drawn
@@ -337,7 +579,65 @@ class ScopeDaytimeBackdropPainter extends CustomPainter {
       )
       ..lineTo(crestX, horizonY)
       ..close();
-    canvas.drawPath(shadowPath, Paint()..color = _moundShadow.withValues(alpha: 0.45));
+    final shadowColor =
+        (lowLightMode ? _moundShadowDusk : _moundShadow).withValues(alpha: 0.45);
+    canvas.drawPath(shadowPath, Paint()..color = shadowColor);
+  }
+
+  /// Range Day Realistic mound — a foreground earth berm rendered as
+  /// a brown oval sitting on the grass. Per
+  /// `range_day_realistic_rewrite_v23.md` §6.2.1 the berm spans
+  /// `0.82H – 0.92H` vertically and is `0.18W` wide, centred
+  /// horizontally on the post. Visually this reads as a dirt mound at
+  /// the base of the target stand rather than a distant hill — the
+  /// realistic-mode post (rendered in `target_plot.dart`'s
+  /// `_paintPole`) terminates at 0.85H, so the bottom 0.03H of the
+  /// post is hidden BEHIND the berm and reads as "planted in the
+  /// dirt." Dusk palette is shared with the legacy mound through the
+  /// same `_moundDusk` / `_moundShadowDusk` colours, so the §6A.2
+  /// low-light scene stays consistent across both modes.
+  void _paintMoundBerm(Canvas canvas, double w, double h) {
+    final left = w * 0.41;        // centred: 0.5 - 0.18/2
+    final right = w * 0.59;       //          0.5 + 0.18/2
+    final top = h * 0.82;
+    final bottom = h * 0.92;
+    final rect = Rect.fromLTRB(left, top, right, bottom);
+
+    // Body: an oval — width 0.18W, height 0.10H, aspect 1.8:1.
+    final bodyColor = lowLightMode ? _moundDusk : _mound;
+    canvas.drawOval(rect, Paint()..color = bodyColor);
+
+    // Shadow: a slightly-smaller darker oval offset to the right, so
+    // the berm reads as lit from the upper-left (same convention as
+    // the legacy hill mound). Drawn at 45% alpha so the body colour
+    // still shows through.
+    final shadowColor =
+        (lowLightMode ? _moundShadowDusk : _moundShadow).withValues(alpha: 0.45);
+    final shadowRect = Rect.fromLTRB(
+      left + (right - left) * 0.45,
+      top + (bottom - top) * 0.15,
+      right,
+      bottom,
+    );
+    canvas.drawOval(shadowRect, Paint()..color = shadowColor);
+
+    // Subtle outline at the top of the berm so it doesn't blend into
+    // the grass. 0.5 px hairline; tonal step between berm and grass is
+    // small in daytime and almost-zero at dusk, so without this the
+    // berm reads as a smudge instead of a defined silhouette.
+    final outlinePaint = Paint()
+      ..color = (lowLightMode ? const Color(0xff1a1208) : const Color(0xff4a3d2c))
+          .withValues(alpha: 0.55)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+    // Top arc of the oval only (the bottom melds into the grass).
+    final topArc = Path()
+      ..addArc(
+        rect,
+        math.pi, // start at 9 o'clock
+        math.pi, // sweep through 12 o'clock to 3 o'clock
+      );
+    canvas.drawPath(topArc, outlinePaint);
   }
 
   /// Target silhouette centered on the mound. Sized in canvas-fraction
@@ -371,55 +671,41 @@ class ScopeDaytimeBackdropPainter extends CustomPainter {
     final crestY = horizonY - h * 0.12;
     final centerY = crestY - heightPx * 0.5 + h * 0.02;
 
-    final fill = Paint()..color = targetColor;
+    // In low-light mode dim the target through the ambient brightness
+    // multiplier so a white silhouette doesn't blaze against the dusk
+    // backdrop (which would tell the eye "noon scene with bad
+    // colors", not "dusk scene"). Outline darkens proportionally
+    // through the same mult so the relative contrast stays intact.
+    final fillColor =
+        lowLightMode ? _darken(targetColor, _kAmbientBrightnessLowLight) : targetColor;
+    final outlineColor = lowLightMode
+        ? _darken(const Color(0xff2c2924), _kAmbientBrightnessLowLight)
+        : const Color(0xff2c2924);
+    final fill = Paint()..color = fillColor;
     final outline = Paint()
-      ..color = const Color(0xff2c2924)
+      ..color = outlineColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = math.max(1.0, w * 0.002);
 
     switch (target) {
       case BackdropTargetSilhouette.ipsc:
-        // Real IPSC / USPSA Classic silhouette path. 18" wide × 30"
-        // tall body with a 6×6" head and a smooth shoulder taper
-        // between them. Single connected Path (not two rounded
-        // rects) so the silhouette reads as a recognisable bottle
-        // at any size — the prior two-rect version flattened into a
-        // single rounded rectangle at small sizes because the head
-        // and gap visually merged into the body. Mirrors the path
-        // in `_paintIpscSilhouette` in lib/screens/range_day/widgets/
-        // target_plot.dart — both painters draw the same target so
-        // they have to agree on its geometry.
-        final left = centerX - widthPx / 2;
-        final top = centerY - heightPx / 2;
-        final headLeft = left + widthPx * 0.333;
-        final headRight = left + widthPx * 0.667;
-        final headTop = top;
-        final headBottomY = top + heightPx * 0.20;
-        final shoulderY = top + heightPx * 0.30;
-        final bodyLeft = left;
-        final bodyRight = left + widthPx;
-        final bodyBottom = top + heightPx;
-        final headCornerR = widthPx * 0.06;
-        final bodyCornerR = widthPx * 0.04;
-        final path = Path()
-          ..moveTo(headLeft, headTop + headCornerR)
-          ..quadraticBezierTo(
-              headLeft, headTop, headLeft + headCornerR, headTop)
-          ..lineTo(headRight - headCornerR, headTop)
-          ..quadraticBezierTo(
-              headRight, headTop, headRight, headTop + headCornerR)
-          ..lineTo(headRight, headBottomY)
-          ..lineTo(bodyRight, shoulderY)
-          ..lineTo(bodyRight, bodyBottom - bodyCornerR)
-          ..quadraticBezierTo(bodyRight, bodyBottom,
-              bodyRight - bodyCornerR, bodyBottom)
-          ..lineTo(bodyLeft + bodyCornerR, bodyBottom)
-          ..quadraticBezierTo(
-              bodyLeft, bodyBottom, bodyLeft, bodyBottom - bodyCornerR)
-          ..lineTo(bodyLeft, shoulderY)
-          ..lineTo(headLeft, headBottomY)
-          ..lineTo(headLeft, headTop + headCornerR)
-          ..close();
+        // IPSC USPSA "metric" silhouette via the shared `buildIpscPath`
+        // helper (defined as a top-level function below in this file).
+        // The helper uses real USPSA target geometry — head 4×6,
+        // neck 2×2, shoulders 2→12 bevel over 4", body 12×12, foot
+        // 12→4 bevel over 4" → 12 × 28 total at aspect 0.4286 — and
+        // guarantees the rendered path is contained within the input
+        // bounds. See `range_day_realistic_rewrite_v23.md` §6.2.2
+        // and `docs/DECISIONS.md` D-010 for the geometry rationale.
+        // The same helper backs `_paintIpscSilhouette` in
+        // `lib/screens/range_day/widgets/target_plot.dart` so both
+        // painters draw identical silhouettes.
+        final ipscBounds = Rect.fromCenter(
+          center: Offset(centerX, centerY),
+          width: widthPx,
+          height: heightPx,
+        );
+        final path = buildIpscPath(ipscBounds);
         canvas.drawPath(path, fill);
         canvas.drawPath(path, outline);
       case BackdropTargetSilhouette.circle:
@@ -778,7 +1064,10 @@ class ScopeDaytimeBackdropPainter extends CustomPainter {
 
   /// Subtle white-ish overlay on the upper third of the canvas to
   /// suggest atmospheric haze on a downrange object. Dialed in low
-  /// alpha so the silhouette + reticle still read clearly.
+  /// alpha so the silhouette + reticle still read clearly. In low-
+  /// light mode the haze flips to black (suggesting fading evening
+  /// air rather than midday glare) at a lower alpha so the dusk
+  /// palette underneath still reads.
   void _paintAtmosphericHaze(
     Canvas canvas,
     double w,
@@ -790,10 +1079,15 @@ class ScopeDaytimeBackdropPainter extends CustomPainter {
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [
-          Colors.white.withValues(alpha: 0.10),
-          Colors.white.withValues(alpha: 0.0),
-        ],
+        colors: lowLightMode
+            ? [
+                Colors.black.withValues(alpha: 0.15),
+                Colors.black.withValues(alpha: 0.0),
+              ]
+            : [
+                Colors.white.withValues(alpha: 0.10),
+                Colors.white.withValues(alpha: 0.0),
+              ],
       ).createShader(hazeRect);
     canvas.drawRect(hazeRect, paint);
   }
@@ -802,6 +1096,9 @@ class ScopeDaytimeBackdropPainter extends CustomPainter {
   bool shouldRepaint(covariant ScopeDaytimeBackdropPainter old) {
     return old.target != target ||
         old.targetWidthFraction != targetWidthFraction ||
-        old.targetColor != targetColor;
+        old.targetColor != targetColor ||
+        old.lowLightMode != lowLightMode ||
+        old.realisticMode != realisticMode ||
+        old.paintMound != paintMound;
   }
 }

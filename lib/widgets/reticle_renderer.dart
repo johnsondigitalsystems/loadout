@@ -87,6 +87,7 @@ class ReticleRenderer extends StatelessWidget {
     this.showUnitOverlay = true,
     this.holdOver,
     this.holdOverHighlightColor,
+    this.lowLightMode = false,
   });
 
   /// The reticle definition to render.
@@ -133,6 +134,16 @@ class ReticleRenderer extends StatelessWidget {
   /// color (which uses primary by default).
   final Color? holdOverHighlightColor;
 
+  /// When `true`, every element whose [ReticleElement.illuminatedColorHex]
+  /// is non-null renders in its authored color (simulating a real
+  /// scope's illuminated reticle at dusk). Elements without an
+  /// illumination color stay on the default [color] — still visible
+  /// but understated, which matches what a shooter actually sees
+  /// through their scope in low light. Defaults to `false`; flipped
+  /// to `true` by the Range Day Realistic "Low Light" AppBar toggle.
+  /// See `range_day_realistic_rewrite_v23.md` §6A.2.
+  final bool lowLightMode;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -155,9 +166,44 @@ class ReticleRenderer extends StatelessWidget {
           showUnitOverlay: showUnitOverlay,
           holdOver: holdOver,
           holdOverHighlightColor: highlight,
+          lowLightMode: lowLightMode,
         ),
       ),
     );
+  }
+}
+
+/// Adaptive level-of-detail gate per v2.3 brief §6A.1. Returns true when
+/// [element] is large enough at the current [pxPerUnit] scale to be
+/// visually meaningful — sub-pixel elements get skipped so that
+/// low-magnification renders don't drown in noise from sub-hashes that
+/// can't possibly be visible.
+///
+/// Thresholds (per brief §6A.1):
+///   * Crosshair / line: always render (load-bearing structural elements)
+///   * Hash: skip when `lengthUnits * pxPerUnit < 1.5` (visible tick = 1.5 px)
+///   * Dot (centre + holdover): skip when `radiusUnits * pxPerUnit < 0.5`
+///     (diameter ≥ 1 px to be visible)
+///   * Floating number / label: skip when `fontSizeUnits * pxPerUnit < 6.0`
+///     (below readable text minimum)
+///
+/// Called once per element from `_ReticlePainter.paint`. The performance
+/// cost of the gate is negligible compared to the alternative of drawing
+/// a few hundred sub-pixel elements per frame at 1x LPVO. Public for
+/// unit-test access — `test/reticle_lod_test.dart` exercises every
+/// element-type branch against a representative pxPerUnit range.
+bool shouldRenderReticleElement(ReticleElement element, double pxPerUnit) {
+  switch (element) {
+    case CrosshairLine():
+      return true;
+    case HashMark():
+      return element.lengthUnits * pxPerUnit >= 1.5;
+    case CenterDot():
+      return element.radiusUnits * pxPerUnit >= 0.5;
+    case HoldoverDot():
+      return element.radiusUnits * pxPerUnit >= 0.5;
+    case FloatingNumber():
+      return element.fontSizeUnits * pxPerUnit >= 6.0;
   }
 }
 
@@ -171,6 +217,7 @@ class _ReticlePainter extends CustomPainter {
     required this.showUnitOverlay,
     required this.holdOver,
     required this.holdOverHighlightColor,
+    required this.lowLightMode,
   });
 
   final ReticleDefinition reticle;
@@ -181,6 +228,29 @@ class _ReticlePainter extends CustomPainter {
   final bool showUnitOverlay;
   final FiringHoldOver? holdOver;
   final Color holdOverHighlightColor;
+  final bool lowLightMode;
+
+  /// Resolve the stroke / fill color for one element. When [lowLightMode]
+  /// is true AND the element publishes a non-null
+  /// [ReticleElement.illuminatedColorHex], we parse that hex into a
+  /// fully-opaque [Color] and return it (simulating an illuminated
+  /// reticle at dusk). Otherwise we return [lineColor] unchanged.
+  ///
+  /// Hex parsing is tolerant: accepts `'#RRGGBB'`, `'RRGGBB'`,
+  /// `'#AARRGGBB'`, or `'AARRGGBB'`. Any malformed value falls back
+  /// to [lineColor] silently — a broken seed entry should never crash
+  /// the painter.
+  Color _resolveElementColor(ReticleElement el) {
+    if (!lowLightMode) return lineColor;
+    final hex = el.illuminatedColorHex;
+    if (hex == null) return lineColor;
+    var raw = hex.startsWith('#') ? hex.substring(1) : hex;
+    if (raw.length == 6) raw = 'FF$raw';
+    if (raw.length != 8) return lineColor;
+    final v = int.tryParse(raw, radix: 16);
+    if (v == null) return lineColor;
+    return Color(v);
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -199,6 +269,12 @@ class _ReticlePainter extends CustomPainter {
       );
     }
 
+    // Stroke + fill Paints are reused across every element — their
+    // .color is reassigned per element via [_resolveElementColor] so
+    // a single illuminated dot can render red without forcing every
+    // other element to allocate its own Paint. Default color is
+    // [lineColor]; the per-element color is set just before each draw
+    // call below.
     final stroke = Paint()
       ..color = lineColor
       ..style = PaintingStyle.stroke
@@ -209,6 +285,20 @@ class _ReticlePainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     for (final el in reticle.elements) {
+      // §6A.1 adaptive LOD gate. Skip sub-pixel elements at low
+      // magnification so a reticle that looks correct at 5x doesn't
+      // smear into visual noise at 1x LPVO. Crosshairs always render
+      // (load-bearing); hashes / dots / numbers gate on pxPerUnit
+      // thresholds documented above the function.
+      if (!shouldRenderReticleElement(el, pxPerUnit)) continue;
+      // §6A.2 illumination: when the parent has flipped lowLightMode
+      // on AND this element carries an authored illuminated color,
+      // [_resolveElementColor] returns that color; otherwise it
+      // returns [lineColor]. Reassign both shared paints so the
+      // element's stroke + fill render in the right shade.
+      final elColor = _resolveElementColor(el);
+      stroke.color = elColor;
+      fill.color = elColor;
       switch (el) {
         case CrosshairLine():
           stroke.strokeWidth = (el.thicknessMil * pxPerUnit).clamp(0.6, 6.0);
@@ -270,7 +360,7 @@ class _ReticlePainter extends CustomPainter {
             text: TextSpan(
               text: label,
               style: TextStyle(
-                color: lineColor,
+                color: elColor,
                 fontSize: fs,
                 fontWeight: FontWeight.w500,
               ),
@@ -397,25 +487,48 @@ class _ReticlePainter extends CustomPainter {
         old.showUnitOverlay != showUnitOverlay ||
         old.holdOver?.elevationMil != holdOver?.elevationMil ||
         old.holdOver?.windageMil != holdOver?.windageMil ||
-        old.holdOverHighlightColor != holdOverHighlightColor;
+        old.holdOverHighlightColor != holdOverHighlightColor ||
+        old.lowLightMode != lowLightMode;
   }
 }
 
-/// Small caption label shown directly under reticle previews, asserting
-/// LoadOut authorship of the artwork and explaining why the reticle is
-/// calibrated to match a real-world scope's subtensions. Per CLAUDE.md
-/// § 30 (Reticle catalog — dual-track IP posture), every preview surface
-/// in the picker / preview flow renders this caption so users understand
-/// the tool is not claiming to be the manufacturer's reticle. The label
-/// is intentionally NOT painted by [ReticleRenderer] itself — Range Day
-/// live-shooting surfaces (target plot, scope view) embed the renderer
-/// and would treat an always-on caption as noise during the aim/fire
-/// workflow. Reach for this widget on any new picker / preview surface.
+/// Small caption label shown directly under reticle previews. The exact
+/// copy is driven by the reticle's `subtensionOrigin`, per §7.7 of the
+/// Range Day v2.3 dual-track IP posture (CLAUDE.md § 30). Three templates:
+///
+///   * `'original'`       → "LoadOut Original" with
+///                          "Engineered for your scope's subtensions".
+///   * `'public_domain'`  → "Public Domain Reticle" with
+///                          "Traditional duplex / hash / dot pattern;
+///                          not subject to trademark or copyright".
+///   * `'published_spec'` → "Calibrated to [Manufacturer] [Reticle Name]"
+///                          (substituted from the reticle's
+///                          `calibrationProvenance` blob) with
+///                          "Subtensions calibrated to the published
+///                          manufacturer specification. Not a
+///                          reproduction. Verify against your scope's
+///                          specification sheet for precision use."
+///
+/// The "Not a reproduction" framing on `published_spec` rows is legally
+/// load-bearing: it telegraphs that LoadOut is shipping interoperability
+/// data (a calibrated subtension dictionary on LoadOut-original artwork),
+/// not a copy of the manufacturer's trademarked reticle. Horus Vision /
+/// HVRT Corp has historically litigated over reticle reproduction; this
+/// honest framing is the right posture and the exact wording must NOT
+/// be paraphrased — match the user-approved §7.7 spec verbatim.
+///
+/// Every preview surface in the picker / preview flow renders this
+/// caption so users understand the tool is not claiming to be the
+/// manufacturer's reticle. The label is intentionally NOT painted by
+/// [ReticleRenderer] itself — Range Day live-shooting surfaces
+/// (target plot, scope view) embed the renderer and would treat an
+/// always-on caption as noise during the aim/fire workflow. Reach for
+/// this widget on any new picker / preview surface.
 ///
 /// The caption uses the theme's [TextTheme.bodySmall] colored with
 /// [ColorScheme.onSurfaceVariant] so it sits visually under the preview
-/// without competing with it. Wrapped in a [Tooltip] explaining the
-/// interoperability framing.
+/// without competing with it. Wrapped in a [Tooltip] carrying the
+/// per-origin tagline.
 ///
 /// `align` controls horizontal alignment — defaults to centered so the
 /// label looks right under a centered preview (the picker field tile,
@@ -424,22 +537,120 @@ class _ReticlePainter extends CustomPainter {
 ///
 /// `inverse` flips the color to a high-contrast white tint for use over
 /// dark backdrops (the full-screen preview's black scaffold).
+///
+/// `subtensionOrigin` and `calibrationProvenance` together select the
+/// template. Both are nullable for back-compat: legacy callers that
+/// haven't been migrated yet pass nothing and the widget falls back to
+/// the historical fixed string ("LoadOut Original — Interoperability
+/// Calibration") so existing surfaces never go blank during a partial
+/// rollout. New surfaces should always pass the active reticle's
+/// `subtensionOrigin`.
 class ReticleInteroperabilityLabel extends StatelessWidget {
   const ReticleInteroperabilityLabel({
     super.key,
     this.align = TextAlign.center,
     this.inverse = false,
+    this.subtensionOrigin,
+    this.calibrationProvenance,
   });
 
   final TextAlign align;
   final bool inverse;
 
-  static const String _label = 'LoadOut Original — Interoperability Calibration';
+  /// IP-posture discriminator. Accepts the three documented values
+  /// (`'original'`, `'public_domain'`, `'published_spec'`); any other
+  /// string falls back to the `'original'` template so we can never
+  /// render an empty caption. Null means "legacy call site" — the
+  /// widget renders the historical fixed string for back-compat.
+  final String? subtensionOrigin;
 
-  static const String _tooltip =
+  /// Internal-only provenance dictionary for `'published_spec'` rows.
+  /// Keys: `manufacturer`, `reticle_name`. Either may be absent or
+  /// empty; in that case the disclaimer falls back to a generic
+  /// "Calibrated to manufacturer specification" without naming.
+  final Map<String, dynamic>? calibrationProvenance;
+
+  // Legacy back-compat strings — rendered when no `subtensionOrigin`
+  // is provided. Phased out as call sites migrate to the per-origin
+  // templates; keep until every consumer of this widget is updated.
+  static const String _legacyLabel =
+      'LoadOut Original — Interoperability Calibration';
+  static const String _legacyTooltip =
       'LoadOut original artwork, calibrated to match real-world scope '
       'subtensions for accuracy. The reticle name and design are '
       'LoadOut-original.';
+
+  // §7.7 per-origin templates. EXACT copy approved by the project lead;
+  // do not paraphrase or "polish" these strings.
+  static const String _originalLabel = 'LoadOut Original';
+  static const String _originalTooltip =
+      "Engineered for your scope's subtensions";
+
+  static const String _publicDomainLabel = 'Public Domain Reticle';
+  static const String _publicDomainTooltip =
+      'Traditional duplex / hash / dot pattern; not subject to '
+      'trademark or copyright';
+
+  static const String _publishedSpecGenericLabel =
+      'Calibrated to manufacturer specification';
+  static const String _publishedSpecTooltip =
+      'Subtensions calibrated to the published manufacturer '
+      'specification. Not a reproduction. Verify against your '
+      "scope's specification sheet for precision use.";
+
+  /// Resolve the visible caption + tooltip for the configured origin.
+  /// Returns a (label, tooltip) pair. Public so widget tests can
+  /// inspect the resolution without having to render the widget.
+  static ({String label, String tooltip}) resolveTemplate({
+    required String? subtensionOrigin,
+    required Map<String, dynamic>? calibrationProvenance,
+  }) {
+    if (subtensionOrigin == null) {
+      return (label: _legacyLabel, tooltip: _legacyTooltip);
+    }
+    switch (subtensionOrigin) {
+      case 'public_domain':
+        return (label: _publicDomainLabel, tooltip: _publicDomainTooltip);
+      case 'published_spec':
+        // Pull manufacturer + reticle name out of the provenance blob.
+        // Treat empty strings as missing — never render a label with a
+        // dangling "Calibrated to  " gap.
+        String? manufacturer;
+        String? reticleName;
+        try {
+          final m = calibrationProvenance?['manufacturer'];
+          if (m is String && m.trim().isNotEmpty) {
+            manufacturer = m.trim();
+          }
+          final n = calibrationProvenance?['reticle_name'];
+          if (n is String && n.trim().isNotEmpty) {
+            reticleName = n.trim();
+          }
+        } catch (_) {
+          // If the blob is malformed (wrong type, throws on read), fall
+          // through to the generic label below.
+          manufacturer = null;
+          reticleName = null;
+        }
+        if (manufacturer != null && reticleName != null) {
+          return (
+            label: 'Calibrated to $manufacturer $reticleName',
+            tooltip: _publishedSpecTooltip,
+          );
+        }
+        // Fall back to a generic, name-free label when the provenance
+        // is missing or malformed. The tooltip stays the same so the
+        // user still sees the legally important "Not a reproduction"
+        // framing.
+        return (
+          label: _publishedSpecGenericLabel,
+          tooltip: _publishedSpecTooltip,
+        );
+      case 'original':
+      default:
+        return (label: _originalLabel, tooltip: _originalTooltip);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -447,10 +658,14 @@ class ReticleInteroperabilityLabel extends StatelessWidget {
     final color = inverse
         ? Colors.white.withValues(alpha: 0.75)
         : theme.colorScheme.onSurfaceVariant;
+    final resolved = resolveTemplate(
+      subtensionOrigin: subtensionOrigin,
+      calibrationProvenance: calibrationProvenance,
+    );
     return Tooltip(
-      message: _tooltip,
+      message: resolved.tooltip,
       child: Text(
-        _label,
+        resolved.label,
         textAlign: align,
         style: theme.textTheme.bodySmall?.copyWith(
           color: color,

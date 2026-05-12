@@ -572,6 +572,25 @@ class Reticles extends Table {
   /// reticles_v2.json` for the canonical shape). Optional — null when
   /// the geometry in `definitionJson` is sufficient on its own.
   TextColumn get subtensionsJson => text().nullable()();
+
+  // ── Disclosure metadata (added schema v35, Range Day Realistic v2.3) ──
+  /// IP-posture discriminator. One of:
+  ///   * `'original'`       — LoadOut original artwork, original subtensions
+  ///   * `'published_spec'` — LoadOut original artwork, subtensions calibrated
+  ///                          to match a manufacturer's published spec
+  ///   * `'public_domain'`  — A public-domain reticle design (e.g. plex,
+  ///                          USMC mil-dot)
+  /// Drives the i18n disclaimer surface in the reticle preview screen
+  /// (see `lib/l10n/intl_*.arb` keys `reticle_disclaimer_*`). Required by
+  /// the dual-track IP posture documented in CLAUDE.md § 30.
+  TextColumn get subtensionOrigin =>
+      text().withDefault(const Constant('original'))();
+  /// JSON blob with provenance fields when `subtensionOrigin ==
+  /// 'published_spec'` — carries `manufacturer`, `reticle_name`,
+  /// `source_url`, `verified_at`. Null for `original` and
+  /// `public_domain`. The provenance string is internal-only and never
+  /// appears in user-visible product surfaces (CLAUDE.md § 30 rule 6).
+  TextColumn get calibrationProvenance => text().nullable()();
 }
 
 /// Reference catalog of custom drag curves (CDMs / DSFs) for specific
@@ -1271,6 +1290,25 @@ class UserFirearms extends Table {
   TextColumn get muzzleBrakeName => text().nullable()();
   TextColumn get suppressorName => text().nullable()();
   TextColumn get bipodName => text().nullable()();
+
+  // ── Range Day Realistic v2.3 defaults (added schema v35) ──
+  /// Preferred scope magnification for this firearm. Range Day
+  /// pre-populates the session's `currentMagnification` from this
+  /// value when the firearm is picked. Null falls back to the
+  /// scope's geometric-mean magnification at runtime.
+  RealColumn get defaultMagnification => real().nullable()();
+  /// Preferred scope for this firearm, as a string id matching
+  /// `scopes.json` row's `id` field (e.g. `vortex_razor_hd_gen_iii_6_36x56_ffp`).
+  /// Distinct from `opticsId` (an integer FK to the `Optics`
+  /// drift table); this column reads from the merged v2.3 scope
+  /// catalog by string id. Null falls back to `opticsId`.
+  TextColumn get defaultScopeId => text().nullable()();
+  /// Preferred reticle for this firearm, as a string id matching
+  /// `reticles.json` row's `id` field (e.g. `loadout_mil_tree_flare`).
+  /// Distinct from `reticleId` (the integer FK on the Reticles
+  /// drift table); this column reads from the merged v2.3 reticle
+  /// catalog by string id. Null falls back to `reticleId`.
+  TextColumn get defaultReticleId => text().nullable()();
 }
 
 // ─────────────────────── Batches (user, schema v4, feature #12) ───────────────────────
@@ -1670,6 +1708,37 @@ class RangeDaySessions extends Table {
   /// position) is clamped to the valid range by the picker, never
   /// crashes.
   IntColumn get rackChildPosition => integer().nullable()();
+
+  // ── Range Day Realistic scene state (added schema v35, v2.3) ──
+  /// Current scope magnification at session time. Drives the
+  /// `fovRadiansAtMagnification` interpolation and the SFP/FFP
+  /// reticle scaling math in `scope_view_geometry.dart`. Null means
+  /// "use the firearm's default" (which itself falls back to the
+  /// scope's geometric-mean magnification if unset).
+  RealColumn get currentMagnification => real().nullable()();
+  /// Reticle picked for this session, as a string id matching
+  /// `reticles.json` row's `id` field. Distinct from `reticleId`
+  /// (an integer FK to the Reticles drift table) — this column
+  /// supports the v2.3 mid-session reticle switcher which writes
+  /// directly to the session by string id without resolving to a
+  /// DB row first. Null falls back to `reticleId`.
+  TextColumn get currentReticleId => text().nullable()();
+  /// Dew point in Fahrenheit. Feeds the `mirageStrength` calculation
+  /// in `scope_view_geometry.dart` together with `temperatureF`.
+  /// Null when the user hasn't entered atmosphere data.
+  RealColumn get dewPointF => real().nullable()();
+  /// ISO8601 local time the session was recorded at. Feeds the
+  /// `solarPosition` calculation for mound-shadow lighting
+  /// direction. Stored as text so the timezone offset survives a
+  /// round trip; the painter converts to UTC at use time.
+  TextColumn get sessionLocalTime => text().nullable()();
+  /// Geographic latitude in decimal degrees. Feeds `solarPosition`
+  /// for lighting direction. Null when the user hasn't enabled
+  /// location services.
+  RealColumn get latitudeDeg => real().nullable()();
+  /// Geographic longitude in decimal degrees. Pairs with
+  /// `latitudeDeg`.
+  RealColumn get longitudeDeg => real().nullable()();
 }
 
 /// One row per shot recorded during a range-day session. Impact coordinates
@@ -2247,7 +2316,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 34;
+  int get schemaVersion => 35;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -2929,6 +2998,70 @@ class AppDatabase extends _$AppDatabase {
             if (!firearmsRefCols.contains('caliber_specs_json')) {
               await m.addColumn(firearmsRef, firearmsRef.caliberSpecsJson);
             }
+          }
+          if (from < 35) {
+            // v35 — Range Day Realistic v2.3 rewrite. Adds scene-state
+            // columns to range_day_sessions (current magnification,
+            // string-id reticle picker, dew point, session local time,
+            // location for solar position), per-firearm defaults on
+            // user_firearms (default magnification + scope/reticle ids),
+            // and IP-posture disclosure metadata on reticles. The
+            // reticles table is also wiped so SeedLoader re-seeds from
+            // the rewritten reticles.json with the new fields populated
+            // — same pattern as the v3 primers re-seed (see comment
+            // at line 2293 above). User data is untouched.
+            final rdsCols = await _columnsOf('range_day_sessions');
+            if (!rdsCols.contains('current_magnification')) {
+              await m.addColumn(
+                  rangeDaySessions, rangeDaySessions.currentMagnification);
+            }
+            if (!rdsCols.contains('current_reticle_id')) {
+              await m.addColumn(
+                  rangeDaySessions, rangeDaySessions.currentReticleId);
+            }
+            if (!rdsCols.contains('dew_point_f')) {
+              await m.addColumn(
+                  rangeDaySessions, rangeDaySessions.dewPointF);
+            }
+            if (!rdsCols.contains('session_local_time')) {
+              await m.addColumn(
+                  rangeDaySessions, rangeDaySessions.sessionLocalTime);
+            }
+            if (!rdsCols.contains('latitude_deg')) {
+              await m.addColumn(
+                  rangeDaySessions, rangeDaySessions.latitudeDeg);
+            }
+            if (!rdsCols.contains('longitude_deg')) {
+              await m.addColumn(
+                  rangeDaySessions, rangeDaySessions.longitudeDeg);
+            }
+
+            final userFirearmsCols = await _columnsOf('user_firearms');
+            if (!userFirearmsCols.contains('default_magnification')) {
+              await m.addColumn(
+                  userFirearms, userFirearms.defaultMagnification);
+            }
+            if (!userFirearmsCols.contains('default_scope_id')) {
+              await m.addColumn(
+                  userFirearms, userFirearms.defaultScopeId);
+            }
+            if (!userFirearmsCols.contains('default_reticle_id')) {
+              await m.addColumn(
+                  userFirearms, userFirearms.defaultReticleId);
+            }
+
+            final reticlesCols = await _columnsOf('reticles');
+            if (!reticlesCols.contains('subtension_origin')) {
+              await m.addColumn(reticles, reticles.subtensionOrigin);
+            }
+            if (!reticlesCols.contains('calibration_provenance')) {
+              await m.addColumn(reticles, reticles.calibrationProvenance);
+            }
+
+            // Re-seed reticles so the new fields populate from the
+            // rewritten reticles.json. SeedLoader's per-table seed
+            // method runs when the table is empty.
+            await delete(reticles).go();
           }
         },
       );
