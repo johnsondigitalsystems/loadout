@@ -9653,6 +9653,34 @@ class _TargetThumbnailPainter extends CustomPainter {
     // Limit the target to ~78% of the shorter axis so it has room to
     // breathe inside the box without touching the border.
     final maxBox = math.min(w, h) * 0.78;
+    // SVG dispatch first — animals and competition silhouettes (popper,
+    // future IDPA / USPSA classifier / etc.) resolve via shape_id and
+    // the boot-preloaded path caches. Procedural shapes (circle / star /
+    // IPSC silhouette / rectangle / square) fall through to the switch
+    // below. The same dispatch helper is used by the realistic-scene
+    // painter in target_plot.dart — single source of truth.
+    final shapeId = spec.shapeId;
+    if (shapeId != null) {
+      // Aspect-preserved square bounding box centered in the thumbnail.
+      // scalePathToBounds inside the silhouette cache further fits the
+      // SVG to its source aspect within this rect (with bottom-
+      // alignment), so the rendered silhouette sits at the bottom of
+      // the tile like it's standing on the ground.
+      final svgRect = Rect.fromCenter(
+        center: Offset(centerX, centerY),
+        width: maxBox,
+        height: maxBox,
+      );
+      final svgPath = resolveTargetSvgPath(svgRect, shapeId);
+      if (svgPath != null) {
+        canvas.drawPath(svgPath, fill);
+        canvas.drawPath(svgPath, outline);
+        return;
+      }
+      // shapeId set but cache cold — fall through to procedural so the
+      // thumbnail isn't blank during the brief boot-preload window.
+    }
+
     final shape = spec.shape.toLowerCase();
     switch (shape) {
       case 'circle':
@@ -9666,15 +9694,6 @@ class _TargetThumbnailPainter extends CustomPainter {
       case 'idpa':
       case 'human':
         _paintIpscSilhouette(canvas, centerX, centerY, maxBox, fill, outline);
-      case 'popper':
-        _paintPopper(canvas, centerX, centerY, maxBox, fill, outline);
-      case 'bear':
-      case 'boar':
-      case 'deer':
-      case 'elk':
-      case 'coyote':
-      case 'hog':
-        _paintAnimal(canvas, centerX, centerY, maxBox, fill, outline, shape);
       case 'rectangle':
       case 'square':
       default:
@@ -9788,293 +9807,6 @@ class _TargetThumbnailPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = math.max(0.6, outline.strokeWidth * 0.6);
     canvas.drawPath(inner, innerPaint);
-  }
-
-  /// Paint a pepper-popper silhouette: round head on top, narrow
-  /// neck, wider rounded body that tapers slightly toward the
-  /// bottom. Used by both the full popper (33.46 × 7.87 in,
-  /// 85 cm tall) and the mini popper (22.05 × 7.87 in, 56 cm
-  /// tall) — both have the same bowling-pin profile, just
-  /// different overall heights.
-  void _paintPopper(
-    Canvas canvas,
-    double cx,
-    double cy,
-    double maxBox,
-    Paint fill,
-    Paint outline,
-  ) {
-    final aspect = (spec.heightIn <= 0 || spec.widthIn <= 0)
-        ? 0.24
-        : spec.widthIn / spec.heightIn;
-    // Popper is very tall + narrow (aspect ≈ 0.24); height fills
-    // the box, width follows the catalog row's W:H.
-    final targetH = maxBox;
-    final targetW = maxBox * aspect;
-    final left = cx - targetW / 2;
-    final right = cx + targetW / 2;
-    final top = cy - targetH / 2;
-    final bottom = cy + targetH / 2;
-    // Geometry breakdown (fractions of total H):
-    //   head — round disc, ~0.18 of H, full width
-    //   neck — narrow vertical cylinder, 0.06 of H, ~0.55 of W
-    //   shoulders — quick taper out, 0.04 of H
-    //   body — main rounded rect, 0.65 of H, ~0.95 of W
-    //   bottom — slight inward chamfer, 0.07 of H
-    final headBottom = top + targetH * 0.18;
-    final neckBottom = headBottom + targetH * 0.06;
-    final shoulderBottom = neckBottom + targetH * 0.04;
-    final chamferStart = bottom - targetH * 0.07;
-    final neckHalfW = targetW * 0.275;
-    final bodyHalfW = targetW * 0.475;
-    final bottomHalfW = targetW * 0.40;
-    // Trace the popper path clockwise from the top of the head.
-    // Use cubic-style curves for the head dome and shoulder
-    // transitions so it reads as a smooth bowling pin rather than
-    // a stack of stepped rectangles.
-    final path = Path()
-      ..moveTo(cx, top)
-      // Right side of head (semicircle).
-      ..arcToPoint(
-        Offset(right, (top + headBottom) / 2),
-        radius: Radius.circular(targetW / 2),
-        clockwise: true,
-      )
-      ..arcToPoint(
-        Offset(cx, headBottom),
-        radius: Radius.circular(targetW / 2),
-        clockwise: true,
-      )
-      // Right neck inward curve.
-      ..quadraticBezierTo(
-        right * 0.55 + cx * 0.45,
-        headBottom,
-        cx + neckHalfW,
-        neckBottom,
-      )
-      // Right shoulder out to body edge.
-      ..quadraticBezierTo(
-        cx + neckHalfW,
-        shoulderBottom,
-        cx + bodyHalfW,
-        shoulderBottom + targetH * 0.02,
-      )
-      // Right body edge straight down to chamfer start.
-      ..lineTo(cx + bodyHalfW, chamferStart)
-      // Bottom-right chamfer in.
-      ..lineTo(cx + bottomHalfW, bottom)
-      // Across the bottom.
-      ..lineTo(cx - bottomHalfW, bottom)
-      // Bottom-left chamfer up.
-      ..lineTo(cx - bodyHalfW, chamferStart)
-      // Left body edge up to shoulder.
-      ..lineTo(cx - bodyHalfW, shoulderBottom + targetH * 0.02)
-      // Left shoulder in to neck.
-      ..quadraticBezierTo(
-        cx - neckHalfW,
-        shoulderBottom,
-        cx - neckHalfW,
-        neckBottom,
-      )
-      // Left neck back up to head bottom.
-      ..quadraticBezierTo(
-        left * 0.55 + cx * 0.45,
-        headBottom,
-        cx,
-        headBottom,
-      )
-      // Left side of head (semicircle to top).
-      ..arcToPoint(
-        Offset(left, (top + headBottom) / 2),
-        radius: Radius.circular(targetW / 2),
-        clockwise: true,
-      )
-      ..arcToPoint(
-        Offset(cx, top),
-        radius: Radius.circular(targetW / 2),
-        clockwise: true,
-      )
-      ..close();
-    canvas.drawPath(path, fill);
-    canvas.drawPath(path, outline);
-  }
-
-  /// Paint an animal silhouette as a recognizable side-profile of the
-  /// body type. We use simple geometric primitives (rounded body
-  /// rect + head + ears/antlers + legs) so each shape reads at a
-  /// glance against the daytime backdrop. NOT photorealistic — a
-  /// "deer" looks like a four-legged silhouette with antlers; an
-  /// "elk" is a larger version with bigger antlers; "bear" is bulky
-  /// with rounded ears; "boar" is low and stocky with a snout;
-  /// "coyote" is dog-shaped.
-  void _paintAnimal(
-    Canvas canvas,
-    double cx,
-    double cy,
-    double maxBox,
-    Paint fill,
-    Paint outline,
-    String kind,
-  ) {
-    // Use the catalog's actual aspect (animal silhouettes are wide,
-    // not tall) so an Elk at 48×36 reads wider than a Deer at 30×24.
-    final aspect = (spec.heightIn <= 0 || spec.widthIn <= 0)
-        ? 1.5
-        : spec.widthIn / spec.heightIn;
-    double bodyW;
-    double bodyH;
-    if (aspect >= 1.0) {
-      bodyW = maxBox;
-      bodyH = maxBox / aspect;
-    } else {
-      bodyH = maxBox;
-      bodyW = maxBox * aspect;
-    }
-    // Body rectangle (rounded) — left half is haunches, right half
-    // is shoulder/chest. We anchor to the lower portion of the box
-    // so head/antlers can extend above without overflowing.
-    final bodyRect = Rect.fromCenter(
-      center: Offset(cx - bodyW * 0.05, cy + bodyH * 0.08),
-      width: bodyW * 0.78,
-      height: bodyH * 0.50,
-    );
-    final body = RRect.fromRectAndRadius(
-      bodyRect, Radius.circular(bodyH * 0.10));
-    canvas.drawRRect(body, fill);
-    canvas.drawRRect(body, outline);
-    // Head — sits forward (right side) at the front of the body.
-    final headW = bodyW * 0.28;
-    final headH = bodyH * 0.30;
-    final headCx = cx + bodyW * 0.32;
-    final headCy = cy - bodyH * 0.10;
-    final headRect = Rect.fromCenter(
-      center: Offset(headCx, headCy),
-      width: headW,
-      height: headH,
-    );
-    final head = RRect.fromRectAndRadius(
-      headRect, Radius.circular(headH * 0.35));
-    canvas.drawRRect(head, fill);
-    canvas.drawRRect(head, outline);
-    // Snout — short for deer/elk/bear/coyote, longer + thicker for
-    // boar/hog so the muzzle reads as the defining feature.
-    final isHog = kind == 'boar' || kind == 'hog';
-    final snoutW = isHog ? headW * 0.55 : headW * 0.40;
-    final snoutH = isHog ? headH * 0.50 : headH * 0.30;
-    final snoutRect = Rect.fromCenter(
-      center: Offset(headCx + headW * 0.45, headCy + headH * 0.10),
-      width: snoutW,
-      height: snoutH,
-    );
-    final snout = RRect.fromRectAndRadius(
-      snoutRect, Radius.circular(snoutH * 0.4));
-    canvas.drawRRect(snout, fill);
-    canvas.drawRRect(snout, outline);
-    // Legs — four short rectangles under the body.
-    final legW = bodyW * 0.06;
-    final legH = bodyH * 0.32;
-    for (final dx in [-0.30, -0.10, 0.12, 0.28]) {
-      final legRect = Rect.fromCenter(
-        center: Offset(cx + bodyW * dx, cy + bodyH * 0.40),
-        width: legW,
-        height: legH,
-      );
-      canvas.drawRect(legRect, fill);
-      canvas.drawRect(legRect, outline);
-    }
-    // Tail / appendages by species.
-    if (kind == 'deer' || kind == 'elk') {
-      // Antlers — two angled lines branching upward from the head.
-      final antlerPaint = Paint()
-        ..color = outline.color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = math.max(2.0, bodyH * 0.04)
-        ..strokeCap = StrokeCap.round;
-      final base = Offset(headCx - headW * 0.20, headCy - headH * 0.40);
-      final antlerSpan = (kind == 'elk' ? 0.55 : 0.40) * bodyH;
-      final antlerWidth = (kind == 'elk' ? 0.55 : 0.35) * bodyW;
-      // Main antler beams.
-      canvas.drawLine(
-        base,
-        Offset(base.dx - antlerWidth * 0.30, base.dy - antlerSpan),
-        antlerPaint,
-      );
-      canvas.drawLine(
-        Offset(base.dx + headW * 0.15, base.dy),
-        Offset(base.dx + headW * 0.15 + antlerWidth * 0.25,
-            base.dy - antlerSpan),
-        antlerPaint,
-      );
-      // Tine for elk only — extra branch off each main beam.
-      if (kind == 'elk') {
-        canvas.drawLine(
-          Offset(base.dx - antlerWidth * 0.15, base.dy - antlerSpan * 0.55),
-          Offset(base.dx - antlerWidth * 0.40,
-              base.dy - antlerSpan * 0.85),
-          antlerPaint,
-        );
-        canvas.drawLine(
-          Offset(base.dx + headW * 0.15 + antlerWidth * 0.12,
-              base.dy - antlerSpan * 0.55),
-          Offset(base.dx + headW * 0.15 + antlerWidth * 0.35,
-              base.dy - antlerSpan * 0.85),
-          antlerPaint,
-        );
-      }
-      // Short tail.
-      final tail = Rect.fromCenter(
-        center: Offset(cx - bodyW * 0.42, cy - bodyH * 0.05),
-        width: bodyW * 0.05,
-        height: bodyH * 0.12,
-      );
-      canvas.drawRect(tail, fill);
-      canvas.drawRect(tail, outline);
-    } else if (kind == 'bear') {
-      // Two small rounded ears on top of the head.
-      for (final dx in [-0.18, 0.18]) {
-        final ear = Rect.fromCenter(
-          center: Offset(headCx + headW * dx, headCy - headH * 0.55),
-          width: headW * 0.30,
-          height: headH * 0.32,
-        );
-        final earR = RRect.fromRectAndRadius(ear, Radius.circular(headH * 0.25));
-        canvas.drawRRect(earR, fill);
-        canvas.drawRRect(earR, outline);
-      }
-    } else if (isHog) {
-      // Two upright triangular ears + a curly tail tick.
-      for (final dx in [-0.15, 0.15]) {
-        final earPath = Path()
-          ..moveTo(headCx + headW * dx - headW * 0.10,
-              headCy - headH * 0.30)
-          ..lineTo(headCx + headW * dx + headW * 0.10,
-              headCy - headH * 0.30)
-          ..lineTo(headCx + headW * dx, headCy - headH * 0.75)
-          ..close();
-        canvas.drawPath(earPath, fill);
-        canvas.drawPath(earPath, outline);
-      }
-    } else if (kind == 'coyote') {
-      // Two pointed ears + a thin downturned tail.
-      for (final dx in [-0.18, 0.18]) {
-        final earPath = Path()
-          ..moveTo(headCx + headW * dx - headW * 0.10,
-              headCy - headH * 0.30)
-          ..lineTo(headCx + headW * dx + headW * 0.10,
-              headCy - headH * 0.30)
-          ..lineTo(headCx + headW * dx, headCy - headH * 0.75)
-          ..close();
-        canvas.drawPath(earPath, fill);
-        canvas.drawPath(earPath, outline);
-      }
-      final tail = Rect.fromCenter(
-        center: Offset(cx - bodyW * 0.45, cy + bodyH * 0.18),
-        width: bodyW * 0.20,
-        height: bodyH * 0.05,
-      );
-      canvas.drawRect(tail, fill);
-      canvas.drawRect(tail, outline);
-    }
   }
 
   /// Paints a Texas Star: central hub with five satellite plates

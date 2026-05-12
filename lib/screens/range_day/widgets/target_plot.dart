@@ -137,6 +137,37 @@ import '../../../widgets/reticle_renderer.dart';
 import '../../../widgets/scope_daytime_backdrop.dart';
 import '../../../widgets/target_silhouettes.dart';
 
+/// Shape dispatch for any painter rendering a [TargetSpec].
+///
+/// Returns the scaled SVG path when [shapeId] resolves to an authored
+/// silhouette in either [AnimalSilhouettes] or [TargetSilhouettes].
+/// Returns `null` when [shapeId] is null, unknown, or the path cache
+/// is cold — callers fall back to their own procedural rendering in
+/// that case (circle / silhouette / star / rectangle / square /
+/// generic IPSC).
+///
+/// Synchronous; safe to call from `CustomPainter.paint`. The path
+/// caches consulted here are populated at app boot via the fire-and-
+/// forget preload in `main.dart` (Appendix H.4 / M of the Range Day
+/// Realistic v2.3 rewrite). A cold-cache null return is transient —
+/// the next repaint after preload completes will return the real path.
+///
+/// Single source of truth for SVG dispatch across the realistic scene
+/// painter ([_RealisticScenePainter]) and the picker thumbnail painter
+/// (`_TargetThumbnailPainter` in `range_day_detail_screen.dart`). If a
+/// new SVG silhouette class ships, add its check here and both
+/// painters pick it up.
+Path? resolveTargetSvgPath(Rect bounds, String? shapeId) {
+  if (shapeId == null) return null;
+  if (AnimalSilhouettes.isAnimalShape(shapeId)) {
+    return AnimalSilhouettes.cachedScaledPath(bounds, shapeId);
+  }
+  if (TargetSilhouettes.isTargetShape(shapeId)) {
+    return TargetSilhouettes.cachedScaledPath(bounds, shapeId);
+  }
+  return null;
+}
+
 /// Two interaction modes for the target plot.
 enum TargetPlotTapMode {
   /// Tap moves the aim marker.
@@ -1172,20 +1203,10 @@ class _RealisticScenePainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.6;
 
-    // ── Dispatch ───────────────────────────────────────────────────
-    // 1. shapeId set + AnimalSilhouettes recognizes → SVG path.
-    // 2. shapeId set + TargetSilhouettes recognizes → SVG path.
-    // 3. Otherwise fall back to procedural by target.shape.
-    final shapeId = target.shapeId;
-    Path? svgPath;
-    if (shapeId != null) {
-      if (AnimalSilhouettes.isAnimalShape(shapeId)) {
-        svgPath = AnimalSilhouettes.cachedScaledPath(rect, shapeId);
-      } else if (TargetSilhouettes.isTargetShape(shapeId)) {
-        svgPath = TargetSilhouettes.cachedScaledPath(rect, shapeId);
-      }
-    }
-
+    // Shared dispatch: SVG path if shapeId resolves, otherwise null.
+    // See top-level [resolveTargetSvgPath]; the same helper backs the
+    // picker thumbnail painter in range_day_detail_screen.dart.
+    final svgPath = resolveTargetSvgPath(rect, target.shapeId);
     if (svgPath != null) {
       canvas.drawPath(svgPath, fillPaint);
       canvas.drawPath(svgPath, outlinePaint);
