@@ -5896,9 +5896,19 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   /// pattern as the picker filter at `_targetShapeFilter`.
   Widget _targetShapeIcon(String shape, String? shapeId, ThemeData theme) {
     final color = theme.colorScheme.primary;
-    // Animal-via-shape_id branch (16 rows): the catalog stores their
-    // shape as 'silhouette' but the per-species SVG key on shape_id
-    // tells us this is an animal.
+    // Phase 9 Group C.2 — IPSC silhouettes get a person-silhouette
+    // icon (matches their "human-shaped competition silhouette"
+    // semantics). Distinct from the paw-glyph animal branch below.
+    // Must come BEFORE the generic shape_id != null check, since
+    // IPSC also has shape='silhouette' + shape_id='ipsc' but is
+    // not an animal.
+    if (shape == 'silhouette' && shapeId == 'ipsc') {
+      return Icon(Icons.person, size: 28, color: color);
+    }
+    // Animal-via-shape_id branch (48 rows post-Phase-9 — was 16
+    // pre-Phase-9 before the size variants landed): the catalog
+    // stores their shape as 'silhouette' but the per-species SVG
+    // key on shape_id tells us this is an animal.
     if (shape == 'silhouette' && shapeId != null) {
       return Icon(Icons.pets, size: 28, color: color);
     }
