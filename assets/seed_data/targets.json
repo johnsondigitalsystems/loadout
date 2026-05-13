@@ -567,8 +567,54 @@
     }
   },
   {
+    "id": "deer_small",
+    "name": "Small Deer 30×16 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "deer",
+    "width_in": 30,
+    "height_in": 16,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#1A1410",
+    "default_distance_yd": 200,
+    "category_tags": [
+      "animal",
+      "big-game",
+      "north-america"
+    ],
+    "notes": "Side angle of a deer target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
+    },
+    "svg_scale_factor": 1.4
+  },
+  {
+    "id": "deer_medium",
+    "name": "Medium Deer 48×26 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "deer",
+    "width_in": 48,
+    "height_in": 26,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#1A1410",
+    "default_distance_yd": 200,
+    "category_tags": [
+      "animal",
+      "big-game",
+      "north-america"
+    ],
+    "notes": "Side angle of a deer target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
+    },
+    "svg_scale_factor": 1.4
+  },
+  {
     "id": "deer",
-    "name": "Deer 60×32 in",
+    "name": "Large Deer 60×32 in",
     "category": "animal",
     "shape": "silhouette",
     "shape_id": "deer",
@@ -585,13 +631,61 @@
     "notes": "Side angle of a deer target.",
     "center_point": {
       "vertical_from_top": 0.5,
-      "horizontal_from_left": 0.7
+      "horizontal_from_left": 0.6
+    },
+    "svg_scale_factor": 1.4
+  },
+  {
+    "id": "mule_deer_small",
+    "name": "Small Mule deer 30×16 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "mule_deer",
+    "width_in": 30,
+    "height_in": 16,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#1A1410",
+    "default_distance_yd": 250,
+    "category_tags": [
+      "animal",
+      "big-game",
+      "north-america",
+      "western"
+    ],
+    "notes": "Side angle of a mule deer target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
+    },
+    "svg_scale_factor": 1.4
+  },
+  {
+    "id": "mule_deer_medium",
+    "name": "Medium Mule deer 48×26 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "mule_deer",
+    "width_in": 48,
+    "height_in": 26,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#1A1410",
+    "default_distance_yd": 250,
+    "category_tags": [
+      "animal",
+      "big-game",
+      "north-america",
+      "western"
+    ],
+    "notes": "Side angle of a mule deer target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
     },
     "svg_scale_factor": 1.4
   },
   {
     "id": "mule_deer",
-    "name": "Mule deer 60×32 in",
+    "name": "Large Mule deer 60×32 in",
     "category": "animal",
     "shape": "silhouette",
     "shape_id": "mule_deer",
@@ -609,13 +703,61 @@
     "notes": "Side angle of a mule deer target.",
     "center_point": {
       "vertical_from_top": 0.5,
-      "horizontal_from_left": 0.7
+      "horizontal_from_left": 0.6
     },
     "svg_scale_factor": 1.4
   },
   {
+    "id": "elk_small",
+    "name": "Small Elk 50×26 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "elk",
+    "width_in": 50,
+    "height_in": 26,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#1A1410",
+    "default_distance_yd": 300,
+    "category_tags": [
+      "animal",
+      "big-game",
+      "north-america",
+      "western"
+    ],
+    "notes": "Side angle of an elk target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
+    },
+    "svg_scale_factor": 1.3
+  },
+  {
+    "id": "elk_medium",
+    "name": "Medium Elk 80×42 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "elk",
+    "width_in": 80,
+    "height_in": 42,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#1A1410",
+    "default_distance_yd": 300,
+    "category_tags": [
+      "animal",
+      "big-game",
+      "north-america",
+      "western"
+    ],
+    "notes": "Side angle of an elk target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
+    },
+    "svg_scale_factor": 1.3
+  },
+  {
     "id": "elk",
-    "name": "Elk 100×53 in",
+    "name": "Large Elk 100×53 in",
     "category": "animal",
     "shape": "silhouette",
     "shape_id": "elk",
@@ -633,13 +775,61 @@
     "notes": "Side angle of an elk target.",
     "center_point": {
       "vertical_from_top": 0.5,
-      "horizontal_from_left": 0.7
+      "horizontal_from_left": 0.6
     },
     "svg_scale_factor": 1.3
   },
   {
+    "id": "moose_small",
+    "name": "Small Moose 60×32 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "moose",
+    "width_in": 60,
+    "height_in": 32,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#1A1410",
+    "default_distance_yd": 200,
+    "category_tags": [
+      "animal",
+      "big-game",
+      "north-america",
+      "northern"
+    ],
+    "notes": "Side angle of a moose target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
+    },
+    "svg_scale_factor": 1.4
+  },
+  {
+    "id": "moose_medium",
+    "name": "Medium Moose 96×51 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "moose",
+    "width_in": 96,
+    "height_in": 51,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#1A1410",
+    "default_distance_yd": 200,
+    "category_tags": [
+      "animal",
+      "big-game",
+      "north-america",
+      "northern"
+    ],
+    "notes": "Side angle of a moose target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
+    },
+    "svg_scale_factor": 1.4
+  },
+  {
     "id": "moose",
-    "name": "Moose 120×64 in",
+    "name": "Large Moose 120×64 in",
     "category": "animal",
     "shape": "silhouette",
     "shape_id": "moose",
@@ -657,13 +847,63 @@
     "notes": "Side angle of a moose target.",
     "center_point": {
       "vertical_from_top": 0.5,
-      "horizontal_from_left": 0.7
+      "horizontal_from_left": 0.6
     },
     "svg_scale_factor": 1.4
   },
   {
+    "id": "pronghorn_small",
+    "name": "Small Pronghorn 30×16 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "pronghorn",
+    "width_in": 30,
+    "height_in": 16,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#3D2F1E",
+    "default_distance_yd": 300,
+    "category_tags": [
+      "animal",
+      "big-game",
+      "north-america",
+      "western",
+      "open-country"
+    ],
+    "notes": "Side angle of a pronghorn target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
+    },
+    "svg_scale_factor": 1.2
+  },
+  {
+    "id": "pronghorn_medium",
+    "name": "Medium Pronghorn 48×26 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "pronghorn",
+    "width_in": 48,
+    "height_in": 26,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#3D2F1E",
+    "default_distance_yd": 300,
+    "category_tags": [
+      "animal",
+      "big-game",
+      "north-america",
+      "western",
+      "open-country"
+    ],
+    "notes": "Side angle of a pronghorn target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
+    },
+    "svg_scale_factor": 1.2
+  },
+  {
     "id": "pronghorn",
-    "name": "Pronghorn 60×32 in",
+    "name": "Large Pronghorn 60×32 in",
     "category": "animal",
     "shape": "silhouette",
     "shape_id": "pronghorn",
@@ -682,13 +922,57 @@
     "notes": "Side angle of a pronghorn target.",
     "center_point": {
       "vertical_from_top": 0.5,
-      "horizontal_from_left": 0.7
+      "horizontal_from_left": 0.6
     },
     "svg_scale_factor": 1.2
   },
   {
+    "id": "bear_small",
+    "name": "Small Bear 30×16 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "bear",
+    "width_in": 30,
+    "height_in": 16,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#000000",
+    "default_distance_yd": 150,
+    "category_tags": [
+      "animal",
+      "big-game",
+      "north-america"
+    ],
+    "notes": "Side angle of a bear target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
+    }
+  },
+  {
+    "id": "bear_medium",
+    "name": "Medium Bear 48×26 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "bear",
+    "width_in": 48,
+    "height_in": 26,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#000000",
+    "default_distance_yd": 150,
+    "category_tags": [
+      "animal",
+      "big-game",
+      "north-america"
+    ],
+    "notes": "Side angle of a bear target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
+    }
+  },
+  {
     "id": "bear",
-    "name": "Bear 60×32 in",
+    "name": "Large Bear 60×32 in",
     "category": "animal",
     "shape": "silhouette",
     "shape_id": "bear",
@@ -705,12 +989,58 @@
     "notes": "Side angle of a bear target.",
     "center_point": {
       "vertical_from_top": 0.5,
-      "horizontal_from_left": 0.7
+      "horizontal_from_left": 0.6
+    }
+  },
+  {
+    "id": "boar_small",
+    "name": "Small Boar 30×16 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "boar",
+    "width_in": 30,
+    "height_in": 16,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#000000",
+    "default_distance_yd": 150,
+    "category_tags": [
+      "animal",
+      "big-game",
+      "north-america",
+      "varmint"
+    ],
+    "notes": "Side angle of a boar target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
+    }
+  },
+  {
+    "id": "boar_medium",
+    "name": "Medium Boar 48×26 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "boar",
+    "width_in": 48,
+    "height_in": 26,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#000000",
+    "default_distance_yd": 150,
+    "category_tags": [
+      "animal",
+      "big-game",
+      "north-america",
+      "varmint"
+    ],
+    "notes": "Side angle of a boar target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
     }
   },
   {
     "id": "boar",
-    "name": "Boar 60×33 in",
+    "name": "Large Boar 60×33 in",
     "category": "animal",
     "shape": "silhouette",
     "shape_id": "boar",
@@ -728,12 +1058,56 @@
     "notes": "Side angle of a boar target.",
     "center_point": {
       "vertical_from_top": 0.5,
-      "horizontal_from_left": 0.7
+      "horizontal_from_left": 0.6
+    }
+  },
+  {
+    "id": "mountain_lion_small",
+    "name": "Small Mountain lion 42×22 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "mountain_lion",
+    "width_in": 42,
+    "height_in": 22,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#3D2F1E",
+    "default_distance_yd": 100,
+    "category_tags": [
+      "animal",
+      "predator",
+      "north-america"
+    ],
+    "notes": "Side angle of a mountain lion target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
+    }
+  },
+  {
+    "id": "mountain_lion_medium",
+    "name": "Medium Mountain lion 67×36 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "mountain_lion",
+    "width_in": 67,
+    "height_in": 36,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#3D2F1E",
+    "default_distance_yd": 100,
+    "category_tags": [
+      "animal",
+      "predator",
+      "north-america"
+    ],
+    "notes": "Side angle of a mountain lion target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
     }
   },
   {
     "id": "mountain_lion",
-    "name": "Mountain lion 84×45 in",
+    "name": "Large Mountain lion 84×45 in",
     "category": "animal",
     "shape": "silhouette",
     "shape_id": "mountain_lion",
@@ -750,12 +1124,56 @@
     "notes": "Side angle of a mountain lion target.",
     "center_point": {
       "vertical_from_top": 0.5,
-      "horizontal_from_left": 0.7
+      "horizontal_from_left": 0.6
+    }
+  },
+  {
+    "id": "coyote_small",
+    "name": "Small Coyote 24×13 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "coyote",
+    "width_in": 24,
+    "height_in": 13,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#1A1410",
+    "default_distance_yd": 300,
+    "category_tags": [
+      "animal",
+      "predator",
+      "north-america"
+    ],
+    "notes": "Side angle of a coyote target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
+    }
+  },
+  {
+    "id": "coyote_medium",
+    "name": "Medium Coyote 38×21 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "coyote",
+    "width_in": 38,
+    "height_in": 21,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#1A1410",
+    "default_distance_yd": 300,
+    "category_tags": [
+      "animal",
+      "predator",
+      "north-america"
+    ],
+    "notes": "Side angle of a coyote target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
     }
   },
   {
     "id": "coyote",
-    "name": "Coyote 48×26 in",
+    "name": "Large Coyote 48×26 in",
     "category": "animal",
     "shape": "silhouette",
     "shape_id": "coyote",
@@ -772,12 +1190,56 @@
     "notes": "Side angle of a coyote target.",
     "center_point": {
       "vertical_from_top": 0.5,
-      "horizontal_from_left": 0.7
+      "horizontal_from_left": 0.6
+    }
+  },
+  {
+    "id": "fox_small",
+    "name": "Small Fox 18×10 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "fox",
+    "width_in": 18,
+    "height_in": 10,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#1A1410",
+    "default_distance_yd": 200,
+    "category_tags": [
+      "animal",
+      "predator",
+      "small-game"
+    ],
+    "notes": "Side angle of a fox target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
+    }
+  },
+  {
+    "id": "fox_medium",
+    "name": "Medium Fox 29×15 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "fox",
+    "width_in": 29,
+    "height_in": 15,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#1A1410",
+    "default_distance_yd": 200,
+    "category_tags": [
+      "animal",
+      "predator",
+      "small-game"
+    ],
+    "notes": "Side angle of a fox target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
     }
   },
   {
     "id": "fox",
-    "name": "Fox 36×19 in",
+    "name": "Large Fox 36×19 in",
     "category": "animal",
     "shape": "silhouette",
     "shape_id": "fox",
@@ -794,12 +1256,54 @@
     "notes": "Side angle of a fox target.",
     "center_point": {
       "vertical_from_top": 0.5,
-      "horizontal_from_left": 0.7
+      "horizontal_from_left": 0.6
+    }
+  },
+  {
+    "id": "rabbit_small",
+    "name": "Small Rabbit 9×5 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "rabbit",
+    "width_in": 9,
+    "height_in": 5,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#1A1410",
+    "default_distance_yd": 100,
+    "category_tags": [
+      "animal",
+      "small-game"
+    ],
+    "notes": "Side angle of a rabbit target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
+    }
+  },
+  {
+    "id": "rabbit_medium",
+    "name": "Medium Rabbit 14×8 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "rabbit",
+    "width_in": 14,
+    "height_in": 8,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#1A1410",
+    "default_distance_yd": 100,
+    "category_tags": [
+      "animal",
+      "small-game"
+    ],
+    "notes": "Side angle of a rabbit target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
     }
   },
   {
     "id": "rabbit",
-    "name": "Rabbit 18×10 in",
+    "name": "Large Rabbit 18×10 in",
     "category": "animal",
     "shape": "silhouette",
     "shape_id": "rabbit",
@@ -815,12 +1319,56 @@
     "notes": "Side angle of a rabbit target.",
     "center_point": {
       "vertical_from_top": 0.5,
-      "horizontal_from_left": 0.7
+      "horizontal_from_left": 0.6
+    }
+  },
+  {
+    "id": "groundhog_small",
+    "name": "Small Groundhog 12×6 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "groundhog",
+    "width_in": 12,
+    "height_in": 6,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#1A1410",
+    "default_distance_yd": 200,
+    "category_tags": [
+      "animal",
+      "varmint",
+      "small-game"
+    ],
+    "notes": "Side angle of a groundhog target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
+    }
+  },
+  {
+    "id": "groundhog_medium",
+    "name": "Medium Groundhog 19×10 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "groundhog",
+    "width_in": 19,
+    "height_in": 10,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#1A1410",
+    "default_distance_yd": 200,
+    "category_tags": [
+      "animal",
+      "varmint",
+      "small-game"
+    ],
+    "notes": "Side angle of a groundhog target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
     }
   },
   {
     "id": "groundhog",
-    "name": "Groundhog 24×13 in",
+    "name": "Large Groundhog 24×13 in",
     "category": "animal",
     "shape": "silhouette",
     "shape_id": "groundhog",
@@ -837,12 +1385,56 @@
     "notes": "Side angle of a groundhog target.",
     "center_point": {
       "vertical_from_top": 0.5,
-      "horizontal_from_left": 0.7
+      "horizontal_from_left": 0.6
+    }
+  },
+  {
+    "id": "prairie_dog_small",
+    "name": "Small Prairie dog 6×3 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "prairie_dog",
+    "width_in": 6,
+    "height_in": 3,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#3D2F1E",
+    "default_distance_yd": 400,
+    "category_tags": [
+      "animal",
+      "varmint",
+      "long-range-plinking"
+    ],
+    "notes": "Side angle of a prairie dog target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
+    }
+  },
+  {
+    "id": "prairie_dog_medium",
+    "name": "Medium Prairie dog 10×5 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "prairie_dog",
+    "width_in": 10,
+    "height_in": 5,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#3D2F1E",
+    "default_distance_yd": 400,
+    "category_tags": [
+      "animal",
+      "varmint",
+      "long-range-plinking"
+    ],
+    "notes": "Side angle of a prairie dog target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
     }
   },
   {
     "id": "prairie_dog",
-    "name": "Prairie dog 12×6 in",
+    "name": "Large Prairie dog 12×6 in",
     "category": "animal",
     "shape": "silhouette",
     "shape_id": "prairie_dog",
@@ -859,12 +1451,58 @@
     "notes": "Side angle of a prairie dog target.",
     "center_point": {
       "vertical_from_top": 0.5,
-      "horizontal_from_left": 0.7
+      "horizontal_from_left": 0.6
     }
   },
   {
+    "id": "wild_turkey_small",
+    "name": "Small Wild turkey 18×10 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "wild_turkey",
+    "width_in": 18,
+    "height_in": 10,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#1A1410",
+    "default_distance_yd": 40,
+    "category_tags": [
+      "animal",
+      "upland-bird",
+      "game-bird"
+    ],
+    "notes": "Side angle of a turkey target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
+    },
+    "svg_scale_factor": 1.2
+  },
+  {
+    "id": "wild_turkey_medium",
+    "name": "Medium Wild turkey 29×15 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "wild_turkey",
+    "width_in": 29,
+    "height_in": 15,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#1A1410",
+    "default_distance_yd": 40,
+    "category_tags": [
+      "animal",
+      "upland-bird",
+      "game-bird"
+    ],
+    "notes": "Side angle of a turkey target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
+    },
+    "svg_scale_factor": 1.2
+  },
+  {
     "id": "wild_turkey",
-    "name": "Wild turkey 36×19 in",
+    "name": "Large Wild turkey 36×19 in",
     "category": "animal",
     "shape": "silhouette",
     "shape_id": "wild_turkey",
@@ -881,13 +1519,59 @@
     "notes": "Side angle of a turkey target.",
     "center_point": {
       "vertical_from_top": 0.5,
-      "horizontal_from_left": 0.7
+      "horizontal_from_left": 0.6
+    },
+    "svg_scale_factor": 1.2
+  },
+  {
+    "id": "pheasant_small",
+    "name": "Small Pheasant 18×10 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "pheasant",
+    "width_in": 18,
+    "height_in": 10,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#1A1410",
+    "default_distance_yd": 30,
+    "category_tags": [
+      "animal",
+      "upland-bird",
+      "game-bird"
+    ],
+    "notes": "Side angle of a pheasant target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
+    },
+    "svg_scale_factor": 1.2
+  },
+  {
+    "id": "pheasant_medium",
+    "name": "Medium Pheasant 29×15 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "pheasant",
+    "width_in": 29,
+    "height_in": 15,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#1A1410",
+    "default_distance_yd": 30,
+    "category_tags": [
+      "animal",
+      "upland-bird",
+      "game-bird"
+    ],
+    "notes": "Side angle of a pheasant target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
     },
     "svg_scale_factor": 1.2
   },
   {
     "id": "pheasant",
-    "name": "Pheasant 36×19 in",
+    "name": "Large Pheasant 36×19 in",
     "category": "animal",
     "shape": "silhouette",
     "shape_id": "pheasant",
@@ -904,13 +1588,57 @@
     "notes": "Side angle of a pheasant target.",
     "center_point": {
       "vertical_from_top": 0.5,
-      "horizontal_from_left": 0.7
+      "horizontal_from_left": 0.6
     },
     "svg_scale_factor": 1.2
   },
   {
+    "id": "bigfoot_small",
+    "name": "Small Bigfoot 42×23 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "bigfoot",
+    "width_in": 42,
+    "height_in": 23,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#000000",
+    "default_distance_yd": 400,
+    "category_tags": [
+      "animal",
+      "novelty",
+      "cryptid"
+    ],
+    "notes": "Side angle of a bigfoot target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
+    }
+  },
+  {
+    "id": "bigfoot_medium",
+    "name": "Medium Bigfoot 67×37 in",
+    "category": "animal",
+    "shape": "silhouette",
+    "shape_id": "bigfoot",
+    "width_in": 67,
+    "height_in": 37,
+    "color_hex": "#ffffff",
+    "rim_color_hex": "#000000",
+    "default_distance_yd": 400,
+    "category_tags": [
+      "animal",
+      "novelty",
+      "cryptid"
+    ],
+    "notes": "Side angle of a bigfoot target.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.6
+    }
+  },
+  {
     "id": "bigfoot",
-    "name": "Bigfoot 84×46 in",
+    "name": "Large Bigfoot 84×46 in",
     "category": "animal",
     "shape": "silhouette",
     "shape_id": "bigfoot",
@@ -927,7 +1655,7 @@
     "notes": "Side angle of a bigfoot target.",
     "center_point": {
       "vertical_from_top": 0.5,
-      "horizontal_from_left": 0.7
+      "horizontal_from_left": 0.6
     }
   }
 ]
