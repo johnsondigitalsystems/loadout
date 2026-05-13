@@ -97,14 +97,23 @@ import 'package:svg_path_parser/svg_path_parser.dart' as svg_strict;
 import 'dart:async';
 
 /// Phase 7b — value type for an SVG `<path>` parsed into a Flutter
-/// `Path` plus its `fill` attribute (lowercased, or null if absent).
-/// Internal to this file; carries the data the inverted-pattern
-/// heuristic and the white-fill filter both need.
+/// `Path` plus its `fill` and `stroke` attributes (lowercased, or null
+/// if absent). Internal to this file; carries the data the inverted-
+/// pattern heuristic, the white-fill filter, and the stroke-only
+/// filter (Phase 9 Group C.3 Pattern E) all need.
+///
+/// `dString` (Phase 9 Group C.3) is the raw `d` attribute string —
+/// preserved so the Pattern C subpath extractor can re-parse and split
+/// subpaths without having to enumerate Flutter's `Path` internals
+/// (which doesn't expose subpath access directly).
 class _ParsedSvgPath {
-  _ParsedSvgPath(this.path, this.fillHex) : bounds = path.getBounds();
+  _ParsedSvgPath(this.path, this.fillHex, this.strokeHex, this.dString)
+      : bounds = path.getBounds();
 
   final Path path;
   final String? fillHex;
+  final String? strokeHex;
+  final String dString;
   final Rect bounds;
 }
 
@@ -207,19 +216,70 @@ class AnimalSilhouettes {
       throw StateError('No <path d="..."/> found in $assetPath');
     }
 
-    // 1. Inverted-negative-space pattern.
-    if (_isInvertedNegativeSpaceSvg(paths, viewBox)) {
+    // Phase 9 Group C.3 — Pattern E filter. Drop stroke-only outline
+    // paths before any dispatch. These come from SVGs authored with
+    // a `fill="none" stroke="#..."` outline path alongside a filled
+    // silhouette path; the outline is decorative and shouldn't
+    // contribute to the silhouette body.
+    final filledPaths =
+        paths.where((p) => !_isStrokeOnly(p)).toList();
+    final effectivePaths =
+        filledPaths.isNotEmpty ? filledPaths : paths;
+
+    // 1. Inverted-negative-space pattern (Pattern B + Pattern C).
+    //    Pattern B (bigfoot-style): single path whose `d` contains
+    //    both the outer canvas-cover and the silhouette as a single
+    //    fill with non-zero / even-odd winding producing a hole.
+    //    Pattern C (old complex IPSC-style): the first <path>'s `d`
+    //    has two distinct SUBPATHS — an outer canvas-cover subpath
+    //    and a smaller silhouette subpath. Pattern.combine with
+    //    non-zero winding produces an empty path when the inner
+    //    subpath goes the same direction as the outer; for Pattern
+    //    C we extract just the inner subpath instead.
+    if (_isInvertedNegativeSpaceSvg(effectivePaths, viewBox)) {
+      final first = effectivePaths.first;
+      final subpaths = _splitSubpaths(first.dString);
+
+      // Pattern C detection: ≥2 subpaths AND a subpath that's
+      // clearly inside the canvas-cover (covers < 80% of viewBox).
+      if (subpaths.length >= 2) {
+        final innerSubpaths = subpaths.where((s) {
+          if (viewBox.width <= 0 || viewBox.height <= 0) return false;
+          final coverX = s.bounds.width / viewBox.width;
+          final coverY = s.bounds.height / viewBox.height;
+          // "Inner" = clearly smaller than the canvas-cover in BOTH
+          // axes (catches the silhouette subpath; rejects the
+          // canvas-cover subpath).
+          return coverX < 0.8 && coverY < 0.8;
+        }).toList();
+
+        if (innerSubpaths.isNotEmpty) {
+          final result = Path();
+          for (final s in innerSubpaths) {
+            result.addPath(s.path, Offset.zero);
+          }
+          return result;
+        }
+      }
+
+      // Pattern B fallthrough: single-subpath inverted silhouette.
+      // Use Path.combine(difference, canvasRect, firstPath) so the
+      // non-zero winding rule converts the hole into the visible
+      // silhouette.
       final canvasRect = Path()..addRect(viewBox);
       return Path.combine(
         PathOperation.difference,
         canvasRect,
-        paths.first.path,
+        first.path,
       );
     }
 
-    // 2. Standard SVG — filter white-fill paths, then combine.
+    // 2. Standard SVG (Pattern A + Pattern D). Filter white-fill
+    //    paths (Pattern D: separate canvas-cover-as-white path +
+    //    dark silhouette path), then combine the remaining filled
+    //    paths into the silhouette body.
     final combined = Path();
-    for (final p in paths) {
+    for (final p in effectivePaths) {
       if (_isWhiteFill(p.fillHex)) continue;
       combined.addPath(p.path, Offset.zero);
     }
@@ -228,7 +288,9 @@ class AnimalSilhouettes {
     //    is all white-fill — unexpected, but possible), combine every
     //    path so we still get a non-empty silhouette. Matches the
     //    pre-Phase-7b behaviour for SVGs that don't fit either of
-    //    the two structural patterns above.
+    //    the two structural patterns above. Uses `paths` (not
+    //    `effectivePaths`) so even stroke-only-and-all-white SVGs
+    //    still produce something rather than nothing.
     if (combined.getBounds().isEmpty) {
       final fallback = Path();
       for (final p in paths) {
@@ -262,6 +324,7 @@ class AnimalSilhouettes {
     );
     final dAttrRe = RegExp(r'\bd\s*=\s*"([^"]+)"');
     final fillAttrRe = RegExp(r'\bfill\s*=\s*"([^"]+)"');
+    final strokeAttrRe = RegExp(r'\bstroke\s*=\s*"([^"]+)"');
 
     final result = <_ParsedSvgPath>[];
     for (final match in pathTagRe.allMatches(svgContent)) {
@@ -271,6 +334,8 @@ class AnimalSilhouettes {
       final d = dMatch.group(1)!;
       final fillMatch = fillAttrRe.firstMatch(attrs);
       final fillHex = fillMatch?.group(1)?.toLowerCase();
+      final strokeMatch = strokeAttrRe.firstMatch(attrs);
+      final strokeHex = strokeMatch?.group(1)?.toLowerCase();
 
       Path? parsed;
       try {
@@ -284,9 +349,62 @@ class AnimalSilhouettes {
           continue;
         }
       }
-      result.add(_ParsedSvgPath(parsed, fillHex));
+      result.add(_ParsedSvgPath(parsed, fillHex, strokeHex, d));
     }
     return result;
+  }
+
+  /// Phase 9 Group C.3 — Pattern E (stroke-only outline). A path with
+  /// `fill="none"` or `fill=""` (or missing fill in combination with
+  /// a present stroke) is an outline-only path that shouldn't be
+  /// combined into the silhouette body. Returning `true` here makes
+  /// `extractAndCombinePaths` filter the path out before the combine.
+  static bool _isStrokeOnly(_ParsedSvgPath p) {
+    final fill = p.fillHex;
+    final fillEmpty = fill == null || fill.isEmpty || fill == 'none';
+    final hasStroke = p.strokeHex != null &&
+        p.strokeHex!.isNotEmpty &&
+        p.strokeHex != 'none';
+    // Per SVG spec the inherited default fill is BLACK, not "none",
+    // so `fill == null` alone doesn't mean stroke-only — we additionally
+    // require `stroke` to be set. If neither fill nor stroke are
+    // attributes, the path inherits both from the parent <g>; we treat
+    // those as filled (the common case for hand-authored silhouettes).
+    return fillEmpty && hasStroke;
+  }
+
+  /// Phase 9 Group C.3 — Pattern C subpath extraction.
+  ///
+  /// Splits an SVG `d` string into its subpaths at every absolute-
+  /// or-relative `M`/`m` command. Each entry in the returned list is
+  /// a parsed Flutter `Path` for a single subpath plus its bounds.
+  /// Used by the inverted-negative-space dispatch when the first
+  /// path turns out to be a Pattern C structure (canvas-cover subpath
+  /// + silhouette-hole subpath in one `<path>` element, the old
+  /// complex IPSC SVG pattern).
+  static List<({Path path, Rect bounds})> _splitSubpaths(String d) {
+    // Split before each `M` or `m`. `RegExp.split` doesn't keep the
+    // separator, so prepend it back. Filter out empty leading split
+    // result (the prefix before the first `M`).
+    final parts = d.split(RegExp(r'(?=[Mm])'));
+    final out = <({Path path, Rect bounds})>[];
+    for (final part in parts) {
+      final trimmed = part.trim();
+      if (trimmed.isEmpty) continue;
+      if (!trimmed.startsWith(RegExp(r'[Mm]'))) continue;
+      try {
+        final p = svg_strict.parseSvgPath(trimmed);
+        out.add((path: p, bounds: p.getBounds()));
+      } catch (_) {
+        try {
+          final p = parseSvgPathData(trimmed);
+          out.add((path: p, bounds: p.getBounds()));
+        } catch (e) {
+          debugPrint('animal_silhouettes: subpath skip: $e');
+        }
+      }
+    }
+    return out;
   }
 
   /// Returns the SVG's `viewBox` as a Rect, or a 1024×1024 default

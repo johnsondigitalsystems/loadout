@@ -76,7 +76,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:path_drawing/path_drawing.dart';
+import 'package:svg_path_parser/svg_path_parser.dart' as svg_strict;
 import 'dart:async';
+
+/// Phase 9 Group C.3 — mirror of `_ParsedSvgPath` in
+/// `animal_silhouettes.dart`. See that file for full doc; this is the
+/// sibling type for non-animal target SVGs (IPSC, popper, etc.).
+class _ParsedSvgPath {
+  _ParsedSvgPath(this.path, this.fillHex, this.strokeHex, this.dString)
+      : bounds = path.getBounds();
+
+  final Path path;
+  final String? fillHex;
+  final String? strokeHex;
+  final String dString;
+  final Rect bounds;
+}
 
 /// Renders hand-authored SVG silhouettes for competition targets (pepper poppers,
 /// IDPA, USPSA classifier, NRA B-27, etc.). Parallel to AnimalSilhouettes.
@@ -133,27 +148,229 @@ class TargetSilhouettes {
 
   static Future<Path> _loadAndParse(String assetPath) async {
     final svgContent = await rootBundle.loadString(assetPath);
-    return _extractAndCombinePaths(svgContent, assetPath);
+    return extractAndCombinePaths(svgContent, assetPath);
   }
 
-  /// Same multi-path extraction logic as AnimalSilhouettes.
-  static Path _extractAndCombinePaths(String svgContent, String assetPath) {
-    final matches = RegExp(
-      r'<path\b[^>]*\bd\s*=\s*"([^"]+)"',
-      multiLine: true,
-    ).allMatches(svgContent);
+  /// Mirror of `AnimalSilhouettes.extractAndCombinePaths` (Phase 9
+  /// Group C.3 brought parity). Handles five SVG authoring patterns:
+  ///
+  ///   * **A — Single solid silhouette path.** Most common (the new
+  ///     simplified IPSC SVG, pepper_popper.svg). Combined path
+  ///     returns the silhouette directly.
+  ///   * **B — Inverted negative-space single-path.** One path's
+  ///     `d` traces an outer canvas-cover and an inner silhouette
+  ///     hole; non-zero winding from the path's combined geometry
+  ///     produces the silhouette via `Path.combine(difference, ...)`.
+  ///   * **C — Multi-subpath: canvas-cover + silhouette in one
+  ///     `<path>`.** The old complex IPSC SVG pattern. Split the
+  ///     `d` string into subpaths; return only the inner subpath.
+  ///   * **D — Separate paths: white background + dark silhouette.**
+  ///     White-fill filter drops the background path before combine.
+  ///   * **E — Stroke-only outline path.** `fill="none"` (or empty
+  ///     fill) plus a stroke attribute. Filtered out before combine
+  ///     so outline-only paths don't add ghost geometry to the body.
+  ///
+  /// Public for tests.
+  static Path extractAndCombinePaths(String svgContent, String assetPath) {
+    final viewBox = _parseViewBox(svgContent);
+    final paths = _parseAllPaths(svgContent);
 
-    if (matches.isEmpty) {
+    if (paths.isEmpty) {
       throw StateError('No <path d="..."/> found in $assetPath');
     }
 
-    final combined = Path();
-    for (final match in matches) {
-      final d = match.group(1)!;
-      final subpath = parseSvgPathData(d);
-      combined.addPath(subpath, Offset.zero);
+    // Pattern E filter.
+    final filledPaths =
+        paths.where((p) => !_isStrokeOnly(p)).toList();
+    final effectivePaths =
+        filledPaths.isNotEmpty ? filledPaths : paths;
+
+    // Pattern B + C — inverted-negative-space dispatch.
+    if (_isInvertedNegativeSpaceSvg(effectivePaths, viewBox)) {
+      final first = effectivePaths.first;
+      final subpaths = _splitSubpaths(first.dString);
+
+      if (subpaths.length >= 2) {
+        final innerSubpaths = subpaths.where((s) {
+          if (viewBox.width <= 0 || viewBox.height <= 0) return false;
+          final coverX = s.bounds.width / viewBox.width;
+          final coverY = s.bounds.height / viewBox.height;
+          return coverX < 0.8 && coverY < 0.8;
+        }).toList();
+
+        if (innerSubpaths.isNotEmpty) {
+          final result = Path();
+          for (final s in innerSubpaths) {
+            result.addPath(s.path, Offset.zero);
+          }
+          return result;
+        }
+      }
+
+      final canvasRect = Path()..addRect(viewBox);
+      return Path.combine(
+        PathOperation.difference,
+        canvasRect,
+        first.path,
+      );
     }
+
+    // Pattern A + D — standard SVG with white-fill filter.
+    final combined = Path();
+    for (final p in effectivePaths) {
+      if (_isWhiteFill(p.fillHex)) continue;
+      combined.addPath(p.path, Offset.zero);
+    }
+
+    if (combined.getBounds().isEmpty) {
+      final fallback = Path();
+      for (final p in paths) {
+        fallback.addPath(p.path, Offset.zero);
+      }
+      return fallback;
+    }
+
     return combined;
+  }
+
+  /// Mirror of `AnimalSilhouettes._parseAllPaths`.
+  static List<_ParsedSvgPath> _parseAllPaths(String svgContent) {
+    final pathTagRe = RegExp(
+      r'<path\b([^>]*)>',
+      multiLine: true,
+      dotAll: true,
+    );
+    final dAttrRe = RegExp(r'\bd\s*=\s*"([^"]+)"');
+    final fillAttrRe = RegExp(r'\bfill\s*=\s*"([^"]+)"');
+    final strokeAttrRe = RegExp(r'\bstroke\s*=\s*"([^"]+)"');
+
+    final result = <_ParsedSvgPath>[];
+    for (final match in pathTagRe.allMatches(svgContent)) {
+      final attrs = match.group(1) ?? '';
+      final dMatch = dAttrRe.firstMatch(attrs);
+      if (dMatch == null) continue;
+      final d = dMatch.group(1)!;
+      final fillMatch = fillAttrRe.firstMatch(attrs);
+      final fillHex = fillMatch?.group(1)?.toLowerCase();
+      final strokeMatch = strokeAttrRe.firstMatch(attrs);
+      final strokeHex = strokeMatch?.group(1)?.toLowerCase();
+
+      Path? parsed;
+      try {
+        parsed = svg_strict.parseSvgPath(d);
+      } catch (_) {
+        try {
+          parsed = parseSvgPathData(d);
+        } catch (e) {
+          debugPrint('target_silhouettes: skipped unparseable path: $e');
+          continue;
+        }
+      }
+      result.add(_ParsedSvgPath(parsed, fillHex, strokeHex, d));
+    }
+    return result;
+  }
+
+  /// Mirror of `AnimalSilhouettes._parseViewBox`.
+  static Rect _parseViewBox(String svgContent) {
+    final svgTagRe = RegExp(
+      r'<svg\b([^>]*)>',
+      multiLine: true,
+      dotAll: true,
+    );
+    final viewBoxAttrRe = RegExp(r'\bviewBox\s*=\s*"([^"]+)"');
+    final svgMatch = svgTagRe.firstMatch(svgContent);
+    if (svgMatch == null) {
+      return const Rect.fromLTWH(0, 0, 1024, 1024);
+    }
+    final viewBoxMatch =
+        viewBoxAttrRe.firstMatch(svgMatch.group(1) ?? '');
+    if (viewBoxMatch == null) {
+      final widthRe = RegExp(r'\bwidth\s*=\s*"([\d.]+)');
+      final heightRe = RegExp(r'\bheight\s*=\s*"([\d.]+)');
+      final w = widthRe.firstMatch(svgMatch.group(1) ?? '');
+      final h = heightRe.firstMatch(svgMatch.group(1) ?? '');
+      if (w != null && h != null) {
+        return Rect.fromLTWH(0, 0, double.parse(w.group(1)!),
+            double.parse(h.group(1)!));
+      }
+      return const Rect.fromLTWH(0, 0, 1024, 1024);
+    }
+    final parts = viewBoxMatch
+        .group(1)!
+        .split(RegExp(r'[\s,]+'))
+        .where((s) => s.isNotEmpty)
+        .toList();
+    if (parts.length != 4) {
+      return const Rect.fromLTWH(0, 0, 1024, 1024);
+    }
+    return Rect.fromLTWH(
+      double.parse(parts[0]),
+      double.parse(parts[1]),
+      double.parse(parts[2]),
+      double.parse(parts[3]),
+    );
+  }
+
+  /// Mirror of `AnimalSilhouettes._isWhiteFill`.
+  static bool _isWhiteFill(String? fillHex) {
+    if (fillHex == null) return false;
+    final f = fillHex.trim().toLowerCase();
+    if (f == 'white') return true;
+    if (!f.startsWith('#')) return false;
+    final hex = f.substring(1);
+    if (hex == 'fff' || hex == 'ffffff' || hex == 'ffffffff') return true;
+    if (RegExp(r'^[ef]{3}$').hasMatch(hex)) return true;
+    if (RegExp(r'^[ef]{6}$').hasMatch(hex)) return true;
+    if (RegExp(r'^[ef]{8}$').hasMatch(hex)) return true;
+    return false;
+  }
+
+  /// Mirror of `AnimalSilhouettes._isInvertedNegativeSpaceSvg`.
+  static bool _isInvertedNegativeSpaceSvg(
+    List<_ParsedSvgPath> paths,
+    Rect viewBox,
+  ) {
+    if (paths.isEmpty) return false;
+    final first = paths.first;
+    if (!_isWhiteFill(first.fillHex)) return false;
+    if (viewBox.width <= 0 || viewBox.height <= 0) return false;
+    final coverageX = first.bounds.width / viewBox.width;
+    final coverageY = first.bounds.height / viewBox.height;
+    return coverageX >= 0.9 && coverageY >= 0.9;
+  }
+
+  /// Mirror of `AnimalSilhouettes._isStrokeOnly`.
+  static bool _isStrokeOnly(_ParsedSvgPath p) {
+    final fill = p.fillHex;
+    final fillEmpty = fill == null || fill.isEmpty || fill == 'none';
+    final hasStroke = p.strokeHex != null &&
+        p.strokeHex!.isNotEmpty &&
+        p.strokeHex != 'none';
+    return fillEmpty && hasStroke;
+  }
+
+  /// Mirror of `AnimalSilhouettes._splitSubpaths`.
+  static List<({Path path, Rect bounds})> _splitSubpaths(String d) {
+    final parts = d.split(RegExp(r'(?=[Mm])'));
+    final out = <({Path path, Rect bounds})>[];
+    for (final part in parts) {
+      final trimmed = part.trim();
+      if (trimmed.isEmpty) continue;
+      if (!trimmed.startsWith(RegExp(r'[Mm]'))) continue;
+      try {
+        final p = svg_strict.parseSvgPath(trimmed);
+        out.add((path: p, bounds: p.getBounds()));
+      } catch (_) {
+        try {
+          final p = parseSvgPathData(trimmed);
+          out.add((path: p, bounds: p.getBounds()));
+        } catch (e) {
+          debugPrint('target_silhouettes: subpath skip: $e');
+        }
+      }
+    }
+    return out;
   }
 
   /// Synchronous cache-hit accessor for use from `CustomPainter.paint`.

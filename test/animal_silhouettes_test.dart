@@ -216,6 +216,95 @@ void main() {
       expect(bounds.right, closeTo(90, 0.5));
     });
 
+    // ── Phase 9 Group C.3 Pattern C: multi-subpath inverted SVG ────
+    test(
+        'Pattern C — multi-subpath canvas-cover + silhouette in one <path>',
+        () {
+      // Synthetic representation of the OLD complex IPSC SVG: one
+      // <path> element whose `d` carries TWO subpaths — the outer
+      // canvas-cover rectangle AND an inner silhouette. Both
+      // subpaths go clockwise so non-zero winding combined would
+      // produce empty geometry via `Path.combine(difference, ...)`.
+      // The Pattern C dispatch extracts the inner subpath directly
+      // and returns its bounds.
+      const svg = '''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <path d="M 0 0 L 200 0 L 200 200 L 0 200 Z M 60 50 L 140 50 L 140 150 L 60 150 Z" fill="#FFFFFF"/>
+</svg>
+''';
+      final result =
+          AnimalSilhouettes.extractAndCombinePaths(svg, 'test.svg');
+      final bounds = result.getBounds();
+      // Expected: just the inner subpath (60..140, 50..150).
+      expect(bounds.left, closeTo(60, 0.5));
+      expect(bounds.top, closeTo(50, 0.5));
+      expect(bounds.right, closeTo(140, 0.5));
+      expect(bounds.bottom, closeTo(150, 0.5));
+    });
+
+    // ── Phase 9 Group C.3 Pattern D: separate paths white-bg + dark ─
+    test('Pattern D — separate white-bg + dark silhouette paths', () {
+      // Two paths: a SMALL white background patch + dark silhouette
+      // as siblings. The white patch doesn't cover the full viewBox
+      // (so the inverted-pattern dispatch is NOT triggered); the
+      // Phase 7b white-fill filter strips the white path; only the
+      // dark silhouette survives.
+      const svg = '''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <path d="M 0 0 L 50 0 L 50 30 L 0 30 Z" fill="#FEFEFE"/>
+  <path d="M 25 25 L 75 25 L 75 75 L 25 75 Z" fill="#1A1A1A"/>
+</svg>
+''';
+      final result =
+          AnimalSilhouettes.extractAndCombinePaths(svg, 'test.svg');
+      final bounds = result.getBounds();
+      // Only the dark path's bounds (25..75) — the white-bg path
+      // was filtered out before combine.
+      expect(bounds.left, closeTo(25, 0.5));
+      expect(bounds.top, closeTo(25, 0.5));
+      expect(bounds.right, closeTo(75, 0.5));
+      expect(bounds.bottom, closeTo(75, 0.5));
+    });
+
+    // ── Phase 9 Group C.3 Pattern E: stroke-only outline filtered ───
+    test('Pattern E — stroke-only outline filtered out', () {
+      // Two paths: a stroke-only outline + a filled silhouette.
+      // The Pattern E filter drops the outline before combine; only
+      // the filled silhouette contributes to the result.
+      const svg = '''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <path d="M 0 0 L 100 0 L 100 100 L 0 100 Z" fill="none" stroke="#000000"/>
+  <path d="M 40 40 L 60 40 L 60 60 L 40 60 Z" fill="#1A1A1A"/>
+</svg>
+''';
+      final result =
+          AnimalSilhouettes.extractAndCombinePaths(svg, 'test.svg');
+      final bounds = result.getBounds();
+      // Just the inner filled silhouette (40..60).
+      expect(bounds.left, closeTo(40, 0.5));
+      expect(bounds.top, closeTo(40, 0.5));
+      expect(bounds.right, closeTo(60, 0.5));
+      expect(bounds.bottom, closeTo(60, 0.5));
+    });
+
+    // ── Phase 9 Group C.3 Pattern E variant: empty-string fill ─────
+    test(
+        'Pattern E variant — fill="" treated as stroke-only when stroke set',
+        () {
+      const svg = '''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <path d="M 10 10 L 90 10 L 90 90 L 10 90 Z" fill="" stroke="#444"/>
+  <path d="M 40 40 L 60 40 L 60 60 L 40 60 Z" fill="#1A1A1A"/>
+</svg>
+''';
+      final result =
+          AnimalSilhouettes.extractAndCombinePaths(svg, 'test.svg');
+      final bounds = result.getBounds();
+      // Outer rect filtered; inner survives.
+      expect(bounds.width, closeTo(20, 0.5));
+      expect(bounds.height, closeTo(20, 0.5));
+    });
+
     // ── No paths in SVG: throws StateError ──────────────────────────
     test('empty SVG throws StateError (preserves loud-fail)', () {
       const svg = '''
