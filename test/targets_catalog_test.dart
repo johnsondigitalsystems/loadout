@@ -42,8 +42,73 @@ void main() {
       rows = (jsonDecode(raw) as List).cast<Map<String, dynamic>>();
     });
 
-    test('59 rows total (58 base + 1 new "2 in Square")', () {
-      expect(rows.length, 59);
+    test('91 rows total (Phase 9: 43 non-animal + 48 animals)', () {
+      // Pre-Phase-9: 59 rows (43 non-animal + 16 animals).
+      // Phase 9 Group B expanded each of 16 species to 3 sizes
+      // (Small / Medium / Large), bringing the animal count to 48.
+      expect(rows.length, 91);
+    });
+
+    test('48 animal rows total (16 species × 3 sizes)', () {
+      final animals =
+          rows.where((r) => r['category'] == 'animal').toList();
+      expect(animals, hasLength(48));
+    });
+
+    test(
+        'every animal has center_point.horizontal_from_left = 0.6 '
+        '(Phase 9 — was 0.7 in Phase 7a/8)', () {
+      final animals =
+          rows.where((r) => r['category'] == 'animal').toList();
+      for (final r in animals) {
+        final cp = r['center_point'] as Map<String, dynamic>?;
+        expect(cp, isNotNull,
+            reason:
+                "Animal '${r['name']}' is missing center_point");
+        expect(cp!['horizontal_from_left'], 0.6,
+            reason: "Animal '${r['name']}' has wrong "
+                "horizontal_from_left (expected 0.6)");
+      }
+    });
+
+    test(
+        'each of 16 species has 3 size variants '
+        '(Small / Medium / Large)', () {
+      final animals =
+          rows.where((r) => r['category'] == 'animal').toList();
+      // Group by shape_id (each species should appear thrice).
+      final bySpecies = <String, List<Map<String, dynamic>>>{};
+      for (final r in animals) {
+        final sid = r['shape_id'] as String?;
+        if (sid == null) continue;
+        bySpecies.putIfAbsent(sid, () => []).add(r);
+      }
+      expect(bySpecies, hasLength(16),
+          reason: 'Expected 16 unique animal species; got '
+              '${bySpecies.length}');
+      for (final entry in bySpecies.entries) {
+        expect(entry.value, hasLength(3),
+            reason: "Species '${entry.key}' should have 3 size "
+                "variants; got ${entry.value.length}");
+        final names = entry.value.map((r) => r['name'] as String);
+        expect(names.any((n) => n.startsWith('Small ')), isTrue,
+            reason: "Species '${entry.key}' missing Small variant");
+        expect(names.any((n) => n.startsWith('Medium ')), isTrue,
+            reason:
+                "Species '${entry.key}' missing Medium variant");
+        expect(names.any((n) => n.startsWith('Large ')), isTrue,
+            reason: "Species '${entry.key}' missing Large variant");
+      }
+    });
+
+    test('all row IDs are unique', () {
+      final ids = <String>{};
+      for (final r in rows) {
+        final id = r['id'] as String?;
+        if (id == null) continue;
+        expect(ids.add(id), isTrue,
+            reason: "Duplicate id '$id' found in catalog");
+      }
     });
 
     test('"2 in Square" row exists with correct geometry', () {
@@ -92,9 +157,11 @@ void main() {
     test('every animal name contains " in" (dims appended)', () {
       final animals =
           rows.where((r) => r['category'] == 'animal').toList();
-      // Phase 8 expanded all 16 animal names from a single noun
+      // Phase 8 expanded all animal names from a single noun
       // (e.g. `"Deer"`) to `"Deer 60×32 in"` for picker readability.
-      expect(animals, hasLength(16));
+      // Phase 9 Group B expanded to 48 animals (16 species × 3 sizes,
+      // each prefixed `Small ` / `Medium ` / `Large `).
+      expect(animals, hasLength(48));
       for (final r in animals) {
         expect((r['name'] as String).contains(' in'), isTrue,
             reason: "Animal name '${r['name']}' lacks dimensions");
