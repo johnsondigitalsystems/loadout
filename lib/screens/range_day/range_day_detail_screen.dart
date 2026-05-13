@@ -5086,6 +5086,15 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         // screen. Replaces the previous DropdownButtonFormField +
         // separate search TextField combo per user request.
         Autocomplete<TargetRow>(
+          // Phase 9 Group A — `_targetShapeFilter`-derived key so a
+          // chip change tears down the Autocomplete and rebuilds
+          // with a fresh `optionsBuilder` closure that captures the
+          // new `orderedFiltered`. Without the key, `optionsBuilder`
+          // would only re-run on text changes, leaving the dropdown
+          // showing the previous chip's results until the user types.
+          // Side effect: typed text clears on chip change — fine,
+          // since the user is intentionally re-filtering.
+          key: ValueKey('target_picker_autocomplete_$_targetShapeFilter'),
           initialValue: TextEditingValue(text: initialText),
           displayStringForOption: _targetDropdownLabel,
           optionsBuilder: (te) {
