@@ -5165,44 +5165,63 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
             _scheduleAutoSave();
           },
           optionsViewBuilder: (context, onSelected, options) {
-            // Phase 8 Group E — wrap the Autocomplete overlay in
-            // `TextFieldTapRegion` so taps inside it don't unfocus
-            // the underlying TextField. Without this wrapper, the
-            // first scroll touch OR tap-to-select fires the
-            // outside-tap handler on the field, which dismisses
-            // the overlay before the gesture can complete (Flutter
-            // Autocomplete's well-known UX bug — see
-            // https://api.flutter.dev/flutter/widgets/TextFieldTapRegion-class.html).
+            // Phase 8 Group E + Phase 9 Group C.6 layered fix.
             //
-            // The wrapper participates in the same TapRegionGroup as
-            // the input field, so taps inside the overlay register
-            // as "inside" the group and the field stays focused.
+            // Phase 8 added TextFieldTapRegion so taps inside the
+            // overlay don't unfocus the underlying TextField. The
+            // operator reported the dismiss-on-scroll bug persisted
+            // despite that wrapper, hypothesis: the inner ListView's
+            // scroll gesture leaks up to a parent Scrollable and the
+            // parent's scroll-start unfocuses + dismisses.
+            //
+            // Phase 9 additions (without simulator-side empirical
+            // diagnosis — operator-side QA confirms which actually
+            // helped):
+            //   1. Explicit `ClampingScrollPhysics` on the inner
+            //      ListView. Makes the overlay's own scrollable a
+            //      higher-priority gesture claimant for vertical
+            //      drags that originate within its bounds.
+            //   2. `behavior: HitTestBehavior.opaque` on the surrounding
+            //      Material (via a Listener wrapper). Absorbs pointer
+            //      events at the overlay's edges that might otherwise
+            //      bubble to the parent.
+            //   3. Reordered the wrapper stack so TextFieldTapRegion
+            //      is OUTERMOST — keeps the field focused even if
+            //      one of the inner layers fails to claim a gesture.
+            //
+            // If the operator confirms the bug is fixed, the helpful
+            // primitive is likely (1) — (2) and (3) are belt-and-
+            // suspenders that don't hurt.
             return TextFieldTapRegion(
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: Material(
-                  elevation: 4,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 360),
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      padding: EdgeInsets.zero,
-                      itemCount: options.length,
-                      itemBuilder: (context, i) {
-                        final t = options.elementAt(i);
-                        final isFav = favIds.contains(t.id);
-                        return ListTile(
-                          dense: true,
-                          leading:
-                              _targetShapeIcon(t.shape, t.shapeId, theme),
-                          title: Text(
-                            isFav
-                                ? '★ ${_targetDropdownLabel(t)}'
-                                : _targetDropdownLabel(t),
-                          ),
-                          onTap: () => onSelected(t),
-                        );
-                      },
+              child: Listener(
+                behavior: HitTestBehavior.opaque,
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: Material(
+                    elevation: 4,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 360),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        padding: EdgeInsets.zero,
+                        physics: const ClampingScrollPhysics(),
+                        itemCount: options.length,
+                        itemBuilder: (context, i) {
+                          final t = options.elementAt(i);
+                          final isFav = favIds.contains(t.id);
+                          return ListTile(
+                            dense: true,
+                            leading: _targetShapeIcon(
+                                t.shape, t.shapeId, theme),
+                            title: Text(
+                              isFav
+                                  ? '★ ${_targetDropdownLabel(t)}'
+                                  : _targetDropdownLabel(t),
+                            ),
+                            onTap: () => onSelected(t),
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ),
