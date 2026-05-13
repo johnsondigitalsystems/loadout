@@ -5141,30 +5141,45 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
             _scheduleAutoSave();
           },
           optionsViewBuilder: (context, onSelected, options) {
-            return Align(
-              alignment: Alignment.topLeft,
-              child: Material(
-                elevation: 4,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 360),
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    padding: EdgeInsets.zero,
-                    itemCount: options.length,
-                    itemBuilder: (context, i) {
-                      final t = options.elementAt(i);
-                      final isFav = favIds.contains(t.id);
-                      return ListTile(
-                        dense: true,
-                        leading: _targetShapeIcon(t.shape, t.shapeId, theme),
-                        title: Text(
-                          isFav
-                              ? '★ ${_targetDropdownLabel(t)}'
-                              : _targetDropdownLabel(t),
-                        ),
-                        onTap: () => onSelected(t),
-                      );
-                    },
+            // Phase 8 Group E — wrap the Autocomplete overlay in
+            // `TextFieldTapRegion` so taps inside it don't unfocus
+            // the underlying TextField. Without this wrapper, the
+            // first scroll touch OR tap-to-select fires the
+            // outside-tap handler on the field, which dismisses
+            // the overlay before the gesture can complete (Flutter
+            // Autocomplete's well-known UX bug — see
+            // https://api.flutter.dev/flutter/widgets/TextFieldTapRegion-class.html).
+            //
+            // The wrapper participates in the same TapRegionGroup as
+            // the input field, so taps inside the overlay register
+            // as "inside" the group and the field stays focused.
+            return TextFieldTapRegion(
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: Material(
+                  elevation: 4,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 360),
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      padding: EdgeInsets.zero,
+                      itemCount: options.length,
+                      itemBuilder: (context, i) {
+                        final t = options.elementAt(i);
+                        final isFav = favIds.contains(t.id);
+                        return ListTile(
+                          dense: true,
+                          leading:
+                              _targetShapeIcon(t.shape, t.shapeId, theme),
+                          title: Text(
+                            isFav
+                                ? '★ ${_targetDropdownLabel(t)}'
+                                : _targetDropdownLabel(t),
+                          ),
+                          onTap: () => onSelected(t),
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
