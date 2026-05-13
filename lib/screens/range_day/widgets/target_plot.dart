@@ -1209,70 +1209,70 @@ class _RealisticScenePainter extends CustomPainter {
     final targetW = effWIn * inPerPx;
     final targetH = effHIn * inPerPx;
 
-    // Visible pole stub is tied to the target's rendered HEIGHT
-    // (no separate box anymore — target.heightIn drives both
-    // box and final). 0.25 frac preserves Phase 5/6/7 stub
-    // proportions for "normal-size" targets; small / large targets
-    // get proportionally smaller / larger stubs as expected.
-    final visiblePoleHeight = targetH * _visiblePoleFracOfTarget;
+    // Phase 9 Group C.5 — animals stand on the ground (feet at
+    // horizon Y); skip pole + mound + pole-base-ring entirely.
+    // Discriminator: shape == 'silhouette' AND shape_id is set AND
+    // shape_id is not 'ipsc' (IPSC silhouettes still mount on a pole;
+    // only the 48 animal SVGs are ground-standing). cp.verticalFromTop
+    // is IGNORED for animals — only horizontal matters because the
+    // bottom is fixed at horizonY.
+    final isGroundStanding = target.shape.toLowerCase() == 'silhouette' &&
+        target.shapeId != null &&
+        target.shapeId != 'ipsc';
 
-    // Phase 8 Group A: pole position is FIXED, target follows.
-    //
-    // Pole's geometric top derived to match Phase 7a EXACTLY when
-    // cp.verticalFromTop = 0.5. Derivation:
-    //   Phase 7a: targetBottomY  = moundApex - visiblePoleHeight
-    //             targetTop      = targetBottomY - targetH
-    //             visualPoleTopY = targetTop + 0.5 * targetH
-    //                            = moundApex - visiblePoleHeight
-    //                              - 0.5 * targetH
-    // We use that same formula here, then solve BACKWARDS for the
-    // target rect from cp + the fixed pole position.
-    //
-    // (NB: the spec wrote the formula using `targetBoxH` which would
-    // diverge from Phase 7a for fit-to-width targets like the bear.
-    // We use post-fit `targetH` to honour the spec's stated intent
-    // — "zero visual change for any catalog row at default cp" —
-    // which the literal `targetBoxH` formulation doesn't deliver.)
     final cp = target.centerPoint;
     final poleX = w / 2;
-    final visualPoleTopY =
-        moundApexY - visiblePoleHeight - 0.5 * targetH;
+    final Rect targetRect;
+    final double visiblePoleHeight;
+    final double visualPoleTopY;
+    final double visualPoleHeight;
 
-    // Solve backwards for target rect position from cp + pole anchors.
-    //   targetTop  + cp.verticalFromTop  * targetH = visualPoleTopY
-    //   targetLeft + cp.horizontalFromLeft * targetW = poleX
-    //
-    // CONSTRAINT (no runtime guard): cp.verticalFromTop should not
-    // exceed `1.0 - _visiblePoleFracOfTarget` (currently 0.75) or
-    // the target rect's bottom drops below the mound apex. All 58
-    // current catalog rows have cp.verticalFromTop = 0.5, so this
-    // is safe today. Bring back a runtime assert if Phase 9+ adds
-    // per-animal vertical tuning that approaches the limit.
-    final targetLeft = poleX - cp.horizontalFromLeft * targetW;
-    final targetTop = visualPoleTopY - cp.verticalFromTop * targetH;
-    final targetRect =
-        Rect.fromLTWH(targetLeft, targetTop, targetW, targetH);
-    final visualPoleHeight = moundApexY - visualPoleTopY;
+    if (isGroundStanding) {
+      // Animal: feet at horizonY; silhouette extends UP into the
+      // sky region. horizontal_from_left positions the silhouette's
+      // anchor point at canvas center (poleX), so a left-facing
+      // animal at 0.6 has its mid-body roughly centered.
+      final targetBottom = horizonY;
+      final targetTop = targetBottom - targetH;
+      final targetLeft = poleX - cp.horizontalFromLeft * targetW;
+      targetRect = Rect.fromLTWH(targetLeft, targetTop, targetW, targetH);
+      // No pole rendering — initialise to harmless defaults so
+      // any consumer (just `visualPoleHeight` for now) doesn't
+      // dereference uninitialised values. The non-animal branch
+      // below paints the pole; we skip it.
+      visiblePoleHeight = 0;
+      visualPoleTopY = horizonY;
+      visualPoleHeight = 0;
+    } else {
+      // Phase 8 Group A inversion (unchanged for non-animals):
+      // pole FIXED at canvas center; target rect solved backwards
+      // from cp + the pole anchors.
+      visiblePoleHeight = targetH * _visiblePoleFracOfTarget;
+      visualPoleTopY = moundApexY - visiblePoleHeight - 0.5 * targetH;
+      final targetLeft = poleX - cp.horizontalFromLeft * targetW;
+      final targetTop = visualPoleTopY - cp.verticalFromTop * targetH;
+      targetRect =
+          Rect.fromLTWH(targetLeft, targetTop, targetW, targetH);
+      visualPoleHeight = moundApexY - visualPoleTopY;
+    }
 
-    // Phase 7a Group C layer order (extends Phase 6):
-    //   sky → distant hills → treeline → grass field → tall grass
-    //   → foreground tree → mound → pole → horizon tufts
-    //   → pole base ring → target
-    // Foreground tree paints AFTER tall grass and BEFORE mound so
-    // it reads as a depth layer between the foreground grass and
-    // the dirt pile. Tree is at x = 0.85W; target rect is centered;
-    // they don't overlap.
+    // Paint order — animals get sky → hills → treeline → grass →
+    // tall grass → foreground tree → TARGET (no mound, no pole,
+    // no pole-base ring, no horizon tufts). Non-animals keep the
+    // full Phase 8 order with mound + pole + tufts + base ring.
     _paintSky(canvas, w, h, horizonY);
     _paintDistantHills(canvas, w, horizonY);
     _paintTreeline(canvas, w, horizonY);
     _paintGrass(canvas, w, h, horizonY);
     _paintTallGrass(canvas, w, h, horizonY, inPerPx);
     _paintForegroundTree(canvas, w, h, horizonY);
-    _paintMound(canvas, w, horizonY, inPerPx);
-    _paintPole(canvas, poleX, visualPoleTopY, visualPoleHeight,
-        visiblePoleHeight);
-    _paintGrassTufts(canvas, w, horizonY, inPerPx);
-    _paintPoleBaseRing(canvas, poleX, moundApexY, visiblePoleHeight);
+    if (!isGroundStanding) {
+      _paintMound(canvas, w, horizonY, inPerPx);
+      _paintPole(canvas, poleX, visualPoleTopY, visualPoleHeight,
+          visiblePoleHeight);
+      _paintGrassTufts(canvas, w, horizonY, inPerPx);
+      _paintPoleBaseRing(canvas, poleX, moundApexY, visiblePoleHeight);
+    }
     _paintTarget(canvas, targetRect);
   }
 
