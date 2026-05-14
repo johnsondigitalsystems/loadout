@@ -243,19 +243,19 @@ void main() {
           const RackChildSpec(
             widthIn: 6.0,
             heightIn: 6.0,
-            shape: 'circle',
+            category: 'circle',
             offsetXFromCenterIn: -12,
           ),
           const RackChildSpec(
             widthIn: 6.0,
             heightIn: 6.0,
-            shape: 'circle',
+            category: 'circle',
             offsetXFromCenterIn: 0,
           ),
           const RackChildSpec(
             widthIn: 6.0,
             heightIn: 6.0,
-            shape: 'circle',
+            category: 'circle',
             offsetXFromCenterIn: 12,
           ),
         ],
@@ -280,7 +280,7 @@ void main() {
             RackChildSpec(
               widthIn: 4.0,
               heightIn: 4.0,
-              shape: 'circle',
+              category: 'circle',
               offsetXFromCenterIn: i * 4.0,
             ),
         ],

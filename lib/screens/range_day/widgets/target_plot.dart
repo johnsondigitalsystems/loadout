@@ -310,7 +310,7 @@ class TargetSpec {
 }
 
 /// One child in a rack. Compact value type so the parent screen can
-/// derive it from its `TargetRackChildRow` without dragging the drift
+/// derive it from its `RackSlot` (v40+) without dragging the drift
 /// type into the widget layer.
 ///
 /// Coordinates: `offsetXFromCenterIn` is in inches relative to the
@@ -321,8 +321,9 @@ class RackChildSpec {
   const RackChildSpec({
     required this.widthIn,
     required this.heightIn,
-    required this.shape,
+    required this.category,
     required this.offsetXFromCenterIn,
+    this.shapeId,
     this.colorHex = '#ffffff',
   });
 
@@ -332,9 +333,19 @@ class RackChildSpec {
   /// Plate / popper / silhouette height in inches.
   final double heightIn;
 
-  /// 'circle' | 'square' | 'rectangle' | 'silhouette' | 'irregular' —
-  /// matches the [TargetSpec.shape] vocabulary.
-  final String shape;
+  /// Phase 9.5 — `circle | square | rectangle | ipsc | animal |
+  /// special`. Matches the [TargetSpec.category] vocabulary so the
+  /// rack painter's dispatch can share helpers with the single-target
+  /// painter. Renamed from the v38 `shape` field — `silhouette` from
+  /// the legacy vocabulary mapped to `ipsc` here, and `popper` / `star`
+  /// mapped to `special` (with `shapeId` carrying the specific apparatus).
+  final String category;
+
+  /// Phase 9.5 — optional SVG dispatch key. Populated for
+  /// `special`-category apparatus (`pepper_popper`, `texas_star`) so the
+  /// painter can route to the right shape. `circle` / `square` /
+  /// `rectangle` slots leave it null.
+  final String? shapeId;
 
   /// X offset from the rack's geometric center, in inches. Positive =
   /// right, negative = left. Used to lay out children horizontally
@@ -2402,17 +2413,31 @@ class _RealisticTargetPainter extends CustomPainter {
         0x1a, 0x1a, 0x1a, isActive ? 1.0 : 0.70);
     _targetOutlinePaint.strokeWidth = outlineWidth;
 
+    // v40 (Phase 9.5 Group C) — `shape` is now the v9.5 category
+    // enum (`circle | square | rectangle | ipsc | animal | special`).
+    // The legacy `silhouette` case was renamed to `ipsc`; `popper` /
+    // `star` cases fold into `special` and route on the slot's
+    // shapeId at the caller (the rack painter passes the right value
+    // for the rack vs single-target case).
+    //
+    // Rack children today are always one of `circle / square /
+    // rectangle / ipsc / special`. `animal` falls through to the
+    // rectangle branch because no shipped rack carries animal
+    // children; if that changes, route through the same SVG
+    // infrastructure the single-target painter uses.
     switch (shape) {
       case 'circle':
         final r = rect.shortestSide / 2;
         canvas.drawCircle(rect.center, r, _targetFillPaint);
         canvas.drawCircle(rect.center, r, _targetOutlinePaint);
         break;
-      case 'silhouette':
+      case 'ipsc':
         _paintIpscSilhouette(canvas, rect);
         break;
       case 'square':
       case 'rectangle':
+      case 'special':
+      case 'animal':
       default:
         canvas.drawRect(rect, _targetFillPaint);
         canvas.drawRect(rect, _targetOutlinePaint);

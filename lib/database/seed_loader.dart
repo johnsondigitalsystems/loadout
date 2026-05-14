@@ -151,6 +151,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/target_center_point.dart';
 import '../services/seed_updater.dart' show seedNeedsReseedPrefix;
 import 'database.dart';
+import 'rack_slot.dart';
 
 /// SharedPreferences key prefix matching `SeedUpdater`'s
 /// `seed_needs_reseed_<key>` flags.
@@ -357,12 +358,11 @@ class SeedLoader {
         await _seedDragCurves();
       }
       if (targetRacksReseed) {
-        // Target racks are independent of `Manufacturers`. Children
-        // are FK-linked to their parent rack, so wipe children FIRST
-        // to satisfy the FK constraint, then wipe parents, then
-        // re-seed.
+        // Target racks are independent of `Manufacturers`. v40
+        // (Phase 9.5 Group C) collapsed the FK child table into an
+        // inline `slotsJson` column on `TargetRacks`, so the reseed
+        // path is now a single-table wipe-and-replace.
         if (!firstRun) {
-          await db.delete(db.targetRackChildren).go();
           await db.delete(db.targetRacks).go();
         }
         await _seedTargetRacks();
@@ -896,20 +896,35 @@ class SeedLoader {
     await db.batch((b) => b.insertAll(db.targets, batch));
   }
 
-  /// Seed the [TargetRacks] / [TargetRackChildren] reference catalog
-  /// from `assets/seed_data/target_racks.json`. The JSON shape is an
-  /// object with a top-level `racks` array; each rack carries a
-  /// `children` array describing the in-rack layout.
+  /// Seed the [TargetRacks] reference catalog from
+  /// `assets/seed_data/target_racks.json`. The JSON shape is an object
+  /// with a top-level `racks` array; each rack carries a `children`
+  /// array describing the in-rack layout.
   ///
-  /// We insert each parent first to learn its auto-incremented id,
-  /// then batch-insert its children with that id as `rackId`. Per-rack
-  /// inserts are slower than one big batch but keep the FK wiring
-  /// trivial — the seed dataset is tiny (single-digit racks) so the
-  /// extra round-trips don't matter.
+  /// v40 (Phase 9.5 Group C) — the child layout is stored INLINE on
+  /// each rack as a JSON array on the `slotsJson` column (TypeConverter
+  /// `RackSlotsConverter`). The previous parent + FK-children
+  /// arrangement was dropped because the slot list is always read as
+  /// a whole, never individually. Per-rack inserts are slow but the
+  /// seed dataset is tiny (~9 racks) so the extra round-trips don't
+  /// matter.
   Future<void> _seedTargetRacks() async {
     final root = await _readJsonObject('target_racks.json');
     final racks = (root['racks'] as List<dynamic>? ?? const <dynamic>[]);
     if (racks.isEmpty) return;
+
+    // Phase 9.5 (v40) — closed enum for rack-slot `category`. Mirrors
+    // the same set used by single targets in `_seedTargets`. The seed
+    // loader fails loudly on unknown categories so a hand-edited
+    // target_racks.json can't ship a misspelled value to users.
+    const validCategories = <String>{
+      'circle',
+      'square',
+      'rectangle',
+      'ipsc',
+      'animal',
+      'special',
+    };
 
     for (final entry in racks) {
       final m = entry as Map<String, dynamic>;
@@ -917,24 +932,19 @@ class SeedLoader {
       // (`hanging_rail | standing_stakes | popper_base | individual_posts`)
       // — falls back to the legacy `rack_kind` field when a JSON row
       // doesn't yet carry the new one. The drift column name stays
-      // `rackKind` for now; Phase 6 may rename to `mountStyle` along
-      // with a schema migration. See Phase 2 erratum item #13 in the
-      // PHASE_2_COMPLETION_REPORT.md.
+      // `rackKind` for now.
       final mountStyle =
           (m['mount_style'] as String?) ?? (m['rack_kind'] as String);
-      final rackId = await db.into(db.targetRacks).insert(
-            TargetRacksCompanion.insert(
-              name: m['name'] as String,
-              description: Value(m['description'] as String?),
-              rackKind: mountStyle,
-              totalWidthIn: (m['total_width_in'] as num).toDouble(),
-              totalHeightIn: (m['total_height_in'] as num).toDouble(),
-              notes: Value(m['notes'] as String?),
-            ),
-          );
-      final children = (m['children'] as List<dynamic>? ?? const <dynamic>[]);
-      if (children.isEmpty) continue;
-      final childBatch = <TargetRackChildrenCompanion>[];
+
+      // Phase 9.5 — build the slot list from the JSON `children`
+      // array (the field name stays `children` in JSON for backwards
+      // compatibility with hand-authored seeds; the Dart-side type
+      // is `List<RackSlot>` now). Empty `children` → empty slot list
+      // → the rack still inserts (the painter handles the degenerate
+      // case as "no shootables, render only the rack furniture").
+      final children =
+          (m['children'] as List<dynamic>? ?? const <dynamic>[]);
+      final slots = <RackSlot>[];
       for (final c in children) {
         final cm = c as Map<String, dynamic>;
         // Prefer the v2.3 §6A.3 `x_offset_in` / `y_offset_in` field
@@ -945,19 +955,55 @@ class SeedLoader {
             (cm['x_offset_in'] as num?) ?? (cm['offset_x_in'] as num);
         final yOffset =
             (cm['y_offset_in'] as num?) ?? (cm['offset_y_in'] as num);
-        childBatch.add(TargetRackChildrenCompanion.insert(
-          rackId: rackId,
+        // v40 — Phase 9.5: the per-slot category enum. Prefer the
+        // new `category` field; fall back to the legacy `shape`
+        // string with a small remap (`silhouette` → `ipsc`,
+        // `popper` / `star` → `special`) so seed files mid-migration
+        // still load. The remap is deliberate: it matches the
+        // `_targetsShapeToCategory` mapping in `_seedTargets`.
+        final rawCategory =
+            (cm['category'] as String?) ?? (cm['shape'] as String);
+        final category = switch (rawCategory) {
+          'silhouette' => 'ipsc',
+          'popper' => 'special',
+          'star' => 'special',
+          final s => s,
+        };
+        if (!validCategories.contains(category)) {
+          throw StateError(
+              "target_racks.json rack '${m['name']}' slot "
+              "'${cm['name']}': invalid category '$category'. "
+              'Allowed: $validCategories.');
+        }
+        slots.add(RackSlot(
           position: cm['position'] as int,
+          shapeId: cm['shape_id'] as String?,
           name: cm['name'] as String,
-          shape: cm['shape'] as String,
+          category: category,
           widthIn: (cm['width_in'] as num).toDouble(),
           heightIn: (cm['height_in'] as num).toDouble(),
           offsetXIn: xOffset.toDouble(),
           offsetYIn: yOffset.toDouble(),
-          colorHex: cm['color_hex'] as String,
+          sizeRank: cm['size_rank'] as int? ?? 1,
+          colorHex: cm['color_hex'] as String? ?? '#ffffff',
         ));
       }
-      await db.batch((b) => b.insertAll(db.targetRackChildren, childBatch));
+      // Author-time order may have skipped or duplicated positions;
+      // the converter sorts defensively on read, but we sort here
+      // too so the stored JSON is canonical.
+      slots.sort((a, b) => a.position.compareTo(b.position));
+
+      await db.into(db.targetRacks).insert(
+            TargetRacksCompanion.insert(
+              name: m['name'] as String,
+              description: Value(m['description'] as String?),
+              rackKind: mountStyle,
+              totalWidthIn: (m['total_width_in'] as num).toDouble(),
+              totalHeightIn: (m['total_height_in'] as num).toDouble(),
+              notes: Value(m['notes'] as String?),
+              slotsJson: slots,
+            ),
+          );
     }
   }
 

@@ -3,9 +3,9 @@
 // ============================================================================
 // WHAT THIS FILE DOES
 // ============================================================================
-// Owns reads against the [Targets] reference catalog AND the parallel
-// [TargetRacks] / [TargetRackChildren] catalog. Both are seeded from JSON
-// in `assets/seed_data/` on first launch (see `seed_loader.dart`); this
+// Owns reads against the [Targets] reference catalog AND the
+// [TargetRacks] catalog. Both are seeded from JSON in
+// `assets/seed_data/` on first launch (see `seed_loader.dart`); this
 // repository never writes to either table.
 //
 // Single-target methods:
@@ -14,15 +14,17 @@
 //     "AR500 8 in").
 //   * `allTargets()` — one-shot snapshot version of `watchAll`.
 //   * `getById(id)` — one-shot lookup of a single target.
-//   * `getByCategory(category)` — list filtered to one of `paper`,
-//     `steel`, `reactive`, `game-silhouette`. Used by the Range Day
-//     filter chips above the picker.
+//   * `getByShape(category)` — list filtered to one of the v9.5
+//     category enum values (`circle | square | rectangle | ipsc |
+//     animal | special`). Used by the Range Day filter chips above
+//     the picker.
 //
 // Target-rack methods:
 //   * `allRacks()` — every seeded rack, naturally sorted by name.
 //   * `rackById(id)` — one-shot lookup of a single rack.
-//   * `childrenOf(rackId)` — every child of one rack, ordered by
-//     `position`. Used by the visual renderer + the active-child picker.
+//   * `childrenOf(rackId)` — the rack's [RackSlot] list (read off the
+//     inline `slotsJson` column on `TargetRacks`). Already sorted by
+//     `position`. Used by the visual renderer + the active-slot picker.
 //
 // ============================================================================
 // WHY IT EXISTS IN THE ARCHITECTURE
@@ -36,15 +38,14 @@
 // ============================================================================
 // WHY THIS IS HARDER THAN IT LOOKS
 // ============================================================================
-// The rack catalog has two physical tables (parent + children with a FK).
-// We deliberately do NOT join here — the renderer wants the parent
-// envelope first (to scale the FOV) and only fetches children once the
-// rack is on-screen. Returning a single denormalized `(rack, [children])`
-// list would force every caller to walk a list-of-lists; instead each
-// caller asks for what it needs. `childrenOf` is sorted by `position`
-// rather than `name` because position is the rack's intended engagement
-// order (left-to-right or near-to-far) and is what the renderer / picker
-// treat as the canonical sort key.
+// Before v40 the rack catalog had two physical tables (parent + children
+// with an FK). Phase 9.5 Group C collapsed those into a single
+// `TargetRacks` table where each rack's slot list rides inline as a
+// JSON array (`RackSlotsConverter`). The rack envelope is still queried
+// independently of the slots — but the slots are now a column read on
+// the loaded row, not a separate SQL query. `childrenOf` is therefore
+// `await rackById(id)` + a field read, which keeps the call shape
+// identical for consumers but cuts one DB round-trip per rack render.
 //
 // ============================================================================
 // WHO CONSUMES THIS FILE
@@ -58,10 +59,11 @@
 // ============================================================================
 // - Reads only. No INSERT / UPDATE / DELETE on either catalog table.
 
-import 'package:drift/drift.dart' show OrderingTerm;
-
 import '../database/database.dart';
+import '../database/rack_slot.dart';
 import '../utils/natural_sort.dart';
+
+export '../database/rack_slot.dart' show RackSlot;
 
 class TargetRepository {
   TargetRepository(this.db);
@@ -126,13 +128,19 @@ class TargetRepository {
       (db.select(db.targetRacks)..where((r) => r.id.equals(id)))
           .getSingleOrNull();
 
-  /// Every child of `rackId`, ordered by `position` (the rack's
-  /// intended engagement sequence). Empty list when the rack has no
-  /// children — caller should treat that as a malformed seed entry,
-  /// since every seeded rack ships at least one child.
-  Future<List<TargetRackChildRow>> childrenOf(int rackId) =>
-      (db.select(db.targetRackChildren)
-            ..where((c) => c.rackId.equals(rackId))
-            ..orderBy([(c) => OrderingTerm.asc(c.position)]))
-          .get();
+  /// Every slot in `rackId`, in position order (the rack's intended
+  /// engagement sequence). Empty list when the rack has no slots OR
+  /// when the rack id was deleted (e.g. a stale id persisted on a
+  /// session row that got re-seeded) — caller should treat the empty
+  /// case as a malformed seed entry, since every seeded rack ships
+  /// at least one slot.
+  ///
+  /// v40 (Phase 9.5 Group C) — formerly an SQL query against the
+  /// dropped `TargetRackChildren` table; now reads `slotsJson` off
+  /// the rack row. The drift TypeConverter does the JSON parse + sort
+  /// inline. Result is an unmodifiable `List<RackSlot>`.
+  Future<List<RackSlot>> childrenOf(int rackId) async {
+    final rack = await rackById(rackId);
+    return rack?.slotsJson ?? const <RackSlot>[];
+  }
 }

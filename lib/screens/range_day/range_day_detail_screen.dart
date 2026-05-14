@@ -212,7 +212,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   // selects which kind is being chosen. When a rack is active,
   // [_selectedTarget] is forced to null and the active geometry comes
   // from `_selectedRackChildren[_selectedRackChildPosition]` (a
-  // [TargetRackChildRow]). That child's width / height / shape /
+  // [RackSlot]). That child's width / height / shape /
   // colorHex feeds every downstream consumer through the
   // `_activeTargetWidthIn` / `_activeTargetHeightIn` /
   // `_activeTargetSpec` helpers below.
@@ -227,7 +227,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   // [_selectedRackChildren] / [_selectedRackChildPosition] before
   // the first solve runs.
   TargetRackRow? _selectedRack;
-  List<TargetRackChildRow> _selectedRackChildren = const [];
+  List<RackSlot> _selectedRackChildren = const [];
   int _selectedRackChildPosition = 0;
   Future<List<TargetRackRow>>? _racksFuture;
   String? _rackChildrenError;
@@ -1050,7 +1050,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       try {
         final rack = await targetRepo.rackById(s.rackId!);
         if (rack != null) {
-          List<TargetRackChildRow> children = const [];
+          List<RackSlot> children = const [];
           try {
             children = await targetRepo.childrenOf(rack.id);
           } catch (e) {
@@ -5529,7 +5529,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       _selectedRackChildPosition = 0;
       _rackChildrenError = null;
     });
-    final children = await safeAsync<List<TargetRackChildRow>>(
+    final children = await safeAsync<List<RackSlot>>(
       context,
       mounted: () => mounted,
       userMessage: 'Could not load rack children.',
@@ -5574,7 +5574,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   /// the child's name is empty. Children are seeded with descriptive
   /// names like "Plate 1 (5 in)" so the chip already conveys the
   /// child's size; this helper is just the safety net.
-  String _rackChildChipLabel(TargetRackChildRow c, int index) {
+  String _rackChildChipLabel(RackSlot c, int index) {
     final name = c.name.trim();
     return name.isEmpty ? 'Plate ${index + 1}' : name;
   }
@@ -5584,7 +5584,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   /// user gets the same kind of "you picked this" confirmation in
   /// rack mode that they get in single-target mode. Reads, e.g.,
   /// "5-Plate KYL · Active: Plate 3 (3 in dia)".
-  Widget _selectedRackPreview(TargetRackRow rack, TargetRackChildRow active) {
+  Widget _selectedRackPreview(TargetRackRow rack, RackSlot active) {
     final theme = Theme.of(context);
     final dims = _rackChildDimensionLabel(active);
     final activeIndex = _selectedRackChildren.indexOf(active);
@@ -5606,20 +5606,15 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
             padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
             child: Row(
               children: [
-                // active is a TargetRackChildRow — rack children
-                // don't carry shape_id today (v36 added the column on
-                // Targets only). Pass null so the icon picker falls
-                // through to the shape-based dispatch.
-                // Phase 9.5 — `active` is a TargetRackChildRow whose
-                // schema still has a `shape` column (Group C will
-                // migrate this to slot-based category). Until then
-                // the rack-child icon picker maps shape strings via
-                // an inline category-equivalent (circle/square/
-                // rectangle map directly; silhouette + popper get
-                // sensible defaults).
+                // active is a RackSlot — rack children
+                // v40 (Phase 9.5 Group C) — RackSlot carries the
+                // `category` enum directly and an optional `shapeId`
+                // for `special`-category apparatus. The icon picker
+                // takes the slot's category as the first arg and
+                // (when populated) the shapeId as the second.
                 _targetShapeIcon(
-                  _rackChildShapeToCategory(active.shape),
-                  null,
+                  active.category,
+                  active.shapeId,
                   theme,
                 ),
                 const SizedBox(width: 10),
@@ -5672,12 +5667,12 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   /// Dimension label for a rack child. Mirrors `_targetDimensionLabel`
   /// so the rack-active preview reads the same way as the single-
   /// target preview.
-  String _rackChildDimensionLabel(TargetRackChildRow c) {
+  String _rackChildDimensionLabel(RackSlot c) {
     final w = c.widthIn;
     final h = c.heightIn;
     String fmt(double v) =>
         v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(1);
-    if (c.shape == 'circle') {
+    if (c.category == 'circle') {
       return '${fmt(w)} in dia';
     }
     if (w == h) {
@@ -5706,7 +5701,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   /// The active rack child, or null if no rack is in play. Always
   /// guarded by [_hasActiveRack] in callers — accessing this when the
   /// list is empty would throw.
-  TargetRackChildRow? get _activeRackChild {
+  RackSlot? get _activeRackChild {
     if (!_hasActiveRack) return null;
     final i = _selectedRackChildPosition.clamp(
       0,
@@ -5738,7 +5733,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   /// selected.
   String? get _activeTargetShape {
     final child = _activeRackChild;
-    if (child != null) return child.shape;
+    if (child != null) return child.category;
     return _selectedTarget?.category;
   }
 
@@ -5771,7 +5766,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   /// from chains. Returns null when no rack is active so the
   /// realistic painter falls back to single-target-on-pole.
   ///
-  /// `offsetXFromCenterIn` is sourced from `TargetRackChildRow.offsetXIn`,
+  /// `offsetXFromCenterIn` is sourced from `RackSlot.offsetXIn`,
   /// which is the rack's intended geometric layout in inches relative
   /// to the rack's center. Children with negative offsets render to
   /// the left of center; positive to the right. The realistic
@@ -5783,7 +5778,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         .map((c) => RackChildSpec(
               widthIn: c.widthIn,
               heightIn: c.heightIn,
-              shape: c.shape,
+              category: c.category,
               offsetXFromCenterIn: c.offsetXIn,
               colorHex: c.colorHex,
             ))
@@ -5797,46 +5792,22 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   int? get _activeRackChildIndex =>
       _hasActiveRack ? _selectedRackChildPosition : null;
 
-  /// Phase 9.5 — bridge from legacy `TargetRackChildRow.shape` to
-  /// Phase 9.5's `TargetSpec.category` enum. Rack children still
-  /// carry the v38 `shape` column (Group C migrates them to a
-  /// slot-based category-driven schema). Until then, map the
-  /// shape string to its category equivalent so the scene painter
-  /// can dispatch correctly.
-  ///
-  /// `'silhouette'` maps to `'ipsc'` because the legacy rack
-  /// children that use that shape value are USPSA Metric targets;
-  /// no rack catalog row uses 'silhouette' to mean 'animal'.
-  String _rackChildShapeToCategory(String shape) {
-    switch (shape.toLowerCase()) {
-      case 'circle':
-        return 'circle';
-      case 'square':
-        return 'square';
-      case 'rectangle':
-        return 'rectangle';
-      case 'silhouette':
-        return 'ipsc';
-      case 'popper':
-      case 'star':
-        return 'special';
-      default:
-        return 'rectangle';
-    }
-  }
-
   /// Build a [TargetSpec] from the current active aim point so the
   /// [TargetPlot] widget can render whichever geometry is in play
   /// without rack-aware code. Returns null when nothing is selected.
+  ///
+  /// v40 (Phase 9.5 Group C) — rack slots now carry the v9.5
+  /// `category` enum directly (no more legacy `shape` field on
+  /// children), so the bridge helper that mapped `shape` → category
+  /// is gone. The slot's `shapeId` propagates so the painter can
+  /// route `special`-category apparatus (pepper poppers / Texas Star
+  /// plates) to the right SVG.
   TargetSpec? get _activeTargetSpec {
     final child = _activeRackChild;
     if (child != null) {
-      // Phase 9.5 — TargetRackChildRow still has `shape` (Group C
-      // migrates rack children to slot-based with category). Map
-      // the rack child's shape string to a category here so the
-      // scene painter's category dispatch can route it correctly.
       return TargetSpec(
-        category: _rackChildShapeToCategory(child.shape),
+        category: child.category,
+        shapeId: child.shapeId,
         widthIn: child.widthIn,
         heightIn: child.heightIn,
         colorHex: child.colorHex,
@@ -9762,7 +9733,7 @@ class _RackThumbnail extends StatelessWidget {
     required this.activePlateColor,
   });
   final TargetRackRow rack;
-  final List<TargetRackChildRow> children;
+  final List<RackSlot> children;
   final int activeIndex;
   final Color activePlateColor;
 
@@ -9804,7 +9775,7 @@ class _RackThumbnailPainter extends CustomPainter {
     required this.activeColor,
   });
   final TargetRackRow rack;
-  final List<TargetRackChildRow> children;
+  final List<RackSlot> children;
   final int activeIndex;
   final Color activeColor;
 
@@ -9837,7 +9808,11 @@ class _RackThumbnailPainter extends CustomPainter {
       final c = children[i];
       final fill = Paint()..color = _parseHex(c.colorHex);
       final pos = placeIn(c.offsetXIn, c.offsetYIn);
-      final shape = c.shape.toLowerCase();
+      // v40 (Phase 9.5 Group C) — slot's category drives the
+      // thumbnail dispatch. `ipsc` / `animal` / `special` all fall
+      // through to the rectangle case (the thumbnail is intentionally
+      // schematic; rack thumbnails don't render SVG silhouettes).
+      final shape = c.category.toLowerCase();
       switch (shape) {
         case 'circle':
           final r = (c.widthIn / 2) * scale;

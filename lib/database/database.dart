@@ -163,6 +163,8 @@ import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:path_provider/path_provider.dart';
 
+import 'rack_slot.dart';
+
 part 'database.g.dart';
 
 // ─────────────────────── Reference tables (read-only seed) ───────────────────────
@@ -1609,45 +1611,24 @@ class TargetRacks extends Table {
   RealColumn get totalHeightIn => real()();
   TextColumn get notes => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
-}
 
-/// One row per child plate / popper / silhouette inside a parent
-/// [TargetRacks] entry. Children are shot one at a time; the ballistics
-/// solver consumes the active child's `widthIn` / `heightIn` /
-/// `shape` for hit-probability math.
-///
-/// `position` is a 0-indexed sort key (left-to-right or near-to-far
-/// depending on the rack). `offsetXIn` / `offsetYIn` locate the child
-/// relative to the rack's center in inches at the rack's natural scale
-/// (positive X = right, positive Y = up).
-@DataClassName('TargetRackChildRow')
-class TargetRackChildren extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  /// FK to the parent [TargetRacks] row.
-  IntColumn get rackId => integer().references(TargetRacks, #id)();
-  /// 0-indexed position within the rack. The repository's `childrenOf`
-  /// query orders by this column, so the renderer / picker get a stable
-  /// order matching the rack's intended engagement sequence.
-  IntColumn get position => integer()();
-  /// Per-child label ("Plate 1 (5 in)", "Popper #3"). Shown in the
-  /// child-picker menu.
-  TextColumn get name => text()();
-  /// 'circle' | 'square' | 'rectangle' | 'silhouette' | 'irregular' —
-  /// matches the enum used by [Targets.shape] so the same renderer
-  /// helpers handle both single targets and rack children.
-  TextColumn get shape => text()();
-  RealColumn get widthIn => real()();
-  RealColumn get heightIn => real()();
-  /// X offset from the rack's geometric center, in inches. Positive =
-  /// right.
-  RealColumn get offsetXIn => real()();
-  /// Y offset from the rack's geometric center, in inches. Positive =
-  /// up.
-  RealColumn get offsetYIn => real()();
-  /// CSS-style hex color (e.g. "#ffffff"). Matches the convention used
-  /// by [Targets.colorHex] so the renderer can paint rack children with
-  /// the same code path as standalone targets.
-  TextColumn get colorHex => text()();
+  /// Phase 9.5 (v40) — JSON-encoded slot list. Each element is a
+  /// `RackSlot` record (see `lib/database/rack_slot.dart`) describing
+  /// one shootable plate / popper / silhouette inside the rack.
+  /// Replaces the v19 `TargetRackChildren` FK table dropped in v40.
+  ///
+  /// The drift TypeConverter handles round-tripping, so callers see
+  /// the column as a typed `List<RackSlot>` and never touch the JSON
+  /// string directly. Reading is O(n) on the rack's slot count
+  /// (single-digit for every seeded rack); the repository's
+  /// `childrenOf(rackId)` is therefore an `await rackById(...)` plus
+  /// a field read with no additional query.
+  ///
+  /// Stored sorted by `position` (the converter re-sorts defensively
+  /// on read, so a hand-edited DB row with out-of-order slots still
+  /// renders correctly).
+  TextColumn get slotsJson =>
+      text().map(const RackSlotsConverter())();
 }
 
 /// One row per range-day workspace the user opened. The session is a
@@ -1747,13 +1728,15 @@ class RangeDaySessions extends Table {
   /// active child within the rack is recorded by [rackChildPosition].
   IntColumn get rackId =>
       integer().nullable().references(TargetRacks, #id)();
-  /// Zero-based position of the active child inside the rack, matching
-  /// `TargetRackChildren.position`. Null when the session is NOT in
-  /// rack mode. The renderer / ballistics solver pulls the active
-  /// child's geometry by indexing `childrenOf(rackId)` at this
-  /// position; a stale value (e.g. seed re-shuffle that dropped the
-  /// position) is clamped to the valid range by the picker, never
-  /// crashes.
+  /// Zero-based position of the active slot inside the rack, matching
+  /// `RackSlot.position`. Null when the session is NOT in rack mode.
+  /// The renderer / ballistics solver pulls the active slot's
+  /// geometry by indexing the rack row's `slotsJson` list at this
+  /// position; a stale value (e.g. a slot dropped from a re-seeded
+  /// rack) is clamped to the valid range by the picker, never
+  /// crashes. v40 (Phase 9.5 Group C) replaced the legacy
+  /// `TargetRackChildren.position` lookup with the inline slot list,
+  /// but the column itself is unchanged — same int, same semantics.
   IntColumn get rackChildPosition => integer().nullable()();
 
   // ── Range Day Realistic scene state (added schema v35, v2.3) ──
@@ -2317,8 +2300,9 @@ class ComponentInventoryAdjustments extends Table {
     // Schema v17 additions (user-saved atmospheric profiles).
     AtmospherePresets,
     // Schema v19 additions (target racks reference catalog).
+    // v40 (Phase 9.5 Group C) dropped TargetRackChildren — children
+    // now ride inline on TargetRacks.slotsJson as a JSON list.
     TargetRacks,
-    TargetRackChildren,
     // Schema v22 additions (verified scope + reticle catalog).
     ScopeManufacturers,
     ScopeModels,
@@ -2363,7 +2347,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 39;
+  int get schemaVersion => 40;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -2699,7 +2683,12 @@ class AppDatabase extends _$AppDatabase {
             // here so existing user data (RangeDaySessions,
             // ShotImpacts, etc.) is preserved.
             await m.createTable(targetRacks);
-            await m.createTable(targetRackChildren);
+            // v40 (Phase 9.5 Group C) removed the v19 child table;
+            // this from-clean-install path now skips the original
+            // `createTable(targetRackChildren)` line entirely. The
+            // v19 → v40 upgrade path in the `from < 40` clause below
+            // drops the legacy `target_rack_children` table that
+            // earlier installs created here.
           }
           if (from < 20) {
             // v20 — Targets renamed to drop leading material words
@@ -2859,10 +2848,12 @@ class AppDatabase extends _$AppDatabase {
             //     Added square variants of KYL + 3-Plate Decreasing,
             //     plus a Texas Star rack.
             // Wipe both tables; the seed loader re-populates from the
-            // updated JSON on next launch. Deleting rack-children
-            // first to honour the FK from `target_rack_children` →
-            // `target_racks`.
-            await delete(targetRackChildren).go();
+            // updated JSON on next launch. v40 (Phase 9.5 Group C)
+            // dropped `target_rack_children` — earlier installs
+            // wipe-via-DROP in the `from < 40` step below, so this
+            // v27 step uses customStatement to handle the still-FK
+            // case for installs landing on v27 from v19.
+            await customStatement('DELETE FROM target_rack_children');
             await delete(targetRacks).go();
             await delete(targets).go();
           }
@@ -3168,6 +3159,24 @@ class AppDatabase extends _$AppDatabase {
             // cold start. No user data lives on Targets.
             await customStatement('DROP TABLE IF EXISTS targets');
             await m.createTable(targets);
+          }
+          if (from < 40) {
+            // v40 — Phase 9.5 Group C: rack model collapses to a
+            // single table. The v19 `TargetRackChildren` FK table is
+            // dropped entirely; each rack's children now ride inline
+            // as a JSON array on the new `slotsJson` column on
+            // `TargetRacks` (drift TypeConverter `RackSlotsConverter`).
+            //
+            // Drop-and-recreate both tables (same reference-only
+            // posture as v39). The DROP order is `target_rack_children`
+            // FIRST so the FK on it doesn't block dropping
+            // `target_racks`. SeedLoader re-seeds the rack catalog
+            // from `assets/seed_data/target_racks.json` on next cold
+            // start with the new slot-list payload.
+            await customStatement(
+                'DROP TABLE IF EXISTS target_rack_children');
+            await customStatement('DROP TABLE IF EXISTS target_racks');
+            await m.createTable(targetRacks);
           }
         },
       );

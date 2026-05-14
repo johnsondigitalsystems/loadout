@@ -78,7 +78,7 @@ void main() {
       await db.close();
     });
 
-    test('schemaVersion is 39', () {
+    test('schemaVersion is 40', () {
       // v35 added Range Day Realistic / per-firearm scope-and-reticle
       // defaults; v36 added `targets.shape_id` for SVG dispatch (v2.3
       // target render fix); v37 added the per-target `center_point`
@@ -89,11 +89,16 @@ void main() {
       // multiplies on top of fit-to-box. v39 (Scene Painter Phase
       // 9.5 Group A) replaced `targets.shape` with the
       // category-driven `targets.category` enum (drop + recreate;
-      // the seed catalog ships the new schema). The file keeps its
-      // v35 name because every v35-era assertion below is still
-      // valid on v39 — schema bumps are additive (except the v39
-      // shape→category rename, which is captured here).
-      expect(db.schemaVersion, 39);
+      // the seed catalog ships the new schema). v40 (Scene Painter
+      // Phase 9.5 Group C) collapsed the rack model: the v19
+      // `TargetRackChildren` FK child table was dropped and each
+      // rack's children now ride inline on a new
+      // `TargetRacks.slotsJson` column (drift TypeConverter,
+      // `RackSlotsConverter`). The file keeps its v35 name because
+      // every v35-era assertion below is still valid on v40 —
+      // schema bumps are additive (except v39 / v40 which are
+      // explicit drop-and-recreate cycles for reference data).
+      expect(db.schemaVersion, 40);
     });
 
     test('targets accepts the new v38 svg_scale_factor column', () async {

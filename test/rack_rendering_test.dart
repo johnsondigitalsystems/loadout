@@ -75,31 +75,31 @@ void main() {
       const RackChildSpec(
         widthIn: 8,
         heightIn: 18,
-        shape: 'silhouette',
+        category: 'ipsc',
         offsetXFromCenterIn: -24,
       ),
       const RackChildSpec(
         widthIn: 8,
         heightIn: 18,
-        shape: 'silhouette',
+        category: 'ipsc',
         offsetXFromCenterIn: -12,
       ),
       const RackChildSpec(
         widthIn: 8,
         heightIn: 18,
-        shape: 'silhouette',
+        category: 'ipsc',
         offsetXFromCenterIn: 0,
       ),
       const RackChildSpec(
         widthIn: 8,
         heightIn: 18,
-        shape: 'silhouette',
+        category: 'ipsc',
         offsetXFromCenterIn: 12,
       ),
       const RackChildSpec(
         widthIn: 8,
         heightIn: 18,
-        shape: 'silhouette',
+        category: 'ipsc',
         offsetXFromCenterIn: 24,
       ),
     ];
@@ -114,31 +114,31 @@ void main() {
       const RackChildSpec(
         widthIn: 5,
         heightIn: 5,
-        shape: 'circle',
+        category: 'circle',
         offsetXFromCenterIn: -28,
       ),
       const RackChildSpec(
         widthIn: 4,
         heightIn: 4,
-        shape: 'circle',
+        category: 'circle',
         offsetXFromCenterIn: -16,
       ),
       const RackChildSpec(
         widthIn: 3,
         heightIn: 3,
-        shape: 'circle',
+        category: 'circle',
         offsetXFromCenterIn: -4,
       ),
       const RackChildSpec(
         widthIn: 2,
         heightIn: 2,
-        shape: 'circle',
+        category: 'circle',
         offsetXFromCenterIn: 8,
       ),
       const RackChildSpec(
         widthIn: 1,
         heightIn: 1,
-        shape: 'circle',
+        category: 'circle',
         offsetXFromCenterIn: 20,
       ),
     ];
@@ -266,7 +266,7 @@ void main() {
           RackChildSpec(
             widthIn: 6,
             heightIn: 30,
-            shape: 'silhouette',
+            category: 'ipsc',
             offsetXFromCenterIn: i * 12.0,
           ),
       ];

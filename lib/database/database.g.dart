@@ -22445,6 +22445,15 @@ class $TargetRacksTable extends TargetRacks
     defaultValue: currentDateAndTime,
   );
   @override
+  late final GeneratedColumnWithTypeConverter<List<RackSlot>, String>
+  slotsJson = GeneratedColumn<String>(
+    'slots_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  ).withConverter<List<RackSlot>>($TargetRacksTable.$converterslotsJson);
+  @override
   List<GeneratedColumn> get $columns => [
     id,
     name,
@@ -22454,6 +22463,7 @@ class $TargetRacksTable extends TargetRacks
     totalHeightIn,
     notes,
     createdAt,
+    slotsJson,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -22570,6 +22580,12 @@ class $TargetRacksTable extends TargetRacks
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      slotsJson: $TargetRacksTable.$converterslotsJson.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}slots_json'],
+        )!,
+      ),
     );
   }
 
@@ -22577,6 +22593,9 @@ class $TargetRacksTable extends TargetRacks
   $TargetRacksTable createAlias(String alias) {
     return $TargetRacksTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<List<RackSlot>, String> $converterslotsJson =
+      const RackSlotsConverter();
 }
 
 class TargetRackRow extends DataClass implements Insertable<TargetRackRow> {
@@ -22604,6 +22623,23 @@ class TargetRackRow extends DataClass implements Insertable<TargetRackRow> {
   final double totalHeightIn;
   final String? notes;
   final DateTime createdAt;
+
+  /// Phase 9.5 (v40) — JSON-encoded slot list. Each element is a
+  /// `RackSlot` record (see `lib/database/rack_slot.dart`) describing
+  /// one shootable plate / popper / silhouette inside the rack.
+  /// Replaces the v19 `TargetRackChildren` FK table dropped in v40.
+  ///
+  /// The drift TypeConverter handles round-tripping, so callers see
+  /// the column as a typed `List<RackSlot>` and never touch the JSON
+  /// string directly. Reading is O(n) on the rack's slot count
+  /// (single-digit for every seeded rack); the repository's
+  /// `childrenOf(rackId)` is therefore an `await rackById(...)` plus
+  /// a field read with no additional query.
+  ///
+  /// Stored sorted by `position` (the converter re-sorts defensively
+  /// on read, so a hand-edited DB row with out-of-order slots still
+  /// renders correctly).
+  final List<RackSlot> slotsJson;
   const TargetRackRow({
     required this.id,
     required this.name,
@@ -22613,6 +22649,7 @@ class TargetRackRow extends DataClass implements Insertable<TargetRackRow> {
     required this.totalHeightIn,
     this.notes,
     required this.createdAt,
+    required this.slotsJson,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -22629,6 +22666,11 @@ class TargetRackRow extends DataClass implements Insertable<TargetRackRow> {
       map['notes'] = Variable<String>(notes);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
+    {
+      map['slots_json'] = Variable<String>(
+        $TargetRacksTable.$converterslotsJson.toSql(slotsJson),
+      );
+    }
     return map;
   }
 
@@ -22646,6 +22688,7 @@ class TargetRackRow extends DataClass implements Insertable<TargetRackRow> {
           ? const Value.absent()
           : Value(notes),
       createdAt: Value(createdAt),
+      slotsJson: Value(slotsJson),
     );
   }
 
@@ -22663,6 +22706,7 @@ class TargetRackRow extends DataClass implements Insertable<TargetRackRow> {
       totalHeightIn: serializer.fromJson<double>(json['totalHeightIn']),
       notes: serializer.fromJson<String?>(json['notes']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      slotsJson: serializer.fromJson<List<RackSlot>>(json['slotsJson']),
     );
   }
   @override
@@ -22677,6 +22721,7 @@ class TargetRackRow extends DataClass implements Insertable<TargetRackRow> {
       'totalHeightIn': serializer.toJson<double>(totalHeightIn),
       'notes': serializer.toJson<String?>(notes),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'slotsJson': serializer.toJson<List<RackSlot>>(slotsJson),
     };
   }
 
@@ -22689,6 +22734,7 @@ class TargetRackRow extends DataClass implements Insertable<TargetRackRow> {
     double? totalHeightIn,
     Value<String?> notes = const Value.absent(),
     DateTime? createdAt,
+    List<RackSlot>? slotsJson,
   }) => TargetRackRow(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -22698,6 +22744,7 @@ class TargetRackRow extends DataClass implements Insertable<TargetRackRow> {
     totalHeightIn: totalHeightIn ?? this.totalHeightIn,
     notes: notes.present ? notes.value : this.notes,
     createdAt: createdAt ?? this.createdAt,
+    slotsJson: slotsJson ?? this.slotsJson,
   );
   TargetRackRow copyWithCompanion(TargetRacksCompanion data) {
     return TargetRackRow(
@@ -22715,6 +22762,7 @@ class TargetRackRow extends DataClass implements Insertable<TargetRackRow> {
           : this.totalHeightIn,
       notes: data.notes.present ? data.notes.value : this.notes,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      slotsJson: data.slotsJson.present ? data.slotsJson.value : this.slotsJson,
     );
   }
 
@@ -22728,7 +22776,8 @@ class TargetRackRow extends DataClass implements Insertable<TargetRackRow> {
           ..write('totalWidthIn: $totalWidthIn, ')
           ..write('totalHeightIn: $totalHeightIn, ')
           ..write('notes: $notes, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('slotsJson: $slotsJson')
           ..write(')'))
         .toString();
   }
@@ -22743,6 +22792,7 @@ class TargetRackRow extends DataClass implements Insertable<TargetRackRow> {
     totalHeightIn,
     notes,
     createdAt,
+    slotsJson,
   );
   @override
   bool operator ==(Object other) =>
@@ -22755,7 +22805,8 @@ class TargetRackRow extends DataClass implements Insertable<TargetRackRow> {
           other.totalWidthIn == this.totalWidthIn &&
           other.totalHeightIn == this.totalHeightIn &&
           other.notes == this.notes &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.slotsJson == this.slotsJson);
 }
 
 class TargetRacksCompanion extends UpdateCompanion<TargetRackRow> {
@@ -22767,6 +22818,7 @@ class TargetRacksCompanion extends UpdateCompanion<TargetRackRow> {
   final Value<double> totalHeightIn;
   final Value<String?> notes;
   final Value<DateTime> createdAt;
+  final Value<List<RackSlot>> slotsJson;
   const TargetRacksCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -22776,6 +22828,7 @@ class TargetRacksCompanion extends UpdateCompanion<TargetRackRow> {
     this.totalHeightIn = const Value.absent(),
     this.notes = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.slotsJson = const Value.absent(),
   });
   TargetRacksCompanion.insert({
     this.id = const Value.absent(),
@@ -22786,10 +22839,12 @@ class TargetRacksCompanion extends UpdateCompanion<TargetRackRow> {
     required double totalHeightIn,
     this.notes = const Value.absent(),
     this.createdAt = const Value.absent(),
+    required List<RackSlot> slotsJson,
   }) : name = Value(name),
        rackKind = Value(rackKind),
        totalWidthIn = Value(totalWidthIn),
-       totalHeightIn = Value(totalHeightIn);
+       totalHeightIn = Value(totalHeightIn),
+       slotsJson = Value(slotsJson);
   static Insertable<TargetRackRow> custom({
     Expression<int>? id,
     Expression<String>? name,
@@ -22799,6 +22854,7 @@ class TargetRacksCompanion extends UpdateCompanion<TargetRackRow> {
     Expression<double>? totalHeightIn,
     Expression<String>? notes,
     Expression<DateTime>? createdAt,
+    Expression<String>? slotsJson,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -22809,6 +22865,7 @@ class TargetRacksCompanion extends UpdateCompanion<TargetRackRow> {
       if (totalHeightIn != null) 'total_height_in': totalHeightIn,
       if (notes != null) 'notes': notes,
       if (createdAt != null) 'created_at': createdAt,
+      if (slotsJson != null) 'slots_json': slotsJson,
     });
   }
 
@@ -22821,6 +22878,7 @@ class TargetRacksCompanion extends UpdateCompanion<TargetRackRow> {
     Value<double>? totalHeightIn,
     Value<String?>? notes,
     Value<DateTime>? createdAt,
+    Value<List<RackSlot>>? slotsJson,
   }) {
     return TargetRacksCompanion(
       id: id ?? this.id,
@@ -22831,6 +22889,7 @@ class TargetRacksCompanion extends UpdateCompanion<TargetRackRow> {
       totalHeightIn: totalHeightIn ?? this.totalHeightIn,
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
+      slotsJson: slotsJson ?? this.slotsJson,
     );
   }
 
@@ -22861,6 +22920,11 @@ class TargetRacksCompanion extends UpdateCompanion<TargetRackRow> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (slotsJson.present) {
+      map['slots_json'] = Variable<String>(
+        $TargetRacksTable.$converterslotsJson.toSql(slotsJson.value),
+      );
+    }
     return map;
   }
 
@@ -22874,7 +22938,8 @@ class TargetRacksCompanion extends UpdateCompanion<TargetRackRow> {
           ..write('totalWidthIn: $totalWidthIn, ')
           ..write('totalHeightIn: $totalHeightIn, ')
           ..write('notes: $notes, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('slotsJson: $slotsJson')
           ..write(')'))
         .toString();
   }
@@ -23873,13 +23938,15 @@ class RangeDaySessionRow extends DataClass
   /// active child within the rack is recorded by [rackChildPosition].
   final int? rackId;
 
-  /// Zero-based position of the active child inside the rack, matching
-  /// `TargetRackChildren.position`. Null when the session is NOT in
-  /// rack mode. The renderer / ballistics solver pulls the active
-  /// child's geometry by indexing `childrenOf(rackId)` at this
-  /// position; a stale value (e.g. seed re-shuffle that dropped the
-  /// position) is clamped to the valid range by the picker, never
-  /// crashes.
+  /// Zero-based position of the active slot inside the rack, matching
+  /// `RackSlot.position`. Null when the session is NOT in rack mode.
+  /// The renderer / ballistics solver pulls the active slot's
+  /// geometry by indexing the rack row's `slotsJson` list at this
+  /// position; a stale value (e.g. a slot dropped from a re-seeded
+  /// rack) is clamped to the valid range by the picker, never
+  /// crashes. v40 (Phase 9.5 Group C) replaced the legacy
+  /// `TargetRackChildren.position` lookup with the inline slot list,
+  /// but the column itself is unchanged — same int, same semantics.
   final int? rackChildPosition;
 
   /// Current scope magnification at session time. Drives the
@@ -30945,625 +31012,6 @@ class AtmospherePresetsCompanion extends UpdateCompanion<AtmospherePresetRow> {
   }
 }
 
-class $TargetRackChildrenTable extends TargetRackChildren
-    with TableInfo<$TargetRackChildrenTable, TargetRackChildRow> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $TargetRackChildrenTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
-    'id',
-    aliasedName,
-    false,
-    hasAutoIncrement: true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
-  );
-  static const VerificationMeta _rackIdMeta = const VerificationMeta('rackId');
-  @override
-  late final GeneratedColumn<int> rackId = GeneratedColumn<int>(
-    'rack_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES target_racks (id)',
-    ),
-  );
-  static const VerificationMeta _positionMeta = const VerificationMeta(
-    'position',
-  );
-  @override
-  late final GeneratedColumn<int> position = GeneratedColumn<int>(
-    'position',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _nameMeta = const VerificationMeta('name');
-  @override
-  late final GeneratedColumn<String> name = GeneratedColumn<String>(
-    'name',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _shapeMeta = const VerificationMeta('shape');
-  @override
-  late final GeneratedColumn<String> shape = GeneratedColumn<String>(
-    'shape',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _widthInMeta = const VerificationMeta(
-    'widthIn',
-  );
-  @override
-  late final GeneratedColumn<double> widthIn = GeneratedColumn<double>(
-    'width_in',
-    aliasedName,
-    false,
-    type: DriftSqlType.double,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _heightInMeta = const VerificationMeta(
-    'heightIn',
-  );
-  @override
-  late final GeneratedColumn<double> heightIn = GeneratedColumn<double>(
-    'height_in',
-    aliasedName,
-    false,
-    type: DriftSqlType.double,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _offsetXInMeta = const VerificationMeta(
-    'offsetXIn',
-  );
-  @override
-  late final GeneratedColumn<double> offsetXIn = GeneratedColumn<double>(
-    'offset_x_in',
-    aliasedName,
-    false,
-    type: DriftSqlType.double,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _offsetYInMeta = const VerificationMeta(
-    'offsetYIn',
-  );
-  @override
-  late final GeneratedColumn<double> offsetYIn = GeneratedColumn<double>(
-    'offset_y_in',
-    aliasedName,
-    false,
-    type: DriftSqlType.double,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _colorHexMeta = const VerificationMeta(
-    'colorHex',
-  );
-  @override
-  late final GeneratedColumn<String> colorHex = GeneratedColumn<String>(
-    'color_hex',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    rackId,
-    position,
-    name,
-    shape,
-    widthIn,
-    heightIn,
-    offsetXIn,
-    offsetYIn,
-    colorHex,
-  ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'target_rack_children';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<TargetRackChildRow> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('rack_id')) {
-      context.handle(
-        _rackIdMeta,
-        rackId.isAcceptableOrUnknown(data['rack_id']!, _rackIdMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_rackIdMeta);
-    }
-    if (data.containsKey('position')) {
-      context.handle(
-        _positionMeta,
-        position.isAcceptableOrUnknown(data['position']!, _positionMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_positionMeta);
-    }
-    if (data.containsKey('name')) {
-      context.handle(
-        _nameMeta,
-        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_nameMeta);
-    }
-    if (data.containsKey('shape')) {
-      context.handle(
-        _shapeMeta,
-        shape.isAcceptableOrUnknown(data['shape']!, _shapeMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_shapeMeta);
-    }
-    if (data.containsKey('width_in')) {
-      context.handle(
-        _widthInMeta,
-        widthIn.isAcceptableOrUnknown(data['width_in']!, _widthInMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_widthInMeta);
-    }
-    if (data.containsKey('height_in')) {
-      context.handle(
-        _heightInMeta,
-        heightIn.isAcceptableOrUnknown(data['height_in']!, _heightInMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_heightInMeta);
-    }
-    if (data.containsKey('offset_x_in')) {
-      context.handle(
-        _offsetXInMeta,
-        offsetXIn.isAcceptableOrUnknown(data['offset_x_in']!, _offsetXInMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_offsetXInMeta);
-    }
-    if (data.containsKey('offset_y_in')) {
-      context.handle(
-        _offsetYInMeta,
-        offsetYIn.isAcceptableOrUnknown(data['offset_y_in']!, _offsetYInMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_offsetYInMeta);
-    }
-    if (data.containsKey('color_hex')) {
-      context.handle(
-        _colorHexMeta,
-        colorHex.isAcceptableOrUnknown(data['color_hex']!, _colorHexMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_colorHexMeta);
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  TargetRackChildRow map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return TargetRackChildRow(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      )!,
-      rackId: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}rack_id'],
-      )!,
-      position: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}position'],
-      )!,
-      name: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}name'],
-      )!,
-      shape: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}shape'],
-      )!,
-      widthIn: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}width_in'],
-      )!,
-      heightIn: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}height_in'],
-      )!,
-      offsetXIn: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}offset_x_in'],
-      )!,
-      offsetYIn: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}offset_y_in'],
-      )!,
-      colorHex: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}color_hex'],
-      )!,
-    );
-  }
-
-  @override
-  $TargetRackChildrenTable createAlias(String alias) {
-    return $TargetRackChildrenTable(attachedDatabase, alias);
-  }
-}
-
-class TargetRackChildRow extends DataClass
-    implements Insertable<TargetRackChildRow> {
-  final int id;
-
-  /// FK to the parent [TargetRacks] row.
-  final int rackId;
-
-  /// 0-indexed position within the rack. The repository's `childrenOf`
-  /// query orders by this column, so the renderer / picker get a stable
-  /// order matching the rack's intended engagement sequence.
-  final int position;
-
-  /// Per-child label ("Plate 1 (5 in)", "Popper #3"). Shown in the
-  /// child-picker menu.
-  final String name;
-
-  /// 'circle' | 'square' | 'rectangle' | 'silhouette' | 'irregular' —
-  /// matches the enum used by [Targets.shape] so the same renderer
-  /// helpers handle both single targets and rack children.
-  final String shape;
-  final double widthIn;
-  final double heightIn;
-
-  /// X offset from the rack's geometric center, in inches. Positive =
-  /// right.
-  final double offsetXIn;
-
-  /// Y offset from the rack's geometric center, in inches. Positive =
-  /// up.
-  final double offsetYIn;
-
-  /// CSS-style hex color (e.g. "#ffffff"). Matches the convention used
-  /// by [Targets.colorHex] so the renderer can paint rack children with
-  /// the same code path as standalone targets.
-  final String colorHex;
-  const TargetRackChildRow({
-    required this.id,
-    required this.rackId,
-    required this.position,
-    required this.name,
-    required this.shape,
-    required this.widthIn,
-    required this.heightIn,
-    required this.offsetXIn,
-    required this.offsetYIn,
-    required this.colorHex,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
-    map['rack_id'] = Variable<int>(rackId);
-    map['position'] = Variable<int>(position);
-    map['name'] = Variable<String>(name);
-    map['shape'] = Variable<String>(shape);
-    map['width_in'] = Variable<double>(widthIn);
-    map['height_in'] = Variable<double>(heightIn);
-    map['offset_x_in'] = Variable<double>(offsetXIn);
-    map['offset_y_in'] = Variable<double>(offsetYIn);
-    map['color_hex'] = Variable<String>(colorHex);
-    return map;
-  }
-
-  TargetRackChildrenCompanion toCompanion(bool nullToAbsent) {
-    return TargetRackChildrenCompanion(
-      id: Value(id),
-      rackId: Value(rackId),
-      position: Value(position),
-      name: Value(name),
-      shape: Value(shape),
-      widthIn: Value(widthIn),
-      heightIn: Value(heightIn),
-      offsetXIn: Value(offsetXIn),
-      offsetYIn: Value(offsetYIn),
-      colorHex: Value(colorHex),
-    );
-  }
-
-  factory TargetRackChildRow.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return TargetRackChildRow(
-      id: serializer.fromJson<int>(json['id']),
-      rackId: serializer.fromJson<int>(json['rackId']),
-      position: serializer.fromJson<int>(json['position']),
-      name: serializer.fromJson<String>(json['name']),
-      shape: serializer.fromJson<String>(json['shape']),
-      widthIn: serializer.fromJson<double>(json['widthIn']),
-      heightIn: serializer.fromJson<double>(json['heightIn']),
-      offsetXIn: serializer.fromJson<double>(json['offsetXIn']),
-      offsetYIn: serializer.fromJson<double>(json['offsetYIn']),
-      colorHex: serializer.fromJson<String>(json['colorHex']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
-      'rackId': serializer.toJson<int>(rackId),
-      'position': serializer.toJson<int>(position),
-      'name': serializer.toJson<String>(name),
-      'shape': serializer.toJson<String>(shape),
-      'widthIn': serializer.toJson<double>(widthIn),
-      'heightIn': serializer.toJson<double>(heightIn),
-      'offsetXIn': serializer.toJson<double>(offsetXIn),
-      'offsetYIn': serializer.toJson<double>(offsetYIn),
-      'colorHex': serializer.toJson<String>(colorHex),
-    };
-  }
-
-  TargetRackChildRow copyWith({
-    int? id,
-    int? rackId,
-    int? position,
-    String? name,
-    String? shape,
-    double? widthIn,
-    double? heightIn,
-    double? offsetXIn,
-    double? offsetYIn,
-    String? colorHex,
-  }) => TargetRackChildRow(
-    id: id ?? this.id,
-    rackId: rackId ?? this.rackId,
-    position: position ?? this.position,
-    name: name ?? this.name,
-    shape: shape ?? this.shape,
-    widthIn: widthIn ?? this.widthIn,
-    heightIn: heightIn ?? this.heightIn,
-    offsetXIn: offsetXIn ?? this.offsetXIn,
-    offsetYIn: offsetYIn ?? this.offsetYIn,
-    colorHex: colorHex ?? this.colorHex,
-  );
-  TargetRackChildRow copyWithCompanion(TargetRackChildrenCompanion data) {
-    return TargetRackChildRow(
-      id: data.id.present ? data.id.value : this.id,
-      rackId: data.rackId.present ? data.rackId.value : this.rackId,
-      position: data.position.present ? data.position.value : this.position,
-      name: data.name.present ? data.name.value : this.name,
-      shape: data.shape.present ? data.shape.value : this.shape,
-      widthIn: data.widthIn.present ? data.widthIn.value : this.widthIn,
-      heightIn: data.heightIn.present ? data.heightIn.value : this.heightIn,
-      offsetXIn: data.offsetXIn.present ? data.offsetXIn.value : this.offsetXIn,
-      offsetYIn: data.offsetYIn.present ? data.offsetYIn.value : this.offsetYIn,
-      colorHex: data.colorHex.present ? data.colorHex.value : this.colorHex,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('TargetRackChildRow(')
-          ..write('id: $id, ')
-          ..write('rackId: $rackId, ')
-          ..write('position: $position, ')
-          ..write('name: $name, ')
-          ..write('shape: $shape, ')
-          ..write('widthIn: $widthIn, ')
-          ..write('heightIn: $heightIn, ')
-          ..write('offsetXIn: $offsetXIn, ')
-          ..write('offsetYIn: $offsetYIn, ')
-          ..write('colorHex: $colorHex')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(
-    id,
-    rackId,
-    position,
-    name,
-    shape,
-    widthIn,
-    heightIn,
-    offsetXIn,
-    offsetYIn,
-    colorHex,
-  );
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is TargetRackChildRow &&
-          other.id == this.id &&
-          other.rackId == this.rackId &&
-          other.position == this.position &&
-          other.name == this.name &&
-          other.shape == this.shape &&
-          other.widthIn == this.widthIn &&
-          other.heightIn == this.heightIn &&
-          other.offsetXIn == this.offsetXIn &&
-          other.offsetYIn == this.offsetYIn &&
-          other.colorHex == this.colorHex);
-}
-
-class TargetRackChildrenCompanion extends UpdateCompanion<TargetRackChildRow> {
-  final Value<int> id;
-  final Value<int> rackId;
-  final Value<int> position;
-  final Value<String> name;
-  final Value<String> shape;
-  final Value<double> widthIn;
-  final Value<double> heightIn;
-  final Value<double> offsetXIn;
-  final Value<double> offsetYIn;
-  final Value<String> colorHex;
-  const TargetRackChildrenCompanion({
-    this.id = const Value.absent(),
-    this.rackId = const Value.absent(),
-    this.position = const Value.absent(),
-    this.name = const Value.absent(),
-    this.shape = const Value.absent(),
-    this.widthIn = const Value.absent(),
-    this.heightIn = const Value.absent(),
-    this.offsetXIn = const Value.absent(),
-    this.offsetYIn = const Value.absent(),
-    this.colorHex = const Value.absent(),
-  });
-  TargetRackChildrenCompanion.insert({
-    this.id = const Value.absent(),
-    required int rackId,
-    required int position,
-    required String name,
-    required String shape,
-    required double widthIn,
-    required double heightIn,
-    required double offsetXIn,
-    required double offsetYIn,
-    required String colorHex,
-  }) : rackId = Value(rackId),
-       position = Value(position),
-       name = Value(name),
-       shape = Value(shape),
-       widthIn = Value(widthIn),
-       heightIn = Value(heightIn),
-       offsetXIn = Value(offsetXIn),
-       offsetYIn = Value(offsetYIn),
-       colorHex = Value(colorHex);
-  static Insertable<TargetRackChildRow> custom({
-    Expression<int>? id,
-    Expression<int>? rackId,
-    Expression<int>? position,
-    Expression<String>? name,
-    Expression<String>? shape,
-    Expression<double>? widthIn,
-    Expression<double>? heightIn,
-    Expression<double>? offsetXIn,
-    Expression<double>? offsetYIn,
-    Expression<String>? colorHex,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (rackId != null) 'rack_id': rackId,
-      if (position != null) 'position': position,
-      if (name != null) 'name': name,
-      if (shape != null) 'shape': shape,
-      if (widthIn != null) 'width_in': widthIn,
-      if (heightIn != null) 'height_in': heightIn,
-      if (offsetXIn != null) 'offset_x_in': offsetXIn,
-      if (offsetYIn != null) 'offset_y_in': offsetYIn,
-      if (colorHex != null) 'color_hex': colorHex,
-    });
-  }
-
-  TargetRackChildrenCompanion copyWith({
-    Value<int>? id,
-    Value<int>? rackId,
-    Value<int>? position,
-    Value<String>? name,
-    Value<String>? shape,
-    Value<double>? widthIn,
-    Value<double>? heightIn,
-    Value<double>? offsetXIn,
-    Value<double>? offsetYIn,
-    Value<String>? colorHex,
-  }) {
-    return TargetRackChildrenCompanion(
-      id: id ?? this.id,
-      rackId: rackId ?? this.rackId,
-      position: position ?? this.position,
-      name: name ?? this.name,
-      shape: shape ?? this.shape,
-      widthIn: widthIn ?? this.widthIn,
-      heightIn: heightIn ?? this.heightIn,
-      offsetXIn: offsetXIn ?? this.offsetXIn,
-      offsetYIn: offsetYIn ?? this.offsetYIn,
-      colorHex: colorHex ?? this.colorHex,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<int>(id.value);
-    }
-    if (rackId.present) {
-      map['rack_id'] = Variable<int>(rackId.value);
-    }
-    if (position.present) {
-      map['position'] = Variable<int>(position.value);
-    }
-    if (name.present) {
-      map['name'] = Variable<String>(name.value);
-    }
-    if (shape.present) {
-      map['shape'] = Variable<String>(shape.value);
-    }
-    if (widthIn.present) {
-      map['width_in'] = Variable<double>(widthIn.value);
-    }
-    if (heightIn.present) {
-      map['height_in'] = Variable<double>(heightIn.value);
-    }
-    if (offsetXIn.present) {
-      map['offset_x_in'] = Variable<double>(offsetXIn.value);
-    }
-    if (offsetYIn.present) {
-      map['offset_y_in'] = Variable<double>(offsetYIn.value);
-    }
-    if (colorHex.present) {
-      map['color_hex'] = Variable<String>(colorHex.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('TargetRackChildrenCompanion(')
-          ..write('id: $id, ')
-          ..write('rackId: $rackId, ')
-          ..write('position: $position, ')
-          ..write('name: $name, ')
-          ..write('shape: $shape, ')
-          ..write('widthIn: $widthIn, ')
-          ..write('heightIn: $heightIn, ')
-          ..write('offsetXIn: $offsetXIn, ')
-          ..write('offsetYIn: $offsetYIn, ')
-          ..write('colorHex: $colorHex')
-          ..write(')'))
-        .toString();
-  }
-}
-
 class $ScopeManufacturersTable extends ScopeManufacturers
     with TableInfo<$ScopeManufacturersTable, ScopeManufacturerRow> {
   @override
@@ -37904,8 +37352,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $SightCalibrationsTable(this);
   late final $AtmospherePresetsTable atmospherePresets =
       $AtmospherePresetsTable(this);
-  late final $TargetRackChildrenTable targetRackChildren =
-      $TargetRackChildrenTable(this);
   late final $ScopeManufacturersTable scopeManufacturers =
       $ScopeManufacturersTable(this);
   late final $ScopeModelsTable scopeModels = $ScopeModelsTable(this);
@@ -37964,7 +37410,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     truedBcOverrides,
     sightCalibrations,
     atmospherePresets,
-    targetRackChildren,
     scopeManufacturers,
     scopeModels,
     scopeReticleOptions,
@@ -52975,6 +52420,7 @@ typedef $$TargetRacksTableCreateCompanionBuilder =
       required double totalHeightIn,
       Value<String?> notes,
       Value<DateTime> createdAt,
+      required List<RackSlot> slotsJson,
     });
 typedef $$TargetRacksTableUpdateCompanionBuilder =
     TargetRacksCompanion Function({
@@ -52986,6 +52432,7 @@ typedef $$TargetRacksTableUpdateCompanionBuilder =
       Value<double> totalHeightIn,
       Value<String?> notes,
       Value<DateTime> createdAt,
+      Value<List<RackSlot>> slotsJson,
     });
 
 final class $$TargetRacksTableReferences
@@ -53009,30 +52456,6 @@ final class $$TargetRacksTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _rangeDaySessionsRefsTable($_db),
-    );
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-
-  static MultiTypedResultKey<$TargetRackChildrenTable, List<TargetRackChildRow>>
-  _targetRackChildrenRefsTable(_$AppDatabase db) =>
-      MultiTypedResultKey.fromTable(
-        db.targetRackChildren,
-        aliasName: $_aliasNameGenerator(
-          db.targetRacks.id,
-          db.targetRackChildren.rackId,
-        ),
-      );
-
-  $$TargetRackChildrenTableProcessedTableManager get targetRackChildrenRefs {
-    final manager = $$TargetRackChildrenTableTableManager(
-      $_db,
-      $_db.targetRackChildren,
-    ).filter((f) => f.rackId.id.sqlEquals($_itemColumn<int>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(
-      _targetRackChildrenRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -53089,6 +52512,12 @@ class $$TargetRacksTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnWithTypeConverterFilters<List<RackSlot>, List<RackSlot>, String>
+  get slotsJson => $composableBuilder(
+    column: $table.slotsJson,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
   Expression<bool> rangeDaySessionsRefs(
     Expression<bool> Function($$RangeDaySessionsTableFilterComposer f) f,
   ) {
@@ -53105,31 +52534,6 @@ class $$TargetRacksTableFilterComposer
           }) => $$RangeDaySessionsTableFilterComposer(
             $db: $db,
             $table: $db.rangeDaySessions,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-
-  Expression<bool> targetRackChildrenRefs(
-    Expression<bool> Function($$TargetRackChildrenTableFilterComposer f) f,
-  ) {
-    final $$TargetRackChildrenTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.targetRackChildren,
-      getReferencedColumn: (t) => t.rackId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$TargetRackChildrenTableFilterComposer(
-            $db: $db,
-            $table: $db.targetRackChildren,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -53188,6 +52592,11 @@ class $$TargetRacksTableOrderingComposer
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get slotsJson => $composableBuilder(
+    column: $table.slotsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$TargetRacksTableAnnotationComposer
@@ -53229,6 +52638,9 @@ class $$TargetRacksTableAnnotationComposer
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
+  GeneratedColumnWithTypeConverter<List<RackSlot>, String> get slotsJson =>
+      $composableBuilder(column: $table.slotsJson, builder: (column) => column);
+
   Expression<T> rangeDaySessionsRefs<T extends Object>(
     Expression<T> Function($$RangeDaySessionsTableAnnotationComposer a) f,
   ) {
@@ -53253,32 +52665,6 @@ class $$TargetRacksTableAnnotationComposer
     );
     return f(composer);
   }
-
-  Expression<T> targetRackChildrenRefs<T extends Object>(
-    Expression<T> Function($$TargetRackChildrenTableAnnotationComposer a) f,
-  ) {
-    final $$TargetRackChildrenTableAnnotationComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.id,
-          referencedTable: $db.targetRackChildren,
-          getReferencedColumn: (t) => t.rackId,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$TargetRackChildrenTableAnnotationComposer(
-                $db: $db,
-                $table: $db.targetRackChildren,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return f(composer);
-  }
 }
 
 class $$TargetRacksTableTableManager
@@ -53294,10 +52680,7 @@ class $$TargetRacksTableTableManager
           $$TargetRacksTableUpdateCompanionBuilder,
           (TargetRackRow, $$TargetRacksTableReferences),
           TargetRackRow,
-          PrefetchHooks Function({
-            bool rangeDaySessionsRefs,
-            bool targetRackChildrenRefs,
-          })
+          PrefetchHooks Function({bool rangeDaySessionsRefs})
         > {
   $$TargetRacksTableTableManager(_$AppDatabase db, $TargetRacksTable table)
     : super(
@@ -53320,6 +52703,7 @@ class $$TargetRacksTableTableManager
                 Value<double> totalHeightIn = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<List<RackSlot>> slotsJson = const Value.absent(),
               }) => TargetRacksCompanion(
                 id: id,
                 name: name,
@@ -53329,6 +52713,7 @@ class $$TargetRacksTableTableManager
                 totalHeightIn: totalHeightIn,
                 notes: notes,
                 createdAt: createdAt,
+                slotsJson: slotsJson,
               ),
           createCompanionCallback:
               ({
@@ -53340,6 +52725,7 @@ class $$TargetRacksTableTableManager
                 required double totalHeightIn,
                 Value<String?> notes = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                required List<RackSlot> slotsJson,
               }) => TargetRacksCompanion.insert(
                 id: id,
                 name: name,
@@ -53349,6 +52735,7 @@ class $$TargetRacksTableTableManager
                 totalHeightIn: totalHeightIn,
                 notes: notes,
                 createdAt: createdAt,
+                slotsJson: slotsJson,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -53358,63 +52745,38 @@ class $$TargetRacksTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback:
-              ({rangeDaySessionsRefs = false, targetRackChildrenRefs = false}) {
-                return PrefetchHooks(
-                  db: db,
-                  explicitlyWatchedTables: [
-                    if (rangeDaySessionsRefs) db.rangeDaySessions,
-                    if (targetRackChildrenRefs) db.targetRackChildren,
-                  ],
-                  addJoins: null,
-                  getPrefetchedDataCallback: (items) async {
-                    return [
-                      if (rangeDaySessionsRefs)
-                        await $_getPrefetchedData<
-                          TargetRackRow,
-                          $TargetRacksTable,
-                          RangeDaySessionRow
-                        >(
-                          currentTable: table,
-                          referencedTable: $$TargetRacksTableReferences
-                              ._rangeDaySessionsRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$TargetRacksTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).rangeDaySessionsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.rackId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
-                      if (targetRackChildrenRefs)
-                        await $_getPrefetchedData<
-                          TargetRackRow,
-                          $TargetRacksTable,
-                          TargetRackChildRow
-                        >(
-                          currentTable: table,
-                          referencedTable: $$TargetRacksTableReferences
-                              ._targetRackChildrenRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$TargetRacksTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).targetRackChildrenRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.rackId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
-                    ];
-                  },
-                );
+          prefetchHooksCallback: ({rangeDaySessionsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (rangeDaySessionsRefs) db.rangeDaySessions,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (rangeDaySessionsRefs)
+                    await $_getPrefetchedData<
+                      TargetRackRow,
+                      $TargetRacksTable,
+                      RangeDaySessionRow
+                    >(
+                      currentTable: table,
+                      referencedTable: $$TargetRacksTableReferences
+                          ._rangeDaySessionsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$TargetRacksTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).rangeDaySessionsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.rackId == item.id),
+                      typedResults: items,
+                    ),
+                ];
               },
+            );
+          },
         ),
       );
 }
@@ -53431,10 +52793,7 @@ typedef $$TargetRacksTableProcessedTableManager =
       $$TargetRacksTableUpdateCompanionBuilder,
       (TargetRackRow, $$TargetRacksTableReferences),
       TargetRackRow,
-      PrefetchHooks Function({
-        bool rangeDaySessionsRefs,
-        bool targetRackChildrenRefs,
-      })
+      PrefetchHooks Function({bool rangeDaySessionsRefs})
     >;
 typedef $$RangeDaySessionsTableCreateCompanionBuilder =
     RangeDaySessionsCompanion Function({
@@ -58120,430 +57479,6 @@ typedef $$AtmospherePresetsTableProcessedTableManager =
       AtmospherePresetRow,
       PrefetchHooks Function()
     >;
-typedef $$TargetRackChildrenTableCreateCompanionBuilder =
-    TargetRackChildrenCompanion Function({
-      Value<int> id,
-      required int rackId,
-      required int position,
-      required String name,
-      required String shape,
-      required double widthIn,
-      required double heightIn,
-      required double offsetXIn,
-      required double offsetYIn,
-      required String colorHex,
-    });
-typedef $$TargetRackChildrenTableUpdateCompanionBuilder =
-    TargetRackChildrenCompanion Function({
-      Value<int> id,
-      Value<int> rackId,
-      Value<int> position,
-      Value<String> name,
-      Value<String> shape,
-      Value<double> widthIn,
-      Value<double> heightIn,
-      Value<double> offsetXIn,
-      Value<double> offsetYIn,
-      Value<String> colorHex,
-    });
-
-final class $$TargetRackChildrenTableReferences
-    extends
-        BaseReferences<
-          _$AppDatabase,
-          $TargetRackChildrenTable,
-          TargetRackChildRow
-        > {
-  $$TargetRackChildrenTableReferences(
-    super.$_db,
-    super.$_table,
-    super.$_typedResult,
-  );
-
-  static $TargetRacksTable _rackIdTable(_$AppDatabase db) =>
-      db.targetRacks.createAlias(
-        $_aliasNameGenerator(db.targetRackChildren.rackId, db.targetRacks.id),
-      );
-
-  $$TargetRacksTableProcessedTableManager get rackId {
-    final $_column = $_itemColumn<int>('rack_id')!;
-
-    final manager = $$TargetRacksTableTableManager(
-      $_db,
-      $_db.targetRacks,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_rackIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-}
-
-class $$TargetRackChildrenTableFilterComposer
-    extends Composer<_$AppDatabase, $TargetRackChildrenTable> {
-  $$TargetRackChildrenTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get position => $composableBuilder(
-    column: $table.position,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get name => $composableBuilder(
-    column: $table.name,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get shape => $composableBuilder(
-    column: $table.shape,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<double> get widthIn => $composableBuilder(
-    column: $table.widthIn,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<double> get heightIn => $composableBuilder(
-    column: $table.heightIn,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<double> get offsetXIn => $composableBuilder(
-    column: $table.offsetXIn,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<double> get offsetYIn => $composableBuilder(
-    column: $table.offsetYIn,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get colorHex => $composableBuilder(
-    column: $table.colorHex,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  $$TargetRacksTableFilterComposer get rackId {
-    final $$TargetRacksTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.rackId,
-      referencedTable: $db.targetRacks,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$TargetRacksTableFilterComposer(
-            $db: $db,
-            $table: $db.targetRacks,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$TargetRackChildrenTableOrderingComposer
-    extends Composer<_$AppDatabase, $TargetRackChildrenTable> {
-  $$TargetRackChildrenTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get position => $composableBuilder(
-    column: $table.position,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get name => $composableBuilder(
-    column: $table.name,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get shape => $composableBuilder(
-    column: $table.shape,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<double> get widthIn => $composableBuilder(
-    column: $table.widthIn,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<double> get heightIn => $composableBuilder(
-    column: $table.heightIn,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<double> get offsetXIn => $composableBuilder(
-    column: $table.offsetXIn,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<double> get offsetYIn => $composableBuilder(
-    column: $table.offsetYIn,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get colorHex => $composableBuilder(
-    column: $table.colorHex,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  $$TargetRacksTableOrderingComposer get rackId {
-    final $$TargetRacksTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.rackId,
-      referencedTable: $db.targetRacks,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$TargetRacksTableOrderingComposer(
-            $db: $db,
-            $table: $db.targetRacks,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$TargetRackChildrenTableAnnotationComposer
-    extends Composer<_$AppDatabase, $TargetRackChildrenTable> {
-  $$TargetRackChildrenTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<int> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<int> get position =>
-      $composableBuilder(column: $table.position, builder: (column) => column);
-
-  GeneratedColumn<String> get name =>
-      $composableBuilder(column: $table.name, builder: (column) => column);
-
-  GeneratedColumn<String> get shape =>
-      $composableBuilder(column: $table.shape, builder: (column) => column);
-
-  GeneratedColumn<double> get widthIn =>
-      $composableBuilder(column: $table.widthIn, builder: (column) => column);
-
-  GeneratedColumn<double> get heightIn =>
-      $composableBuilder(column: $table.heightIn, builder: (column) => column);
-
-  GeneratedColumn<double> get offsetXIn =>
-      $composableBuilder(column: $table.offsetXIn, builder: (column) => column);
-
-  GeneratedColumn<double> get offsetYIn =>
-      $composableBuilder(column: $table.offsetYIn, builder: (column) => column);
-
-  GeneratedColumn<String> get colorHex =>
-      $composableBuilder(column: $table.colorHex, builder: (column) => column);
-
-  $$TargetRacksTableAnnotationComposer get rackId {
-    final $$TargetRacksTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.rackId,
-      referencedTable: $db.targetRacks,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$TargetRacksTableAnnotationComposer(
-            $db: $db,
-            $table: $db.targetRacks,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$TargetRackChildrenTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $TargetRackChildrenTable,
-          TargetRackChildRow,
-          $$TargetRackChildrenTableFilterComposer,
-          $$TargetRackChildrenTableOrderingComposer,
-          $$TargetRackChildrenTableAnnotationComposer,
-          $$TargetRackChildrenTableCreateCompanionBuilder,
-          $$TargetRackChildrenTableUpdateCompanionBuilder,
-          (TargetRackChildRow, $$TargetRackChildrenTableReferences),
-          TargetRackChildRow,
-          PrefetchHooks Function({bool rackId})
-        > {
-  $$TargetRackChildrenTableTableManager(
-    _$AppDatabase db,
-    $TargetRackChildrenTable table,
-  ) : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$TargetRackChildrenTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$TargetRackChildrenTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$TargetRackChildrenTableAnnotationComposer(
-                $db: db,
-                $table: table,
-              ),
-          updateCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                Value<int> rackId = const Value.absent(),
-                Value<int> position = const Value.absent(),
-                Value<String> name = const Value.absent(),
-                Value<String> shape = const Value.absent(),
-                Value<double> widthIn = const Value.absent(),
-                Value<double> heightIn = const Value.absent(),
-                Value<double> offsetXIn = const Value.absent(),
-                Value<double> offsetYIn = const Value.absent(),
-                Value<String> colorHex = const Value.absent(),
-              }) => TargetRackChildrenCompanion(
-                id: id,
-                rackId: rackId,
-                position: position,
-                name: name,
-                shape: shape,
-                widthIn: widthIn,
-                heightIn: heightIn,
-                offsetXIn: offsetXIn,
-                offsetYIn: offsetYIn,
-                colorHex: colorHex,
-              ),
-          createCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                required int rackId,
-                required int position,
-                required String name,
-                required String shape,
-                required double widthIn,
-                required double heightIn,
-                required double offsetXIn,
-                required double offsetYIn,
-                required String colorHex,
-              }) => TargetRackChildrenCompanion.insert(
-                id: id,
-                rackId: rackId,
-                position: position,
-                name: name,
-                shape: shape,
-                widthIn: widthIn,
-                heightIn: heightIn,
-                offsetXIn: offsetXIn,
-                offsetYIn: offsetYIn,
-                colorHex: colorHex,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map(
-                (e) => (
-                  e.readTable(table),
-                  $$TargetRackChildrenTableReferences(db, table, e),
-                ),
-              )
-              .toList(),
-          prefetchHooksCallback: ({rackId = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (rackId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.rackId,
-                                referencedTable:
-                                    $$TargetRackChildrenTableReferences
-                                        ._rackIdTable(db),
-                                referencedColumn:
-                                    $$TargetRackChildrenTableReferences
-                                        ._rackIdTable(db)
-                                        .id,
-                              )
-                              as T;
-                    }
-
-                    return state;
-                  },
-              getPrefetchedDataCallback: (items) async {
-                return [];
-              },
-            );
-          },
-        ),
-      );
-}
-
-typedef $$TargetRackChildrenTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $TargetRackChildrenTable,
-      TargetRackChildRow,
-      $$TargetRackChildrenTableFilterComposer,
-      $$TargetRackChildrenTableOrderingComposer,
-      $$TargetRackChildrenTableAnnotationComposer,
-      $$TargetRackChildrenTableCreateCompanionBuilder,
-      $$TargetRackChildrenTableUpdateCompanionBuilder,
-      (TargetRackChildRow, $$TargetRackChildrenTableReferences),
-      TargetRackChildRow,
-      PrefetchHooks Function({bool rackId})
-    >;
 typedef $$ScopeManufacturersTableCreateCompanionBuilder =
     ScopeManufacturersCompanion Function({
       Value<int> id,
@@ -62580,8 +61515,6 @@ class $AppDatabaseManager {
       $$SightCalibrationsTableTableManager(_db, _db.sightCalibrations);
   $$AtmospherePresetsTableTableManager get atmospherePresets =>
       $$AtmospherePresetsTableTableManager(_db, _db.atmospherePresets);
-  $$TargetRackChildrenTableTableManager get targetRackChildren =>
-      $$TargetRackChildrenTableTableManager(_db, _db.targetRackChildren);
   $$ScopeManufacturersTableTableManager get scopeManufacturers =>
       $$ScopeManufacturersTableTableManager(_db, _db.scopeManufacturers);
   $$ScopeModelsTableTableManager get scopeModels =>
