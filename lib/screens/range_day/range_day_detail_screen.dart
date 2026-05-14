@@ -5624,17 +5624,18 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                   _selectedRackChildren.length - 1,
                 )],
               ),
-              // Phase 9.8.A — color swatch row for rack targets,
-              // mirroring the single-target swatch at line ~5298.
-              // Reuses `_selectedTargetColorHex` so the user's color
-              // pick persists across Single/Rack toggles. The painter
-              // applies the override uniformly across every rack slot
-              // (per-slot override is out of scope for v1; operator-
-              // confirmed in Phase 9.8 scoping). When no rack is
-              // selected the swatch row stays hidden (it's inside
-              // this `else if (selectedRack != null && ...)` block).
-              _targetColorSwatchRow(),
             ],
+            // Phase 9.8.A.1 — color swatch row for rack targets.
+            // Hoisted OUT of the `selectedRack != null` conditional
+            // so the swatch is visible whenever rack mode is active,
+            // matching the single-target picker's unconditional
+            // swatch row at line ~5298. The user can pick a color
+            // before picking a rack; the choice applies the moment a
+            // rack is picked. Reuses `_selectedTargetColorHex` so the
+            // pick persists across Single/Rack toggles. Per-rack
+            // override applies uniformly across every slot (per-slot
+            // override out of scope for v1).
+            _targetColorSwatchRow(),
           ],
         );
       },
