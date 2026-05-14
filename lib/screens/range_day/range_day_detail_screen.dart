@@ -4816,9 +4816,12 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     // they don't think "I'm shooting paper today." The chip values
     // map 1:1 to the catalog's `shape` column.
     // Phase 9.5 — chip values are now `category` enum values.
-    // Popper + Star chips dropped (rolled into the `special` bucket;
-    // 6th 'Special' chip deferred per spec until the bucket grows
-    // past 3-4 rows).
+    // Popper + Star chips dropped (rolled into the `special` bucket).
+    // Phase 9.6 Group A — `Special` chip added so the 3 procedurally-
+    // drawn apparatus rows (Pepper Popper, Texas Star, etc.) are
+    // reachable without searching the unfiltered view. Empty chips
+    // (e.g. if all special rows were ever removed) stay visible and
+    // surface a "No matches" empty state when selected.
     const shapeChips = <(String value, String label)>[
       ('all', 'All'),
       ('circle', 'Circle'),
@@ -4826,6 +4829,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       ('rectangle', 'Rectangle'),
       ('ipsc', 'IPSC'),
       ('animal', 'Animal'),
+      ('special', 'Special'),
     ];
     final theme = Theme.of(context);
     return Column(
@@ -4965,9 +4969,9 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     // animals, IPSC, and "special" (poppers + Texas Star) each have
     // their own category. The 'silhouette' chip value is retired
     // (replaced by 'ipsc'); the 'popper' / 'star' chip values
-    // collapse into the 'special' bucket (no dedicated chip — spec
-    // §"Out of scope" defers a 'Special' chip until the bucket
-    // grows past 3-4 rows).
+    // collapse into the 'special' bucket. Phase 9.6 Group A added
+    // the dedicated 'Special' chip — same `category == value`
+    // predicate as every other chip, no special-case dispatch.
     var filtered = switch (_targetShapeFilter) {
       'all' => all,
       _ => all
