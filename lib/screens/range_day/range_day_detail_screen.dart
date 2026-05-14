@@ -4822,6 +4822,15 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
             },
           ),
         ),
+        // Phase 9.8.A.2 — shared color swatch row directly under
+        // the Single/Rack toggle. Lives at the parent level so it
+        // renders ONCE regardless of which picker body is active,
+        // and stays in the same on-screen position when the user
+        // toggles between Single and Rack mode. `_selectedTargetColorHex`
+        // is the single source of truth; `_paintSingle` applies it to
+        // the single target's fill and `_paintRack` applies it
+        // uniformly across every slot.
+        _targetColorSwatchRow(),
         const SizedBox(height: 8),
         if (_targetPickerMode == _TargetPickerMode.single)
           _singleTargetPickerBody()
@@ -5290,12 +5299,9 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         // row) because targets ship as seeded reference data.
         if (selected != null && stillInCatalog)
           _selectedTargetPreview(selected, favIds),
-        // Color swatch row — five circular tappable swatches.
-        // Tapping one writes `_selectedTargetColorHex`, which
-        // overrides the target's natural color in the
-        // TargetPlot painters via `colorHexOverride`. Null
-        // means "use the target's natural colorHex".
-        _targetColorSwatchRow(),
+        // Phase 9.8.A.2 — color swatch row moved up to the parent
+        // (shared between Single + Rack modes; renders directly
+        // under the Single/Rack toggle). Removed from this body.
       ],
     );
   }
@@ -5625,17 +5631,9 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                 )],
               ),
             ],
-            // Phase 9.8.A.1 — color swatch row for rack targets.
-            // Hoisted OUT of the `selectedRack != null` conditional
-            // so the swatch is visible whenever rack mode is active,
-            // matching the single-target picker's unconditional
-            // swatch row at line ~5298. The user can pick a color
-            // before picking a rack; the choice applies the moment a
-            // rack is picked. Reuses `_selectedTargetColorHex` so the
-            // pick persists across Single/Rack toggles. Per-rack
-            // override applies uniformly across every slot (per-slot
-            // override out of scope for v1).
-            _targetColorSwatchRow(),
+            // Phase 9.8.A.2 — color swatch row moved up to the parent
+            // (shared between Single + Rack modes; renders directly
+            // under the Single/Rack toggle). Removed from this body.
           ],
         );
       },
