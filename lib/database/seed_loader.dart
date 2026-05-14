@@ -336,7 +336,34 @@ class SeedLoader {
         if (!firstRun) {
           await db.delete(db.targets).go();
         }
-        await _seedTargets();
+        // Phase 9.8.B.2 — stale docs-mirror self-heal. If the seed
+        // validation throws (typically because the docs-mirror file
+        // is from an older schema, e.g. pre-Phase-9.5 had a
+        // material-based `category` instead of the v9.5 enum),
+        // delete the stale mirror and retry from the bundled asset.
+        // The bundled asset is always in sync with the running app
+        // code, so the retry is the canonical recovery. SeedUpdater
+        // will re-download a fresh mirror from Firebase Storage on
+        // a future cold start IF the remote version is strictly
+        // greater than the bundled version.
+        //
+        // The second attempt uses `forceBundled: true` so even if
+        // the deletion failed for OS reasons (locked file, etc.),
+        // the read still skips the mirror. A second failure rethrows
+        // — that means the BUNDLED asset itself is malformed, which
+        // IS a genuine crash-on-launch (engineering bug, not stale
+        // data).
+        try {
+          await _seedTargets();
+        } catch (_) {
+          await _invalidateStaleMirror('targets.json');
+          // If the cleared row partial-batch landed before the throw,
+          // wipe again so the retry inserts a clean set.
+          if (!firstRun) {
+            await db.delete(db.targets).go();
+          }
+          await _seedTargets(forceBundled: true);
+        }
       }
       if (reticlesReseed) {
         // Reticles do not share `Manufacturers` rows — `Reticles.manufacturerId`
@@ -470,27 +497,87 @@ class SeedLoader {
   /// copy in `<docs>/seed_data/<filename>` over the bundled asset. Falls
   /// back to the bundled copy whenever the local file is missing or
   /// unreadable so we always have *something* to seed from.
-  Future<String> _readSeedString(String filename) async {
-    try {
-      final docsDir = await getApplicationDocumentsDirectory();
-      final localFile = File(p.join(docsDir.path, 'seed_data', filename));
-      if (await localFile.exists()) {
-        return await localFile.readAsString();
+  ///
+  /// When [forceBundled] is true (set by [_invalidateStaleMirrorAndRetry]
+  /// after a validation failure), the docs-mirror preference is skipped
+  /// entirely. Used by the stale-mirror self-heal path: if a `_seedX`
+  /// call validates the docs-mirror data and finds it unreadable
+  /// (Phase 9.8.B.2 — schema migrations like Phase 9.5 Group A's
+  /// category-driven taxonomy can render older docs-mirror files
+  /// invalid), the loader deletes the stale mirror and re-runs the
+  /// seed step with `forceBundled: true` so the BUNDLED asset (which
+  /// is always in sync with the running app code) wins.
+  Future<String> _readSeedString(
+    String filename, {
+    bool forceBundled = false,
+  }) async {
+    if (!forceBundled) {
+      try {
+        final docsDir = await getApplicationDocumentsDirectory();
+        final localFile =
+            File(p.join(docsDir.path, 'seed_data', filename));
+        if (await localFile.exists()) {
+          return await localFile.readAsString();
+        }
+      } catch (_) {
+        // If the documents directory is somehow unavailable, fall through
+        // to the bundled asset rather than crashing on launch.
       }
-    } catch (_) {
-      // If the documents directory is somehow unavailable, fall through
-      // to the bundled asset rather than crashing on launch.
     }
     return rootBundle.loadString('assets/seed_data/$filename');
   }
 
-  Future<List<dynamic>> _readJsonList(String filename) async {
-    final raw = await _readSeedString(filename);
+  /// Phase 9.8.B.2 — stale docs-mirror self-heal. Deletes the
+  /// docs-mirror copy of [filename] (if present) so subsequent reads
+  /// fall through to the bundled asset. Called from the
+  /// validation-failure recovery path in `_seedX` methods.
+  ///
+  /// The mirror could be stale for several reasons:
+  ///   * App version was upgraded with new bundled seed data, and the
+  ///     mirror (last downloaded from Firebase Storage) is from an
+  ///     older app version with an older schema. The current canonical
+  ///     example: a pre-Phase-9.5 mirror has `shape: "circle"` and a
+  ///     material `category: "paper" / "steel" / "target"`; the
+  ///     post-Phase-9.5 loader expects `category` to be one of the
+  ///     v9.5 enum values.
+  ///   * Firebase Storage was rolled back to an older payload.
+  ///   * The mirror was hand-edited and corrupted.
+  ///
+  /// In all cases the bundled asset is the source of truth at app
+  /// version N, so deleting the mirror is the correct recovery.
+  /// SeedUpdater on next cold start will re-download the mirror from
+  /// Firebase IF Firebase has a newer version than the bundled asset
+  /// (the existing strictly-greater version check in
+  /// `seed_updater.dart` does the right thing).
+  Future<void> _invalidateStaleMirror(String filename) async {
+    try {
+      final docsDir = await getApplicationDocumentsDirectory();
+      final localFile =
+          File(p.join(docsDir.path, 'seed_data', filename));
+      if (await localFile.exists()) {
+        await localFile.delete();
+      }
+    } catch (_) {
+      // Best-effort. If we can't delete the mirror, the next read
+      // will still try it and fail again — but the operator will
+      // at least see the same loud error twice (instead of silently
+      // limping along with stale data).
+    }
+  }
+
+  Future<List<dynamic>> _readJsonList(
+    String filename, {
+    bool forceBundled = false,
+  }) async {
+    final raw = await _readSeedString(filename, forceBundled: forceBundled);
     return json.decode(raw) as List<dynamic>;
   }
 
-  Future<Map<String, dynamic>> _readJsonObject(String filename) async {
-    final raw = await _readSeedString(filename);
+  Future<Map<String, dynamic>> _readJsonObject(
+    String filename, {
+    bool forceBundled = false,
+  }) async {
+    final raw = await _readSeedString(filename, forceBundled: forceBundled);
     return json.decode(raw) as Map<String, dynamic>;
   }
 
@@ -813,8 +900,9 @@ class SeedLoader {
   /// add custom targets via the UI today), so deleting and re-inserting
   /// is the simplest path. The picker's stale-id guard handles any
   /// `RangeDaySessions.targetId` that pointed at an AR500/AR550 row.
-  Future<void> _seedTargets() async {
-    final data = await _readJsonList('targets.json');
+  Future<void> _seedTargets({bool forceBundled = false}) async {
+    final data = await _readJsonList('targets.json',
+        forceBundled: forceBundled);
     final batch = <TargetsCompanion>[];
     for (final entry in data) {
       final m = entry as Map<String, dynamic>;
