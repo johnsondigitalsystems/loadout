@@ -320,5 +320,79 @@ void main() {
         throwsStateError,
       );
     });
+
+    // ── Phase 9.5 Group B — canonical mirror wrapper applied ────────
+    test(
+        'Phase 9.5 — <g data-loadout-mirror="true"> wrapper '
+        'horizontally mirrors the combined Path', () {
+      // A SMALL dark rect at (10,40)-(30,60) on a 100×100 viewBox.
+      // After horizontal mirror around the viewBox center (50), the
+      // rect should land at (70,40)-(90,60). The wrapper has the
+      // canonical `translate(W 0) scale(-1 1)` form.
+      const svg = '''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<g data-loadout-mirror="true" transform="translate(100 0) scale(-1 1)">
+  <path d="M 10 40 L 30 40 L 30 60 L 10 60 Z" fill="#000000"/>
+</g>
+</svg>
+''';
+      final result =
+          AnimalSilhouettes.extractAndCombinePaths(svg, 'mirror.svg');
+      final bounds = result.getBounds();
+      expect(bounds.left, closeTo(70, 0.5),
+          reason: 'Mirror should flip x: 10 → 100-10 = 90? No, left edge '
+              'of the source rect (x=10) maps to x=100-10=90, but rect '
+              'right edge (x=30) maps to x=100-30=70, so the new left '
+              'edge is 70 and right edge is 90.');
+      expect(bounds.right, closeTo(90, 0.5));
+      expect(bounds.top, closeTo(40, 0.5),
+          reason: 'Mirror preserves y');
+      expect(bounds.bottom, closeTo(60, 0.5));
+    });
+
+    test(
+        'Phase 9.5 — mirror wrapper absent: path returned unchanged',
+        () {
+      // Same source SVG WITHOUT the mirror group wrapper. The path
+      // should retain its original bounds (10..30) — verifies the
+      // mirror logic is a no-op when the wrapper is absent.
+      const svg = '''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <path d="M 10 40 L 30 40 L 30 60 L 10 60 Z" fill="#000000"/>
+</svg>
+''';
+      final result =
+          AnimalSilhouettes.extractAndCombinePaths(svg, 'no-mirror.svg');
+      final bounds = result.getBounds();
+      expect(bounds.left, closeTo(10, 0.5));
+      expect(bounds.right, closeTo(30, 0.5));
+    });
+
+    test(
+        'Phase 9.5 — non-canonical transform on mirror group is '
+        'rejected (path renders un-flipped)',
+        () {
+      // Wrapper has data-loadout-mirror="true" but the transform
+      // isn't the canonical `translate(W 0) scale(-1 1)` form. The
+      // parser should treat this as "not a recognised mirror
+      // pattern" and skip the transform — the rect stays at its
+      // source coordinates rather than getting an arbitrary
+      // rotation applied.
+      const svg = '''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<g data-loadout-mirror="true" transform="rotate(45)">
+  <path d="M 10 40 L 30 40 L 30 60 L 10 60 Z" fill="#000000"/>
+</g>
+</svg>
+''';
+      final result = AnimalSilhouettes.extractAndCombinePaths(
+          svg, 'bad-mirror.svg');
+      final bounds = result.getBounds();
+      // Bounds match the source rect — no transform applied.
+      expect(bounds.left, closeTo(10, 0.5));
+      expect(bounds.right, closeTo(30, 0.5));
+      expect(bounds.top, closeTo(40, 0.5));
+      expect(bounds.bottom, closeTo(60, 0.5));
+    });
   });
 }

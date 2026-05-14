@@ -216,6 +216,18 @@ class AnimalSilhouettes {
       throw StateError('No <path d="..."/> found in $assetPath');
     }
 
+    // Phase 9.5 Group B — canonical mirror wrapper. SVGs that need to be
+    // horizontally flipped to face LEFT canonically wrap their paths in
+    // `<g data-loadout-mirror="true" transform="translate(W 0) scale(-1 1)">`.
+    // The parser ignores `<g>` for path extraction, so we extract the
+    // mirror matrix once here and apply it to whatever Path each pattern
+    // ends up returning. No-op when the wrapper is absent (existing
+    // SVGs that already face LEFT, plus the test fixtures, all stay
+    // untouched).
+    final mirror = _extractMirrorTransform(svgContent);
+    Path applyMirror(Path p) =>
+        mirror == null ? p : p.transform(mirror.storage);
+
     // Phase 9 Group C.3 — Pattern E filter. Drop stroke-only outline
     // paths before any dispatch. These come from SVGs authored with
     // a `fill="none" stroke="#..."` outline path alongside a filled
@@ -258,7 +270,7 @@ class AnimalSilhouettes {
           for (final s in innerSubpaths) {
             result.addPath(s.path, Offset.zero);
           }
-          return result;
+          return applyMirror(result);
         }
       }
 
@@ -267,11 +279,11 @@ class AnimalSilhouettes {
       // non-zero winding rule converts the hole into the visible
       // silhouette.
       final canvasRect = Path()..addRect(viewBox);
-      return Path.combine(
+      return applyMirror(Path.combine(
         PathOperation.difference,
         canvasRect,
         first.path,
-      );
+      ));
     }
 
     // 2. Standard SVG (Pattern A + Pattern D). Filter white-fill
@@ -296,10 +308,61 @@ class AnimalSilhouettes {
       for (final p in paths) {
         fallback.addPath(p.path, Offset.zero);
       }
-      return fallback;
+      return applyMirror(fallback);
     }
 
-    return combined;
+    return applyMirror(combined);
+  }
+
+  /// Phase 9.5 Group B — extract the canonical horizontal-mirror
+  /// transform from a `<g data-loadout-mirror="true" transform="...">`
+  /// wrapper if present. Returns `null` when the wrapper is absent
+  /// (no-op for the 8 already-left-facing animals and every
+  /// non-animal SVG).
+  ///
+  /// Currently the only transform we honor is the canonical form
+  ///   `translate(W 0) scale(-1 1)`
+  /// where W matches the viewBox width. Any other transform pattern
+  /// returns `null` (the SVG renders un-flipped). The strictness is
+  /// deliberate — we want the mirror wrapper to be a recognised
+  /// LoadOut convention, not a general-purpose SVG transform
+  /// implementation. Future canonical transforms can be added here
+  /// as named patterns.
+  ///
+  /// The returned `Matrix4` is suitable for `Path.transform(matrix
+  /// .storage)` — flips x while preserving y.
+  static Matrix4? _extractMirrorTransform(String svgContent) {
+    final groupRe = RegExp(
+      r'<g\b[^>]*\bdata-loadout-mirror\s*=\s*"true"[^>]*\btransform\s*=\s*"([^"]+)"',
+      multiLine: true,
+      dotAll: true,
+    );
+    final m = groupRe.firstMatch(svgContent);
+    if (m == null) return null;
+    final transform = m.group(1)!.trim();
+
+    // Match the canonical form. Accept any positive numeric W (matches
+    // the viewBox width). The translate / scale args allow either a
+    // space or comma separator and tolerate trailing whitespace.
+    final canonicalRe = RegExp(
+      r'^translate\(\s*(\d+(?:\.\d+)?)\s*[ ,]\s*0\s*\)\s+scale\(\s*-1\s*[ ,]\s*1\s*\)\s*$',
+    );
+    final cm = canonicalRe.firstMatch(transform);
+    if (cm == null) return null;
+    final w = double.tryParse(cm.group(1)!);
+    if (w == null) return null;
+    // Build: x' = W - x, y' = y. As a 4x4 matrix this is
+    //   [-1  0  0  W]
+    //   [ 0  1  0  0]
+    //   [ 0  0  1  0]
+    //   [ 0  0  0  1]
+    // Matrix4 in package:vector_math is column-major; the cleaner
+    // composition is the same one the SVG transform encodes:
+    // translate(W, 0) THEN scale(-1, 1) (matrix multiplication right-
+    // to-left applies scale first, then translate).
+    return Matrix4.identity()
+      ..translate(w, 0.0)
+      ..scale(-1.0, 1.0);
   }
 
   /// Parses every `<path>` block in [svgContent] into a `_ParsedSvgPath`
