@@ -592,29 +592,31 @@ class TargetPlot extends StatelessWidget {
                       // subsequent phases for the single-target path;
                       // the legacy painter still renders them for racks
                       // until the rack rewrite lands.
-                      // Phase 9.7 Group B — singles now go through the
-                      // sealed-type SceneInput API. Racks still hit the
-                      // legacy `_RealisticTargetPainter` until Group C
-                      // ships the unified rack-rendering branch.
-                      painter: layout.isRack
-                          ? _RealisticTargetPainter(
-                              target: target,
-                              shots: shots,
-                              aimPointX: ax,
-                              aimPointY: ay,
-                              layout: layout,
-                              primary: theme.colorScheme.primary,
-                              errorColor: theme.colorScheme.error,
-                              textColor: theme.colorScheme.onSurface,
-                              colorHexOverride: colorHexOverride,
-                              lowLightMode: lowLightMode,
-                              rackMountStyle: rackMountStyle,
-                            )
-                          : _RealisticScenePainter(
-                              sceneInput: SingleTargetScene(target: target),
-                              colorHexOverride: colorHexOverride,
-                              sizeFloorEnabled: sizeFloorEnabled,
-                            ),
+                      // Phase 9.7 Group C — both modes now go through
+                      // the unified [_RealisticScenePainter] via the
+                      // sealed-type [SceneInput] API. The legacy
+                      // [_RealisticTargetPainter] is unreferenced from
+                      // production code after this commit; Group D
+                      // deletes the class.
+                      //
+                      // Rack mode constructs a [RackScene] with the
+                      // active slot index; single mode constructs a
+                      // [SingleTargetScene] with the existing target.
+                      painter: _RealisticScenePainter(
+                        sceneInput: layout.isRack && rackChildren != null
+                            ? RackScene(
+                                rack: RackSpec(
+                                  mountStructure: rackMountStyle ??
+                                      'hanging_rail',
+                                  slots: rackChildren!,
+                                ),
+                                activeSlotIndex:
+                                    activeRackChildIndex ?? 0,
+                              )
+                            : SingleTargetScene(target: target),
+                        colorHexOverride: colorHexOverride,
+                        sizeFloorEnabled: sizeFloorEnabled,
+                      ),
                     )
                   else
                     CustomPaint(
@@ -1251,14 +1253,8 @@ class _RealisticScenePainter extends CustomPainter {
     switch (sceneInput) {
       case SingleTargetScene():
         _paintSingle(canvas, size);
-      case RackScene():
-        throw UnimplementedError(
-          'RackScene rendering lands in Phase 9.7 Group C. The Group B '
-          'call site (TargetPlot.build) still dispatches racks to '
-          '_RealisticTargetPainter; constructing a RackScene against '
-          '_RealisticScenePainter directly before Group C ships hits '
-          'this guard.',
-        );
+      case RackScene(:final rack, :final activeSlotIndex):
+        _paintRack(canvas, size, rack, activeSlotIndex);
     }
   }
 
@@ -1827,6 +1823,10 @@ class _RealisticScenePainter extends CustomPainter {
   // either have to return as a tuple or recompute. The inlined
   // version is ~20 lines, well-commented, and the only consumer.
 
+  /// Single-target draw. Reads the painter's derived [target] getter
+  /// (single-target rendering path). For rack-mode slot rendering see
+  /// [_drawCategoryShape] below — same dispatch logic but with
+  /// caller-supplied spec and paints.
   void _paintTarget(Canvas canvas, Rect rect) {
     // Fill color: override beats target.colorHex; both go through the
     // same hex parser.
@@ -1837,18 +1837,32 @@ class _RealisticScenePainter extends CustomPainter {
       ..color = _targetOutlineColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.6;
+    _drawCategoryShape(canvas, rect, target, fillPaint, outlinePaint);
+  }
 
-    // Phase 9.5 — category-driven painter dispatch (replaces the
-    // old shape-based switch). SVG-capable categories (`ipsc`,
-    // `animal`) try the SVG path first via resolveTargetSvgPath;
-    // procedural categories (`circle`, `square`, `rectangle`) draw
-    // directly; `special` routes by shape_id sub-discriminator
-    // (pepper_popper, texas_star).
+  /// Phase 9.5 — category-driven shape dispatch. SVG-capable
+  /// categories (`ipsc`, `animal`) try the SVG path first via
+  /// [resolveTargetSvgPath]; procedural categories (`circle`,
+  /// `square`, `rectangle`) draw directly; `special` routes by
+  /// `shape_id` sub-discriminator (pepper_popper, texas_star).
+  ///
+  /// Phase 9.7 Group C extraction — the dispatch was inline in
+  /// `_paintTarget`. Pulled out so rack-mode slot rendering can
+  /// reuse the SAME category dispatch with per-slot fill / outline
+  /// paints, without going through the painter's `target` getter
+  /// (which is tied to the active slot for [RackScene]).
+  void _drawCategoryShape(
+    Canvas canvas,
+    Rect rect,
+    TargetSpec spec,
+    Paint fillPaint,
+    Paint outlinePaint,
+  ) {
     final svgPath = resolveTargetSvgPath(
       rect,
-      target.category,
-      target.shapeId,
-      scaleFactor: target.svgScaleFactor,
+      spec.category,
+      spec.shapeId,
+      scaleFactor: spec.svgScaleFactor,
     );
     if (svgPath != null) {
       canvas.drawPath(svgPath, fillPaint);
@@ -1856,7 +1870,7 @@ class _RealisticScenePainter extends CustomPainter {
       return;
     }
 
-    switch (target.category) {
+    switch (spec.category) {
       case 'circle':
         final r = rect.shortestSide / 2;
         canvas.drawCircle(rect.center, r, fillPaint);
@@ -1868,7 +1882,7 @@ class _RealisticScenePainter extends CustomPainter {
         canvas.drawPath(ipsc, outlinePaint);
         break;
       case 'special':
-        _drawSpecial(canvas, rect, fillPaint, outlinePaint);
+        _drawSpecial(canvas, rect, fillPaint, outlinePaint, spec.shapeId);
         break;
       case 'square':
       case 'rectangle':
@@ -1919,13 +1933,22 @@ class _RealisticScenePainter extends CustomPainter {
   /// `_paintTarget` so this branch only fires when the SVG cache is
   /// cold) and `texas_star`. Future apparatuses (plate_rack,
   /// dueling_tree_steel, etc.) add new cases here.
+  /// `special`-category apparatus dispatch. Routes by `shapeId` to
+  /// per-apparatus painters.
+  ///
+  /// Phase 9.7 Group C — takes `shapeId` as a parameter so rack-mode
+  /// rendering can dispatch per-slot (each rack slot can have its
+  /// own `shapeId`) without going through the painter's `target`
+  /// getter (which only resolves the active slot for [RackScene]).
+  /// Single-target callers pass `target.shapeId`.
   void _drawSpecial(
     Canvas canvas,
     Rect rect,
     Paint fillPaint,
     Paint outlinePaint,
+    String? shapeId,
   ) {
-    switch (target.shapeId) {
+    switch (shapeId) {
       case 'texas_star':
         _drawTexasStar(canvas, rect, fillPaint, outlinePaint);
         break;
@@ -1970,6 +1993,402 @@ class _RealisticScenePainter extends CustomPainter {
             target.centerPoint.horizontalFromLeft ||
         old.colorHexOverride != colorHexOverride ||
         old.sizeFloorEnabled != sizeFloorEnabled;
+  }
+
+  // ──────────────────────────────────────────────────────────────────
+  // Phase 9.7 Group C — Rack rendering
+  // ──────────────────────────────────────────────────────────────────
+  //
+  // The unified rack render. Reuses the single-target's common
+  // backdrop layers (sky / hills / treeline / grass / tall grass /
+  // foreground tree) and the per-category shape dispatch
+  // ([_drawCategoryShape]), and adds:
+  //   * Slot-positioning math (center-to-center spacing per
+  //     `RackChildSpec.offsetXFromCenterIn`, ground-anchored
+  //     vertical per `mountStructure`).
+  //   * 4 mount-structure drawers (rail / standing stake / popper
+  //     base no-op / silhouette stand), drawn UNDER the slots so
+  //     the slots render on top of the rig.
+  //   * Per-slot stroke (active = 2.0 px pure-black, inactive =
+  //     1.0 px black @ 70% opacity).
+  //
+  // What's deliberately NOT rendered (vs single-target mode):
+  //   * Mound — single-target's brown earth pile under the pole.
+  //   * Pole — single-target's vertical lumber stand.
+  //   * Pole-base ring — single-target's disturbed-earth shadow.
+  //   * Grass tufts clustered around the pole base —
+  //     [_paintGrassTufts] is single-target-only too. (Field-wide
+  //     tall grass via [_paintTallGrass] DOES paint for both
+  //     modes — that's part of the common backdrop.)
+  //
+  // What's NOT YET rendered (matches single-target realistic mode):
+  //   aim point, shot dots, scope ring, precision reticle. These
+  //   were absent from single-target realistic mode pre-9.7 and
+  //   stay absent post-9.7 for symmetry. The legacy
+  //   `_RealisticTargetPainter` had its own scope-ring + reticle;
+  //   Group D removes that with the legacy painter.
+
+  /// Phase 9.7 Group C — unified rack rendering. Called from `paint()`
+  /// when [sceneInput] is a [RackScene].
+  ///
+  /// Order of operations (matches single-target paint() except for
+  /// the rig + slot-loop substitution):
+  ///   1. Common backdrop (sky / hills / treeline / grass / tall
+  ///      grass / foreground tree).
+  ///   2. Compute per-slot rects from `offsetXFromCenterIn` +
+  ///      mount-structure-specific vertical anchoring.
+  ///   3. Mount-structure rig (rail / stakes / silhouette stands;
+  ///      poppers are self-mounting so popper_base has no rig
+  ///      pass).
+  ///   4. Iterate slots in `position` order, draw each via
+  ///      [_drawCategoryShape] with the slot's spec + a per-slot
+  ///      stroke (active vs inactive).
+  void _paintRack(
+    Canvas canvas,
+    Size size,
+    RackSpec rack,
+    int activeSlotIndex,
+  ) {
+    if (rack.slots.isEmpty) return;
+    final w = size.width;
+    final h = size.height;
+    final inPerPx = h / _inchesPerCanvasHeight;
+    final horizonY = _horizonFrac * h;
+    final canvasCenterX = w / 2;
+
+    // ── 1. Common backdrop ───────────────────────────────────────
+    _paintSky(canvas, w, h, horizonY);
+    _paintDistantHills(canvas, w, horizonY);
+    _paintTreeline(canvas, w, horizonY);
+    _paintGrass(canvas, w, h, horizonY);
+    _paintTallGrass(canvas, w, h, horizonY, inPerPx);
+    _paintForegroundTree(canvas, w, h, horizonY);
+
+    // ── 2. Slot rects ────────────────────────────────────────────
+    final slotRects = _computeRackSlotRects(
+      rack,
+      w,
+      canvasCenterX,
+      horizonY,
+      inPerPx,
+    );
+
+    // ── 3. Mount-structure rig ──────────────────────────────────
+    switch (rack.mountStructure) {
+      case 'standing_stake':
+        _paintStandingStakesRig(canvas, slotRects, horizonY);
+        break;
+      case 'silhouette_stand':
+        _paintSilhouetteStandsRig(canvas, slotRects, horizonY, inPerPx);
+        break;
+      case 'popper_base':
+        // No separate rig — each popper draws its own triangular base
+        // via the `special`-category dispatch in [_drawCategoryShape]
+        // -> [_drawSpecial]. The popper drawer paints the base + body
+        // as one unit per slot, ground-anchored at `horizonY` by the
+        // slot rect's bottom edge.
+        break;
+      case 'hanging_rail':
+      default:
+        _paintHangingRailRig(canvas, w, slotRects, horizonY, inPerPx);
+        break;
+    }
+
+    // ── 4. Slot fill + per-slot stroke ──────────────────────────
+    final clampedActive =
+        activeSlotIndex.clamp(0, rack.slots.length - 1);
+    for (var i = 0; i < rack.slots.length; i++) {
+      final slot = rack.slots[i];
+      final slotRect = slotRects[i];
+      final isActive = i == clampedActive;
+      // Build a TargetSpec for the slot so the shared category-shape
+      // dispatch resolves the same as single-target rendering.
+      final spec = TargetSpec(
+        category: slot.category,
+        shapeId: slot.shapeId,
+        widthIn: slot.widthIn,
+        heightIn: slot.heightIn,
+        colorHex: slot.colorHex,
+      );
+      // Phase 9.7 Group C stroke rule: active = 2.0 px pure-black,
+      // inactive = 1.0 px black @ 70% opacity. Ratio 2.0× — well
+      // above the ≥1.5× regression test threshold in
+      // test/rack_rendering_test.dart.
+      final fillPaint = Paint()..color = _parseHexColor(slot.colorHex);
+      final outlinePaint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = isActive ? 2.0 : 1.0
+        ..color = isActive
+            ? const Color(0xff000000)
+            : const Color(0xff000000).withValues(alpha: 0.70);
+      _drawCategoryShape(
+        canvas,
+        slotRect,
+        spec,
+        fillPaint,
+        outlinePaint,
+      );
+    }
+  }
+
+  /// Computes the on-canvas rect for every rack slot, anchored
+  /// per [RackSpec.mountStructure]:
+  ///
+  ///   * hanging_rail  — top edge below the rail (rail at
+  ///                     `horizonY - canvas_h * 0.18`, slot top at
+  ///                     `rail_y + 6 + 4 * inPerPx` per spec §C.2).
+  ///   * standing_stake — bottom edge at the top of the stake; stake
+  ///                     height = `slot.heightIn * 1.5 * inPerPx`.
+  ///   * popper_base   — bottom edge at `horizonY` (ground-standing).
+  ///   * silhouette_stand — bottom edge at `horizonY`
+  ///                     (silhouette is ground-anchored; stake is
+  ///                     drawn BEHIND it by the rig pass).
+  ///
+  /// Horizontal: each slot's center is `canvasCenterX +
+  /// slot.offsetXFromCenterIn * inPerPx`. The Phase 9.6 Group D
+  /// catalog ships pre-computed `x_offset_in` per slot, so the
+  /// painter doesn't recompute spacing from `default_spacing_in`
+  /// (the offsets ARE the spec's center-to-center interpretation
+  /// applied at seed time).
+  ///
+  /// If the resulting span overflows the canvas width with a small
+  /// margin, every slot's horizontal position scales uniformly so
+  /// the rack fits. (Currently unused at default canvas sizes; the
+  /// Phase 9.6 catalog's widest rack — IDPA Open Stage at
+  /// `total_width_in = 138` — fits without scaling at typical
+  /// preview canvas widths.)
+  List<Rect> _computeRackSlotRects(
+    RackSpec rack,
+    double canvasW,
+    double canvasCenterX,
+    double horizonY,
+    double inPerPx,
+  ) {
+    // First pass — compute natural rects without scaling.
+    final natural = <Rect>[];
+    for (final slot in rack.slots) {
+      final slotW = slot.widthIn * inPerPx;
+      final slotH = slot.heightIn * inPerPx;
+      final slotCenterX =
+          canvasCenterX + slot.offsetXFromCenterIn * inPerPx;
+      double slotCenterY;
+      switch (rack.mountStructure) {
+        case 'standing_stake':
+          final stakeHeight = slot.heightIn * 1.5 * inPerPx;
+          final slotBottomY = horizonY - stakeHeight;
+          slotCenterY = slotBottomY - slotH / 2;
+          break;
+        case 'hanging_rail':
+          final railY = horizonY - canvasW * 0.18;
+          final slotTopY = railY + 6 + 4 * inPerPx;
+          slotCenterY = slotTopY + slotH / 2;
+          break;
+        case 'popper_base':
+        case 'silhouette_stand':
+        default:
+          // Ground-standing: bottom edge of slot at horizon.
+          slotCenterY = horizonY - slotH / 2;
+          break;
+      }
+      natural.add(Rect.fromCenter(
+        center: Offset(slotCenterX, slotCenterY),
+        width: slotW,
+        height: slotH,
+      ));
+    }
+
+    // Overflow guard — if the natural span exceeds the canvas width
+    // minus an 8 px margin per side, scale every slot's horizontal
+    // offset uniformly so the rightmost slot fits inside the margin.
+    // Vertical positions stay anchored to horizon / rail.
+    const margin = 8.0;
+    final leftmost = natural.map((r) => r.left).reduce(math.min);
+    final rightmost = natural.map((r) => r.right).reduce(math.max);
+    final span = rightmost - leftmost;
+    final available = canvasW - 2 * margin;
+    if (span <= available) {
+      return natural;
+    }
+    final scale = available / span;
+    return natural.map((r) {
+      final newCenterX =
+          canvasCenterX + (r.center.dx - canvasCenterX) * scale;
+      return Rect.fromCenter(
+        center: Offset(newCenterX, r.center.dy),
+        width: r.width,
+        height: r.height,
+      );
+    }).toList();
+  }
+
+  /// `hanging_rail` mount rig per spec §C.2:
+  ///   * Brass-tinted (`#C5A572`) horizontal bar, 6 px tall, with a
+  ///     2 px black stroke top + bottom.
+  ///   * Bar extends from leftmost slot center - 12 in to rightmost
+  ///     slot center + 12 in (12 in overhang per side).
+  ///   * Tripod legs at each end: outer leg foot offset outward by
+  ///     `canvasW * 0.10`, inner leg foot inward by `canvasW * 0.04`.
+  ///     2 px dark-gray (`#4a4a4a`) stroke.
+  ///   * Per-slot chain: 1 px black vertical line from bar bottom to
+  ///     slot top.
+  void _paintHangingRailRig(
+    Canvas canvas,
+    double canvasW,
+    List<Rect> slotRects,
+    double horizonY,
+    double inPerPx,
+  ) {
+    if (slotRects.isEmpty) return;
+    // Recompute rail_y from the slot top: every hanging-rail slot has
+    // its top edge at rail_y + 6 + 4*inPerPx (see _computeRackSlotRects).
+    // Invert that to find rail_y, so the rig and the slots stay
+    // perfectly aligned regardless of which value the layout used.
+    final slotTopY = slotRects.first.top;
+    final railTopY = slotTopY - 4 * inPerPx - 6;
+    final railBottomY = railTopY + 6;
+
+    final leftmostX = slotRects.first.center.dx;
+    final rightmostX = slotRects.last.center.dx;
+    final extensionPx = 12 * inPerPx;
+    final barLeftX = leftmostX - extensionPx;
+    final barRightX = rightmostX + extensionPx;
+
+    // Bar
+    const brass = Color(0xffc5a572);
+    const black = Color(0xff000000);
+    final barFill = Paint()..color = brass;
+    final barStroke = Paint()
+      ..color = black
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+    final barRect = Rect.fromLTRB(barLeftX, railTopY, barRightX, railBottomY);
+    canvas.drawRect(barRect, barFill);
+    // Two stroked lines (top + bottom) read as a 2 px black stroke on
+    // each edge — cleaner than stroking the full rect (which would
+    // also stroke the short left/right ends that disappear under the
+    // tripod legs).
+    canvas.drawLine(
+      Offset(barLeftX, railTopY),
+      Offset(barRightX, railTopY),
+      barStroke,
+    );
+    canvas.drawLine(
+      Offset(barLeftX, railBottomY),
+      Offset(barRightX, railBottomY),
+      barStroke,
+    );
+
+    // Tripod legs at each end
+    const darkGray = Color(0xff4a4a4a);
+    final legPaint = Paint()
+      ..color = darkGray
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+    final outerOffset = canvasW * 0.10;
+    final innerOffset = canvasW * 0.04;
+    final railCenterY = (railTopY + railBottomY) / 2;
+
+    // Left tripod
+    canvas.drawLine(
+      Offset(barLeftX, railCenterY),
+      Offset(barLeftX - outerOffset, horizonY),
+      legPaint,
+    );
+    canvas.drawLine(
+      Offset(barLeftX, railCenterY),
+      Offset(barLeftX + innerOffset, horizonY),
+      legPaint,
+    );
+    // Right tripod
+    canvas.drawLine(
+      Offset(barRightX, railCenterY),
+      Offset(barRightX + outerOffset, horizonY),
+      legPaint,
+    );
+    canvas.drawLine(
+      Offset(barRightX, railCenterY),
+      Offset(barRightX - innerOffset, horizonY),
+      legPaint,
+    );
+
+    // Per-slot chains
+    final chainPaint = Paint()
+      ..color = black
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+    for (final slotRect in slotRects) {
+      final cx = slotRect.center.dx;
+      canvas.drawLine(
+        Offset(cx, railBottomY),
+        Offset(cx, slotRect.top),
+        chainPaint,
+      );
+    }
+  }
+
+  /// `standing_stake` mount rig per spec §C.2:
+  ///   * Per slot, a 3 px wide vertical stake from `horizonY` up to
+  ///     the slot's bottom edge.
+  ///   * Stake fill `#3a3a3a` (dark gray), 1 px black stroke.
+  ///   * Stake height = `slot.heightIn * 1.5 * inPerPx` (taller than
+  ///     plate, so plate appears mounted at chest height of the
+  ///     stake).
+  void _paintStandingStakesRig(
+    Canvas canvas,
+    List<Rect> slotRects,
+    double horizonY,
+  ) {
+    const darkGray = Color(0xff3a3a3a);
+    const black = Color(0xff000000);
+    final fillPaint = Paint()..color = darkGray;
+    final strokePaint = Paint()
+      ..color = black
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+    const stakeWidth = 3.0;
+    for (final slotRect in slotRects) {
+      final cx = slotRect.center.dx;
+      final stakeRect = Rect.fromLTRB(
+        cx - stakeWidth / 2,
+        slotRect.bottom,
+        cx + stakeWidth / 2,
+        horizonY,
+      );
+      canvas.drawRect(stakeRect, fillPaint);
+      canvas.drawRect(stakeRect, strokePaint);
+    }
+  }
+
+  /// `silhouette_stand` mount rig per spec §C.2:
+  ///   * Per slot, a 2 px wide short stake BEHIND the silhouette.
+  ///   * Stake fill `#3a3a3a` (dark gray).
+  ///   * Stake length = `slot.heightIn * 0.6 * inPerPx`. Stake bottom
+  ///     at `horizonY`, stake top above.
+  ///   * Silhouette renders on top of the stake (later z-order), with
+  ///     its own bottom edge at `horizonY` (ground-anchored).
+  void _paintSilhouetteStandsRig(
+    Canvas canvas,
+    List<Rect> slotRects,
+    double horizonY,
+    double inPerPx,
+  ) {
+    const darkGray = Color(0xff3a3a3a);
+    final paint = Paint()..color = darkGray;
+    const stakeWidth = 2.0;
+    for (final slotRect in slotRects) {
+      final cx = slotRect.center.dx;
+      // Stake length = slot height × 0.6 (in inches × inPerPx).
+      // slotRect.height is already pixels, so length_px =
+      // slot.heightIn * 0.6 * inPerPx = (slotRect.height) * 0.6.
+      final stakeLength = slotRect.height * 0.6;
+      final stakeRect = Rect.fromLTRB(
+        cx - stakeWidth / 2,
+        horizonY - stakeLength,
+        cx + stakeWidth / 2,
+        horizonY,
+      );
+      canvas.drawRect(stakeRect, paint);
+    }
   }
 }
 
