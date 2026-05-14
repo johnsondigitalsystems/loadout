@@ -2082,11 +2082,14 @@ class _RealisticScenePainter extends CustomPainter {
         _paintSilhouetteStandsRig(canvas, slotRects, horizonY, inPerPx);
         break;
       case 'popper_base':
-        // No separate rig — each popper draws its own triangular base
-        // via the `special`-category dispatch in [_drawCategoryShape]
-        // -> [_drawSpecial]. The popper drawer paints the base + body
-        // as one unit per slot, ground-anchored at `horizonY` by the
-        // slot rect's bottom edge.
+        // Phase 9.7 Group C.2 hotfix — popper bases ARE a separate
+        // rig pass, not part of the popper silhouette's procedural
+        // drawer. Legacy `_RealisticTargetPainter._paintPopperBases`
+        // drew concrete trapezoids under each popper; ported here as
+        // `_paintPopperBasesRig`. Without this the poppers float on
+        // grass with no concrete base under them — the operator's
+        // QA on commit 9531c86 caught the missing rig.
+        _paintPopperBasesRig(canvas, slotRects, horizonY);
         break;
       case 'hanging_rail':
       default:
@@ -2184,6 +2187,16 @@ class _RealisticScenePainter extends CustomPainter {
           slotCenterY = slotTopY + slotH / 2;
           break;
         case 'popper_base':
+          // Phase 9.7 Group C.2 hotfix — popper bottom sits at TOP of
+          // its concrete base (the base itself extends from popper
+          // bottom down to horizonY). Base height matches the legacy
+          // formula `_paintPopperBases` used: `max(slotW * 0.75, 6 px)`
+          // with a 6-px floor so the base stays visible at small canvas
+          // sizes.
+          final baseHeight = math.max(slotW * 0.75, 6.0);
+          final slotBottomY = horizonY - baseHeight;
+          slotCenterY = slotBottomY - slotH / 2;
+          break;
         case 'silhouette_stand':
         default:
           // Ground-standing: bottom edge of slot at horizon.
@@ -2356,6 +2369,53 @@ class _RealisticScenePainter extends CustomPainter {
       );
       canvas.drawRect(stakeRect, fillPaint);
       canvas.drawRect(stakeRect, strokePaint);
+    }
+  }
+
+  /// `popper_base` mount rig (Phase 9.7 Group C.2 hotfix). Ports the
+  /// legacy `_RealisticTargetPainter._paintPopperBases` behaviour:
+  /// each popper sits on a concrete trapezoidal base, lit-from-upper-
+  /// left convention (shadow on the right half of the trapezoid).
+  ///
+  /// Base geometry per slot:
+  ///   * top at `slotRect.bottom` (popper's feet rest on the base).
+  ///   * bottom at `horizonY` (base sits on the grass line).
+  ///   * top half-width = `slotW * 0.75` (top is slightly wider than
+  ///     the popper).
+  ///   * bottom half-width = `slotW * 1.0` (bottom widens further).
+  ///   * fill = light gray (`#9a9a9a`); shadow on right half =
+  ///     darker gray (`#666666`).
+  void _paintPopperBasesRig(
+    Canvas canvas,
+    List<Rect> slotRects,
+    double horizonY,
+  ) {
+    final basePaint = Paint()..color = const Color(0xff9a9a9a);
+    final shadowPaint = Paint()..color = const Color(0xff666666);
+    for (final r in slotRects) {
+      final cw = r.width;
+      final topY = r.bottom;
+      final botY = horizonY;
+      if (botY <= topY) continue; // degenerate (popper extends past horizon)
+      final topHalfW = cw * 0.75;
+      final botHalfW = cw * 1.0;
+      final cx = r.center.dx;
+      final basePath = Path()
+        ..moveTo(cx - topHalfW, topY)
+        ..lineTo(cx + topHalfW, topY)
+        ..lineTo(cx + botHalfW, botY)
+        ..lineTo(cx - botHalfW, botY)
+        ..close();
+      canvas.drawPath(basePath, basePaint);
+      // Right-side shadow wedge — half-trapezoid from center-top to
+      // outer-bottom-right.
+      final shadowPath = Path()
+        ..moveTo(cx, topY)
+        ..lineTo(cx + topHalfW, topY)
+        ..lineTo(cx + botHalfW, botY)
+        ..lineTo(cx, botY)
+        ..close();
+      canvas.drawPath(shadowPath, shadowPaint);
     }
   }
 
