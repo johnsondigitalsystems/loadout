@@ -1,6 +1,6 @@
 {
-  "manifest_version": 13,
-  "generated_at": "2026-05-14T01:00:00Z",
+  "manifest_version": 14,
+  "generated_at": "2026-05-14T02:00:00Z",
   "files": {
     "cartridges": {
       "version": 1,
@@ -31,7 +31,7 @@
       "filename": "firearm_parts.json"
     },
     "targets": {
-      "version": 9,
+      "version": 10,
       "filename": "targets.json"
     },
     "reticles": {

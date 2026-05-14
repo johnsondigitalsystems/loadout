@@ -31,6 +31,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loadout/utils/natural_sort.dart';
 
 void main() {
   group('targets.json — Phase 8 Group D catalog shape', () {
@@ -72,8 +73,7 @@ void main() {
     });
 
     test(
-        'each of 16 species has 3 size variants '
-        '(Small / Medium / Large)', () {
+        'each of 16 species has 3 distinct-dim variants', () {
       final animals =
           rows.where((r) => r['category'] == 'animal').toList();
       // Group by shape_id (each species should appear thrice).
@@ -90,17 +90,15 @@ void main() {
         expect(entry.value, hasLength(3),
             reason: "Species '${entry.key}' should have 3 size "
                 "variants; got ${entry.value.length}");
-        final names = entry.value.map((r) => r['name'] as String);
-        // Phase 9.5 — names are "Species, Size" (e.g. "Bear, Small"),
-        // not "Size Species" (e.g. "Small Bear"). The size suffix is
-        // what we check for now.
-        expect(names.any((n) => n.endsWith(', Small')), isTrue,
-            reason: "Species '${entry.key}' missing Small variant");
-        expect(names.any((n) => n.endsWith(', Medium')), isTrue,
-            reason:
-                "Species '${entry.key}' missing Medium variant");
-        expect(names.any((n) => n.endsWith(', Large')), isTrue,
-            reason: "Species '${entry.key}' missing Large variant");
+        // Phase 9.6 — size words are GONE; variants are identified
+        // by distinct dimensions. Assert the 3 variants have 3
+        // distinct widths (proves they're not duplicate rows).
+        final widths = entry.value
+            .map((r) => (r['width_in'] as num).toDouble())
+            .toSet();
+        expect(widths, hasLength(3),
+            reason: "Species '${entry.key}' should have 3 distinct "
+                "widths; got ${widths.length}");
       }
     });
 
@@ -184,18 +182,104 @@ void main() {
       }
     });
 
-    test('Phase 9.5 — animal names use the new "Species, Size" format', () {
+    test('Phase 9.6 — animal names use "{Species} {W}×{H}" format', () {
       final animals =
           rows.where((r) => r['category'] == 'animal').toList();
       expect(animals, hasLength(48));
-      // Phase 9.5 — names are "Bear, Small" / "Mountain Lion, Large"
-      // etc. Title-case species; size after a comma. No dimensions in
-      // the name.
-      final pat = RegExp(r'^[A-Z][a-zA-Z ]+, (Small|Medium|Large)$');
+      // Phase 9.6 — names are "Bear 30×16" / "Mountain Lion 84×45"
+      // etc. Title-case species (multi-word with single spaces);
+      // dimensions joined by U+00D7 multiplication sign (×), not
+      // letter x. Decimals preserved when present. No size words,
+      // no comma, no "in" suffix.
+      final pat = RegExp(r'^[A-Z][a-zA-Z ]+ \d+(?:\.\d+)?×\d+(?:\.\d+)?$');
       for (final r in animals) {
-        expect(pat.hasMatch(r['name'] as String), isTrue,
-            reason: "Animal name '${r['name']}' doesn't match "
-                "'Species, Size' format");
+        final name = r['name'] as String;
+        expect(pat.hasMatch(name), isTrue,
+            reason: "Animal name '$name' doesn't match "
+                "'{Species} {W}×{H}' format. Multiplication "
+                'sign must be U+00D7, not the letter x.');
+        // The dimensions in the name MUST come from width_in/height_in
+        // verbatim — the seed loader trusts them as ballistic inputs.
+        // A mismatch indicates a hand-edit drifted away from the row's
+        // own width_in / height_in.
+        final w = (r['width_in'] as num);
+        final h = (r['height_in'] as num);
+        String fmt(num v) =>
+            v == v.roundToDouble() ? v.toInt().toString() : v.toString();
+        expect(name, endsWith(' ${fmt(w)}×${fmt(h)}'),
+            reason: "Animal name '$name' dimensions don't match "
+                "width_in=${r['width_in']} height_in=${r['height_in']}.");
+      }
+    });
+
+    test(
+        'Phase 9.6 — naturalCompare on the new animal names produces '
+        'small→large order within each species', () {
+      // The Range Day target picker calls `repo.allTargets()` which
+      // applies `naturalCompare(a.name, b.name)`. The Phase 9.6
+      // animal names ("Bear 30×16" / "Bear 48×26" / "Bear 60×32")
+      // are designed so the numeric chunk right after the species
+      // prefix decides the order — no separate sort code path is
+      // needed in the picker. This test pins that invariant: any
+      // future naturalCompare regression that broke numeric-chunk
+      // ordering would surface here, not in a UI bug report.
+      final names = <String>[
+        'Bear 60×32',
+        'Bear 30×16',
+        'Bear 48×26',
+        'Moose 120×64',
+        'Moose 48×26',
+        'Moose 84×48',
+      ];
+      names.sort(naturalCompare);
+      expect(names, <String>[
+        'Bear 30×16',
+        'Bear 48×26',
+        'Bear 60×32',
+        'Moose 48×26',
+        'Moose 84×48',
+        // 120 > 84 numerically — naive string sort would put
+        // "Moose 120" before "Moose 48" because '1' < '4'.
+        'Moose 120×64',
+      ]);
+    });
+
+    test('Phase 9.6 — animal rows are pre-sorted (species ASC, width_in ASC)',
+        () {
+      // The seed file ships in canonical sort order. The repository's
+      // naturalCompare(name) sort produces the same ordering at runtime
+      // because the new "{Species} {W}×{H}" format puts numeric tokens
+      // right after the matching species prefix, and naturalCompare
+      // numerically-compares those tokens. Pinning the file order
+      // catches a hand-edit that shuffles the catalog AND any future
+      // sort regression that would have only shown up in the picker
+      // UI.
+      final animals =
+          rows.where((r) => r['category'] == 'animal').toList();
+      String species(Map<String, dynamic> r) {
+        return (r['shape_id'] as String)
+            .split('_')
+            .map((p) => '${p[0].toUpperCase()}${p.substring(1)}')
+            .join(' ');
+      }
+      for (var i = 1; i < animals.length; i++) {
+        final prev = animals[i - 1];
+        final curr = animals[i];
+        final cmp = species(prev).compareTo(species(curr));
+        if (cmp != 0) {
+          expect(cmp < 0, isTrue,
+              reason: "Animal '${curr['name']}' precedes "
+                  "'${prev['name']}' alphabetically by species but "
+                  'comes after in the seed file.');
+        } else {
+          final wPrev = (prev['width_in'] as num).toDouble();
+          final wCurr = (curr['width_in'] as num).toDouble();
+          expect(wPrev <= wCurr, isTrue,
+              reason: "Same species '${species(prev)}' but variant "
+                  "'${curr['name']}' (w=$wCurr) sorts before "
+                  "'${prev['name']}' (w=$wPrev) — expected "
+                  'small-to-large.');
+        }
       }
     });
 
