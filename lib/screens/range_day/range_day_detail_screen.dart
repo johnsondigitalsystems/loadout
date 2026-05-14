@@ -3255,6 +3255,14 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     // outer InkWell. Wrapping in IgnorePointer disables TargetPlot's
     // hit testing entirely for this surface, so the InkWell below
     // captures all taps and routes them to _showTargetPreviewDialog.
+    // Phase 9.7 Group C hotfix — pass the rack data through so
+    // `TargetPlot`'s internal `RealisticLayout.compute(rackChildren:
+    // ...)` sees `isRack == true` and `TargetPlot.build` dispatches
+    // to the new [_RealisticScenePainter] with a [RackScene] (instead
+    // of falling through to [SingleTargetScene] when rackChildren is
+    // null). Without this, the picker-preview surface rendered as
+    // single-target even when a rack was selected — caught by
+    // operator cold-restart QA on commit 7d2fd2e.
     final preview = SizedBox(
       height: 234,
       child: IgnorePointer(
@@ -3267,6 +3275,9 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
           viewMode: TargetPlotViewMode.realistic,
           colorHexOverride: _selectedTargetColorHex,
           sizeFloorEnabled: _sizeFloorEnabled,
+          rackChildren: _rackChildrenSpec,
+          activeRackChildIndex: _activeRackChildIndex,
+          rackMountStyle: _selectedRack?.rackKind,
         ),
       ),
     );
@@ -3315,6 +3326,11 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
               SizedBox(
                 width: maxW,
                 height: imageH,
+                // Phase 9.7 Group C hotfix — same rack-data plumbing
+                // as the inline picker-preview surface. Without
+                // these three params, the zoom dialog renders the
+                // active rack slot as a single target instead of
+                // the full rack scene.
                 child: TargetPlot(
                   target: spec,
                   shots: const [],
@@ -3324,6 +3340,9 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                   viewMode: TargetPlotViewMode.realistic,
                   colorHexOverride: _selectedTargetColorHex,
                   sizeFloorEnabled: _sizeFloorEnabled,
+                  rackChildren: _rackChildrenSpec,
+                  activeRackChildIndex: _activeRackChildIndex,
+                  rackMountStyle: _selectedRack?.rackKind,
                 ),
               ),
               const SizedBox(height: 12),
