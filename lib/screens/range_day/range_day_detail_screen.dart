@@ -2442,6 +2442,20 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
 
   // ─────────────────────── Build ───────────────────────
 
+  /// Phase 10 Group B.2 (popup-form rev) — the AppBar's visual-style
+  /// `PopupMenuButton` trigger is a single icon, and that icon flips
+  /// with the currently-selected mode so the user can tell the
+  /// current style at a glance without opening the menu. Same icon
+  /// set as the Settings → App preferences `SegmentedButton<VisualStyle>`
+  /// so the two surfaces read as the same control even though their
+  /// trigger widgets differ (segmented vs. popup) for AppBar space
+  /// reasons.
+  IconData _visualStyleIcon(VisualStyle style) => switch (style) {
+        VisualStyle.cartoon => Icons.brush_outlined,
+        VisualStyle.polished => Icons.auto_awesome_outlined,
+        VisualStyle.photo => Icons.image_outlined,
+      };
+
   @override
   Widget build(BuildContext context) {
     final isWide = Breakpoints.isWide(context);
@@ -2491,53 +2505,71 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
               },
             ),
           ),
-          // Phase 10 Group B.2 — visual style toggle. Compact icon-
-          // only `SegmentedButton<VisualStyle>` matching the
-          // Quick/Full toggle's visual density. Three options:
-          // Cartoon (brush icon), Polished (auto_awesome icon),
-          // Photo (image icon). Synced with the Settings → App
-          // preferences segmented button via `VisualStyleNotifier`.
-          // Both surfaces read + write the same notifier, so a
-          // change in one updates the other immediately. The
-          // painter watches the notifier too (B.3) and repaints
-          // when the mode flips.
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Consumer<VisualStyleNotifier>(
-              builder: (context, visualStyle, _) {
-                return SegmentedButton<VisualStyle>(
-                  segments: const [
-                    ButtonSegment<VisualStyle>(
-                      value: VisualStyle.cartoon,
-                      icon: Icon(Icons.brush_outlined),
-                      tooltip: 'Cartoon — flat procedural scene',
+          // Phase 10 Group B.2 — visual style toggle, popup form.
+          //
+          // Originally a 3-segment `SegmentedButton<VisualStyle>` mirroring
+          // the Quick/Full toggle directly above, but that combo overflowed
+          // the AppBar by 10 px on a 430-px-wide phone (Quick/Full is 2
+          // segments + Visual Style 3 segments + Low Light + History +
+          // Recalculate IconButtons = ~440 px of content for a 430 px
+          // constraint). The fix is to use the alternate trigger the spec
+          // explicitly allows for this surface — Phase 10 §UI-placements:
+          // "Tapping cycles through (or shows a quick popup of) the three
+          // modes." A `PopupMenuButton<VisualStyle>` is the popup form:
+          // single-icon trigger (the currently-selected mode's icon),
+          // labeled popup of all three modes on tap. The Settings surface
+          // keeps its 3-segment SegmentedButton — there's plenty of room
+          // on a full-screen settings list — so users discover the three
+          // options there. Both surfaces still read + write the same
+          // `VisualStyleNotifier`; flipping in either place updates the
+          // other immediately, and the painter watches the notifier (B.3)
+          // and repaints when the mode flips.
+          Consumer<VisualStyleNotifier>(
+            builder: (context, visualStyle, _) {
+              return PopupMenuButton<VisualStyle>(
+                tooltip: 'Visual Style',
+                icon: Icon(_visualStyleIcon(visualStyle.style)),
+                initialValue: visualStyle.style,
+                onSelected: (next) {
+                  if (next == visualStyle.style) return;
+                  // ignore: discarded_futures
+                  visualStyle.setStyle(next);
+                },
+                itemBuilder: (context) => const [
+                  PopupMenuItem<VisualStyle>(
+                    value: VisualStyle.cartoon,
+                    child: ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(Icons.brush_outlined),
+                      title: Text('Cartoon'),
+                      subtitle: Text('Flat procedural scene'),
                     ),
-                    ButtonSegment<VisualStyle>(
-                      value: VisualStyle.polished,
-                      icon: Icon(Icons.auto_awesome_outlined),
-                      tooltip: 'Polished — atmospheric effects',
-                    ),
-                    ButtonSegment<VisualStyle>(
-                      value: VisualStyle.photo,
-                      icon: Icon(Icons.image_outlined),
-                      tooltip: 'Photo — placeholder, renders as polished',
-                    ),
-                  ],
-                  selected: {visualStyle.style},
-                  showSelectedIcon: false,
-                  style: SegmentedButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                  onSelectionChanged: (sel) {
-                    final next = sel.first;
-                    if (next == visualStyle.style) return;
-                    // ignore: discarded_futures
-                    visualStyle.setStyle(next);
-                  },
-                );
-              },
-            ),
+                  PopupMenuItem<VisualStyle>(
+                    value: VisualStyle.polished,
+                    child: ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(Icons.auto_awesome_outlined),
+                      title: Text('Polished'),
+                      subtitle: Text('Atmospheric effects'),
+                    ),
+                  ),
+                  PopupMenuItem<VisualStyle>(
+                    value: VisualStyle.photo,
+                    child: ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(Icons.image_outlined),
+                      title: Text('Photo'),
+                      subtitle: Text(
+                          'Placeholder — currently renders as Polished'),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
           // Low Light toggle (§6A.2). Sun when off, moon when on.
           // Flips the Realistic scene to a dusk backdrop +
