@@ -174,6 +174,7 @@ import 'services/scope_tracking_service.dart';
 import 'services/hit_probability_map_service.dart';
 import 'services/icloud_backup_service.dart';
 import 'services/locale_service.dart';
+import 'services/visual_style_notifier.dart';
 import 'services/onedrive_backup_service.dart';
 import 'services/purchases_service.dart';
 import 'services/sensors/cant_service.dart';
@@ -357,6 +358,13 @@ class LoadOutApp extends StatelessWidget {
         // restart.
         ChangeNotifierProvider<LocaleService>(
           create: (_) => LocaleService(),
+        ),
+        // Phase 10 — global visual-style preference. Settings + Range
+        // Day surfaces watch this to switch between cartoon /
+        // polished / photo modes; the realistic painter consumes
+        // the current value as a constructor parameter.
+        ChangeNotifierProvider<VisualStyleNotifier>(
+          create: (_) => VisualStyleNotifier(),
         ),
         ChangeNotifierProvider<EntitlementNotifier>(
           create: (ctx) => EntitlementNotifier(ctx.read<PurchasesService>()),

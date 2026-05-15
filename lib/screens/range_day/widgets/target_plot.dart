@@ -133,6 +133,7 @@ import 'package:flutter/material.dart';
 import '../../../data/reticle_library.dart';
 import '../../../database/database.dart';
 import '../../../models/target_center_point.dart';
+import '../../../models/visual_style.dart';
 import '../../../widgets/animal_silhouettes.dart';
 import '../../../widgets/reticle_renderer.dart';
 import '../../../widgets/scope_daytime_backdrop.dart';
@@ -751,6 +752,11 @@ class TargetPlot extends StatelessWidget {
                             : SingleTargetScene(target: target),
                         colorHexOverride: colorHexOverride,
                         sizeFloorEnabled: sizeFloorEnabled,
+                        // Phase 10 Group A — hardcoded to cartoon
+                        // here. Group B wires this to the
+                        // `VisualStyleNotifier` via Consumer so the
+                        // painter reacts to user toggles.
+                        visualStyle: VisualStyle.cartoon,
                       ),
                     )
                   else
@@ -1266,6 +1272,7 @@ class _RealisticScenePainter extends CustomPainter {
     required this.sceneInput,
     this.colorHexOverride,
     this.sizeFloorEnabled = true,
+    this.visualStyle = VisualStyle.cartoon,
   });
 
   /// Phase 9.7 Group B — painter input is now a [SceneInput] sealed
@@ -1275,6 +1282,20 @@ class _RealisticScenePainter extends CustomPainter {
   /// `_paintRack` branch with mount-structure dispatch + multi-slot
   /// rendering.
   final SceneInput sceneInput;
+
+  /// Phase 10 Group A — user-controlled visual style. `cartoon`
+  /// (default) renders the existing procedural scene unchanged.
+  /// `polished` and `photo` will light up atmospheric effects in
+  /// Group C and later (saveLayer scaffold, DOF blur, ground haze,
+  /// drop shadow, color grade, vignette, film grain). In Group A
+  /// the field exists but is unused — the paint pass is identical
+  /// for all three values until Group C lands.
+  ///
+  /// Photo mode aliases to polished at the dispatch site (Phase 12 /
+  /// 13 will light up photo's own rendering); the enum preserves
+  /// the user's actual selection so future phases don't need a
+  /// migration.
+  final VisualStyle visualStyle;
 
   /// The focus target (the geometry that drives aim / shots / scope
   /// ring anchoring + the single-target paint body's box-sizing). For
@@ -2142,7 +2163,13 @@ class _RealisticScenePainter extends CustomPainter {
         old.target.centerPoint.horizontalFromLeft !=
             target.centerPoint.horizontalFromLeft ||
         old.colorHexOverride != colorHexOverride ||
-        old.sizeFloorEnabled != sizeFloorEnabled;
+        old.sizeFloorEnabled != sizeFloorEnabled ||
+        // Phase 10 Group A — repaint when the user toggles visual
+        // style (cartoon → polished → photo or back). In Group A
+        // the paint pass ignores this field (no effects yet); the
+        // comparison is in place so once Group C lights up the
+        // dispatch, a style change immediately repaints the scene.
+        old.visualStyle != visualStyle;
   }
 
   // ──────────────────────────────────────────────────────────────────
