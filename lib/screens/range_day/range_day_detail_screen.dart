@@ -5515,16 +5515,23 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                 ),
               )),
         ];
-        // Phase 9.6 Group D — 7-chip filter row, identical layout to
-        // the target picker's chip row. `(value, label)` tuples; the
-        // value goes into _rackShapeFilter, the label into the chip.
+        // Phase 9.8.D — rack picker chip row. Phase 9.6 Group D
+        // originally shipped a 7-chip set matching the target picker
+        // (All / Circle / Square / Rectangle / IPSC / Animal /
+        // Special) for visual symmetry. The Rectangle and Animal
+        // chips were always empty-state — no rack in the seed catalog
+        // (nor any plausibly-shippable future rack) carries a
+        // rectangle plate or an animal silhouette as a slot. They
+        // were dead UI surface. Operator removed them
+        // (2026-05-15) — chip set is now 5: All / Circle / Square /
+        // IPSC / Special. Target picker's chip row at line ~4872 is
+        // unchanged (single-target catalog has both rectangle and
+        // animal rows; those chips are populated and useful).
         const rackChips = <(String value, String label)>[
           ('all', 'All'),
           ('circle', 'Circle'),
           ('square', 'Square'),
-          ('rectangle', 'Rectangle'),
           ('ipsc', 'IPSC'),
-          ('animal', 'Animal'),
           ('special', 'Special'),
         ];
         return Column(
