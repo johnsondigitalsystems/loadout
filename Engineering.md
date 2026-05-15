@@ -335,7 +335,7 @@ Edits should always go to `assets/seed_data/` first, then be uploaded to the buc
 
 | Manifest version | files.targets.version | When |
 |---|---|---|
-| 15 | 10 | Post-Phase-9.5 (current — 2026-05-14) |
+| 16 | 10 | Post-Phase-9.8 + Phase-One Recipes (current — 2026-05-15) |
 
 ---
 
@@ -429,7 +429,7 @@ Firebase Auth's iOS refresh token persists in the system Keychain across app uni
 
 The only Anthropic-using surface in the app today. **AI Smart Import is implemented as an inline overlay card (`_ImproveWithAiCard`) inside `photo_import_review_screen.dart` — it is not a standalone screen.** Translation tool for OCR cleanup. Pro, opt-in per use.
 
-> **Naming clarification.** Today the file `lib/screens/recipes/smart_import_screen.dart` is the **spreadsheet** column-mapping wizard, not the AI feature. The two have nothing in common architecturally; only the filename suggests a relationship. Phase One **Group 2** renames the file to `spreadsheet_import_screen.dart` and the class to `SpreadsheetImportScreen` to remove the collision. Once that lands, "AI Smart Import" refers exclusively to the photo-review overlay; "Spreadsheet Import" refers to the CSV/XLSX flow.
+> **Naming clarification.** The file `lib/screens/recipes/spreadsheet_import_screen.dart` (formerly `smart_import_screen.dart`, renamed in Phase One Group 2 on 2026-05-14) is the **spreadsheet** column-mapping wizard, not the AI feature. The two have nothing in common architecturally; only the old filename suggested a relationship. "AI Smart Import" refers exclusively to the photo-review overlay (`_ImproveWithAiCard`); "Spreadsheet Import" refers to the CSV/XLSX flow.
 
 ### When the card renders
 
@@ -568,14 +568,13 @@ lib/
       recipes_list_screen.dart
       recipe_form_screen.dart
       quick_add_recipe_screen.dart
-      smart_import_screen.dart               (Phase One Group 2 RENAMES this to spreadsheet_import_screen.dart)
+      spreadsheet_import_screen.dart         CSV / XLSX wizard (renamed from smart_import_screen.dart in Phase One Group 2)
       photo_import_screen.dart
       photo_import_review_screen.dart
       multi_page_import_review_screen.dart
       recipe_qr_scan_screen.dart
-      # Phase One Group 5 ADDS:
-      #   recipe_import_landing_screen.dart   — canonical import entry point (see § 19.4)
-      #   recipe_import_source.dart           — RecipeImportSourceKind enum + extension detection helper
+      recipe_import_landing_screen.dart      Canonical "Import a Recipe" entry point (Phase One Group 5)
+      recipe_import_source.dart              RecipeImportSourceKind enum + extension detection helper (Phase One Group 5)
     firearms/, batches/, ballistics/, range_day/
     glossary/, saami/, paywall/
     settings/, sync/, disclaimers/
@@ -590,7 +589,7 @@ lib/
     auto_save_first_time_hint.dart
     empty_state_card.dart
     favorite_star_button.dart
-    import_options_section.dart       Multi-tile "Import a recipe" section. Phase One Group 5 will rework this into a thin shim that pushes recipe_import_landing_screen.
+    import_options_section.dart       Thin shim with a single "Import a Recipe" tile that pushes recipe_import_landing_screen (Phase One Group 5). Kept the AI Smart Import settings deep-link tile + cloud-restore tiles untouched — those are separate concepts from per-recipe import.
     lookup_loads_sheet.dart
     primer_cascade_field.dart
     quick_add_fab_stack.dart
@@ -716,7 +715,7 @@ Real, not advisory. Reverts target individual groups.
 5. Chat-Claude revises.
 6. Final spec ships for execution.
 
-Currently in flight: **Phase 9.8** (scene painter polish — most recent landed commit is `5d32932` Phase 9.8.B "tap target to activate (per-slot hit testing)"). **Phase One — Recipes: Unified Smart Import + Targeted Cleanup** is also in flight, running across § 19 of this doc and `lib/screens/recipes/` (six halt-and-validate groups; Group 1 = this doc sync). See UI.md § 18 for the longer roadmap including Phase 10.
+Currently in flight: **Scene Painter Phase 10** — visual-style mode toggle for the scene painter (Groups A–C landed: foundation, toggle surfaces, polished rendering scaffold). **Phase One — Recipes: Unified Smart Import + Targeted Cleanup** completed on 2026-05-15 (six halt-and-validate groups; see Phase Two queue at § 19.10 for deferred work). See UI.md § 18 for the longer roadmap.
 
 ---
 
@@ -773,7 +772,7 @@ Safer external claim: "companion apps in development; pairing infrastructure liv
 
 | Gate | State |
 |---|---|
-| `flutter test --exclude-tags=slow` | **1344 passing + 1 skipped, 0 failed** as of 2026-05-14. Updated count tracked per phase report. |
+| `flutter test --exclude-tags=slow` | **1389 passing + 1 skipped, 0 failed** as of 2026-05-15 (post-Phase-One Recipes). The +45 vs. 2026-05-13 baseline comes from Phase One Groups 3 + 5 (caliber-from-diameter regression suite + recipe-import source-enum suite) plus interleaved Phase 9.8 / Phase 10 work. |
 | `flutter analyze` | **6 issues, 0 errors** (pre-existing deprecation infos) |
 
 ### Test runner conventions
@@ -860,21 +859,21 @@ The recipes surface lives in `lib/screens/recipes/`:
 |---|---|---|
 | `recipes_list_screen.dart` | List + master/detail (wide layouts) + multi-select PDF share + swipe-to-delete | Live |
 | `recipe_form_screen.dart` | Full recipe form (Core / Extended / Full detail levels, 10 sections, ~60 fields, autosave, lot pickers, custom fields, share menu, Pro hooks) | Live |
-| `quick_add_recipe_screen.dart` | One-screen, notebook-line capture form (recipe name + caliber + powder + charge + bullet + weight + COAL/CBTO + notes) | Live. **COAL/CBTO field ships in Phase One Group 4** — today the file's header lists the axis but the editor doesn't render it |
-| `smart_import_screen.dart` | CSV / XLSX column-mapping wizard | Live today. **Phase One Group 2** renames file → `spreadsheet_import_screen.dart` and class → `SpreadsheetImportScreen`. Behavior unchanged. |
+| `quick_add_recipe_screen.dart` | One-screen, notebook-line capture form (recipe name + caliber + powder + charge + bullet + weight + COAL/CBTO + notes) | Live (COAL/CBTO axis toggle landed in Phase One Group 4) |
+| `spreadsheet_import_screen.dart` | CSV / XLSX column-mapping wizard | Live (renamed from `smart_import_screen.dart` in Phase One Group 2; class renamed to `SpreadsheetImportScreen`; behavior unchanged) |
 | `photo_import_screen.dart` | Camera / gallery capture → ML Kit OCR → `RecipeParser` → review | Live (iOS/Android only) |
 | `photo_import_review_screen.dart` | Editable parsed draft with confidence bars; hosts the AI Smart Import overlay card | Live |
 | `multi_page_import_review_screen.dart` | Batch photo review — one card per detected entry, discard checkboxes, Save All | Live |
 | `recipe_qr_scan_screen.dart` | Fullscreen camera-based QR scanner for LoadOut recipe shares | Live |
-| `recipe_import_landing_screen.dart` | **Canonical entry point** for every import source — file-extension routing, see § 19.4 | **Ships in Phase One Group 5** |
-| `recipe_import_source.dart` | `RecipeImportSourceKind` enum + `detectKindFromFileExtension` helper | **Ships in Phase One Group 5** |
+| `recipe_import_landing_screen.dart` | **Canonical entry point** for every import source — file-extension routing, see § 19.4 | Live (added in Phase One Group 5) |
+| `recipe_import_source.dart` | `RecipeImportSourceKind` enum + `detectKindFromFileExtension` helper | Live (added in Phase One Group 5) |
 
 Supporting widgets (under `lib/widgets/`):
 
 | File | Role | Status |
 |---|---|---|
 | `component_field.dart` | Autocomplete picker for cartridge / powder / bullet / primer / brass; favorites + frequent + general ordering | Live |
-| `import_options_section.dart` | Today renders multiple import tiles inline. **Phase One Group 5** reworks it into a thin shim that pushes `RecipeImportLandingScreen` (kept for backward compatibility with existing call sites; can be deleted after a future cleanup). | Live today; rework in Group 5 |
+| `import_options_section.dart` | Thin shim with a single "Import a Recipe" tile that pushes `RecipeImportLandingScreen`, plus the AI Smart Import settings deep-link tile and the cloud-restore tiles (iCloud / Drive / OneDrive). The six recipe-import tiles that used to live here folded into the landing screen in Phase One Group 5. | Live |
 | `quick_add_fab_stack.dart` | Two-FAB cluster (Quick + Standard) used on the recipes list |
 | `glossary_label.dart` | Tappable domain-term wrapper for in-form definitions |
 | `auto_save_banner.dart` / `auto_save_first_time_hint.dart` | AppBar-level autosave status indicator + first-time onboarding tooltip |
@@ -969,7 +968,7 @@ Columns (canonical reference — see `lib/database/database.dart` for the author
 | Service | Role | Path |
 |---|---|---|
 | `RecipeRepository` | UserLoads CRUD; lot CRUD; custom-field CRUD; `mostUsedComponentNames(kind)` for picker frequency | `lib/repositories/recipe_repository.dart` |
-| `ComponentRepository` | Catalog access (cartridges, powders, bullets, primers, brass); `addCustomComponent`; `componentLabels`. **`caliberLabelForBulletDiameter` ships in Phase One Group 3** — today the mapping lives as a hardcoded private method on the recipe form. See § 19.9. | `lib/repositories/component_repository.dart` |
+| `ComponentRepository` | Catalog access (cartridges, powders, bullets, primers, brass); `addCustomComponent`; `componentLabels`; `caliberLabelForBulletDiameter` (Phase One Group 3 — see § 19.9). | `lib/repositories/component_repository.dart` |
 | `FavoritesRepository` | Int-row-id favorites (cartridge / reticle / target); stream API for live UI updates | `lib/repositories/favorites_repository.dart` |
 | `ComponentFavoritesService` | Name-keyed favorites for powder / bullet / primer / brass | `lib/services/component_favorites_service.dart` |
 | `AutoSaveService` + `AutoSaveController` | Frequency policies, dirty tracking, debounced save; controller per form instance | `lib/services/auto_save_service.dart` |
@@ -987,19 +986,19 @@ Columns (canonical reference — see `lib/database/database.dart` for the author
 
 ### 19.4 Import architecture
 
-The recipes surface supports many import sources. **Today** they're reached via separate tiles inside the `ImportOptionsSection` widget on the Quick Add and Recipes List screens — there's no canonical entry point. **Phase One Group 5** introduces `RecipeImportLandingScreen` — a unified entry point that detects the source from the user's input (file extension, photo, paste, QR) and routes to the existing per-source flow. The rest of this subsection describes the **target state** the Group 5 work delivers.
+The recipes surface supports many import sources, all reached through a single canonical entry point: `RecipeImportLandingScreen` (added in Phase One Group 5 on 2026-05-14). The user picks the SOURCE; the screen detects the source kind from the input (file extension for the file picker, OS API for photos, content shape for paste) and routes to the existing per-source flow. Per-source flows did not change — the landing screen is a router.
 
-### Source taxonomy (target state after Phase One Group 5)
+### Source taxonomy
 
 | Kind (`RecipeImportSourceKind`) | Triggered by | Routes to | Status |
 |---|---|---|---|
-| `spreadsheet` | File picker, `.csv` / `.xlsx` / `.xls` | `SpreadsheetImportScreen` (post-Group-2 rename) | Per-source flow live today; routed via landing screen after Group 5 |
-| `photoSingle` | "Take a photo" or "Pick from gallery" (single) | `PhotoImportScreen` → `PhotoImportReviewScreen` | Per-source flow live today (iOS/Android only); routed via landing screen after Group 5 |
-| `photoMultiPage` | Multi-page batch gallery pick | Multi-page capture → `MultiPageImportReviewScreen` | Per-source flow live today (iOS/Android only); routed via landing screen after Group 5 |
-| `loadoutJson` | File picker, `.json` | LoadOut JSON re-import handler | Per-source flow live today; routed via landing screen after Group 5 |
-| `qrCode` | "Scan QR code" tile | `RecipeQrScanScreen` | Per-source flow live today; routed via landing screen after Group 5 |
-| `clipboard` | "Paste from clipboard" tile (text content) | Materialize to temp `.csv`, push `SpreadsheetImportScreen(initialFile:)` | Per-source flow live today; routed via landing screen after Group 5 |
-| `garminFit` | File picker, `.fit` (Pro) | `GarminXeroService.importFitFile` (Phase One Group 5 extracts the recipe-form inline handler into the service so the landing screen can invoke it) | Per-source flow live today inside the recipe form; surfaced via landing screen after Group 5 |
+| `spreadsheet` | File picker, `.csv` / `.xlsx` / `.xls` | `SpreadsheetImportScreen` | Live via Recipe Import Landing |
+| `photoSingle` | "Take a Photo" or "Pick From Gallery" tile | `PhotoImportScreen` → `PhotoImportReviewScreen` | Live via Recipe Import Landing (iOS/Android only) |
+| `photoMultiPage` | Multi-page batch gallery pick | Multi-page capture → `MultiPageImportReviewScreen` | Live via Recipe Import Landing (iOS/Android only) |
+| `loadoutJson` | File picker, `.json` | LoadOut JSON re-import handler (`LoadoutFileImportService.importFromJson` reading the picked file's contents) | Live via Recipe Import Landing |
+| `qrCode` | "Scan a Recipe QR" tile | `RecipeQrScanScreen` | Live via Recipe Import Landing |
+| `clipboard` | "Paste From Clipboard" tile | Materialize text to temp `.csv`, push `SpreadsheetImportScreen(initialFile:)` | Live via Recipe Import Landing |
+| `garminFit` | File picker, `.fit` (Pro) | Today: informational SnackBar pointing at the recipe form's Pro Tools section. The recipe form's inline `_onImportGarminFit` handler is heavily entangled with form state (notes / chronograph / autosave wiring); extracting it to a context-free service for landing-screen invocation is a Phase Two task. | Live on the recipe form; landing-screen route deferred to Phase Two |
 | `msWordDoc` | File picker, `.docx` / `.doc` | — | **Coming Soon** (Phase Two) |
 | `msOneNote` | File picker, `.one` | — | **Coming Soon** (Phase Two; realistic path = OneNote export to `.docx` first) |
 | `garminXeroPhoto` | Photo of Xero display (OCR vs `.fit`) | — | **Coming Soon** (Phase Two) |
@@ -1053,7 +1052,7 @@ Behaviors:
 
 **Clipboard** — text content is materialized into a temp `.csv` file and routed through the spreadsheet wizard. Empty clipboard surfaces a snackbar without routing.
 
-**Garmin .fit** — `GarminXeroService.importFitFile(path)` parses the binary FIT file, computes average / ES / SD across shot velocities, and surfaces a summary the user can drop into a recipe's notes. Pro-gated. **Phase One Group 5** will extract this from the recipe form's inline handler into a reusable service method so the landing screen can invoke it without owning a `RecipeFormScreen` state.
+**Garmin .fit** — `GarminXeroService.importFitFile(path)` parses the binary FIT file, computes average / ES / SD across shot velocities, and surfaces a summary the user can drop into a recipe's notes. Pro-gated. Lives on the recipe form's Pro Tools section (`_onImportGarminFit`); the landing-screen tile shows an informational SnackBar pointing the user there. Extracting the form-side handler into a context-free service for landing-screen invocation is a Phase Two task (the handler today is tightly coupled to the recipe form's `_notes` / `_chronographUsed` controllers and the autosave dirty-flag wiring).
 
 ### 19.5 Recipe form (`recipe_form_screen.dart`)
 
@@ -1161,7 +1160,7 @@ One-screen, no-section, notebook-line capture form. Captures the fields a reload
 2. Caliber
 3. Powder + charge (gr)
 4. Bullet + weight (gr)
-5. COAL or CBTO axis toggle + a single dimension field — **ships in Phase One Group 4.** The file's `WHAT THIS FILE DOES` header already lists this row; the editor doesn't render it yet.
+5. COAL or CBTO axis toggle + a single dimension field (Phase One Group 4 — `_DimensionAxis` enum + `_dimension` controller; save routes to `coalIn` xor `cbtoIn` based on the selected axis; templates with a `coalIn` value force axis = COAL, templates with `cbtoIn` only force axis = CBTO).
 6. Notes
 
 Plus a "Start from a template" picker that pre-fills all five fields with a published-data starting load.
@@ -1191,11 +1190,11 @@ Operator picks the path in Phase Two.
 
 When the user picks a bullet from the autocomplete on the recipe form, the form back-fills the caliber field by mapping the bullet's diameter to a colloquial caliber label.
 
-**Today:** the mapping is a hardcoded 14-entry private method `_caliberLabelFromDiameter` inside `recipe_form_screen.dart`. Every new cartridge family (6mm ARC, 6.5 PRC, .224 Valkyrie) has to be added in two places — once to the cartridge catalog seed, once to this private table.
+The canonical method is `ComponentRepository.caliberLabelForBulletDiameter(double diameterIn)` (Phase One Group 3 — 2026-05-14). Iterates `_kCaliberFamiliesByDiameter` (a 14-entry `final Map<double, String>` at `lib/repositories/component_repository.dart` file level), returns the entry with the smallest residual diameter within ±0.0015 inches tolerance, returns null when no entry matches.
 
-**Phase One Group 3 (planned):** `ComponentRepository.caliberLabelForBulletDiameter(double diameterIn)` becomes the canonical method. It will read the cartridge catalog and return the colloquial label matching the diameter within ±0.0015 inches tolerance, preferring the shortest label when multiple cartridge families share a diameter. A small in-method fallback will handle metric families (e.g. "6mm", "9mm") that may not be represented as standalone cartridge rows; that fallback gets a `// TODO(phase-2): move to a caliberFamilies seed JSON` comment for eventual elimination.
+The map is `final`, not `const`, because Dart bans `const Map<double, _>` (double overrides `==` / `hashCode` for NaN + signed-zero semantics). The signature is `Future<String?>` even though the body is synchronous, so call sites stay forward-compatible with a future catalog-backed implementation. The map is inherently a separate dataset from the cartridge catalog (four entries — `6mm` / `6.5mm` / `7mm` / `9mm` — are metric family labels that don't appear as standalone cartridge names; several imperial entries have leading-token collisions with cartridge names like `.25-06` vs `.257`), so a leading-token-from-name extraction over the catalog would be too brittle.
 
-The redesign makes "what caliber is this bullet" a catalog question rather than a form-private detail, so adding a new cartridge family becomes a one-place change.
+A `// TODO(phase-2): move to assets/seed_data/caliber_families.json` comment on the map marks the eventual move to the live-update pipeline (§ 5). The regression suite is `test/component_repository_caliber_test.dart` — 24 tests including 16 round-trip assertions, 4 boundary checks, tolerance / null / negative defensives, and a tie-break test.
 
 ### 19.10 Phase Two queue (recipes surface)
 
