@@ -2184,6 +2184,63 @@ class _RealisticScenePainter extends CustomPainter {
   /// (single-target rendering path). For rack-mode slot rendering see
   /// [_drawCategoryShape] below — same dispatch logic but with
   /// caller-supplied spec and paints.
+  /// Phase 10 Group E — soft drop shadow drawn under the target /
+  /// each rack slot in polished + photo modes. Spec §Effect-
+  /// specifications "Soft drop shadow", parameters used verbatim:
+  ///
+  ///   * Offset: `Offset(0, 3)` — straight-down drop, no horizontal
+  ///   * Blur sigma: 4.0 (via `MaskFilter.blur(BlurStyle.normal, 4.0)`)
+  ///   * Color: black at 30% opacity
+  ///
+  /// Shape-aware shadow geometry, also per spec:
+  ///
+  ///   * `circle` (procedural) → `drawCircle` with the shifted
+  ///     center + half-shortest-side radius. The maskFilter blur
+  ///     softens the edge into a radial fade.
+  ///   * `square` / `rectangle` (procedural) → `drawRect` of the
+  ///     shifted rect.
+  ///   * `ipsc` / `animal` / `special` (complex / SVG-ish paths) →
+  ///     `drawRect` of the shifted bounds-rect. Per spec, blurring
+  ///     the actual silhouette path is more expensive AND would
+  ///     read as a fuzzy animal-shaped blob rather than a shadow;
+  ///     the bounds-rect approximation reads as "this object is
+  ///     here, casting a soft shadow under it" at preview canvas
+  ///     sizes.
+  ///
+  /// Cartoon mode returns early — no shadow drawn, paint pass is
+  /// byte-identical to pre-Phase-10.
+  ///
+  /// Visual goal: the target appears grounded — feet planted on the
+  /// backdrop rather than floating. The blur σ=4.0 falloff reaches
+  /// ~12 px (3σ) beyond the rect edges; at the default 234-px-tall
+  /// preview that's ~5% of canvas height — visible but not heavy.
+  void _paintTargetShadow(Canvas canvas, Rect rect, String category) {
+    if (_effectiveStyle == VisualStyle.cartoon) return;
+    final shadowRect = rect.shift(const Offset(0, 3));
+    final shadowPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.30)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4.0);
+
+    if (category == 'circle') {
+      // Procedural circle — path-shaped shadow uses the same
+      // drawing primitive (drawCircle) with the shifted center.
+      canvas.drawCircle(
+        shadowRect.center,
+        shadowRect.shortestSide / 2,
+        shadowPaint,
+      );
+      return;
+    }
+
+    // square, rectangle, ipsc, animal, special — all use the
+    // shifted bounds rect. For square/rectangle this is the same
+    // path; for the SVG-ish complex paths (ipsc, animal, special)
+    // this is the bounds-rect approximation per spec. Unknown
+    // categories fall through here too (safe default — they
+    // already drawRect for their fill).
+    canvas.drawRect(shadowRect, shadowPaint);
+  }
+
   void _paintTarget(Canvas canvas, Rect rect) {
     // Fill color: override beats target.colorHex; both go through the
     // same hex parser.
@@ -2215,6 +2272,21 @@ class _RealisticScenePainter extends CustomPainter {
     Paint fillPaint,
     Paint outlinePaint,
   ) {
+    // Phase 10 Group E — soft drop shadow under the target / slot in
+    // polished + photo modes. Painted FIRST (before SVG resolution
+    // and before the procedural-shape switch) so the target's fill
+    // and outline draw cleanly on top — the target appears grounded
+    // rather than floating. Cartoon mode skips the helper entirely.
+    //
+    // In rack mode this fires per-slot from the rack slot loop AFTER
+    // the mount-structure rig has already drawn, so each slot's
+    // shadow lands ON TOP of the rig (per spec's default order:
+    // shadow → after rig, before fill). If that order looks wrong on
+    // cold-restart QA — particularly for `silhouette_stand` racks
+    // where the stake sits directly behind the silhouette — the
+    // shadow could be moved to draw inside the rig painter instead.
+    _paintTargetShadow(canvas, rect, spec.category);
+
     final svgPath = resolveTargetSvgPath(
       rect,
       spec.category,
