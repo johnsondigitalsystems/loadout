@@ -147,6 +147,7 @@
 import 'package:drift/drift.dart';
 
 import '../database/database.dart';
+import '../models/recipe_template.dart';
 import '../utils/natural_sort.dart';
 
 /// Repository for user-saved recipes (load records).
@@ -163,6 +164,55 @@ import '../utils/natural_sort.dart';
 class RecipeRepository {
   RecipeRepository(this.db);
   final AppDatabase db;
+
+  // ─────────────────────── Recipe templates ───────────────────────
+  //
+  // Phase Two Group 1 (2026-05-15, v41): templates moved from a
+  // static const Dart list in `lib/data/recipe_templates.dart` to
+  // a seeded reference table (`assets/seed_data/recipe_templates.json`
+  // → `RecipeTemplates` drift table). Callers that previously
+  // iterated `kRecipeTemplates` now await `allTemplates()` or
+  // `templatesByDetailLevel(...)`.
+
+  /// All recipe templates from the seeded `RecipeTemplates`
+  /// reference table. Order is the JSON-author order (insertion
+  /// order on seed) — drift's primary-key uniqueness keeps the
+  /// final order stable across re-seeds.
+  Future<List<RecipeTemplate>> allTemplates() async {
+    final rows = await db.select(db.recipeTemplates).get();
+    return rows.map(_rowToTemplate).toList(growable: false);
+  }
+
+  /// Templates filtered to the given detail level. Used by future
+  /// pickers that want to surface only Quick-mode templates in a
+  /// Quick form. Today's Quick Add picker uses `allTemplates()`
+  /// directly because every shipping template is `quick` per the
+  /// Phase Two Group 1 default.
+  Future<List<RecipeTemplate>> templatesByDetailLevel(
+    RecipeTemplateDetailLevel level,
+  ) async {
+    final rows = await (db.select(db.recipeTemplates)
+          ..where((t) => t.recommendedDetailLevel.equals(level.name)))
+        .get();
+    return rows.map(_rowToTemplate).toList(growable: false);
+  }
+
+  RecipeTemplate _rowToTemplate(RecipeTemplateRow r) => RecipeTemplate(
+        id: r.id,
+        name: r.name,
+        description: r.description,
+        recommendedDetailLevel: RecipeTemplateDetailLevel.values
+            .firstWhere((v) => v.name == r.recommendedDetailLevel),
+        caliber: r.caliber,
+        powder: r.powder,
+        powderChargeGr: r.powderChargeGr,
+        bullet: r.bullet,
+        bulletWeightGr: r.bulletWeightGr,
+        coalIn: r.coalIn,
+        cbtoIn: r.cbtoIn,
+        useCase: r.useCase,
+        notes: r.notes,
+      );
 
   // ─────────────────────── Recipes ───────────────────────
 

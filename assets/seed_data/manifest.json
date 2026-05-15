@@ -1,6 +1,6 @@
 {
-  "manifest_version": 16,
-  "generated_at": "2026-05-15T00:00:00Z",
+  "manifest_version": 17,
+  "generated_at": "2026-05-15T12:00:00Z",
   "files": {
     "cartridges": {
       "version": 1,
@@ -89,6 +89,10 @@
     "firearm_components_bipods": {
       "version": 1,
       "filename": "components/bipods.json"
+    },
+    "recipe_templates": {
+      "version": 1,
+      "filename": "recipe_templates.json"
     }
   }
 }

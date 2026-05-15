@@ -78,7 +78,7 @@ void main() {
       await db.close();
     });
 
-    test('schemaVersion is 40', () {
+    test('schemaVersion is 41', () {
       // v35 added Range Day Realistic / per-firearm scope-and-reticle
       // defaults; v36 added `targets.shape_id` for SVG dispatch (v2.3
       // target render fix); v37 added the per-target `center_point`
@@ -94,11 +94,16 @@ void main() {
       // `TargetRackChildren` FK child table was dropped and each
       // rack's children now ride inline on a new
       // `TargetRacks.slotsJson` column (drift TypeConverter,
-      // `RackSlotsConverter`). The file keeps its v35 name because
-      // every v35-era assertion below is still valid on v40 —
-      // schema bumps are additive (except v39 / v40 which are
-      // explicit drop-and-recreate cycles for reference data).
-      expect(db.schemaVersion, 40);
+      // `RackSlotsConverter`). v41 (Phase Two Group 1, 2026-05-15)
+      // added the `RecipeTemplates` reference table — recipe
+      // templates moved from a static const Dart list to seed
+      // JSON so they ride the manifest-versioned live update
+      // pipeline. The file keeps its v35 name because every
+      // v35-era assertion below is still valid on v41 — schema
+      // bumps are additive (except v39 / v40 which are explicit
+      // drop-and-recreate cycles for reference data, and v41
+      // which is a plain `createTable`).
+      expect(db.schemaVersion, 41);
     });
 
     test('targets accepts the new v38 svg_scale_factor column', () async {

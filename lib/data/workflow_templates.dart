@@ -9,8 +9,13 @@
 // configured by hand across three different screens (Quick Add, Range
 // Day session setup, ballistics solver):
 //
-//   * A starter recipe (links by id into [kRecipeTemplates] in
-//     `lib/data/recipe_templates.dart`).
+//   * A starter recipe id ([recipeTemplateId]) — a stable string
+//     pointing into the seeded `RecipeTemplates` reference table
+//     (Phase Two Group 1, 2026-05-15; see
+//     `lib/models/recipe_template.dart` +
+//     `assets/seed_data/recipe_templates.json`). Callers that need
+//     the full template look it up via
+//     `RecipeRepository.allTemplates()` and filter by id.
 //   * A target type ('steel-plate' | 'paper' | 'silhouette').
 //   * A typical engagement distance, in yards.
 //   * A typical zero range, in yards.
@@ -48,8 +53,6 @@
 //   discipline" affordance on the template-picker card.
 
 import 'package:flutter/material.dart';
-
-import 'recipe_templates.dart';
 
 /// One discipline preset surfaced from onboarding and Quick Add. Every
 /// field is optional except [id], [name], [description], and [icon] — a
@@ -115,17 +118,14 @@ class WorkflowTemplate {
   ///     the user is going to import one).
   final String? defaultDragModel;
 
-  /// Convenience: resolve the linked recipe template, if any. Returns
-  /// null when [recipeTemplateId] is null or doesn't match a known
-  /// template (defensive — recipe ids might be re-keyed in the future).
-  RecipeTemplate? get recipeTemplate {
-    final id = recipeTemplateId;
-    if (id == null) return null;
-    for (final t in kRecipeTemplates) {
-      if (t.id == id) return t;
-    }
-    return null;
-  }
+  // Phase Two Group 1 (2026-05-15) removed the
+  // `RecipeTemplate? get recipeTemplate` convenience getter that
+  // iterated the retired `kRecipeTemplates` const list. The getter
+  // had zero callers in `lib/` or `test/` (verified by grep before
+  // deletion). Callers that want a full template now go through
+  // `RecipeRepository.allTemplates()` and filter by id —
+  // recipe templates live in a seeded drift table now, not a
+  // compile-time const.
 }
 
 /// The shipping discipline set. Order is curated — broadest cohorts first.

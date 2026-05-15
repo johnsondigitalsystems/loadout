@@ -533,7 +533,9 @@ lib/
     database.g.dart          Generated — do not edit
     seed_loader.dart         First-run JSON → SQLite
   data/
-    recipe_templates.dart    Hardcoded starter loads (Phase Two: move to seed JSON)
+    # Phase Two Group 1 (v41, 2026-05-15) deleted lib/data/recipe_templates.dart.
+    # Templates now seeded from assets/seed_data/recipe_templates.json into the
+    # RecipeTemplates drift table; the model lives at lib/models/recipe_template.dart.
   repositories/              ComponentRepository, RecipeRepository,
                              FirearmRepository, FavoritesRepository
   services/
@@ -1167,9 +1169,11 @@ Plus a "Start from a template" picker that pre-fills all five fields with a publ
 
 ### Templates
 
-Templates live in `lib/data/recipe_templates.dart` as a static const `kRecipeTemplates`. **Phase Two queue:** move to `assets/seed_data/recipe_templates.json` so they participate in the live catalog update pipeline (§ 5).
+Templates ship in `assets/seed_data/recipe_templates.json` and seed into the `RecipeTemplates` drift table on first run via `SeedLoader._seedRecipeTemplates()`. The Quick Add picker reads them via `RecipeRepository.allTemplates()` (typed `List<RecipeTemplate>` from `lib/models/recipe_template.dart`). Phase Two Group 1 (2026-05-15, schema v41, manifest v17) moved them out of the retired `lib/data/recipe_templates.dart` static const list so they ride the manifest-versioned live update pipeline (§ 5) — corrections and additions ship without an App Store push.
 
-The template disclaimer banner (`kRecipeTemplateDisclaimer`) is always shown — published starting loads are reference points, not recommendations.
+Each template carries a `recommendedDetailLevel` annotation (`quick` / `core` / `extended` / `full`). Today's five shipping templates are all `quick` (load-defining fields only — caliber + powder + charge + bullet + weight + COAL/CBTO + notes). The `templatesByDetailLevel(...)` repository method lets future pickers filter by the form's mode after Phase Three's Quick → Regular bridge redesign.
+
+The template disclaimer banner (`RecipeTemplate.disclaimer` static const) is always shown — published starting loads are reference points, not recommendations. The string lives on the model class rather than as a top-level const so we can specialise per-template later if subsonic or other categories need different wording.
 
 ### Quick → Regular bridge
 

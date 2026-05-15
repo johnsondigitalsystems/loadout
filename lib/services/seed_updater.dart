@@ -186,6 +186,11 @@ const allowedKeys = <String>{
   'firearm_components_muzzle_brakes',
   'firearm_components_suppressors',
   'firearm_components_bipods',
+  // v41 (Phase Two Group 1, 2026-05-15) — recipe templates moved
+  // from a static const Dart list to a seeded reference table so
+  // they ride the manifest-versioned live update path. See
+  // `lib/models/recipe_template.dart` + `_seedRecipeTemplates`.
+  'recipe_templates',
 };
 
 /// Pulls fresh reference-catalog JSON from Firebase Storage and caches it

@@ -2252,6 +2252,51 @@ class ComponentInventoryAdjustments extends Table {
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
+// ─── Schema v41 additions (Phase Two Group 1) ──────────────────────
+//
+// Reference-data table for the "Start from a template" picker in
+// Quick Add. Pre-Phase-Two, templates lived as a static const Dart
+// list in `lib/data/recipe_templates.dart`; Phase Two Group 1
+// (2026-05-15) moved them to `assets/seed_data/recipe_templates.json`
+// so they ride the manifest-versioned live update path
+// (Engineering.md § 5). All five existing templates ported verbatim.
+//
+// Column shape mirrors the `RecipeTemplate` model in
+// `lib/models/recipe_template.dart`. The `recommendedDetailLevel`
+// column stores the enum's `.name` string (drift convention for
+// enums-on-disk). Adding a new template = one JSON entry + a
+// manifest bump; no schema change needed.
+@DataClassName('RecipeTemplateRow')
+class RecipeTemplates extends Table {
+  /// Stable identifier ported from the retired `kRecipeTemplates`
+  /// const list. Pinned across catalog updates so a future-version
+  /// of a template (corrected charge weight, refined notes)
+  /// overwrites the existing row instead of duplicating.
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  TextColumn get description => text().nullable()();
+
+  /// `RecipeTemplateDetailLevel.name` string (`quick` / `core` /
+  /// `extended` / `full`). Enforced at read time by
+  /// `RecipeTemplate.fromJson` / `RecipeRepository._rowToTemplate`.
+  TextColumn get recommendedDetailLevel => text()();
+
+  // Pre-fill fields — all nullable so a template that only knows
+  // a caliber + powder + charge is still useful.
+  TextColumn get caliber => text().nullable()();
+  TextColumn get powder => text().nullable()();
+  RealColumn get powderChargeGr => real().nullable()();
+  TextColumn get bullet => text().nullable()();
+  RealColumn get bulletWeightGr => real().nullable()();
+  RealColumn get coalIn => real().nullable()();
+  RealColumn get cbtoIn => real().nullable()();
+  TextColumn get useCase => text().nullable()();
+  TextColumn get notes => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 // ─────────────────────── Database ───────────────────────
 
 @DriftDatabase(
@@ -2339,6 +2384,10 @@ class ComponentInventoryAdjustments extends Table {
     // on UserFirearms — the `isCustomBuild` flag and 7 free-form
     // component-name strings).
     FirearmComponents,
+    // Schema v41 additions (Phase Two Group 1, 2026-05-15) — recipe
+    // templates moved from a static const Dart list to seed JSON so
+    // they ride the manifest-versioned live update path.
+    RecipeTemplates,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -2347,7 +2396,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 40;
+  int get schemaVersion => 41;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -3178,6 +3227,17 @@ class AppDatabase extends _$AppDatabase {
             await customStatement('DROP TABLE IF EXISTS target_racks');
             await m.createTable(targetRacks);
           }
+          if (from < 41) {
+            // v41 — Phase Two Group 1: recipe templates moved from
+            // a static const Dart list to a seeded reference table
+            // so they ride the manifest-versioned live update path
+            // (Engineering.md § 5). Pre-launch, reference-only —
+            // no user data lives on RecipeTemplates. Plain
+            // `createTable`; SeedLoader populates from
+            // `assets/seed_data/recipe_templates.json` on next
+            // cold start via `_seedRecipeTemplates()`.
+            await m.createTable(recipeTemplates);
+          }
         },
       );
 
@@ -3563,6 +3623,18 @@ class AppDatabase extends _$AppDatabase {
     final count = await (selectOnly(manufacturedAmmo)
           ..addColumns([manufacturedAmmo.id.count()]))
         .map((row) => row.read(manufacturedAmmo.id.count()) ?? 0)
+        .getSingle();
+    return count == 0;
+  }
+
+  /// True when the [RecipeTemplates] catalog is empty. Used by the
+  /// seed loader to decide whether to insert the bundled recipe
+  /// templates on first launch or after the v41 migration (Phase
+  /// Two Group 1).
+  Future<bool> get recipeTemplatesAreEmpty async {
+    final count = await (selectOnly(recipeTemplates)
+          ..addColumns([recipeTemplates.id.count()]))
+        .map((row) => row.read(recipeTemplates.id.count()) ?? 0)
         .getSingle();
     return count == 0;
   }

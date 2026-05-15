@@ -148,6 +148,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/recipe_template.dart';
 import '../models/target_center_point.dart';
 import '../services/seed_updater.dart' show seedNeedsReseedPrefix;
 import 'database.dart';
@@ -247,6 +248,13 @@ class SeedLoader {
     final firearmComponentsReseed = firstRun ||
         await db.firearmComponentsAreEmpty ||
         flag('firearm_components');
+    // Recipe templates (added schema v41, Phase Two Group 1).
+    // Curated starter loads surfaced from Quick Add's template
+    // picker. Moved from a static const Dart list to seed JSON so
+    // they ride the manifest-versioned live update path.
+    final recipeTemplatesReseed = firstRun ||
+        await db.recipeTemplatesAreEmpty ||
+        flag('recipe_templates');
 
     final any = cartridgesReseed ||
         powdersReseed ||
@@ -262,7 +270,8 @@ class SeedLoader {
         targetRacksReseed ||
         // verifiedScopesReseed retired in the v2.3 hotfix (see above).
         manufacturedAmmoReseed ||
-        firearmComponentsReseed;
+        firearmComponentsReseed ||
+        recipeTemplatesReseed;
     if (!any) return;
 
     await db.transaction(() async {
@@ -423,6 +432,17 @@ class SeedLoader {
           await db.delete(db.firearmComponents).go();
         }
         await _seedFirearmComponents();
+      }
+      if (recipeTemplatesReseed) {
+        // Recipe templates (Phase Two Group 1, v41). Reference-only
+        // catalog; no `Manufacturers` FK, no user data lives on the
+        // table. Wipe + reinsert so a refreshed JSON cleanly
+        // replaces the previous template set on next launch — same
+        // pattern as `manufacturedAmmo` and `firearmComponents`.
+        if (!firstRun) {
+          await db.delete(db.recipeTemplates).go();
+        }
+        await _seedRecipeTemplates();
       }
       // Re-seed primers if they're missing — the v3 migration intentionally
       // clears them so the new productLine field gets populated for
@@ -1093,6 +1113,45 @@ class SeedLoader {
               totalHeightIn: (m['total_height_in'] as num).toDouble(),
               notes: Value(m['notes'] as String?),
               slotsJson: slots,
+            ),
+          );
+    }
+  }
+
+  /// Seed the [RecipeTemplates] reference catalog from
+  /// `assets/seed_data/recipe_templates.json` (Phase Two Group 1,
+  /// v41). The JSON shape is `{ "version": N, "templates": [...] }`;
+  /// each entry parses via `RecipeTemplate.fromJson`, which throws
+  /// on an unknown `recommendedDetailLevel` enum value — we surface
+  /// the throw rather than silently degrading so a typo in the
+  /// seed file is loud at startup, not silent in production.
+  ///
+  /// `useCase` lives on the model but not on the drift row; it
+  /// pre-fills the recipe's Use Case field at apply time, not
+  /// stored on the template itself. (Workflow templates link
+  /// recipe→use_case independently.)
+  Future<void> _seedRecipeTemplates() async {
+    final root = await _readJsonObject('recipe_templates.json');
+    final entries =
+        (root['templates'] as List<dynamic>? ?? const <dynamic>[]);
+    for (final entry in entries) {
+      final t =
+          RecipeTemplate.fromJson(entry as Map<String, dynamic>);
+      await db.into(db.recipeTemplates).insert(
+            RecipeTemplatesCompanion.insert(
+              id: t.id,
+              name: t.name,
+              description: Value(t.description),
+              recommendedDetailLevel: t.recommendedDetailLevel.name,
+              caliber: Value(t.caliber),
+              powder: Value(t.powder),
+              powderChargeGr: Value(t.powderChargeGr),
+              bullet: Value(t.bullet),
+              bulletWeightGr: Value(t.bulletWeightGr),
+              coalIn: Value(t.coalIn),
+              cbtoIn: Value(t.cbtoIn),
+              useCase: Value(t.useCase),
+              notes: Value(t.notes),
             ),
           );
     }

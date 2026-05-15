@@ -37300,6 +37300,798 @@ class FirearmComponentsCompanion extends UpdateCompanion<FirearmComponentRow> {
   }
 }
 
+class $RecipeTemplatesTable extends RecipeTemplates
+    with TableInfo<$RecipeTemplatesTable, RecipeTemplateRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RecipeTemplatesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _recommendedDetailLevelMeta =
+      const VerificationMeta('recommendedDetailLevel');
+  @override
+  late final GeneratedColumn<String> recommendedDetailLevel =
+      GeneratedColumn<String>(
+        'recommended_detail_level',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _caliberMeta = const VerificationMeta(
+    'caliber',
+  );
+  @override
+  late final GeneratedColumn<String> caliber = GeneratedColumn<String>(
+    'caliber',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _powderMeta = const VerificationMeta('powder');
+  @override
+  late final GeneratedColumn<String> powder = GeneratedColumn<String>(
+    'powder',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _powderChargeGrMeta = const VerificationMeta(
+    'powderChargeGr',
+  );
+  @override
+  late final GeneratedColumn<double> powderChargeGr = GeneratedColumn<double>(
+    'powder_charge_gr',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _bulletMeta = const VerificationMeta('bullet');
+  @override
+  late final GeneratedColumn<String> bullet = GeneratedColumn<String>(
+    'bullet',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _bulletWeightGrMeta = const VerificationMeta(
+    'bulletWeightGr',
+  );
+  @override
+  late final GeneratedColumn<double> bulletWeightGr = GeneratedColumn<double>(
+    'bullet_weight_gr',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _coalInMeta = const VerificationMeta('coalIn');
+  @override
+  late final GeneratedColumn<double> coalIn = GeneratedColumn<double>(
+    'coal_in',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _cbtoInMeta = const VerificationMeta('cbtoIn');
+  @override
+  late final GeneratedColumn<double> cbtoIn = GeneratedColumn<double>(
+    'cbto_in',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _useCaseMeta = const VerificationMeta(
+    'useCase',
+  );
+  @override
+  late final GeneratedColumn<String> useCase = GeneratedColumn<String>(
+    'use_case',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    description,
+    recommendedDetailLevel,
+    caliber,
+    powder,
+    powderChargeGr,
+    bullet,
+    bulletWeightGr,
+    coalIn,
+    cbtoIn,
+    useCase,
+    notes,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'recipe_templates';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RecipeTemplateRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('recommended_detail_level')) {
+      context.handle(
+        _recommendedDetailLevelMeta,
+        recommendedDetailLevel.isAcceptableOrUnknown(
+          data['recommended_detail_level']!,
+          _recommendedDetailLevelMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_recommendedDetailLevelMeta);
+    }
+    if (data.containsKey('caliber')) {
+      context.handle(
+        _caliberMeta,
+        caliber.isAcceptableOrUnknown(data['caliber']!, _caliberMeta),
+      );
+    }
+    if (data.containsKey('powder')) {
+      context.handle(
+        _powderMeta,
+        powder.isAcceptableOrUnknown(data['powder']!, _powderMeta),
+      );
+    }
+    if (data.containsKey('powder_charge_gr')) {
+      context.handle(
+        _powderChargeGrMeta,
+        powderChargeGr.isAcceptableOrUnknown(
+          data['powder_charge_gr']!,
+          _powderChargeGrMeta,
+        ),
+      );
+    }
+    if (data.containsKey('bullet')) {
+      context.handle(
+        _bulletMeta,
+        bullet.isAcceptableOrUnknown(data['bullet']!, _bulletMeta),
+      );
+    }
+    if (data.containsKey('bullet_weight_gr')) {
+      context.handle(
+        _bulletWeightGrMeta,
+        bulletWeightGr.isAcceptableOrUnknown(
+          data['bullet_weight_gr']!,
+          _bulletWeightGrMeta,
+        ),
+      );
+    }
+    if (data.containsKey('coal_in')) {
+      context.handle(
+        _coalInMeta,
+        coalIn.isAcceptableOrUnknown(data['coal_in']!, _coalInMeta),
+      );
+    }
+    if (data.containsKey('cbto_in')) {
+      context.handle(
+        _cbtoInMeta,
+        cbtoIn.isAcceptableOrUnknown(data['cbto_in']!, _cbtoInMeta),
+      );
+    }
+    if (data.containsKey('use_case')) {
+      context.handle(
+        _useCaseMeta,
+        useCase.isAcceptableOrUnknown(data['use_case']!, _useCaseMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RecipeTemplateRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RecipeTemplateRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      ),
+      recommendedDetailLevel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}recommended_detail_level'],
+      )!,
+      caliber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}caliber'],
+      ),
+      powder: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}powder'],
+      ),
+      powderChargeGr: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}powder_charge_gr'],
+      ),
+      bullet: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bullet'],
+      ),
+      bulletWeightGr: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}bullet_weight_gr'],
+      ),
+      coalIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}coal_in'],
+      ),
+      cbtoIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}cbto_in'],
+      ),
+      useCase: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}use_case'],
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+    );
+  }
+
+  @override
+  $RecipeTemplatesTable createAlias(String alias) {
+    return $RecipeTemplatesTable(attachedDatabase, alias);
+  }
+}
+
+class RecipeTemplateRow extends DataClass
+    implements Insertable<RecipeTemplateRow> {
+  /// Stable identifier ported from the retired `kRecipeTemplates`
+  /// const list. Pinned across catalog updates so a future-version
+  /// of a template (corrected charge weight, refined notes)
+  /// overwrites the existing row instead of duplicating.
+  final String id;
+  final String name;
+  final String? description;
+
+  /// `RecipeTemplateDetailLevel.name` string (`quick` / `core` /
+  /// `extended` / `full`). Enforced at read time by
+  /// `RecipeTemplate.fromJson` / `RecipeRepository._rowToTemplate`.
+  final String recommendedDetailLevel;
+  final String? caliber;
+  final String? powder;
+  final double? powderChargeGr;
+  final String? bullet;
+  final double? bulletWeightGr;
+  final double? coalIn;
+  final double? cbtoIn;
+  final String? useCase;
+  final String? notes;
+  const RecipeTemplateRow({
+    required this.id,
+    required this.name,
+    this.description,
+    required this.recommendedDetailLevel,
+    this.caliber,
+    this.powder,
+    this.powderChargeGr,
+    this.bullet,
+    this.bulletWeightGr,
+    this.coalIn,
+    this.cbtoIn,
+    this.useCase,
+    this.notes,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    map['recommended_detail_level'] = Variable<String>(recommendedDetailLevel);
+    if (!nullToAbsent || caliber != null) {
+      map['caliber'] = Variable<String>(caliber);
+    }
+    if (!nullToAbsent || powder != null) {
+      map['powder'] = Variable<String>(powder);
+    }
+    if (!nullToAbsent || powderChargeGr != null) {
+      map['powder_charge_gr'] = Variable<double>(powderChargeGr);
+    }
+    if (!nullToAbsent || bullet != null) {
+      map['bullet'] = Variable<String>(bullet);
+    }
+    if (!nullToAbsent || bulletWeightGr != null) {
+      map['bullet_weight_gr'] = Variable<double>(bulletWeightGr);
+    }
+    if (!nullToAbsent || coalIn != null) {
+      map['coal_in'] = Variable<double>(coalIn);
+    }
+    if (!nullToAbsent || cbtoIn != null) {
+      map['cbto_in'] = Variable<double>(cbtoIn);
+    }
+    if (!nullToAbsent || useCase != null) {
+      map['use_case'] = Variable<String>(useCase);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    return map;
+  }
+
+  RecipeTemplatesCompanion toCompanion(bool nullToAbsent) {
+    return RecipeTemplatesCompanion(
+      id: Value(id),
+      name: Value(name),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      recommendedDetailLevel: Value(recommendedDetailLevel),
+      caliber: caliber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(caliber),
+      powder: powder == null && nullToAbsent
+          ? const Value.absent()
+          : Value(powder),
+      powderChargeGr: powderChargeGr == null && nullToAbsent
+          ? const Value.absent()
+          : Value(powderChargeGr),
+      bullet: bullet == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bullet),
+      bulletWeightGr: bulletWeightGr == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bulletWeightGr),
+      coalIn: coalIn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(coalIn),
+      cbtoIn: cbtoIn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cbtoIn),
+      useCase: useCase == null && nullToAbsent
+          ? const Value.absent()
+          : Value(useCase),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+    );
+  }
+
+  factory RecipeTemplateRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RecipeTemplateRow(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      description: serializer.fromJson<String?>(json['description']),
+      recommendedDetailLevel: serializer.fromJson<String>(
+        json['recommendedDetailLevel'],
+      ),
+      caliber: serializer.fromJson<String?>(json['caliber']),
+      powder: serializer.fromJson<String?>(json['powder']),
+      powderChargeGr: serializer.fromJson<double?>(json['powderChargeGr']),
+      bullet: serializer.fromJson<String?>(json['bullet']),
+      bulletWeightGr: serializer.fromJson<double?>(json['bulletWeightGr']),
+      coalIn: serializer.fromJson<double?>(json['coalIn']),
+      cbtoIn: serializer.fromJson<double?>(json['cbtoIn']),
+      useCase: serializer.fromJson<String?>(json['useCase']),
+      notes: serializer.fromJson<String?>(json['notes']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'description': serializer.toJson<String?>(description),
+      'recommendedDetailLevel': serializer.toJson<String>(
+        recommendedDetailLevel,
+      ),
+      'caliber': serializer.toJson<String?>(caliber),
+      'powder': serializer.toJson<String?>(powder),
+      'powderChargeGr': serializer.toJson<double?>(powderChargeGr),
+      'bullet': serializer.toJson<String?>(bullet),
+      'bulletWeightGr': serializer.toJson<double?>(bulletWeightGr),
+      'coalIn': serializer.toJson<double?>(coalIn),
+      'cbtoIn': serializer.toJson<double?>(cbtoIn),
+      'useCase': serializer.toJson<String?>(useCase),
+      'notes': serializer.toJson<String?>(notes),
+    };
+  }
+
+  RecipeTemplateRow copyWith({
+    String? id,
+    String? name,
+    Value<String?> description = const Value.absent(),
+    String? recommendedDetailLevel,
+    Value<String?> caliber = const Value.absent(),
+    Value<String?> powder = const Value.absent(),
+    Value<double?> powderChargeGr = const Value.absent(),
+    Value<String?> bullet = const Value.absent(),
+    Value<double?> bulletWeightGr = const Value.absent(),
+    Value<double?> coalIn = const Value.absent(),
+    Value<double?> cbtoIn = const Value.absent(),
+    Value<String?> useCase = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
+  }) => RecipeTemplateRow(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    description: description.present ? description.value : this.description,
+    recommendedDetailLevel:
+        recommendedDetailLevel ?? this.recommendedDetailLevel,
+    caliber: caliber.present ? caliber.value : this.caliber,
+    powder: powder.present ? powder.value : this.powder,
+    powderChargeGr: powderChargeGr.present
+        ? powderChargeGr.value
+        : this.powderChargeGr,
+    bullet: bullet.present ? bullet.value : this.bullet,
+    bulletWeightGr: bulletWeightGr.present
+        ? bulletWeightGr.value
+        : this.bulletWeightGr,
+    coalIn: coalIn.present ? coalIn.value : this.coalIn,
+    cbtoIn: cbtoIn.present ? cbtoIn.value : this.cbtoIn,
+    useCase: useCase.present ? useCase.value : this.useCase,
+    notes: notes.present ? notes.value : this.notes,
+  );
+  RecipeTemplateRow copyWithCompanion(RecipeTemplatesCompanion data) {
+    return RecipeTemplateRow(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      recommendedDetailLevel: data.recommendedDetailLevel.present
+          ? data.recommendedDetailLevel.value
+          : this.recommendedDetailLevel,
+      caliber: data.caliber.present ? data.caliber.value : this.caliber,
+      powder: data.powder.present ? data.powder.value : this.powder,
+      powderChargeGr: data.powderChargeGr.present
+          ? data.powderChargeGr.value
+          : this.powderChargeGr,
+      bullet: data.bullet.present ? data.bullet.value : this.bullet,
+      bulletWeightGr: data.bulletWeightGr.present
+          ? data.bulletWeightGr.value
+          : this.bulletWeightGr,
+      coalIn: data.coalIn.present ? data.coalIn.value : this.coalIn,
+      cbtoIn: data.cbtoIn.present ? data.cbtoIn.value : this.cbtoIn,
+      useCase: data.useCase.present ? data.useCase.value : this.useCase,
+      notes: data.notes.present ? data.notes.value : this.notes,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecipeTemplateRow(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('recommendedDetailLevel: $recommendedDetailLevel, ')
+          ..write('caliber: $caliber, ')
+          ..write('powder: $powder, ')
+          ..write('powderChargeGr: $powderChargeGr, ')
+          ..write('bullet: $bullet, ')
+          ..write('bulletWeightGr: $bulletWeightGr, ')
+          ..write('coalIn: $coalIn, ')
+          ..write('cbtoIn: $cbtoIn, ')
+          ..write('useCase: $useCase, ')
+          ..write('notes: $notes')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    description,
+    recommendedDetailLevel,
+    caliber,
+    powder,
+    powderChargeGr,
+    bullet,
+    bulletWeightGr,
+    coalIn,
+    cbtoIn,
+    useCase,
+    notes,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RecipeTemplateRow &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.description == this.description &&
+          other.recommendedDetailLevel == this.recommendedDetailLevel &&
+          other.caliber == this.caliber &&
+          other.powder == this.powder &&
+          other.powderChargeGr == this.powderChargeGr &&
+          other.bullet == this.bullet &&
+          other.bulletWeightGr == this.bulletWeightGr &&
+          other.coalIn == this.coalIn &&
+          other.cbtoIn == this.cbtoIn &&
+          other.useCase == this.useCase &&
+          other.notes == this.notes);
+}
+
+class RecipeTemplatesCompanion extends UpdateCompanion<RecipeTemplateRow> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String?> description;
+  final Value<String> recommendedDetailLevel;
+  final Value<String?> caliber;
+  final Value<String?> powder;
+  final Value<double?> powderChargeGr;
+  final Value<String?> bullet;
+  final Value<double?> bulletWeightGr;
+  final Value<double?> coalIn;
+  final Value<double?> cbtoIn;
+  final Value<String?> useCase;
+  final Value<String?> notes;
+  final Value<int> rowid;
+  const RecipeTemplatesCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.description = const Value.absent(),
+    this.recommendedDetailLevel = const Value.absent(),
+    this.caliber = const Value.absent(),
+    this.powder = const Value.absent(),
+    this.powderChargeGr = const Value.absent(),
+    this.bullet = const Value.absent(),
+    this.bulletWeightGr = const Value.absent(),
+    this.coalIn = const Value.absent(),
+    this.cbtoIn = const Value.absent(),
+    this.useCase = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RecipeTemplatesCompanion.insert({
+    required String id,
+    required String name,
+    this.description = const Value.absent(),
+    required String recommendedDetailLevel,
+    this.caliber = const Value.absent(),
+    this.powder = const Value.absent(),
+    this.powderChargeGr = const Value.absent(),
+    this.bullet = const Value.absent(),
+    this.bulletWeightGr = const Value.absent(),
+    this.coalIn = const Value.absent(),
+    this.cbtoIn = const Value.absent(),
+    this.useCase = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       recommendedDetailLevel = Value(recommendedDetailLevel);
+  static Insertable<RecipeTemplateRow> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? description,
+    Expression<String>? recommendedDetailLevel,
+    Expression<String>? caliber,
+    Expression<String>? powder,
+    Expression<double>? powderChargeGr,
+    Expression<String>? bullet,
+    Expression<double>? bulletWeightGr,
+    Expression<double>? coalIn,
+    Expression<double>? cbtoIn,
+    Expression<String>? useCase,
+    Expression<String>? notes,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (description != null) 'description': description,
+      if (recommendedDetailLevel != null)
+        'recommended_detail_level': recommendedDetailLevel,
+      if (caliber != null) 'caliber': caliber,
+      if (powder != null) 'powder': powder,
+      if (powderChargeGr != null) 'powder_charge_gr': powderChargeGr,
+      if (bullet != null) 'bullet': bullet,
+      if (bulletWeightGr != null) 'bullet_weight_gr': bulletWeightGr,
+      if (coalIn != null) 'coal_in': coalIn,
+      if (cbtoIn != null) 'cbto_in': cbtoIn,
+      if (useCase != null) 'use_case': useCase,
+      if (notes != null) 'notes': notes,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RecipeTemplatesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String?>? description,
+    Value<String>? recommendedDetailLevel,
+    Value<String?>? caliber,
+    Value<String?>? powder,
+    Value<double?>? powderChargeGr,
+    Value<String?>? bullet,
+    Value<double?>? bulletWeightGr,
+    Value<double?>? coalIn,
+    Value<double?>? cbtoIn,
+    Value<String?>? useCase,
+    Value<String?>? notes,
+    Value<int>? rowid,
+  }) {
+    return RecipeTemplatesCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      recommendedDetailLevel:
+          recommendedDetailLevel ?? this.recommendedDetailLevel,
+      caliber: caliber ?? this.caliber,
+      powder: powder ?? this.powder,
+      powderChargeGr: powderChargeGr ?? this.powderChargeGr,
+      bullet: bullet ?? this.bullet,
+      bulletWeightGr: bulletWeightGr ?? this.bulletWeightGr,
+      coalIn: coalIn ?? this.coalIn,
+      cbtoIn: cbtoIn ?? this.cbtoIn,
+      useCase: useCase ?? this.useCase,
+      notes: notes ?? this.notes,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (recommendedDetailLevel.present) {
+      map['recommended_detail_level'] = Variable<String>(
+        recommendedDetailLevel.value,
+      );
+    }
+    if (caliber.present) {
+      map['caliber'] = Variable<String>(caliber.value);
+    }
+    if (powder.present) {
+      map['powder'] = Variable<String>(powder.value);
+    }
+    if (powderChargeGr.present) {
+      map['powder_charge_gr'] = Variable<double>(powderChargeGr.value);
+    }
+    if (bullet.present) {
+      map['bullet'] = Variable<String>(bullet.value);
+    }
+    if (bulletWeightGr.present) {
+      map['bullet_weight_gr'] = Variable<double>(bulletWeightGr.value);
+    }
+    if (coalIn.present) {
+      map['coal_in'] = Variable<double>(coalIn.value);
+    }
+    if (cbtoIn.present) {
+      map['cbto_in'] = Variable<double>(cbtoIn.value);
+    }
+    if (useCase.present) {
+      map['use_case'] = Variable<String>(useCase.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecipeTemplatesCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('recommendedDetailLevel: $recommendedDetailLevel, ')
+          ..write('caliber: $caliber, ')
+          ..write('powder: $powder, ')
+          ..write('powderChargeGr: $powderChargeGr, ')
+          ..write('bullet: $bullet, ')
+          ..write('bulletWeightGr: $bulletWeightGr, ')
+          ..write('coalIn: $coalIn, ')
+          ..write('cbtoIn: $cbtoIn, ')
+          ..write('useCase: $useCase, ')
+          ..write('notes: $notes, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -37371,6 +38163,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $ComponentInventoryAdjustmentsTable(this);
   late final $FirearmComponentsTable firearmComponents =
       $FirearmComponentsTable(this);
+  late final $RecipeTemplatesTable recipeTemplates = $RecipeTemplatesTable(
+    this,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -37420,6 +38215,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     componentInventory,
     componentInventoryAdjustments,
     firearmComponents,
+    recipeTemplates,
   ];
 }
 
@@ -61440,6 +62236,372 @@ typedef $$FirearmComponentsTableProcessedTableManager =
       FirearmComponentRow,
       PrefetchHooks Function()
     >;
+typedef $$RecipeTemplatesTableCreateCompanionBuilder =
+    RecipeTemplatesCompanion Function({
+      required String id,
+      required String name,
+      Value<String?> description,
+      required String recommendedDetailLevel,
+      Value<String?> caliber,
+      Value<String?> powder,
+      Value<double?> powderChargeGr,
+      Value<String?> bullet,
+      Value<double?> bulletWeightGr,
+      Value<double?> coalIn,
+      Value<double?> cbtoIn,
+      Value<String?> useCase,
+      Value<String?> notes,
+      Value<int> rowid,
+    });
+typedef $$RecipeTemplatesTableUpdateCompanionBuilder =
+    RecipeTemplatesCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String?> description,
+      Value<String> recommendedDetailLevel,
+      Value<String?> caliber,
+      Value<String?> powder,
+      Value<double?> powderChargeGr,
+      Value<String?> bullet,
+      Value<double?> bulletWeightGr,
+      Value<double?> coalIn,
+      Value<double?> cbtoIn,
+      Value<String?> useCase,
+      Value<String?> notes,
+      Value<int> rowid,
+    });
+
+class $$RecipeTemplatesTableFilterComposer
+    extends Composer<_$AppDatabase, $RecipeTemplatesTable> {
+  $$RecipeTemplatesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get recommendedDetailLevel => $composableBuilder(
+    column: $table.recommendedDetailLevel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get caliber => $composableBuilder(
+    column: $table.caliber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get powder => $composableBuilder(
+    column: $table.powder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get powderChargeGr => $composableBuilder(
+    column: $table.powderChargeGr,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bullet => $composableBuilder(
+    column: $table.bullet,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get bulletWeightGr => $composableBuilder(
+    column: $table.bulletWeightGr,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get coalIn => $composableBuilder(
+    column: $table.coalIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get cbtoIn => $composableBuilder(
+    column: $table.cbtoIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get useCase => $composableBuilder(
+    column: $table.useCase,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$RecipeTemplatesTableOrderingComposer
+    extends Composer<_$AppDatabase, $RecipeTemplatesTable> {
+  $$RecipeTemplatesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get recommendedDetailLevel => $composableBuilder(
+    column: $table.recommendedDetailLevel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get caliber => $composableBuilder(
+    column: $table.caliber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get powder => $composableBuilder(
+    column: $table.powder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get powderChargeGr => $composableBuilder(
+    column: $table.powderChargeGr,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bullet => $composableBuilder(
+    column: $table.bullet,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get bulletWeightGr => $composableBuilder(
+    column: $table.bulletWeightGr,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get coalIn => $composableBuilder(
+    column: $table.coalIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get cbtoIn => $composableBuilder(
+    column: $table.cbtoIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get useCase => $composableBuilder(
+    column: $table.useCase,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$RecipeTemplatesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RecipeTemplatesTable> {
+  $$RecipeTemplatesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get recommendedDetailLevel => $composableBuilder(
+    column: $table.recommendedDetailLevel,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get caliber =>
+      $composableBuilder(column: $table.caliber, builder: (column) => column);
+
+  GeneratedColumn<String> get powder =>
+      $composableBuilder(column: $table.powder, builder: (column) => column);
+
+  GeneratedColumn<double> get powderChargeGr => $composableBuilder(
+    column: $table.powderChargeGr,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get bullet =>
+      $composableBuilder(column: $table.bullet, builder: (column) => column);
+
+  GeneratedColumn<double> get bulletWeightGr => $composableBuilder(
+    column: $table.bulletWeightGr,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get coalIn =>
+      $composableBuilder(column: $table.coalIn, builder: (column) => column);
+
+  GeneratedColumn<double> get cbtoIn =>
+      $composableBuilder(column: $table.cbtoIn, builder: (column) => column);
+
+  GeneratedColumn<String> get useCase =>
+      $composableBuilder(column: $table.useCase, builder: (column) => column);
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+}
+
+class $$RecipeTemplatesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RecipeTemplatesTable,
+          RecipeTemplateRow,
+          $$RecipeTemplatesTableFilterComposer,
+          $$RecipeTemplatesTableOrderingComposer,
+          $$RecipeTemplatesTableAnnotationComposer,
+          $$RecipeTemplatesTableCreateCompanionBuilder,
+          $$RecipeTemplatesTableUpdateCompanionBuilder,
+          (
+            RecipeTemplateRow,
+            BaseReferences<
+              _$AppDatabase,
+              $RecipeTemplatesTable,
+              RecipeTemplateRow
+            >,
+          ),
+          RecipeTemplateRow,
+          PrefetchHooks Function()
+        > {
+  $$RecipeTemplatesTableTableManager(
+    _$AppDatabase db,
+    $RecipeTemplatesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RecipeTemplatesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RecipeTemplatesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RecipeTemplatesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<String> recommendedDetailLevel = const Value.absent(),
+                Value<String?> caliber = const Value.absent(),
+                Value<String?> powder = const Value.absent(),
+                Value<double?> powderChargeGr = const Value.absent(),
+                Value<String?> bullet = const Value.absent(),
+                Value<double?> bulletWeightGr = const Value.absent(),
+                Value<double?> coalIn = const Value.absent(),
+                Value<double?> cbtoIn = const Value.absent(),
+                Value<String?> useCase = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RecipeTemplatesCompanion(
+                id: id,
+                name: name,
+                description: description,
+                recommendedDetailLevel: recommendedDetailLevel,
+                caliber: caliber,
+                powder: powder,
+                powderChargeGr: powderChargeGr,
+                bullet: bullet,
+                bulletWeightGr: bulletWeightGr,
+                coalIn: coalIn,
+                cbtoIn: cbtoIn,
+                useCase: useCase,
+                notes: notes,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                Value<String?> description = const Value.absent(),
+                required String recommendedDetailLevel,
+                Value<String?> caliber = const Value.absent(),
+                Value<String?> powder = const Value.absent(),
+                Value<double?> powderChargeGr = const Value.absent(),
+                Value<String?> bullet = const Value.absent(),
+                Value<double?> bulletWeightGr = const Value.absent(),
+                Value<double?> coalIn = const Value.absent(),
+                Value<double?> cbtoIn = const Value.absent(),
+                Value<String?> useCase = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RecipeTemplatesCompanion.insert(
+                id: id,
+                name: name,
+                description: description,
+                recommendedDetailLevel: recommendedDetailLevel,
+                caliber: caliber,
+                powder: powder,
+                powderChargeGr: powderChargeGr,
+                bullet: bullet,
+                bulletWeightGr: bulletWeightGr,
+                coalIn: coalIn,
+                cbtoIn: cbtoIn,
+                useCase: useCase,
+                notes: notes,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$RecipeTemplatesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RecipeTemplatesTable,
+      RecipeTemplateRow,
+      $$RecipeTemplatesTableFilterComposer,
+      $$RecipeTemplatesTableOrderingComposer,
+      $$RecipeTemplatesTableAnnotationComposer,
+      $$RecipeTemplatesTableCreateCompanionBuilder,
+      $$RecipeTemplatesTableUpdateCompanionBuilder,
+      (
+        RecipeTemplateRow,
+        BaseReferences<_$AppDatabase, $RecipeTemplatesTable, RecipeTemplateRow>,
+      ),
+      RecipeTemplateRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -61542,4 +62704,6 @@ class $AppDatabaseManager {
       );
   $$FirearmComponentsTableTableManager get firearmComponents =>
       $$FirearmComponentsTableTableManager(_db, _db.firearmComponents);
+  $$RecipeTemplatesTableTableManager get recipeTemplates =>
+      $$RecipeTemplatesTableTableManager(_db, _db.recipeTemplates);
 }

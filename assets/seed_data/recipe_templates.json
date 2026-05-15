@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "templates": [
+    {
+      "id": "6_5_creedmoor_h4350_140eldm",
+      "name": "6.5 Creedmoor — H4350 + 140gr ELD-M",
+      "recommendedDetailLevel": "quick",
+      "caliber": "6.5 Creedmoor",
+      "powder": "Hodgdon H4350",
+      "powderChargeGr": 41.5,
+      "bullet": "Hornady ELD Match 140gr",
+      "bulletWeightGr": 140.0,
+      "coalIn": 2.800,
+      "useCase": "match",
+      "notes": "Popular match starting load. Verify against Hodgdon and Hornady published data for your specific brass and primer."
+    },
+    {
+      "id": "308_win_varget_168smk",
+      "name": ".308 Winchester — Varget + 168gr SMK",
+      "recommendedDetailLevel": "quick",
+      "caliber": ".308 Winchester",
+      "powder": "Hodgdon Varget",
+      "powderChargeGr": 43.0,
+      "bullet": "Sierra MatchKing 168gr",
+      "bulletWeightGr": 168.0,
+      "coalIn": 2.800,
+      "useCase": "match",
+      "notes": "Classic .308 match starting load. Verify against Hodgdon and Sierra published data for your specific brass and primer."
+    },
+    {
+      "id": "223_rem_h335_55fmj",
+      "name": ".223 Rem — H335 + 55gr FMJ",
+      "recommendedDetailLevel": "quick",
+      "caliber": ".223 Remington",
+      "powder": "Hodgdon H335",
+      "powderChargeGr": 24.5,
+      "bullet": "FMJ 55gr",
+      "bulletWeightGr": 55.0,
+      "coalIn": 2.250,
+      "useCase": "practice",
+      "notes": "Common .223 plinking / practice starting load. Verify against Hodgdon published data for your specific brass and primer."
+    },
+    {
+      "id": "300blk_subsonic_h110_220sierra",
+      "name": ".300 Blackout subsonic — H110 + 220gr Sierra",
+      "recommendedDetailLevel": "quick",
+      "caliber": ".300 AAC Blackout",
+      "powder": "Hodgdon H110",
+      "powderChargeGr": 10.5,
+      "bullet": "Sierra MatchKing 220gr",
+      "bulletWeightGr": 220.0,
+      "coalIn": 2.100,
+      "useCase": "practice",
+      "notes": "Subsonic starting load. Subsonic loads have unique pressure considerations — verify carefully against Hodgdon and Sierra published data."
+    },
+    {
+      "id": "9mm_titegroup_124fmj",
+      "name": "9mm Luger — Titegroup + 124gr FMJ",
+      "recommendedDetailLevel": "quick",
+      "caliber": "9mm Luger",
+      "powder": "Hodgdon Titegroup",
+      "powderChargeGr": 4.4,
+      "bullet": "FMJ 124gr",
+      "bulletWeightGr": 124.0,
+      "coalIn": 1.150,
+      "useCase": "practice",
+      "notes": "Popular 9mm range starting load. Verify against Hodgdon published data for your specific bullet and brass."
+    }
+  ]
+}

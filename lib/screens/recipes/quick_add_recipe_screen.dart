@@ -79,8 +79,8 @@ import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../data/recipe_templates.dart';
 import '../../database/database.dart';
+import '../../models/recipe_template.dart';
 import '../../repositories/component_repository.dart';
 import '../../repositories/recipe_repository.dart';
 import '../../services/beginner_mode_service.dart';
@@ -155,11 +155,16 @@ class _QuickAddRecipeScreenState extends State<QuickAddRecipeScreen> {
     setState(() {
       _selectedTemplateId = t.id;
       _name.text = t.name;
-      _caliber.text = t.caliber;
-      _powder.text = t.powder;
-      _powderCharge.text = t.powderChargeGr.toString();
-      _bullet.text = t.bullet;
-      _bulletWeight.text = t.bulletWeightGr.toString();
+      // Every pre-fill field is nullable post-Phase-Two-Group-1.
+      // The five shipping templates all populate caliber + powder +
+      // charge + bullet + weight, but the seed JSON could ship a
+      // partial template tomorrow — fall back to empty rather than
+      // crashing on null.
+      _caliber.text = t.caliber ?? '';
+      _powder.text = t.powder ?? '';
+      _powderCharge.text = t.powderChargeGr?.toString() ?? '';
+      _bullet.text = t.bullet ?? '';
+      _bulletWeight.text = t.bulletWeightGr?.toString() ?? '';
       _useCase = t.useCase;
       // COAL / CBTO pre-fill. Templates are reference loads drawn from
       // published manuals; manuals quote COAL (overall length) much
@@ -543,7 +548,7 @@ class _DisclaimerBanner extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              kRecipeTemplateDisclaimer,
+              RecipeTemplate.disclaimer,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onErrorContainer,
               ),
@@ -557,7 +562,7 @@ class _DisclaimerBanner extends StatelessWidget {
 
 /// Compact "start from a template" affordance. Renders an `ExpansionTile`
 /// so the picker doesn't take vertical space until the user opens it.
-class _TemplatePickerCard extends StatelessWidget {
+class _TemplatePickerCard extends StatefulWidget {
   const _TemplatePickerCard({
     required this.selectedId,
     required this.onPick,
@@ -567,12 +572,30 @@ class _TemplatePickerCard extends StatelessWidget {
   final ValueChanged<RecipeTemplate> onPick;
 
   @override
+  State<_TemplatePickerCard> createState() => _TemplatePickerCardState();
+}
+
+class _TemplatePickerCardState extends State<_TemplatePickerCard> {
+  /// Phase Two Group 1 (v41): templates now live in the seeded
+  /// `RecipeTemplates` drift table, not a static const Dart list.
+  /// We load once in `initState` and cache the Future so each
+  /// rebuild reuses the same snapshot — `RecipeRepository.allTemplates()`
+  /// hits SQLite, and we don't want a re-read per parent rebuild.
+  late final Future<List<RecipeTemplate>> _templatesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _templatesFuture = context.read<RecipeRepository>().allTemplates();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Card(
       clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
-        initiallyExpanded: selectedId == null,
+        initiallyExpanded: widget.selectedId == null,
         leading: Icon(
           Icons.bolt_outlined,
           color: theme.colorScheme.primary,
@@ -582,36 +605,96 @@ class _TemplatePickerCard extends StatelessWidget {
           style: theme.textTheme.titleSmall,
         ),
         subtitle: Text(
-          selectedId == null
+          widget.selectedId == null
               ? 'Optional — pre-fill with a published starting load'
               : 'Template applied — edit any field below',
           style: theme.textTheme.bodySmall,
         ),
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         children: [
-          for (final t in kRecipeTemplates)
-            ListTile(
-              dense: true,
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(
-                t.id == selectedId
-                    ? Icons.radio_button_checked
-                    : Icons.radio_button_unchecked,
-                color: t.id == selectedId
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurfaceVariant,
-              ),
-              title: Text(t.name),
-              subtitle: Text(
-                '${t.powderChargeGr} gr ${t.powder.split(' ').last} '
-                '· ${t.bulletWeightGr.toStringAsFixed(0)}gr bullet',
-                style: theme.textTheme.bodySmall,
-              ),
-              onTap: () => onPick(t),
-            ),
+          FutureBuilder<List<RecipeTemplate>>(
+            future: _templatesFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState != ConnectionState.done) {
+                // Tight loader — the seed query returns in
+                // milliseconds against the local SQLite catalog;
+                // we never expect the user to see the spinner.
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Center(
+                    child: SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                );
+              }
+              final templates = snapshot.data ?? const <RecipeTemplate>[];
+              if (templates.isEmpty) {
+                // Defensive: the seed loader populates the table on
+                // first launch. Surface an empty-state row rather
+                // than rendering a blank ExpansionTile body.
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    'No templates available yet.',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                );
+              }
+              return Column(
+                children: [
+                  for (final t in templates)
+                    ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(
+                        t.id == widget.selectedId
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                        color: t.id == widget.selectedId
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.onSurfaceVariant,
+                      ),
+                      title: Text(t.name),
+                      subtitle: Text(
+                        _templateSubtitle(t),
+                        style: theme.textTheme.bodySmall,
+                      ),
+                      onTap: () => widget.onPick(t),
+                    ),
+                ],
+              );
+            },
+          ),
         ],
       ),
     );
+  }
+
+  /// Build the subtitle line shown under each template name. Every
+  /// field on `RecipeTemplate` is nullable post-Phase-Two-Group-1,
+  /// so we compose only the parts we have a value for. The shipping
+  /// templates all populate `powderChargeGr`, `powder`, and
+  /// `bulletWeightGr`; the empty-subtitle fallback exists for
+  /// future templates that might ship partial data.
+  String _templateSubtitle(RecipeTemplate t) {
+    final parts = <String>[];
+    if (t.powderChargeGr != null && t.powder != null) {
+      // Last token of "Hodgdon H4350" is the powder short-name
+      // ("H4350"). Defensive split handles single-word inputs too.
+      final powderShort = t.powder!.split(' ').last;
+      parts.add('${t.powderChargeGr} gr $powderShort');
+    } else if (t.powderChargeGr != null) {
+      parts.add('${t.powderChargeGr} gr');
+    } else if (t.powder != null) {
+      parts.add(t.powder!.split(' ').last);
+    }
+    if (t.bulletWeightGr != null) {
+      parts.add('${t.bulletWeightGr!.toStringAsFixed(0)}gr bullet');
+    }
+    return parts.join(' · ');
   }
 }
 
