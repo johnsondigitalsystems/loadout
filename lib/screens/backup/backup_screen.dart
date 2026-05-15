@@ -106,7 +106,7 @@ import '../../services/onedrive_backup_service.dart';
 import '../../services/onedrive_config.dart';
 import '../auth/login_screen.dart';
 import '../paywall/paywall_screen.dart';
-import '../recipes/smart_import_screen.dart';
+import '../recipes/spreadsheet_import_screen.dart';
 
 /// Top-level "Backup & Export" destination reachable from the home drawer.
 ///
@@ -283,7 +283,7 @@ class _BackupScreenState extends State<BackupScreen> {
   /// affordance below.
   Future<void> _runSmartImport() async {
     await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const SmartImportScreen()),
+      MaterialPageRoute(builder: (_) => const SpreadsheetImportScreen()),
     );
     if (!mounted) return;
     _setStatus('Smart Import finished.');

@@ -103,7 +103,7 @@ import '../backup/backup_screen.dart';
 import '../paywall/paywall_screen.dart';
 import '../recipes/photo_import_screen.dart';
 import '../recipes/quick_add_recipe_screen.dart';
-import '../recipes/smart_import_screen.dart';
+import '../recipes/spreadsheet_import_screen.dart';
 import 'import_sources_screen.dart';
 import 'notebook_onboarding_screen.dart';
 
@@ -295,7 +295,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final navigator = Navigator.of(context);
     navigator.pop();
     navigator.push(
-      MaterialPageRoute(builder: (_) => const SmartImportScreen()),
+      MaterialPageRoute(builder: (_) => const SpreadsheetImportScreen()),
     );
   }
 

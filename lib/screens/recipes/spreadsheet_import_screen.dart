@@ -1,12 +1,24 @@
-// FILE: lib/screens/recipes/smart_import_screen.dart
+// FILE: lib/screens/recipes/spreadsheet_import_screen.dart
 //
 // ============================================================================
 // WHAT THIS FILE DOES
 // ============================================================================
-// Smart Import wizard. Lets a user import recipes from a `.csv` or
-// `.xlsx` file even when the column names don't match our schema —
+// Spreadsheet Import wizard. Lets a user import recipes from a `.csv`
+// or `.xlsx` file even when the column names don't match our schema —
 // the auto-suggester proposes a mapping, the user confirms or
 // overrides it, and we ingest every row.
+//
+// > **Naming history.** This file shipped originally as
+// > `smart_import_screen.dart` / `SmartImportScreen`. Phase One Group
+// > 2 (2026-05-14) renamed it to remove a confusing collision with
+// > "AI Smart Import" — an entirely separate feature implemented as
+// > an inline overlay card (`_ImproveWithAiCard`) inside
+// > `photo_import_review_screen.dart`. The two surfaces have nothing
+// > in common; only the old filename suggested a relationship. Use
+// > "AI Smart Import" only for the photo-review overlay; use
+// > "Spreadsheet Import" for this CSV/XLSX flow. The user-visible
+// > AppBar title is held at "Smart Import" pending a UI chat
+// > decision on the new copy — only the code identifier changed.
 //
 // Five steps:
 //   1. Pick file (CSV or XLSX).
@@ -24,9 +36,9 @@
 // The original `CsvImportService` only auto-detected a small set of
 // fixed header aliases. Anyone whose Excel sheet used a custom column
 // name had to either rename their columns first or write off the
-// import entirely. Smart Import fixes that with an in-app mapping UI
-// that surfaces one row per spreadsheet column with the auto-suggested
-// destination field already pre-selected.
+// import entirely. Spreadsheet Import fixes that with an in-app
+// mapping UI that surfaces one row per spreadsheet column with the
+// auto-suggested destination field already pre-selected.
 //
 // Survey data (CLAUDE.md) showed 33% of reloaders track loads in
 // Excel. This is the conversion path; gating it would defeat the
@@ -69,8 +81,8 @@ import '../../repositories/recipe_repository.dart';
 import '../../services/spreadsheet_import_service.dart';
 import 'recipes_list_screen.dart';
 
-class SmartImportScreen extends StatefulWidget {
-  const SmartImportScreen({
+class SpreadsheetImportScreen extends StatefulWidget {
+  const SpreadsheetImportScreen({
     super.key,
     this.initialFile,
     this.titleOverride,
@@ -84,16 +96,19 @@ class SmartImportScreen extends StatefulWidget {
   /// reloading app" (after the user confirms which export they have).
   final File? initialFile;
 
-  /// Optional AppBar title override. Defaults to "Smart Import".
+  /// Optional AppBar title override. Defaults to "Smart Import"
+  /// (pending UI-chat decision on the new user-visible copy after the
+  /// Phase One Group 2 code-identifier rename).
   final String? titleOverride;
 
   @override
-  State<SmartImportScreen> createState() => _SmartImportScreenState();
+  State<SpreadsheetImportScreen> createState() =>
+      _SpreadsheetImportScreenState();
 }
 
 enum _Step { pickFile, preview, mapping, summary, importing, done }
 
-class _SmartImportScreenState extends State<SmartImportScreen> {
+class _SpreadsheetImportScreenState extends State<SpreadsheetImportScreen> {
   _Step _step = _Step.pickFile;
 
   File? _file;
@@ -1462,7 +1477,7 @@ class _InlineError extends StatelessWidget {
 }
 
 // Re-exported for entry-point convenience.
-typedef SmartImportEntry = SmartImportScreen;
+typedef SmartImportEntry = SpreadsheetImportScreen;
 
 // Avoid unused-import lint for `recipes_list_screen.dart` — kept in the
 // imports so `Navigator.popUntil` style transitions stay near the

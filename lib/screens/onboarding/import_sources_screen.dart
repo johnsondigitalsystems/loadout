@@ -12,7 +12,7 @@
 // short description, and a routing handler. Sources:
 //
 //   * Photo                — opens [PhotoImportScreen] (existing OCR flow).
-//   * CSV / Excel          — opens [SmartImportScreen] (.csv + .xlsx).
+//   * CSV / Excel          — opens [SpreadsheetImportScreen] (.csv + .xlsx).
 //   * Notes / Text File    — file picker for `.txt`, plain UTF-8 read,
 //                            parsed via [RecipeParser], pushed to the
 //                            existing review screen.
@@ -77,7 +77,7 @@
 // ============================================================================
 // SIDE EFFECTS
 // ============================================================================
-// - Pushes [SmartImportScreen], [PhotoImportScreen], or
+// - Pushes [SpreadsheetImportScreen], [PhotoImportScreen], or
 //   [PhotoImportReviewScreen] (with a draft) onto the navigator
 //   depending on the user's pick.
 // - For text / PDF / guide-then-pick paths, opens the OS file picker
@@ -93,7 +93,7 @@ import 'package:flutter/material.dart';
 import '../../services/text_import_service.dart';
 import '../recipes/photo_import_review_screen.dart';
 import '../recipes/photo_import_screen.dart';
-import '../recipes/smart_import_screen.dart';
+import '../recipes/spreadsheet_import_screen.dart';
 
 class ImportSourcesScreen extends StatefulWidget {
   const ImportSourcesScreen({super.key});
@@ -216,7 +216,7 @@ class _ImportSourcesScreenState extends State<ImportSourcesScreen> {
 
   void _openSpreadsheet() {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const SmartImportScreen()),
+      MaterialPageRoute(builder: (_) => const SpreadsheetImportScreen()),
     );
   }
 

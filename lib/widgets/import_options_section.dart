@@ -10,11 +10,11 @@
 //
 // Surface (in order):
 //
-//   1. Import from spreadsheet (CSV / Excel)        → SmartImportScreen
+//   1. Import from spreadsheet (CSV / Excel)        → SpreadsheetImportScreen
 //   2. Import from photo (on-device OCR)            → PhotoImportScreen
 //   3. Import from file (re-import a LoadOut export)→ LoadoutFileImportService
-//   4. Import from another reloading app (CSV)      → SmartImportScreen
-//   5. Paste from clipboard (CSV-shaped text)       → SmartImportScreen
+//   4. Import from another reloading app (CSV)      → SpreadsheetImportScreen
+//   5. Paste from clipboard (CSV-shaped text)       → SpreadsheetImportScreen
 //   6. AI Smart Import (Pro)                        → routes to AI settings
 //   7. Import from iCloud / Google Drive / OneDrive → cloud restore
 //
@@ -51,7 +51,7 @@
 //    callback that fires after a successful import; the widget itself
 //    doesn't know how the parent wants to react to "imported N rows".
 // 3. **Clipboard CSV vs. another-app CSV.** Both end up routing
-//    through `SmartImportScreen` because that screen already handles
+//    through `SpreadsheetImportScreen` because that screen already handles
 //    fuzzy header detection, mapping confirmation, and validation.
 //    The "another app" path differs only in the AppBar title and a
 //    little intro copy via `titleOverride`.
@@ -87,7 +87,7 @@ import 'package:provider/provider.dart';
 import '../repositories/recipe_repository.dart';
 import '../screens/recipes/photo_import_screen.dart';
 import '../screens/recipes/recipe_qr_scan_screen.dart';
-import '../screens/recipes/smart_import_screen.dart';
+import '../screens/recipes/spreadsheet_import_screen.dart';
 import '../screens/settings/ai_settings_screen.dart';
 import '../services/cloud_backup.dart';
 import '../services/drive_backup_service.dart';
@@ -230,7 +230,7 @@ class ImportOptionsSection extends StatelessWidget {
 
   Future<void> _openSpreadsheetWizard(BuildContext context) async {
     await Navigator.of(context).push<void>(
-      MaterialPageRoute(builder: (_) => const SmartImportScreen()),
+      MaterialPageRoute(builder: (_) => const SpreadsheetImportScreen()),
     );
   }
 
@@ -273,7 +273,7 @@ class ImportOptionsSection extends StatelessWidget {
   }
 
   Future<void> _openAnotherAppCsvImport(BuildContext context) async {
-    // Pick the CSV first so we can hand it to SmartImportScreen with a
+    // Pick the CSV first so we can hand it to SpreadsheetImportScreen with a
     // bridge title. The wizard's fuzzy header detection already handles
     // Hornady 4DOF / GRT / QuickLOAD / Strelok exports.
     final messenger = ScaffoldMessenger.of(context);
@@ -298,7 +298,7 @@ class ImportOptionsSection extends StatelessWidget {
     if (!context.mounted) return;
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
-        builder: (_) => SmartImportScreen(
+        builder: (_) => SpreadsheetImportScreen(
           initialFile: File(path),
           titleOverride: 'Import from another app',
         ),
@@ -341,7 +341,7 @@ class ImportOptionsSection extends StatelessWidget {
     if (tempFile == null) return;
     await navigator.push<void>(
       MaterialPageRoute(
-        builder: (_) => SmartImportScreen(
+        builder: (_) => SpreadsheetImportScreen(
           initialFile: tempFile,
           titleOverride: 'Import from clipboard',
         ),

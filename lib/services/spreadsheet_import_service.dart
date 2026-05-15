@@ -94,7 +94,7 @@
 // ============================================================================
 // WHO CONSUMES THIS FILE
 // ============================================================================
-// - lib/screens/recipes/smart_import_screen.dart — the wizard UI.
+// - lib/screens/recipes/spreadsheet_import_screen.dart — the wizard UI.
 // - test/spreadsheet_import_service_test.dart — round-trip CSV test.
 //
 // ============================================================================
