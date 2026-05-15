@@ -337,6 +337,90 @@ class ComponentRepository {
     return results;
   }
 
+  /// Returns the **bare** component-name strings for the given
+  /// [kind], without the manufacturer prefix that
+  /// [componentLabels] composes on top.
+  ///
+  /// For kinds whose label is `"<Mfg> <Name>"` ([powder], [bullet],
+  /// [primer]), returns just the bare name part (`"H4350"`,
+  /// `"Hybrid 105gr"`, `"210M"`). For kinds whose label is already
+  /// bare ([brass], [cartridge]), returns the same list as
+  /// [componentLabels].
+  ///
+  /// **Why this exists (Phase Two Group 3, 2026-05-15).** The
+  /// photo / text / OCR import parsers need to match a reloader's
+  /// notebook scrawl (`"H4350"`) against the catalog. Pre-Group-3
+  /// they stripped the manufacturer prefix from [componentLabels]
+  /// output via `label.split(' ').sublist(1).join(' ')` — buggy
+  /// for two-word manufacturer names (`"Western Powders Ramshot
+  /// Hunter"` stripped to `"Powders Ramshot Hunter"`) and broken
+  /// for bare-manufacturer labels (`"Lapua"` stripped to `""`).
+  /// This method reads the bare name directly from the catalog
+  /// table, no fragile string surgery.
+  ///
+  /// Includes custom components (user-typed names not in the
+  /// reference catalog) the same way [componentLabels] does.
+  /// Sorted by `naturalCompare` so "10mm" lands after "8mm" and
+  /// ".30-06" lands near ".308".
+  ///
+  /// The `kind` parameter stays `String` until Phase Two Group 4
+  /// converts every component-API entry point to `ComponentKind`.
+  Future<List<String>> componentNames(String kind) async {
+    final results = <String>[];
+    switch (kind) {
+      case 'powder':
+        final rows = await (db.select(db.powders)
+              ..orderBy([(p) => OrderingTerm.asc(p.name)]))
+            .get();
+        results.addAll(rows.map((r) => r.name));
+        break;
+      case 'bullet':
+        // Bullets disambiguate by weight — the bare `line`
+        // collides across weights ("Hybrid 105gr" vs "Hybrid
+        // 115gr" both have line "Hybrid"). Composing
+        // `"$line ${weight}gr"` matches the label format minus
+        // the manufacturer prefix, which is what a notebook
+        // entry typically reads as.
+        final rows = await (db.select(db.bullets)
+              ..orderBy([
+                (b) => OrderingTerm.asc(b.line),
+                (b) => OrderingTerm.asc(b.weightGr),
+              ]))
+            .get();
+        for (final r in rows) {
+          final wt = r.weightGr.toStringAsFixed(
+              r.weightGr.truncateToDouble() == r.weightGr ? 0 : 1);
+          results.add('${r.line} ${wt}gr');
+        }
+        break;
+      case 'primer':
+        // Bare primer name only — no `#` prefix (that's a label-
+        // formatting concern owned by `componentLabels`).
+        final rows = await (db.select(db.primers)
+              ..orderBy([(p) => OrderingTerm.asc(p.name)]))
+            .get();
+        results.addAll(rows.map((r) => r.name));
+        break;
+      case 'brass':
+      case 'cartridge':
+        // No separate brand+name to strip — the existing label
+        // IS the bare name. Delegate so any future change to
+        // `componentLabels` ordering or custom-component merge
+        // automatically propagates.
+        return componentLabels(kind);
+    }
+    // Mirror `componentLabels`'s custom-component merge so a user
+    // who typed a powder name that isn't in the catalog still
+    // gets it back in the parser dictionary.
+    final customs = await (db.select(db.customComponents)
+          ..where((c) => c.kind.equals(kind))
+          ..orderBy([(c) => OrderingTerm.asc(c.name)]))
+        .get();
+    results.addAll(customs.map((c) => c.name));
+    results.sort(naturalCompare);
+    return results;
+  }
+
   Future<int> addCustomComponent(String kind, String name, {String? notes}) =>
       db.into(db.customComponents).insertOnConflictUpdate(
             CustomComponentsCompanion.insert(

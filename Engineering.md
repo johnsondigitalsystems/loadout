@@ -972,7 +972,7 @@ Columns (canonical reference — see `lib/database/database.dart` for the author
 | Service | Role | Path |
 |---|---|---|
 | `RecipeRepository` | UserLoads CRUD; lot CRUD; custom-field CRUD; `mostUsedComponentNames(kind)` for picker frequency | `lib/repositories/recipe_repository.dart` |
-| `ComponentRepository` | Catalog access (cartridges, powders, bullets, primers, brass); `addCustomComponent`; `componentLabels`; `caliberLabelForBulletDiameter` (Phase One Group 3 — see § 19.9). | `lib/repositories/component_repository.dart` |
+| `ComponentRepository` | Catalog access (cartridges, powders, bullets, primers, brass); `addCustomComponent`; `componentLabels` (composed display strings like `"Hodgdon H4350"`); **`componentNames`** (bare names like `"H4350"` for OCR / parser matching — Phase Two Group 3, 2026-05-15); `caliberLabelForBulletDiameter` (Phase One Group 3 — see § 19.9). | `lib/repositories/component_repository.dart` |
 | `FavoritesRepository` | Int-row-id favorites (cartridge / reticle / target); stream API for live UI updates | `lib/repositories/favorites_repository.dart` |
 | `ComponentFavoritesService` | Name-keyed favorites for powder / bullet / primer / brass | `lib/services/component_favorites_service.dart` |
 | `AutoSaveService` + `AutoSaveController` | Frequency policies, dirty tracking, debounced save; controller per form instance | `lib/services/auto_save_service.dart` |

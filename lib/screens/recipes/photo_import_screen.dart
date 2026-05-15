@@ -160,18 +160,20 @@ class _PhotoImportScreenState extends State<PhotoImportScreen> {
       }
     }
 
-    // Powder labels come back as "<Manufacturer> <Name>" — strip the
-    // manufacturer prefix so the parser sees what users actually write
-    // ("H4350", "Varget", etc.) AND keep the full label as a fallback.
-    final powderNames = <String>{};
-    for (final label in powderLabels) {
-      powderNames.add(label);
-      final parts = label.split(' ');
-      if (parts.length >= 2) {
-        // Drop the manufacturer (first token) — covers "Hodgdon H4350" -> "H4350".
-        powderNames.add(parts.sublist(1).join(' '));
-      }
-    }
+    // Powder names for the parser: include both the full
+    // "<Mfg> <Name>" labels (so a notebook that wrote
+    // "Hodgdon H4350" still matches) AND the bare powder names
+    // ("H4350" / "Varget" / etc.) so notebooks that omit the
+    // manufacturer also match. Pre-Phase-Two-Group-3 this set
+    // was built by `label.split(' ').sublist(1).join(' ')` on
+    // each label — buggy for two-word manufacturers like
+    // "Western Powders" and broken for bare-manufacturer labels
+    // like "Lapua". `componentNames('powder')` reads the bare
+    // `Powders.name` column directly, no string surgery.
+    final powderNames = <String>{
+      ...powderLabels,
+      ...await components.componentNames('powder'),
+    };
 
     final bulletEntries = <BulletCatalogEntry>[
       for (final b in bullets)

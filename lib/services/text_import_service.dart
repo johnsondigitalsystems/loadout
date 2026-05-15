@@ -134,17 +134,19 @@ class TextImportService {
       }
     }
 
-    // Same powder-name canonicalisation as the photo screen: include
-    // both "Hodgdon H4350" and "H4350" so a recipe that names only
-    // the powder still matches.
-    final powderNames = <String>{};
-    for (final label in powderLabels) {
-      powderNames.add(label);
-      final parts = label.split(' ');
-      if (parts.length >= 2) {
-        powderNames.add(parts.sublist(1).join(' '));
-      }
-    }
+    // Same powder-name canonicalisation as the photo screen:
+    // include both "Hodgdon H4350" and "H4350" so a recipe that
+    // names only the powder still matches. Phase Two Group 3
+    // (2026-05-15) replaced the previous `label.split(' ')...`
+    // prefix-strip with a direct read from `Powders.name` via
+    // `componentNames('powder')` — the strip path broke for
+    // two-word manufacturer names (`"Western Powders Ramshot
+    // Hunter"` → `"Powders Ramshot Hunter"`) and produced empty
+    // strings for bare-manufacturer labels (`"Lapua"` → `""`).
+    final powderNames = <String>{
+      ...powderLabels,
+      ...await components.componentNames('powder'),
+    };
 
     final bulletEntries = <BulletCatalogEntry>[
       for (final b in bullets)
