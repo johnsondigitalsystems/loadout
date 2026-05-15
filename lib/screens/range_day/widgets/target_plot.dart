@@ -479,6 +479,7 @@ class TargetPlot extends StatelessWidget {
     required this.onTapAt,
     required this.onLongPressShot,
     this.onActiveRackSlotChange,
+    this.onLongPress,
     this.tapMode = TargetPlotTapMode.recordShot,
     this.viewMode = TargetPlotViewMode.targetFocused,
     this.aimPointX,
@@ -520,6 +521,18 @@ class TargetPlot extends StatelessWidget {
   /// scene continues to work regardless — tap-to-activate is an
   /// additional affordance, not a replacement.
   final void Function(int newActiveSlotIndex)? onActiveRackSlotChange;
+
+  /// Phase 9.8.B.4 — fired when the user long-presses the rendered
+  /// scene at a point that DOESN'T land on a recorded shot dot.
+  /// Picker preview surfaces wire this to the enlarge-zoom dialog
+  /// (long-press the small inline preview → open the full-screen
+  /// view). The Range Day workspace passes null because it doesn't
+  /// have an enlarge dialog AND its long-press is reserved for
+  /// shot-edit interactions via [onLongPressShot]. Shot-edit
+  /// behaviour still takes precedence — a long-press that lands
+  /// near a shot dot fires [onLongPressShot] and skips this
+  /// fallback.
+  final VoidCallback? onLongPress;
 
   /// Active tap interpretation. See [TargetPlotTapMode].
   final TargetPlotTapMode tapMode;
@@ -817,7 +830,14 @@ class TargetPlot extends StatelessWidget {
 
   void _handleLongPress(Offset localPos, Rect targetRect) {
     final norm = _toNormalized(localPos, targetRect);
-    if (norm == null) return;
+    if (norm == null) {
+      // Long-press landed OUTSIDE the target rectangle (gutter /
+      // framing). Fire the surface-level [onLongPress] fallback if
+      // wired — used by the picker preview to surface the
+      // enlarge-zoom dialog.
+      onLongPress?.call();
+      return;
+    }
     // Find the closest shot within a generous touch radius and surface it
     // up. We compare in NORMALIZED units so the test is consistent across
     // different render sizes AND across both view modes (the rect that
@@ -834,11 +854,17 @@ class TargetPlot extends StatelessWidget {
         closest = shot;
       }
     }
-    if (closest == null) return;
     // Touch slop ~ 8% of target width — generous for gloved range use.
-    if (closestDist2 < 0.08 * 0.08) {
+    if (closest != null && closestDist2 < 0.08 * 0.08) {
       onLongPressShot(closest);
+      return;
     }
+    // Phase 9.8.B.4 — no shot near the long-press location. Fire the
+    // surface-level [onLongPress] fallback if wired. Picker preview
+    // surfaces use this to open the enlarge dialog; the Range Day
+    // workspace passes null (the workspace doesn't have an enlarge
+    // dialog).
+    onLongPress?.call();
   }
 
   /// Convert a tap location in widget-local pixels into normalized

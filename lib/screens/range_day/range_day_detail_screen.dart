@@ -3263,41 +3263,40 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     // null). Without this, the picker-preview surface rendered as
     // single-target even when a rack was selected — caught by
     // operator cold-restart QA on commit 7d2fd2e.
-    // Phase 9.8.B.3 — picker preview gestures:
+    // Phase 9.8.B.4 — picker preview gestures (final shape):
     //   * SINGLE tap → active-slot change (rack mode only; routes
     //     into TargetPlot's own GestureDetector → onTapDown →
-    //     onActiveRackSlotChange callback). Single-target mode taps
-    //     are no-ops here (no `onAimPointSet` wired in this surface).
-    //   * DOUBLE tap → enlarge dialog. Moved from single-tap
-    //     (operator request 2026-05-15).
+    //     onActiveRackSlotChange). Single-target mode taps are
+    //     no-ops here (no `onAimPointSet` wired in this surface).
+    //   * LONG PRESS → enlarge dialog. Migrated from double-tap in
+    //     9.8.B.3 (operator request 2026-05-15: "Now, the enlarge
+    //     should work from a long press.").
     //
-    // The pre-9.8.B.3 wrapper had `IgnorePointer` blocking
-    // TargetPlot's gestures and an outer `InkWell.onTap` routing
-    // single taps to the zoom dialog. That blocked tap-to-activate
-    // from working in the picker preview. New layout:
-    //   * Outer `GestureDetector.onDoubleTap` → zoom dialog.
-    //   * Inner `TargetPlot` (no IgnorePointer) — its own
-    //     GestureDetector handles single-tap activation via the
-    //     onTapDown → onActiveRackSlotChange path added in 9.8.B.
+    // Implementation note: the long-press handler is wired INSIDE
+    // TargetPlot via the new `onLongPress` prop (Phase 9.8.B.4),
+    // which fires when the inner gesture handler's long-press
+    // doesn't land near a recorded shot dot. This avoids the
+    // gesture-arena ambiguity that would arise from competing
+    // long-press recognizers at different widget depths — the
+    // inner handler is the sole long-press claimant, and it
+    // delegates upward to this surface via the callback.
     //
-    // Gesture arena behaviour: when the user single-taps, the inner
-    // TargetPlot's onTapDown fires immediately (no double-tap
-    // window delay because the inner GestureDetector only has
-    // onTapDown / onLongPressStart, no onDoubleTap of its own). The
-    // outer GestureDetector's onDoubleTap only commits when a
-    // SECOND tap arrives within the platform double-tap window
-    // (~300 ms by default).
-    final preview = SizedBox(
+    // No outer GestureDetector / InkWell wrapper anymore.
+    final displayName = _activeTargetDisplayName ?? 'Target';
+    return SizedBox(
       height: 234,
       child: TargetPlot(
         target: activeTargetSpec,
         shots: const [],
         onTapAt: (_, _) {},
         onLongPressShot: (_) {},
-        // Wire tap-to-activate for the picker preview (Phase 9.8.B
-        // skipped this surface because of IgnorePointer; that's
-        // gone now).
+        // Single-tap → activate (rack mode).
         onActiveRackSlotChange: _setActiveRackSlot,
+        // Long-press → enlarge dialog. Fires only when the long-
+        // press does NOT land near a shot dot; shot-edit takes
+        // precedence (irrelevant here because `shots: const []`).
+        onLongPress: () =>
+            _showTargetPreviewDialog(activeTargetSpec, displayName),
         tapMode: TargetPlotTapMode.aimPoint,
         viewMode: TargetPlotViewMode.realistic,
         colorHexOverride: _selectedTargetColorHex,
@@ -3305,21 +3304,6 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         rackChildren: _rackChildrenSpec,
         activeRackChildIndex: _activeRackChildIndex,
         rackMountStyle: _selectedRack?.rackKind,
-      ),
-    );
-    final displayName = _activeTargetDisplayName ?? 'Target';
-    return Material(
-      color: Colors.transparent,
-      // No `Material.borderRadius` clip needed — the inner painter
-      // already clips to its rounded-rect. Behavior: pointer events
-      // pass through Material to the GestureDetector below.
-      child: GestureDetector(
-        // Double-tap → enlarge. Single-tap intentionally NOT
-        // handled here; falls through the gesture arena to the
-        // inner TargetPlot's onTapDown for rack-slot activation.
-        onDoubleTap: () =>
-            _showTargetPreviewDialog(activeTargetSpec, displayName),
-        child: preview,
       ),
     );
   }
