@@ -96,6 +96,15 @@ class QuickAddRecipeScreen extends StatefulWidget {
   State<QuickAddRecipeScreen> createState() => _QuickAddRecipeScreenState();
 }
 
+/// Which dimension column the Quick Add COAL/CBTO row writes into.
+///
+/// Mirrors the same-named enum in `photo_import_review_screen.dart`
+/// deliberately — both screens capture either-but-not-both for one
+/// dimension. Phase Two item #7 (unified field taxonomy) collapses
+/// the two enums into one canonical `RecipeFieldId`-style type; do
+/// NOT unify them in this group.
+enum _DimensionAxis { coal, cbto }
+
 class _QuickAddRecipeScreenState extends State<QuickAddRecipeScreen> {
   final _formKey = GlobalKey<FormState>();
 
@@ -105,7 +114,19 @@ class _QuickAddRecipeScreenState extends State<QuickAddRecipeScreen> {
   final _powderCharge = TextEditingController();
   final _bullet = TextEditingController();
   final _bulletWeight = TextEditingController();
+
+  /// Single text field that backs whichever of COAL / CBTO the user
+  /// has selected on the axis toggle. `_buildCompanion` routes the
+  /// parsed value into the right drift column at save time so we
+  /// never persist a stale value from the OTHER axis after a swap.
+  final _dimension = TextEditingController();
+
   final _notes = TextEditingController();
+
+  /// Which drift column the [_dimension] field writes into.
+  /// Defaults to COAL — that's what reloading manuals quote and what
+  /// most pen-and-paper reloaders carry on their notebook line.
+  _DimensionAxis _axis = _DimensionAxis.coal;
 
   /// Currently-selected template id (if any). Used only as the
   /// dropdown's indicator value.
@@ -125,6 +146,7 @@ class _QuickAddRecipeScreenState extends State<QuickAddRecipeScreen> {
     _powderCharge.dispose();
     _bullet.dispose();
     _bulletWeight.dispose();
+    _dimension.dispose();
     _notes.dispose();
     super.dispose();
   }
@@ -139,6 +161,21 @@ class _QuickAddRecipeScreenState extends State<QuickAddRecipeScreen> {
       _bullet.text = t.bullet;
       _bulletWeight.text = t.bulletWeightGr.toString();
       _useCase = t.useCase;
+      // COAL / CBTO pre-fill. Templates are reference loads drawn from
+      // published manuals; manuals quote COAL (overall length) much
+      // more often than CBTO (base-to-ogive — comparator-dependent).
+      // Prefer COAL when the template ships both; fall back to CBTO
+      // when only CBTO is set; clear the field when neither is set so
+      // a previously-applied template's dimension doesn't linger.
+      if (t.coalIn != null) {
+        _axis = _DimensionAxis.coal;
+        _dimension.text = t.coalIn!.toString();
+      } else if (t.cbtoIn != null) {
+        _axis = _DimensionAxis.cbto;
+        _dimension.text = t.cbtoIn!.toString();
+      } else {
+        _dimension.text = '';
+      }
       // Append the template's note to anything the user already wrote.
       // Don't blow away their text — they may have typed something first
       // and only then noticed the template picker.
@@ -166,6 +203,15 @@ class _QuickAddRecipeScreenState extends State<QuickAddRecipeScreen> {
   UserLoadsCompanion _buildCompanion() {
     final typed = _name.text.trim();
     final name = typed.isEmpty ? _generateName() : typed;
+    // COAL / CBTO routing. The single [_dimension] controller backs
+    // whichever axis is selected. We parse once, then write the value
+    // into the matching drift column AND null the other column so the
+    // save doesn't carry a stale value from before an axis swap.
+    final dimensionValue = double.tryParse(_dimension.text.trim());
+    final coalToWrite =
+        _axis == _DimensionAxis.coal ? dimensionValue : null;
+    final cbtoToWrite =
+        _axis == _DimensionAxis.cbto ? dimensionValue : null;
     return UserLoadsCompanion(
       name: drift.Value(name),
       caliber: drift.Value(_emptyToNull(_caliber.text)),
@@ -173,6 +219,8 @@ class _QuickAddRecipeScreenState extends State<QuickAddRecipeScreen> {
       powderChargeGr: drift.Value(double.tryParse(_powderCharge.text.trim())),
       bullet: drift.Value(_emptyToNull(_bullet.text)),
       bulletWeightGr: drift.Value(double.tryParse(_bulletWeight.text.trim())),
+      coalIn: drift.Value(coalToWrite),
+      cbtoIn: drift.Value(cbtoToWrite),
       useCase: drift.Value(_useCase),
       notes: drift.Value(_emptyToNull(_notes.text)),
     );
@@ -390,6 +438,42 @@ class _QuickAddRecipeScreenState extends State<QuickAddRecipeScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Bullet Weight (gr)',
                   suffixText: 'gr',
+                ),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+              ),
+              const SizedBox(height: 12),
+              // COAL / CBTO axis toggle + dimension field. See the
+              // `_DimensionAxis` enum docstring for the routing rule.
+              // The user picks which column to write into; the single
+              // field's label and suffix swap to match.
+              SegmentedButton<_DimensionAxis>(
+                segments: const <ButtonSegment<_DimensionAxis>>[
+                  ButtonSegment<_DimensionAxis>(
+                    value: _DimensionAxis.coal,
+                    label: Text('COAL'),
+                  ),
+                  ButtonSegment<_DimensionAxis>(
+                    value: _DimensionAxis.cbto,
+                    label: Text('CBTO'),
+                  ),
+                ],
+                selected: <_DimensionAxis>{_axis},
+                onSelectionChanged: (selection) {
+                  setState(() => _axis = selection.first);
+                },
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _dimension,
+                decoration: InputDecoration(
+                  labelText: _axis == _DimensionAxis.coal
+                      ? 'COAL (in)'
+                      : 'CBTO (in)',
+                  suffixText: 'in',
+                  helperText: _axis == _DimensionAxis.coal
+                      ? 'Cartridge overall length'
+                      : 'Cartridge base-to-ogive',
                 ),
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),

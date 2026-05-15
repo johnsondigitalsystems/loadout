@@ -84,6 +84,7 @@ class RecipeTemplate {
     required this.bullet,
     required this.bulletWeightGr,
     this.coalIn,
+    this.cbtoIn,
     required this.disclaimer,
     this.useCase,
     this.notes,
@@ -104,6 +105,14 @@ class RecipeTemplate {
   /// Cartridge overall length in inches. Optional — some templates leave
   /// this blank and let the reloader measure their own.
   final double? coalIn;
+
+  /// Cartridge base-to-ogive in inches. Optional — most published
+  /// reference loads quote COAL rather than CBTO (CBTO is bullet-comparator-
+  /// dependent and therefore manufacturer-specific). Phase One Group 4
+  /// added this field on the template model so Quick Add's COAL-or-CBTO
+  /// axis toggle can pre-fill from either column. The five shipping
+  /// templates all use [coalIn]; this stays null on them by default.
+  final double? cbtoIn;
 
   /// Free-form intended use ("match", "practice", "hunting", etc.).
   /// Pre-fills the Use Case field on the resulting recipe.
