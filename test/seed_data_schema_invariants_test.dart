@@ -161,13 +161,20 @@ void main() {
     });
 
     test(
-        'Phase 9.6 — catalog ships exactly 9 racks with the spec ids',
+        'Phase 9.8.C — catalog ships exactly 13 racks with the spec ids',
         () {
       const expected = <String>{
         'decreasing_3_plate_circles',
         'decreasing_3_plate_squares',
+        // 5-Plate Equal Rack — three size variants for Circles
+        // (6 / 8 / 10 in diameter) and three for Squares
+        // (4 / 6 / 8 in per side). Added in Phase 9.8.C.
         'equal_rack_5_circles',
+        'equal_rack_5_circles_8in',
+        'equal_rack_5_circles_10in',
         'equal_rack_5_squares',
+        'equal_rack_5_squares_6in',
+        'equal_rack_5_squares_8in',
         'kyl_5_plate_circles',
         'kyl_5_plate_squares',
         'pepper_popper_5',
@@ -176,9 +183,10 @@ void main() {
       };
       final actual = racks.map((r) => r['id'] as String).toSet();
       expect(actual, expected,
-          reason: 'Phase 9.6 §Architecture-decisions locks the rack '
-              'catalog at exactly 9 racks. Any addition or removal '
-              'requires a spec update and operator confirmation.');
+          reason: 'Phase 9.8.C locked the rack catalog at exactly 13 '
+              'racks (9 from Phase 9.6 + 4 size variants of '
+              'Equal Rack). Any addition or removal requires a '
+              'spec update and operator confirmation per § 0c.');
     });
 
     test(
