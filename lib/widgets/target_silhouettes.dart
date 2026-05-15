@@ -124,6 +124,28 @@ class TargetSilhouettes {
   static final Map<String, Path> _pathCache = {};
   static final Map<String, Future<Path>> _loadFutures = {};
 
+  /// Phase 11 Group A v2 — cache-warmup signal.
+  ///
+  /// Bumps every time a target SVG completes loading and lands in the
+  /// path cache. Consumers that render an SVG-backed silhouette
+  /// (`_RealisticScenePainter` via `TargetPlot.build`) subscribe to
+  /// this notifier and reconstruct the painter on each bump, which
+  /// fires `shouldRepaint` and forces the dispatch to re-call
+  /// `cachedScaledPath` — by then the SVG is cached and the path
+  /// resolves instead of falling through to the rect placeholder in
+  /// `_drawSpecial`.
+  ///
+  /// Without this signal, the painter renders ONCE at preview build
+  /// time, sees `_pathCache['pepper_popper'] == null` (preload still
+  /// in flight), draws the rect placeholder, and never repaints
+  /// when the cache eventually warms — leaving the user looking at
+  /// rectangles forever (or at least until some unrelated repaint
+  /// trigger fires, like a mode toggle).
+  ///
+  /// The int value is just a generation counter — listeners only
+  /// care that it CHANGED, not what its value is.
+  static final ValueNotifier<int> cacheGeneration = ValueNotifier<int>(0);
+
   static bool isTargetShape(String shapeId) => _shapeIdToAsset.containsKey(shapeId);
 
   static Future<Path> loadTargetPath(String shapeId) async {
@@ -143,6 +165,9 @@ class TargetSilhouettes {
     final path = await future;
     _pathCache[shapeId] = path;
     _loadFutures.remove(shapeId);
+    // Phase 11 Group A v2 — wake up any painter that already rendered
+    // a rect placeholder while this future was in flight.
+    cacheGeneration.value++;
     return path;
   }
 

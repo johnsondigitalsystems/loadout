@@ -774,51 +774,84 @@ class TargetPlot extends StatelessWidget {
                           valueListenable:
                               _NoiseAssetLoader.imageNotifier,
                           builder: (context, noiseImage, _) {
-                            return CustomPaint(
-                              size: outerSize,
-                              // Phase 9.7 Group D — both modes go
-                              // through the unified
-                              // [_RealisticScenePainter] via the
-                              // sealed-type [SceneInput] API. Rack
-                              // mode constructs a [RackScene] with
-                              // the active slot index; single mode
-                              // constructs a [SingleTargetScene].
-                              // The pre-9.7 legacy rack painter
-                              // has been deleted in Group D; this
-                              // is the only painter.
-                              painter: _RealisticScenePainter(
-                                sceneInput: layout.isRack &&
-                                        rackChildren != null
-                                    ? RackScene(
-                                        rack: RackSpec(
-                                          mountStructure:
-                                              rackMountStyle ??
-                                                  'hanging_rail',
-                                          slots: rackChildren!,
-                                        ),
-                                        activeSlotIndex:
-                                            activeRackChildIndex ?? 0,
-                                      )
-                                    : SingleTargetScene(target: target),
-                                colorHexOverride: colorHexOverride,
-                                sizeFloorEnabled: sizeFloorEnabled,
-                                // Phase 10 Group B.3 — visual style
-                                // flows down from the parent widget
-                                // (Range Day call sites pass
-                                // `context.watch<VisualStyleNotifier>().style`
-                                // so the painter repaints when the
-                                // user flips Settings / the AppBar
-                                // toggle).
-                                visualStyle: visualStyle,
-                                // Phase 10 Group F.4 — film-grain
-                                // image, null until the
-                                // `_NoiseAssetLoader` async load
-                                // completes. Painter's
-                                // `_paintFilmGrain` no-ops on null
-                                // and shouldRepaint catches the
-                                // null → non-null transition.
-                                noiseImage: noiseImage,
-                              ),
+                            // Phase 11 Group A v2 — also subscribe to
+                            // the SVG cache-generation counters from
+                            // TargetSilhouettes + AnimalSilhouettes
+                            // (both bump every time one of their
+                            // SVGs finishes the async load + parse).
+                            // Without this subscription the painter
+                            // renders once with a cold cache, gets
+                            // null from cachedScaledPath, falls
+                            // through to the rect placeholder, and
+                            // never repaints when the cache
+                            // eventually warms.
+                            return AnimatedBuilder(
+                              animation: Listenable.merge([
+                                TargetSilhouettes.cacheGeneration,
+                                AnimalSilhouettes.cacheGeneration,
+                              ]),
+                              builder: (context, _) {
+                                return CustomPaint(
+                                  size: outerSize,
+                                  // Phase 9.7 Group D — both modes go
+                                  // through the unified
+                                  // [_RealisticScenePainter] via the
+                                  // sealed-type [SceneInput] API.
+                                  // Rack mode constructs a
+                                  // [RackScene] with the active slot
+                                  // index; single mode constructs a
+                                  // [SingleTargetScene]. The pre-9.7
+                                  // legacy rack painter has been
+                                  // deleted in Group D; this is the
+                                  // only painter.
+                                  painter: _RealisticScenePainter(
+                                    sceneInput: layout.isRack &&
+                                            rackChildren != null
+                                        ? RackScene(
+                                            rack: RackSpec(
+                                              mountStructure:
+                                                  rackMountStyle ??
+                                                      'hanging_rail',
+                                              slots: rackChildren!,
+                                            ),
+                                            activeSlotIndex:
+                                                activeRackChildIndex ?? 0,
+                                          )
+                                        : SingleTargetScene(target: target),
+                                    colorHexOverride: colorHexOverride,
+                                    sizeFloorEnabled: sizeFloorEnabled,
+                                    // Phase 10 Group B.3 — visual
+                                    // style flows down from the
+                                    // parent widget (Range Day call
+                                    // sites pass
+                                    // context.watch<VisualStyleNotifier>().style
+                                    // so the painter repaints when
+                                    // the user flips Settings / the
+                                    // AppBar toggle).
+                                    visualStyle: visualStyle,
+                                    // Phase 10 Group F.4 — film-
+                                    // grain image, null until the
+                                    // _NoiseAssetLoader async load
+                                    // completes. Painter's
+                                    // _paintFilmGrain no-ops on
+                                    // null and shouldRepaint
+                                    // catches the null → non-null
+                                    // transition.
+                                    noiseImage: noiseImage,
+                                    // Phase 11 Group A v2 — sum of
+                                    // both cache-generation
+                                    // counters. Painter doesn't use
+                                    // the value directly; only
+                                    // needs it as a `shouldRepaint`
+                                    // input so warmed-cache
+                                    // transitions force a repaint.
+                                    svgCacheGeneration: TargetSilhouettes
+                                            .cacheGeneration.value +
+                                        AnimalSilhouettes
+                                            .cacheGeneration.value,
+                                  ),
+                                );
+                              },
                             );
                           },
                         );
@@ -1394,6 +1427,7 @@ class _RealisticScenePainter extends CustomPainter {
     this.sizeFloorEnabled = true,
     this.visualStyle = VisualStyle.cartoon,
     this.noiseImage,
+    this.svgCacheGeneration = 0,
   });
 
   /// Phase 9.7 Group B — painter input is now a [SceneInput] sealed
@@ -1429,6 +1463,27 @@ class _RealisticScenePainter extends CustomPainter {
   /// reconstructing the painter so the grain pass actually paints
   /// on the next frame.
   final ui.Image? noiseImage;
+
+  /// Phase 11 Group A v2 — combined cache-generation counter from
+  /// `TargetSilhouettes.cacheGeneration` + `AnimalSilhouettes.cacheGeneration`.
+  /// Each notifier bumps every time one of its SVGs completes
+  /// loading. `TargetPlot.build` listens to both via
+  /// `AnimatedBuilder + Listenable.merge` and passes the summed
+  /// value here on each rebuild.
+  ///
+  /// The painter doesn't use the value directly — its only purpose
+  /// is to be a `shouldRepaint` input so that when the SVG cache
+  /// warms after a cold-cache cold-start paint (which drew a rect
+  /// placeholder because `resolveTargetSvgPath` returned null),
+  /// the next painter construction has a different
+  /// `svgCacheGeneration` value, `shouldRepaint` returns true, and
+  /// the dispatch re-runs `cachedScaledPath` — by then the SVG is
+  /// cached, the path resolves, and the silhouette draws cleanly.
+  ///
+  /// Without this signal the painter would render once with the
+  /// rect placeholder and never repaint to pick up the warmed
+  /// cache.
+  final int svgCacheGeneration;
 
   /// Phase 10 Group C.1 / Group D — single source of truth for the
   /// photo→polished alias. Every effect dispatch inside this painter
@@ -2675,7 +2730,17 @@ class _RealisticScenePainter extends CustomPainter {
         // new painter is constructed with `noiseImage != null`.
         // shouldRepaint catches the diff and triggers the repaint
         // where the grain pass actually fires.
-        old.noiseImage != noiseImage;
+        old.noiseImage != noiseImage ||
+        // Phase 11 Group A v2 — repaint when a target / animal SVG
+        // completes its async load and lands in the cache. Same
+        // mechanism as the noise image above: the silhouette
+        // classes fire a ValueNotifier on load complete; the
+        // AnimatedBuilder in TargetPlot.build rebuilds; the
+        // painter receives a new `svgCacheGeneration` value;
+        // this comparison catches the change; the dispatch
+        // re-runs `resolveTargetSvgPath`, which now hits the
+        // warmed cache instead of the rect placeholder.
+        old.svgCacheGeneration != svgCacheGeneration;
   }
 
   // ──────────────────────────────────────────────────────────────────

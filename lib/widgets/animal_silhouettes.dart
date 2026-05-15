@@ -149,6 +149,16 @@ class AnimalSilhouettes {
   static final Map<String, Path> _pathCache = {};
   static final Map<String, Future<Path>> _loadFutures = {};
 
+  /// Phase 11 Group A v2 — cache-warmup signal. Mirror of
+  /// `TargetSilhouettes.cacheGeneration` (see the rationale block
+  /// there). Bumps every time an animal SVG completes loading.
+  /// The realistic painter subscribes to the combined animal +
+  /// target signal so any cold-cache cold-start render gets a
+  /// repaint as soon as the async preload populates the cache —
+  /// no more "stuck on rect placeholder" until an unrelated
+  /// repaint trigger fires.
+  static final ValueNotifier<int> cacheGeneration = ValueNotifier<int>(0);
+
   static bool isAnimalShape(String shapeId) => _shapeIdToAsset.containsKey(shapeId);
 
   /// Loads and parses the SVG path for [shapeId]. Cached after first call.
@@ -169,6 +179,8 @@ class AnimalSilhouettes {
     final path = await future;
     _pathCache[shapeId] = path;
     _loadFutures.remove(shapeId);
+    // Phase 11 Group A v2 — wake up listening painters.
+    cacheGeneration.value++;
     return path;
   }
 
