@@ -4,14 +4,15 @@ Date: 2026-05-15
 Branch: `claude/infallible-panini-8b20d1` → merged to `main`
 Commits on `main` (chronological): `9ab6c10` (A) → `0b0c486` (A.1) →
 `9bd2e05` (A.2) → `5d32932` (B) → `72179d1` (B.2 hotfix) →
-`43ce043` (B.3) → `a0df32c` (C)
+`43ce043` (B.3) → `a0df32c` (C) → `ab2f888` (B.4) → `56a08d4` (D)
 
 ## TL;DR
 
 Three operator feature requests from Phase 9.7 Group C.2 QA, plus
-one self-heal hotfix caught by cold-restart. All landed on `main`.
-Plus two ops actions (Firebase Storage updates for JSON catalogs +
-SVG archive).
+one self-heal hotfix caught by cold-restart, plus two more refinements
+the operator surfaced after the rest of the phase landed. All landed
+on `main`. Plus three ops actions (Firebase Storage updates for JSON
+catalogs at two different times + SVG archive).
 
 | Status | Item | Commit |
 |---|---|---|
@@ -22,6 +23,8 @@ SVG archive).
 | ✅ | 9.8.B.2 hotfix — Stale docs-mirror self-heal | `72179d1` |
 | ✅ | 9.8.B.3 — Picker preview: single tap activates, double tap enlarges | `43ce043` |
 | ✅ | 9.8.C — Multi-size Equal Rack catalog (9 → 13 racks) | `a0df32c` |
+| ✅ | 9.8.B.4 — Enlarge gesture migrated from double-tap to long-press | `ab2f888` |
+| ✅ | 9.8.D — Drop Animal + Rectangle chips from rack picker | `56a08d4` |
 | ✅ | Firebase Storage upload — JSON catalogs (v10 targets, v5 racks, v16 manifest) | ops |
 | ✅ | Firebase Storage upload — SVG silhouettes archive (18 files) | ops |
 
@@ -139,6 +142,34 @@ window delay because the inner detector doesn't declare
 only commits when a second tap arrives within the platform
 double-tap window (~300 ms).
 
+**9.8.B.4 (`ab2f888`)** — operator refined again: "Remove the double
+click to enlarge the target image. Now, the enlarge should work
+from a long press." The double-tap-to-enlarge gesture had two
+issues — accidental double-taps were easy on a small preview
+thumbnail, and the Flutter gesture-arena layout still left a small
+window for the outer onDoubleTap to absorb fast taps. Long-press
+is intentional, holdable, and unambiguous.
+
+Two changes:
+
+- New `onLongPress: VoidCallback?` prop on `TargetPlot`. Fires
+  when the inner gesture handler's long-press does NOT land near
+  a recorded shot dot. Shot-edit interactions via
+  `onLongPressShot` still take precedence (touch slop ~8 % of
+  target width); the new fallback only fires when the long-press
+  lands in empty space OR outside the rendered target rect.
+
+- `_targetVisualBox` simplified: outer `GestureDetector.onDoubleTap`
+  removed entirely; inner `TargetPlot` wired with
+  `onLongPress: () => _showTargetPreviewDialog(...)`. No outer
+  wrapper anymore. Cleaner widget tree, no gesture-arena
+  ambiguity.
+
+Range Day workspace `TargetPlot` call sites pass `onLongPress: null`
+— the workspace IS the full-size scene; no enlarge dialog there.
+Long-press on the workspace continues to route to `onLongPressShot`
+for shot-editing only.
+
 ## Group 9.8.C — Multi-size Equal Rack catalog
 
 **One commit.** Operator request: "Each category (circle and
@@ -178,6 +209,34 @@ KYL, Decreasing, Pepper Popper, IPSC Stage, and IDPA Open Stage
 all stay single-size (5-Plate KYL etc. are "stepping" racks where
 varying plate size IS the point; size variants only make sense for
 the Equal Rack family).
+
+## Group 9.8.D — Drop Animal + Rectangle chips from rack picker
+
+**One commit (`56a08d4`).** Operator request 2026-05-15: "Remove the
+'Animal' and 'Rectangle' rack options."
+
+Rack picker chip row goes from 7 chips → **5 chips**:
+
+```
+All  Circle  Square  IPSC  Special
+```
+
+The Animal and Rectangle chips were always empty-state in practice
+— no rack in the seed catalog (and none plausibly shippable as a
+future rack) carries an animal silhouette or a rectangle plate as
+a slot. Phase 9.6 Group D had kept them in for visual symmetry with
+the target picker's chip row; the operator's QA correctly called
+the dead UI cost out as outweighing the symmetry benefit.
+
+Target picker's chip row at `range_day_detail_screen.dart:4872` is
+UNCHANGED — the single-target catalog has both Rectangle rows
+(15 rectangle targets) and Animal rows (48 animal silhouettes), so
+those chips are populated and useful.
+
+`_rackShapeFilter` state field is in-memory only (not persisted to
+SharedPreferences or a session row), so cold-restart on this build
+resets the filter to `'all'`. No migration needed for users who
+might have been on a Rectangle / Animal chip when the build deploys.
 
 ## Ops — Firebase Storage uploads
 
@@ -248,22 +307,29 @@ Prior versions archived.
   size variants. I surfaced the before/after table BEFORE writing
   any JSON, waited for "Confirmed as proposed", then executed.
 - **Surface scope decisions, don't bolt onto a group mid-flight.**
-  When the operator's QA on 9.8.B's tap-to-activate surfaced the
-  refinement "single = activate, double = enlarge", I shipped it
-  as 9.8.B.3 as a separate commit rather than reopening 9.8.B.
-- **One commit per logical change.** Six code commits + two ops
-  uploads across the phase. Each commit's diff is reviewable as a
-  unit; no kitchen-sink rewrites.
+  Every refinement the operator surfaced during QA shipped as a
+  separate commit rather than reopening the group:
+    * "single = activate, double = enlarge" → 9.8.B.3
+    * "Now, the enlarge should work from a long press" → 9.8.B.4
+    * "Remove the Animal and Rectangle rack options" → 9.8.D
+- **One commit per logical change.** Eight code commits + three
+  ops uploads across the phase. Each commit's diff is reviewable
+  as a unit; no kitchen-sink rewrites.
+- **Defer dead UI.** Phase 9.6 Group D's "keep empty-state chips
+  for symmetry" choice was reversed in 9.8.D — operator QA
+  confirmed that dead chips cost more than they save. Symmetry
+  with another picker isn't a virtue if half the symmetric items
+  do nothing.
 
 ## Operator verification checklist (cold-restart)
 
-After cold-restart on `a0df32c`:
+After cold-restart on `56a08d4`:
 
-1. **Stale-mirror self-heal** — first cold-restart should land
-   cleanly (the prior `invalid category 'target'` crash is gone).
-   First launch deletes the stale local mirror and reseeds from the
-   bundled asset; second launch pulls fresh v16 manifest /
-   v5 target_racks from Firebase via SeedUpdater.
+1. **Stale-mirror self-heal** — first cold-restart on this build
+   should land cleanly (the prior `invalid category 'target'`
+   crash is gone). First launch deletes the stale local mirror
+   and reseeds from the bundled asset; second launch pulls fresh
+   v16 manifest / v5 target_racks from Firebase via SeedUpdater.
 2. **Color picker placement (9.8.A.2)** — ONE swatch row directly
    under the Single/Rack toggle, visible in both modes, same
    on-screen position when toggling.
@@ -271,14 +337,21 @@ After cold-restart on `a0df32c`:
    tapping a non-active slot in the scene should activate it
    (active-slot outline moves to the tapped slot, chip-row
    selection updates).
-4. **Picker preview gestures (9.8.B.3)** — single-tap on the
-   picker preview activates a slot; double-tap opens the enlarge
-   dialog (was: single-tap opens the dialog).
+4. **Picker preview gestures (9.8.B.3 / 9.8.B.4)** — single-tap
+   on the picker preview activates a slot; LONG-PRESS opens the
+   enlarge dialog (was: single-tap opens it pre-9.8.B.3; was:
+   double-tap opens it in the 9.8.B.3 → 9.8.B.4 window). Double-tap
+   is now a no-op.
 5. **Multi-size rack catalog (9.8.C)** — switch to Rack mode,
-   open the dropdown under the `Circle` chip — should now show
-   THREE 5-Plate Equal Rack entries (6 in, 8 in, 10 in) plus the
-   3-Plate Decreasing and KYL Circles. Same expansion under
-   `Square` (4 in / 6 in / 8 in Equal Rack + Decreasing + KYL).
+   tap the `Circle` chip — the dropdown should show THREE 5-Plate
+   Equal Rack entries (6 in, 8 in, 10 in) plus the 3-Plate
+   Decreasing and KYL Circles. Same expansion under `Square`
+   (4 in / 6 in / 8 in Equal Rack + Decreasing + KYL).
+6. **Rack chip row (9.8.D)** — the rack picker should show
+   exactly FIVE chips: `All`, `Circle`, `Square`, `IPSC`,
+   `Special`. No `Rectangle`, no `Animal`. The target picker's
+   chip row is unchanged (still 7 chips because the single-target
+   catalog has Rectangle + Animal rows).
 
 ## Files changed (summary)
 
@@ -287,8 +360,8 @@ SCENE_PAINTER_PHASE_9_8_REPORT.md                                  (NEW)
 assets/seed_data/manifest.json                                     (+6 / -6)
 assets/seed_data/target_racks.json                                 (+882 / -68)  — Phase 9.8.C expansion
 lib/database/seed_loader.dart                                      (+101 / -13)  — 9.8.B.2 self-heal
-lib/screens/range_day/range_day_detail_screen.dart                 (+92 / -45)   — 9.8.A / A.1 / A.2 / B / B.3
-lib/screens/range_day/widgets/target_plot.dart                     (+186 / -120) — 9.8.B onActiveRackSlotChange + computeRackSlotRects + colorHexOverride for racks
+lib/screens/range_day/range_day_detail_screen.dart                 (+104 / -77)  — 9.8.A / A.1 / A.2 / B / B.3 / B.4 / D
+lib/screens/range_day/widgets/target_plot.dart                     (+218 / -130) — 9.8.B onActiveRackSlotChange + computeRackSlotRects + colorHexOverride for racks + 9.8.B.4 onLongPress
 test/seed_data_schema_invariants_test.dart                         (+12 / -8)    — 9.8.C 9→13 rack count assertion
 ```
 
