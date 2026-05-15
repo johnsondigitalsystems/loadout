@@ -3,27 +3,34 @@
 // ============================================================================
 // WHAT THIS FILE DOES
 // ============================================================================
-// A reusable, collapsed-by-default `ExpansionTile` that surfaces every
-// recipe import path the app supports in one place. Drops onto the
-// Quick Add recipe screen and the full Recipe form screen so the user
-// has the same set of imports regardless of which form they opened.
+// A reusable, collapsed-by-default `ExpansionTile` that surfaces
+// "bring data in" affordances on the Quick Add and full Recipe
+// form screens. Phase One Group 5 (2026-05-14) collapsed every
+// "import a recipe" affordance behind a single canonical entry
+// point — `RecipeImportLandingScreen` — so this widget now ships
+// ONE recipe-import tile that pushes the landing screen, plus the
+// AI Smart Import settings deep-link and cloud-restore rows that
+// serve different purposes from recipe import.
 //
 // Surface (in order):
 //
-//   1. Import from spreadsheet (CSV / Excel)        → SpreadsheetImportScreen
-//   2. Import from photo (on-device OCR)            → PhotoImportScreen
-//   3. Import from file (re-import a LoadOut export)→ LoadoutFileImportService
-//   4. Import from another reloading app (CSV)      → SpreadsheetImportScreen
-//   5. Paste from clipboard (CSV-shaped text)       → SpreadsheetImportScreen
-//   6. AI Smart Import (Pro)                        → routes to AI settings
-//   7. Import from iCloud / Google Drive / OneDrive → cloud restore
+//   1. Import a Recipe                  → RecipeImportLandingScreen
+//      (which handles spreadsheet, photo, file, clipboard, QR, and
+//       the Coming Soon Word / OneNote / Garmin Xero photo tiles)
+//   2. AI Smart Import (Pro)            → routes to AI settings
+//      (improves a low-confidence parse — separate concept from
+//       bringing a recipe in)
+//   3. Import from iCloud / Google Drive / OneDrive → cloud restore
+//      (full-DB restore from an encrypted backup — separate concept
+//       from per-recipe import)
 //
-// The widget itself is stateless on the data side — it constructs each
-// row from the current platform / Pro state and delegates the actual
-// import work to the consuming screen via callbacks (so the parent can
-// decide whether to pop after a successful insert, refresh its list
-// stream, etc.). The collapse/expand state survives layout rebuilds via
-// a `PageStorageKey`.
+// The widget itself is stateless on the data side — it constructs
+// each row from the current platform / Pro state and delegates the
+// actual import work to the landing screen / restore services via
+// callbacks (so the parent can decide whether to pop after a
+// successful insert, refresh its list stream, etc.). The
+// collapse/expand state survives layout rebuilds via a
+// `PageStorageKey`.
 //
 // ============================================================================
 // WHY IT EXISTS IN THE ARCHITECTURE
@@ -76,18 +83,11 @@
 // - The "Import from file" row reads the file the user picks; soft-fails
 //   on any error. SnackBar feedback only — never throws.
 
-import 'dart:io';
-
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 import '../repositories/recipe_repository.dart';
-import '../screens/recipes/photo_import_screen.dart';
-import '../screens/recipes/recipe_qr_scan_screen.dart';
-import '../screens/recipes/spreadsheet_import_screen.dart';
+import '../screens/recipes/recipe_import_landing_screen.dart';
 import '../screens/settings/ai_settings_screen.dart';
 import '../services/cloud_backup.dart';
 import '../services/drive_backup_service.dart';
@@ -133,60 +133,25 @@ class ImportOptionsSection extends StatelessWidget {
           style: theme.textTheme.titleSmall,
         ),
         subtitle: const Text(
-          'Bring in loads from spreadsheets, photos, files, or the cloud',
+          'Bring in loads from spreadsheets, photos, files, the '
+          'cloud, or another LoadOut device',
         ),
         childrenPadding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
         children: [
+          // Phase One Group 5 (2026-05-14): single canonical entry
+          // point that owns the source-detection logic. The landing
+          // screen surfaces every recipe-import source — spreadsheet,
+          // photo, file, clipboard, QR, plus Coming Soon tiles for
+          // Word / OneNote / Garmin Xero photo. See
+          // `recipe_import_landing_screen.dart` and
+          // `recipe_import_source.dart`.
           _ImportRow(
-            icon: Icons.table_chart_outlined,
-            title: 'Import from spreadsheet',
+            icon: Icons.download_outlined,
+            title: 'Import a Recipe',
             subtitle:
-                'Bring in many recipes at once from a CSV or Excel file.',
-            onTap: () => _openSpreadsheetWizard(context),
-          ),
-          if (PhotoImportScreen.isSupportedPlatform)
-            _ImportRow(
-              icon: Icons.photo_camera_outlined,
-              title: 'Import from photo',
-              subtitle:
-                  'Snap a notebook page — read on this device with OCR.',
-              onTap: () => _openPhotoImport(context),
-            ),
-          // QR-based peer-to-peer import. Camera plugin only ships an
-          // implementation on iOS / Android, so we share the photo-
-          // import platform gate.
-          if (PhotoImportScreen.isSupportedPlatform)
-            _ImportRow(
-              icon: Icons.qr_code_scanner_outlined,
-              title: 'Scan recipe QR',
-              subtitle:
-                  'Scan a QR code shared by another LoadOut device — '
-                  'no account, no network.',
-              onTap: () => _openRecipeQrScan(context),
-            ),
-          _ImportRow(
-            icon: Icons.insert_drive_file_outlined,
-            title: 'Import from file',
-            subtitle:
-                'Re-import recipes from a previously-exported LoadOut '
-                'file (.loadout / .json).',
-            onTap: () => _runLoadoutFileImport(context),
-          ),
-          _ImportRow(
-            icon: Icons.swap_horiz_outlined,
-            title: 'Import from another reloading app',
-            subtitle:
-                'Hornady 4DOF, GRT, QuickLOAD, Strelok — pick the CSV '
-                'export they produced.',
-            onTap: () => _openAnotherAppCsvImport(context),
-          ),
-          _ImportRow(
-            icon: Icons.content_paste_outlined,
-            title: 'Paste from clipboard',
-            subtitle:
-                'Bulk paste of CSV-shaped text from Numbers, Sheets, '
-                'or another app.',
-            onTap: () => _runClipboardImport(context),
+                'Spreadsheet, photo, file, clipboard, or QR. The '
+                'landing screen detects the source from your input.',
+            onTap: () => _openRecipeImportLanding(context),
           ),
           _ImportRow(
             icon: Icons.auto_awesome_outlined,
@@ -228,124 +193,17 @@ class ImportOptionsSection extends StatelessWidget {
 
   // ─────────────── route handlers ───────────────
 
-  Future<void> _openSpreadsheetWizard(BuildContext context) async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute(builder: (_) => const SpreadsheetImportScreen()),
-    );
-  }
-
-  Future<void> _openPhotoImport(BuildContext context) async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute(builder: (_) => const PhotoImportScreen()),
-    );
-  }
-
-  /// Push the QR scanner. Returns a `RecipeQrScanResult` on a successful
-  /// import — we forward the inserted recipe id through the
-  /// [onImported] callback so the host screen can refresh its list.
-  Future<void> _openRecipeQrScan(BuildContext context) async {
-    final result = await Navigator.of(context).push<RecipeQrScanResult?>(
-      RecipeQrScanScreen.route(),
-    );
-    if (result != null) {
-      onImported?.call(1);
-    }
-  }
-
-  Future<void> _runLoadoutFileImport(BuildContext context) async {
-    final repo = context.read<RecipeRepository>();
-    final messenger = ScaffoldMessenger.of(context);
-    final result = await safeAsync<LoadoutFileImportResult?>(
+  /// Push the canonical "Import a Recipe" landing screen.
+  ///
+  /// All six recipe-import paths that used to live as separate
+  /// tiles on this widget (spreadsheet, photo, QR, LoadOut JSON,
+  /// another-app CSV, clipboard) are now routed from the landing
+  /// screen. Forward [onImported] so the QR + JSON paths can
+  /// trigger a host-list refresh on success.
+  Future<void> _openRecipeImportLanding(BuildContext context) async {
+    await RecipeImportLandingScreen.push(
       context,
-      body: () async => LoadoutFileImportService(repo).pickAndImportRecipes(),
-      userMessage: 'Could not import that file.',
-    );
-    final outcome = result;
-    if (outcome == null) return;
-    if (outcome.cancelled) return;
-    final summary = outcome.snackbarSummary();
-    if (summary.isNotEmpty) {
-      messenger.showSnackBar(SnackBar(content: Text(summary)));
-    }
-    if (outcome.imported > 0) {
-      onImported?.call(outcome.imported);
-    }
-  }
-
-  Future<void> _openAnotherAppCsvImport(BuildContext context) async {
-    // Pick the CSV first so we can hand it to SpreadsheetImportScreen with a
-    // bridge title. The wizard's fuzzy header detection already handles
-    // Hornady 4DOF / GRT / QuickLOAD / Strelok exports.
-    final messenger = ScaffoldMessenger.of(context);
-    final picked = await safeAsync<FilePickerResult?>(
-      context,
-      body: () async => FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: const ['csv', 'xlsx'],
-        withData: false,
-      ),
-      userMessage: 'Could not open the file picker.',
-    );
-    final files = picked?.files;
-    if (files == null || files.isEmpty) return;
-    final path = files.single.path;
-    if (path == null) {
-      messenger.showSnackBar(
-        const SnackBar(content: Text("Couldn't read the selected file.")),
-      );
-      return;
-    }
-    if (!context.mounted) return;
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute(
-        builder: (_) => SpreadsheetImportScreen(
-          initialFile: File(path),
-          titleOverride: 'Import from another app',
-        ),
-      ),
-    );
-  }
-
-  Future<void> _runClipboardImport(BuildContext context) async {
-    final messenger = ScaffoldMessenger.of(context);
-    final navigator = Navigator.of(context);
-    final clipboard = await safeAsync<ClipboardData?>(
-      context,
-      body: () async => Clipboard.getData(Clipboard.kTextPlain),
-      userMessage: "Couldn't read the clipboard.",
-    );
-    final text = clipboard?.text?.trim();
-    if (text == null || text.isEmpty) {
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Clipboard is empty. Copy CSV-shaped text first, then '
-            'try again.',
-          ),
-        ),
-      );
-      return;
-    }
-    if (!context.mounted) return;
-    final tempFile = await safeAsync<File?>(
-      context,
-      body: () async {
-        final dir = await getTemporaryDirectory();
-        final stamp = DateTime.now().millisecondsSinceEpoch;
-        final f = File('${dir.path}/loadout-clipboard-$stamp.csv');
-        await f.writeAsString(text, flush: true);
-        return f;
-      },
-      userMessage: "Couldn't stage the pasted text for import.",
-    );
-    if (tempFile == null) return;
-    await navigator.push<void>(
-      MaterialPageRoute(
-        builder: (_) => SpreadsheetImportScreen(
-          initialFile: tempFile,
-          titleOverride: 'Import from clipboard',
-        ),
-      ),
+      onImported: onImported,
     );
   }
 
