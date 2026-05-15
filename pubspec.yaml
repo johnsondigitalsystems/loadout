@@ -479,6 +479,15 @@ flutter:
     # Phase 2.4 consolidated those files into `reticles.json`.
     - assets/silhouettes/animals/
     - assets/silhouettes/targets/
+    # Phase 10 Group F.1 — film-grain noise tile. 256×256 px,
+    # 8-bit grayscale, tileable. Loaded once via `rootBundle.load`
+    # by the `_NoiseAssetLoader` singleton in
+    # `lib/screens/range_day/widgets/target_plot.dart` and cached
+    # as a `ui.Image` for repeat use across paint frames. Used as
+    # the source for the BlendMode.overlay grain pass in polished
+    # / photo visual styles. Regenerable from the Python+PIL
+    # script in commit history (seed 20260515).
+    - assets/noise/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

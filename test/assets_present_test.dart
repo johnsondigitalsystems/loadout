@@ -76,6 +76,12 @@ void main() {
   // make sure to add a matching `- assets/<name>/` line in pubspec.yaml.
   const assetDirs = <String>[
     'assets/seed_data',
+    // Phase 10 Group F.1 — `assets/noise/film_grain_256.png` (the
+    // film-grain tile loaded by `_NoiseAssetLoader` in target_plot.dart).
+    // The dir lives alongside `assets/seed_data/` and needs its own line
+    // in pubspec.yaml (`- assets/noise/`); without it the runtime
+    // `rootBundle.load` would throw on first polished paint.
+    'assets/noise',
   ];
 
   // File extensions that are real bundleable assets in this project. Every

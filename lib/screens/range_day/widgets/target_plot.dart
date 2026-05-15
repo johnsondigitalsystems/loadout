@@ -127,9 +127,11 @@
 // I/O triggered by the callbacks.
 
 import 'dart:math' as math;
-import 'dart:ui' show ImageFilter;
+import 'dart:ui' as ui show Image, ImageShader;
+import 'dart:ui' show ImageFilter, instantiateImageCodec;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 import '../../../data/reticle_library.dart';
 import '../../../database/database.dart';
@@ -741,44 +743,86 @@ class TargetPlot extends StatelessWidget {
               child: Stack(
                 children: [
                   if (viewMode == TargetPlotViewMode.realistic)
-                    CustomPaint(
-                      size: outerSize,
-                      // Phase 9.7 Group D — both modes go through the
-                      // unified [_RealisticScenePainter] via the
-                      // sealed-type [SceneInput] API. Rack mode
-                      // constructs a [RackScene] with the active
-                      // slot index; single mode constructs a
-                      // [SingleTargetScene] with the existing target.
-                      // The pre-9.7 legacy rack painter has been
-                      // deleted in Group D; this is the only painter.
-                      painter: _RealisticScenePainter(
-                        sceneInput: layout.isRack && rackChildren != null
-                            ? RackScene(
-                                rack: RackSpec(
-                                  mountStructure: rackMountStyle ??
-                                      'hanging_rail',
-                                  slots: rackChildren!,
-                                ),
-                                activeSlotIndex:
-                                    activeRackChildIndex ?? 0,
-                              )
-                            : SingleTargetScene(target: target),
-                        colorHexOverride: colorHexOverride,
-                        sizeFloorEnabled: sizeFloorEnabled,
-                        // Phase 10 Group B.3 — the visual style flows
-                        // down from the parent widget. Range Day call
-                        // sites pass `context.watch<VisualStyleNotifier>().style`
-                        // so the painter repaints when the user
-                        // flips the Settings segment or the AppBar
-                        // toggle (the notifier's
-                        // `notifyListeners()` triggers a rebuild on
-                        // the watching screen, which rebuilds
-                        // TargetPlot, which reconstructs the painter
-                        // with the new style; `shouldRepaint`
-                        // (updated in Group A) sees the diff and
-                        // repaints).
-                        visualStyle: visualStyle,
-                      ),
+                    // Phase 10 Group F.4 — wrap the realistic-mode
+                    // CustomPaint in a `ValueListenableBuilder<ui.Image?>`
+                    // subscribed to the `_NoiseAssetLoader` singleton.
+                    // First polished paint sees `null` and skips the
+                    // grain pass (per spec: don't crash, don't block).
+                    // When the async load completes, the notifier
+                    // fires, this builder rebuilds, the painter is
+                    // reconstructed with `noiseImage` set, and
+                    // `shouldRepaint` flags the diff so the grain
+                    // pass actually fires on the next frame.
+                    //
+                    // `_NoiseAssetLoader.kickoff()` is idempotent —
+                    // safe to call on every build. Only fires the
+                    // load once per process; after that subsequent
+                    // calls early-return. Calling it from the
+                    // realistic-only branch means a user who never
+                    // opens Range Day in realistic mode never
+                    // triggers the load.
+                    Builder(
+                      builder: (context) {
+                        // Only kick off the load when polished mode
+                        // is actually in use — cartoon-only users
+                        // skip the async work and never pay the
+                        // decode cost.
+                        if (visualStyle != VisualStyle.cartoon) {
+                          _NoiseAssetLoader.kickoff();
+                        }
+                        return ValueListenableBuilder<ui.Image?>(
+                          valueListenable:
+                              _NoiseAssetLoader.imageNotifier,
+                          builder: (context, noiseImage, _) {
+                            return CustomPaint(
+                              size: outerSize,
+                              // Phase 9.7 Group D — both modes go
+                              // through the unified
+                              // [_RealisticScenePainter] via the
+                              // sealed-type [SceneInput] API. Rack
+                              // mode constructs a [RackScene] with
+                              // the active slot index; single mode
+                              // constructs a [SingleTargetScene].
+                              // The pre-9.7 legacy rack painter
+                              // has been deleted in Group D; this
+                              // is the only painter.
+                              painter: _RealisticScenePainter(
+                                sceneInput: layout.isRack &&
+                                        rackChildren != null
+                                    ? RackScene(
+                                        rack: RackSpec(
+                                          mountStructure:
+                                              rackMountStyle ??
+                                                  'hanging_rail',
+                                          slots: rackChildren!,
+                                        ),
+                                        activeSlotIndex:
+                                            activeRackChildIndex ?? 0,
+                                      )
+                                    : SingleTargetScene(target: target),
+                                colorHexOverride: colorHexOverride,
+                                sizeFloorEnabled: sizeFloorEnabled,
+                                // Phase 10 Group B.3 — visual style
+                                // flows down from the parent widget
+                                // (Range Day call sites pass
+                                // `context.watch<VisualStyleNotifier>().style`
+                                // so the painter repaints when the
+                                // user flips Settings / the AppBar
+                                // toggle).
+                                visualStyle: visualStyle,
+                                // Phase 10 Group F.4 — film-grain
+                                // image, null until the
+                                // `_NoiseAssetLoader` async load
+                                // completes. Painter's
+                                // `_paintFilmGrain` no-ops on null
+                                // and shouldRepaint catches the
+                                // null → non-null transition.
+                                noiseImage: noiseImage,
+                              ),
+                            );
+                          },
+                        );
+                      },
                     )
                   else
                     CustomPaint(
@@ -1282,6 +1326,61 @@ class RealisticLayout {
 /// This painter intentionally does NOT draw the reticle, scope ring,
 /// aim crosshair, or shot dots — those move to subsequent phases.
 ///
+/// Phase 10 Group F.1 — process-global cache for the film-grain
+/// noise tile. The painter is synchronous (`CustomPainter.paint`
+/// can't await), so the asset has to be decoded eagerly. We do it
+/// once per process; `[TargetPlot.build]` calls
+/// `_NoiseAssetLoader.kickoff()` the first time the realistic
+/// painter is constructed in polished/photo mode, which fires the
+/// async load and notifies the `imageNotifier` when the decoded
+/// `ui.Image` is ready. `TargetPlot`'s `ValueListenableBuilder`
+/// wrap on the realistic-mode CustomPaint subscribes to the
+/// notifier, so the painter is reconstructed (and the grain pass
+/// actually fires) on the next frame after the asset arrives.
+///
+/// If the asset is missing or fails to decode the notifier stays
+/// at `null` forever and the painter's `_paintFilmGrain` no-ops
+/// (per spec: "If the noise asset isn't loaded yet on first
+/// polished paint, skip the grain pass — don't crash, don't
+/// block.").
+class _NoiseAssetLoader {
+  _NoiseAssetLoader._(); // No instances — module-level singleton.
+
+  /// Cached image after a successful load. `null` until the first
+  /// load completes.
+  static final ValueNotifier<ui.Image?> imageNotifier =
+      ValueNotifier<ui.Image?>(null);
+
+  /// Guard so we only kick off ONE async load per process. A user
+  /// who never enters polished mode never triggers the load; once
+  /// in polished mode the load fires once and we're done.
+  static bool _started = false;
+
+  static void kickoff() {
+    if (_started) return;
+    _started = true;
+    _load();
+  }
+
+  static Future<void> _load() async {
+    try {
+      final bytes = await rootBundle.load('assets/noise/film_grain_256.png');
+      final codec = await instantiateImageCodec(bytes.buffer.asUint8List());
+      final frame = await codec.getNextFrame();
+      imageNotifier.value = frame.image;
+    } catch (e) {
+      // Asset missing or decode failed. Per spec, the grain pass
+      // skips on null — the scene renders without grain rather
+      // than crashing. Reset the guard so a future call could
+      // retry if the asset is added later (e.g. via live seed
+      // update — though noise isn't on the SeedUpdater path
+      // today; bundled is the only source).
+      debugPrint('Phase 10 Group F: noise asset failed to load: $e');
+      _started = false;
+    }
+  }
+}
+
 /// Phase 9.7 — handles BOTH single-target and rack-mode rendering
 /// via the sealed-type [SceneInput] dispatch. Single mode runs the
 /// [_paintSingle] branch (pole + mound + grass-tufts rig); rack mode
@@ -1294,6 +1393,7 @@ class _RealisticScenePainter extends CustomPainter {
     this.colorHexOverride,
     this.sizeFloorEnabled = true,
     this.visualStyle = VisualStyle.cartoon,
+    this.noiseImage,
   });
 
   /// Phase 9.7 Group B — painter input is now a [SceneInput] sealed
@@ -1317,6 +1417,18 @@ class _RealisticScenePainter extends CustomPainter {
   /// the user's actual selection so future phases don't need a
   /// migration.
   final VisualStyle visualStyle;
+
+  /// Phase 10 Group F.1 / F.4 — process-cached `ui.Image` decoded
+  /// from `assets/noise/film_grain_256.png`, used as the source for
+  /// the polished-mode film-grain overlay. `null` until the
+  /// `_NoiseAssetLoader` async load completes; the grain pass
+  /// no-ops on null (the scene renders without grain rather than
+  /// crashing). Once the load resolves, the
+  /// `_NoiseAssetLoader.imageNotifier` fires and `TargetPlot`'s
+  /// `ValueListenableBuilder` rebuilds with the loaded image,
+  /// reconstructing the painter so the grain pass actually paints
+  /// on the next frame.
+  final ui.Image? noiseImage;
 
   /// Phase 10 Group C.1 / Group D — single source of truth for the
   /// photo→polished alias. Every effect dispatch inside this painter
@@ -1457,19 +1569,32 @@ class _RealisticScenePainter extends CustomPainter {
     // downstream conditional in this painter reads the getter so
     // the alias is enforced in exactly one place.
 
-    // Phase 10 Group C.2 — saveLayer scaffold for polished + photo.
-    // Group F will hang the color-grade / vignette / grain compositing
-    // off the restore of this layer; Group D + E add intermediate
-    // layers between this open and restore. For Group C the scaffold
-    // is intentionally a no-op: open the layer with a default Paint(),
-    // run the existing paint pass unchanged, restore. The cartoon
-    // path is byte-identical because the if-guard skips the saveLayer
-    // entirely. Polished + photo render through one extra layer; with
-    // a default Paint() that layer is a straight passthrough, so the
-    // visible output is identical until Group D lights up effects.
+    // Phase 10 Group C.2 / Group F.2 — saveLayer for polished +
+    // photo, opened with a `ColorFilter.matrix(_colorGradeMatrix)`
+    // hanging off its Paint. Every scene draw (backdrop, Group D
+    // blur layer, ground haze, mid-scene content, Group E drop
+    // shadows, target / slots) is captured INSIDE this layer.
+    // When the layer restores, the color filter applies on
+    // composite — the entire scene picks up a subtle warm cast
+    // (R × 1.05, B × 0.95) per Phase 10 §Effect-specifications
+    // "Color grade." Cartoon mode skips the saveLayer entirely;
+    // its paint pass is byte-identical to pre-Phase-10.
+    //
+    // Why hang ColorFilter on the saveLayer's Paint rather than
+    // open a second intermediate layer just for the grade: this
+    // codebase already had the Group C outer saveLayer, and the
+    // grade reads correctly on restore against the canvas
+    // underneath. One layer is simpler than two, and Group F.3 +
+    // F.4 (vignette + film grain) intentionally draw OUTSIDE the
+    // layer so they sit on top of the graded scene rather than
+    // getting graded themselves — exactly the render-order the
+    // spec calls for (color grade → vignette → grain).
     final usePolishedLayer = _effectiveStyle != VisualStyle.cartoon;
     if (usePolishedLayer) {
-      canvas.saveLayer(Offset.zero & size, Paint());
+      canvas.saveLayer(
+        Offset.zero & size,
+        Paint()..colorFilter = const ColorFilter.matrix(_colorGradeMatrix),
+      );
     }
 
     // Phase 9.7 — sealed-type dispatch. Single-target rendering runs
@@ -1487,13 +1612,127 @@ class _RealisticScenePainter extends CustomPainter {
     }
 
     if (usePolishedLayer) {
-      // Group F lands color-grade + vignette + film-grain
-      // composites here, between the scene paint and the restore.
-      // Group C ships the restore as a no-op so the scaffold is
-      // visually inert (the saveLayer with a default Paint draws
-      // straight through on restore).
+      // Phase 10 Group F.2 — restore the color-graded scene layer
+      // first. After this call the canvas holds the (now graded)
+      // scene; subsequent draws compose on top WITHOUT going
+      // through the filter, so the vignette + grain stay neutral.
       canvas.restore();
+
+      // Phase 10 Group F.3 — radial vignette darkens the corners.
+      _paintVignette(canvas, size);
+
+      // Phase 10 Group F.4 — film-grain noise tile overlay. No-ops
+      // if the noise asset hasn't decoded yet (first polished paint
+      // before the async load completes); subsequent paint after
+      // `_NoiseAssetLoader` fires its notifier picks it up.
+      _paintFilmGrain(canvas, size);
     }
+  }
+
+  /// Phase 10 Group F.2 — color-grade matrix applied to the polished
+  /// / photo scene layer on saveLayer restore. Spec §Effect-
+  /// specifications "Color grade", parameters used verbatim:
+  ///
+  ///   * Red   × 1.05 (subtle warm boost)
+  ///   * Green × 1.00 (unchanged)
+  ///   * Blue  × 0.95 (subtle cool reduction)
+  ///   * Alpha × 1.00 (unchanged)
+  ///
+  /// Net visual: the scene picks up a "daylight" warm cast vs the
+  /// cooler fluorescent look of the raw cartoon palette. Shadows
+  /// remain shadows (0 × 1.05 is still 0), so Group E's drop
+  /// shadows aren't disturbed.
+  ///
+  /// Matrix layout is row-major (Flutter's `ColorFilter.matrix`
+  /// convention): each row is [R_coef, G_coef, B_coef, A_coef,
+  /// constant_offset] for the corresponding output channel.
+  static const List<double> _colorGradeMatrix = <double>[
+    1.05, 0.00, 0.00, 0.00, 0.00, // R' = R × 1.05
+    0.00, 1.00, 0.00, 0.00, 0.00, // G' = G × 1.00
+    0.00, 0.00, 0.95, 0.00, 0.00, // B' = B × 0.95
+    0.00, 0.00, 0.00, 1.00, 0.00, // A' = A × 1.00
+  ];
+
+  /// Phase 10 Group F.3 — radial vignette overlay. Spec §Effect-
+  /// specifications "Vignette", parameters used verbatim:
+  ///
+  ///   * Center: canvas center
+  ///   * Inner radius: `canvas_w × 0.35` — fully transparent
+  ///   * Outer radius (corner reach): `canvas_w × 0.75` — 25 % black
+  ///
+  /// Implemented as a `RadialGradient` shader on a `drawRect` over
+  /// the whole canvas. The `stops` argument places the transparent
+  /// inner edge at `0.35 / 0.75 ≈ 0.467` along the radial axis (the
+  /// gradient's "radius" parameter normalises to 0..1 across the
+  /// outer radius), and the 25 % black outer edge at 1.0. Between
+  /// them the gradient interpolates linearly, producing a soft
+  /// edge-darkening band that draws the eye toward the center
+  /// where the target / rack sits.
+  ///
+  /// Drawn AFTER the color-grade restore so the vignette pixels
+  /// stay neutral black — they don't pick up the warm cast.
+  void _paintVignette(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final paint = Paint()
+      ..shader = RadialGradient(
+        center: Alignment.center,
+        radius: 0.75,
+        colors: [
+          Colors.black.withValues(alpha: 0.00),
+          Colors.black.withValues(alpha: 0.25),
+        ],
+        stops: const [0.35 / 0.75, 1.0],
+      ).createShader(rect);
+    canvas.drawRect(rect, paint);
+  }
+
+  /// Phase 10 Group F.4 — film-grain noise overlay. Spec §Effect-
+  /// specifications "Film grain", parameters used verbatim:
+  ///
+  ///   * Asset: `assets/noise/film_grain_256.png` (256×256, 8-bit
+  ///     grayscale, tileable)
+  ///   * Tiling: `TileMode.repeated` in both axes
+  ///   * Color filter: `Color(0x14FFFFFF)` (~8 % white) with
+  ///     `BlendMode.modulate` — modulates each grain pixel down
+  ///     to ~8 % of its raw intensity before the blend
+  ///   * Blend mode: `BlendMode.overlay` — adds subtle texture
+  ///     where the underlying scene is mid-tone, leaves blacks
+  ///     and whites largely untouched
+  ///
+  /// Visual goal: break the digital perfection of flat color
+  /// regions with subtle film texture. Should be barely
+  /// perceptible at the documented opacity but add noticeable
+  /// depth.
+  ///
+  /// No-ops if [noiseImage] is null (asset hasn't decoded yet —
+  /// `_NoiseAssetLoader` is still resolving the first
+  /// `rootBundle.load` call). Per spec: "If the noise asset
+  /// isn't loaded yet on first polished paint, skip the grain
+  /// pass — don't crash, don't block. The next repaint will have
+  /// it." The `shouldRepaint` override above compares
+  /// `noiseImage` so the next frame after the load completes
+  /// picks it up.
+  ///
+  /// Uses `ImageShader` (tile-repeated) on a single `drawRect`
+  /// rather than a per-tile `drawImage` loop — one canvas op
+  /// instead of N²; the spec sanctioned this as the cleaner path.
+  void _paintFilmGrain(Canvas canvas, Size size) {
+    final img = noiseImage;
+    if (img == null) return;
+    final rect = Offset.zero & size;
+    final paint = Paint()
+      ..shader = ui.ImageShader(
+        img,
+        TileMode.repeated,
+        TileMode.repeated,
+        Matrix4.identity().storage,
+      )
+      ..colorFilter = const ColorFilter.mode(
+        Color(0x14FFFFFF), // 0x14 ≈ 20/255 ≈ 7.84 % alpha
+        BlendMode.modulate,
+      )
+      ..blendMode = BlendMode.overlay;
+    canvas.drawRect(rect, paint);
   }
 
   /// Phase 9.7 Group B extraction — the verbatim Phase 9.6 paint()
@@ -2427,7 +2666,16 @@ class _RealisticScenePainter extends CustomPainter {
         // the paint pass ignores this field (no effects yet); the
         // comparison is in place so once Group C lights up the
         // dispatch, a style change immediately repaints the scene.
-        old.visualStyle != visualStyle;
+        old.visualStyle != visualStyle ||
+        // Phase 10 Group F.4 — repaint when the film-grain asset
+        // arrives from disk. First polished paint sees `null` and
+        // skips the grain pass; the `_NoiseAssetLoader`'s
+        // ValueNotifier fires on load completion, the
+        // ValueListenableBuilder in TargetPlot rebuilds, and a
+        // new painter is constructed with `noiseImage != null`.
+        // shouldRepaint catches the diff and triggers the repaint
+        // where the grain pass actually fires.
+        old.noiseImage != noiseImage;
   }
 
   // ──────────────────────────────────────────────────────────────────
