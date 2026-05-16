@@ -553,7 +553,20 @@ class ComponentRepository {
     final rows = await (db.select(db.manufacturers)
           ..where((m) => m.kind.equals('primer')))
         .get();
-    return rows.map((m) => m.name).toList()..sort(naturalCompare);
+    // Defensive `.toSet()` dedupe. `Manufacturers` declares
+    // `uniqueKeys: [{name, kind}]`, so a correctly-migrated DB
+    // can't hold duplicate (name, 'primer') rows. But a device
+    // whose `Manufacturers` table was CREATED before that unique
+    // key was added (SQLite can't retro-add a table UNIQUE via
+    // ALTER — it needs a table rebuild migration) could carry
+    // legacy duplicates from a historical double-seed. A
+    // duplicate brand here would feed two identical
+    // DropdownMenuItems into `primer_cascade_field.dart`, tripping
+    // the "exactly one item must match value" assertion. Cheap
+    // insurance; harmless on a clean DB. Phase Two Group 3.5
+    // sidecar (2026-05-16).
+    return rows.map((m) => m.name).toSet().toList()
+      ..sort(naturalCompare);
   }
 
   /// All primer products from a given manufacturer, naturally sorted by

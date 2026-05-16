@@ -298,6 +298,23 @@ class _PrimerCascadeFieldState extends State<PrimerCascadeField> {
       future: _futureBrands,
       builder: (context, snap) {
         final brands = snap.data ?? const <String>[];
+        // `initState` sets `_selectedBrand` synchronously from the
+        // existing recipe's primer label, but `_futureBrands`
+        // resolves async. The first paint runs during the
+        // FutureBuilder waiting phase with `brands` still empty —
+        // so a `_selectedBrand` like "Federal" matches zero
+        // DropdownMenuItems and DropdownButtonFormField's
+        // exactly-one-match assertion crashes. (`_customSentinel`
+        // is always present, so the custom case is safe; only a
+        // real brand name not yet loaded bites.) Inject a
+        // synthetic fallback item for `_selectedBrand` whenever
+        // the loaded list doesn't contain it; the rebuild after
+        // the future resolves swaps in the real entry. Phase Two
+        // Group 3.5 sidecar (2026-05-16).
+        final sel = _selectedBrand;
+        final needsBrandFallback = sel != null &&
+            sel != _customSentinel &&
+            !brands.contains(sel);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -311,6 +328,8 @@ class _PrimerCascadeFieldState extends State<PrimerCascadeField> {
               items: [
                 for (final b in brands)
                   DropdownMenuItem<String>(value: b, child: Text(b)),
+                if (needsBrandFallback)
+                  DropdownMenuItem<String>(value: sel, child: Text(sel)),
                 const DropdownMenuItem<String>(
                   value: _customSentinel,
                   child: Text('Other / Custom…'),

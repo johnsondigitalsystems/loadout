@@ -3221,6 +3221,19 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         final options = ready
             ? snapshot.data!
             : const <({String value, String label})>[];
+        // DropdownButtonFormField asserts that a non-null `value`
+        // matches EXACTLY ONE item. During the FutureBuilder's
+        // waiting phase `options` is empty, and on an existing
+        // recipe `selected` is already the persisted status /
+        // use-case — zero matches → assertion crash. (Also bites
+        // if a catalog reseed dropped a value a saved recipe
+        // still references.) Inject a synthetic fallback item for
+        // `selected` whenever the loaded list doesn't contain it,
+        // so the invariant always holds; the rebuild after the
+        // future resolves replaces it with the real (labelled)
+        // entry. Phase Two Group 3.5 sidecar (2026-05-16).
+        final selectedPresent = selected != null &&
+            options.any((o) => o.value == selected);
         return DropdownButtonFormField<String>(
           initialValue: selected,
           isExpanded: true,
@@ -3228,6 +3241,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           items: [
             for (final opt in options)
               DropdownMenuItem(value: opt.value, child: Text(opt.label)),
+            if (selected != null && !selectedPresent)
+              // Show the raw stored value so the form doesn't
+              // crash and the user still sees what's persisted.
+              DropdownMenuItem(value: selected, child: Text(selected)),
           ],
           onChanged: ready ? onChanged : null,
         );
