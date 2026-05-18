@@ -158,12 +158,24 @@ void main() {
               'not exist in reticles.json');
     });
 
-    test('every scope in scopes.json has a default reticle mapping', () async {
-      // The brief asserts 183/183 mapping coverage. A missing mapping
-      // would silently leave the firearm form's reticle field blank
-      // when the user picks that scope — surprising UX. This test is
-      // the early-warning guard.
-      final scopes = await ScopeCatalogV2Service.instance.allScopes();
+    test(
+        'every NON-iron-sight scope has a default reticle mapping',
+        () async {
+      // Every magnified/red-dot scope must have a row in
+      // scope_reticle_options.json — a missing mapping would silently
+      // leave the firearm form's reticle field blank (surprising UX).
+      // This is the early-warning guard for those rows.
+      //
+      // Iron-sight rows (VFP Phase 2 Group B, `category ==
+      // "iron-sights"`) are EXCLUDED by design: iron sights have no
+      // reticle, so they intentionally carry no scope_reticle_options
+      // mapping. How the firearm-form auto-pair / Range Day paths
+      // null-guard for iron optics is the explicit scope of VFP Phase
+      // 2 Group D (iron-sights consumer-contract trace, §0.5 Level 3)
+      // — NOT decided here. This carve-out is documented in
+      // docs/IRON_SIGHTS_CATALOG_AUDIT.md as the Group B→D handoff.
+      final scopes = (await ScopeCatalogV2Service.instance.allScopes())
+          .where((s) => !s.isIronSights);
       final misses = <String>[];
       for (final s in scopes) {
         final rid = await ScopeCatalogV2Service.instance
@@ -172,7 +184,7 @@ void main() {
       }
       expect(misses, isEmpty,
           reason:
-              'Every scope must have a row in '
+              'Every non-iron-sight scope must have a row in '
               'scope_reticle_options.json. Missing: $misses');
     });
 
@@ -410,18 +422,52 @@ void main() {
     });
 
     test(
-        'live catalog has no iron-sight rows yet (latent schema; '
-        'rows land in VFP Phase 2 Group B)', () async {
+        'live catalog has the Group B iron-sight rows '
+        '(populated; 15-25; 7 §B.9 anchors; each row dimensioned)',
+        () async {
+      const frontTypes = {'post', 'blade', 'bead', 'fiber_optic', 'globe'};
+      const sB9Anchors = {
+        'ar15_a2_rifle_irons',
+        'm4_carbine_irons',
+        'akm_pattern_rifle',
+        'iron_1911_gi_service',
+        'iron_polymer_service_factory',
+        'marbles_pattern_tang_peep',
+        'target_globe_diopter',
+      };
       final scopes = await ScopeCatalogV2Service.instance.allScopes();
-      final irons = scopes.where((s) => s.isIronSights).length;
-      expect(irons, 0,
-          reason:
-              'VFP Phase 2 Group A is schema-only; iron-sight rows are '
-              'added in Group B. This guard flips intentionally then.');
-      // Every existing row parses with iron-sight fields null (additive).
-      for (final s in scopes) {
-        expect(s.frontSightType, isNull);
-        expect(s.rearSightType, isNull);
+      final irons = scopes.where((s) => s.isIronSights).toList();
+
+      expect(irons.length, inInclusiveRange(15, 25),
+          reason: 'VFP Phase 2 Group B: 15-25 iron-sight rows');
+      final ids = irons.map((s) => s.id).toSet();
+      for (final a in sB9Anchors) {
+        expect(ids, contains(a),
+            reason: '§B.9 worked-example anchor "$a" must be authored');
+      }
+      for (final s in irons) {
+        // Exit criterion: every entry has a sight type ...
+        expect(s.frontSightType, isNotNull, reason: '${s.id} front type');
+        expect(frontTypes, contains(s.frontSightType),
+            reason: '${s.id} front type "${s.frontSightType}" canonical');
+        // ... and at least one sourced numeric dimension (no all-null
+        // rows ship — unsourceable configs were excluded, see dossier).
+        final dims = <double?>[
+          s.frontSightWidthMm,
+          s.frontSightDiameterMm,
+          s.rearSightApertureMm,
+          s.rearSightDepthMm,
+          s.sightRadiusIn,
+        ];
+        expect(dims.any((d) => d != null), isTrue,
+            reason: '${s.id} must carry >=1 sourced dimension');
+      }
+
+      // Additive: every NON-iron row still parses iron fields as null.
+      for (final s in scopes.where((s) => !s.isIronSights)) {
+        expect(s.frontSightType, isNull, reason: '${s.id} non-iron');
+        expect(s.rearSightType, isNull, reason: '${s.id} non-iron');
+        expect(s.sightRadiusIn, isNull, reason: '${s.id} non-iron');
       }
     });
   });

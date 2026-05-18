@@ -162,13 +162,17 @@ class ScopeV2Row {
   // finalized in Group A and documented in docs/IRON_SIGHTS_SCHEMA.md.
 
   /// Front sight geometry class. Canonical: `post` | `blade` | `bead`
-  /// | `fiber_optic`. Null for non-iron-sight rows.
+  /// | `fiber_optic` | `globe` (operator-finalized VFP Phase 2 Group A,
+  /// `globe` added per the §B.9 math reconciliation). Null for
+  /// non-iron-sight rows.
   final String? frontSightType;
 
   /// Front blade/post width in millimetres (post / blade types).
   final double? frontSightWidthMm;
 
-  /// Front bead/fiber diameter in millimetres (bead / fiber_optic).
+  /// Front bead/fiber/globe diameter in millimetres (bead /
+  /// fiber_optic / globe — globe is a round aperture viewed as a
+  /// circle, so diameter is its geometric dimension per §B.9).
   final double? frontSightDiameterMm;
 
   /// Rear sight geometry class. Canonical: `notch` | `aperture` |
