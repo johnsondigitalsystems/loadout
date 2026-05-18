@@ -1,8 +1,9 @@
 # Iron Sights Catalog Schema — VFP Phase 2 Group A
 
-**Status:** Proposed for operator finalization at the Group A halt
-(plan exit criterion: "Schema design reviewed with operator; sight
-type enums finalized"). Storage: **JSON-only** — `scopes.json` rows +
+**Status:** **FINALIZED** — operator sign-off 2026-05-18. `globe`
+added to `front_sight_type` per the §B.9 math reconciliation (see
+"V6.12 codification" below). Plan exit criterion met ("schema design
+reviewed with operator; sight type enums finalized"). Storage: **JSON-only** — `scopes.json` rows +
 `ScopeV2Row` Dart class. **No Drift migration; `schemaVersion` stays
 42** (per VFP §1.8 / Appendix C / the F2/D-6 storage resolution).
 **Purely additive:** every field below is nullable and absent on the
@@ -23,9 +24,9 @@ values: `lpvo`, `prism`, `prism-sight`, `red-dot`, `rifle-scope`).
 
 | JSON key | Dart (`ScopeV2Row`) | Type | Applies to | Canonical values |
 |---|---|---|---|---|
-| `front_sight_type` | `frontSightType` | string | all iron | `post` · `blade` · `bead` · `fiber_optic` |
+| `front_sight_type` | `frontSightType` | string | all iron | `post` · `blade` · `bead` · `fiber_optic` · **`globe`** |
 | `front_sight_width_mm` | `frontSightWidthMm` | double | post / blade | measurement |
-| `front_sight_diameter_mm` | `frontSightDiameterMm` | double | bead / fiber_optic | measurement |
+| `front_sight_diameter_mm` | `frontSightDiameterMm` | double | bead / fiber_optic / **globe** | measurement (globe = round-aperture dia per §B.9) |
 | `rear_sight_type` | `rearSightType` | string | all iron | `notch` · `aperture` · `ghost_ring` · `buckhorn` · `tang_peep` |
 | `rear_sight_aperture_mm` | `rearSightApertureMm` | double | aperture / ghost_ring | inner-dia measurement |
 | `rear_sight_depth_mm` | `rearSightDepthMm` | double | notch / buckhorn | notch-depth measurement |
@@ -55,8 +56,11 @@ to confirm this reuse at the Group A halt.
 
 - **Front `post` / `blade`** → set `front_sight_width_mm`; leave
   `front_sight_diameter_mm` null.
-- **Front `bead` / `fiber_optic`** → set `front_sight_diameter_mm`;
-  leave `front_sight_width_mm` null.
+- **Front `bead` / `fiber_optic` / `globe`** → set
+  `front_sight_diameter_mm`; leave `front_sight_width_mm` null.
+  (`globe` = target-rifle round front aperture; the §B.9 target-rifle
+  row computes `frontSightAngularMil((diameter / sight_radius) ×
+  1000)`, i.e. diameter-based, not width-based.)
 - **Rear `aperture` / `ghost_ring`** → set `rear_sight_aperture_mm`;
   leave `rear_sight_depth_mm` null.
 - **Rear `notch` / `buckhorn`** → set `rear_sight_depth_mm`; leave
@@ -86,6 +90,33 @@ to confirm this reuse at the Group A halt.
 - IP posture: iron sights are identified by generic sight *type*,
   never by a manufacturer trade name (§9 / §30 generic-design
   posture); enforced in Group B authoring + the Group D IP sweep.
+
+## V6.12 codification (this group)
+
+- **Enums finalized:** `front_sight_type` = post · blade · bead ·
+  fiber_optic · **globe** (5); `rear_sight_type` = notch · aperture ·
+  ghost_ring · buckhorn · tang_peep (5); `elevation_adjustment` /
+  `windage_adjustment` = fixed · rear · front · both (4 each).
+  `category: "iron-sights"` accepted as a non-breaking additive
+  discriminator value.
+- **D-6-class plan inconsistency (operator-flagged):** V6.11
+  task-1 / task-4 list only the 4-value `front_sight_type`
+  (post/blade/bead/fiber_optic), but §B.9 (Iron Sights Sighting
+  Picture Math) and §4.7 / §0.5-L5 sweep reference **`globe`** (the
+  §B.9 "target rifle globe, 1.85 mil" math-table extreme; load-bearing
+  for the §B.9 14× spread claim). Same class as Phase 1 D-6 (plan
+  task spec vs source-of-truth reference mismatch). Resolution: enum
+  aligned to §B.9 (the load-bearing math reference); **V6.12 must add
+  `globe` to the task-1/4 spec.**
+- **"Reuse, not duplicate" schema-design sub-rule:** when a new
+  category needs a field that already exists scope-side
+  (`click_value_moa` / `max_*_moa`), reuse it with null semantics for
+  non-applicable cases rather than adding parallel category-specific
+  fields. Codify in V6.12's §30 / schema-design section.
+- **Plan path-citation D-8-class drift (now 2×: Phase 1 reticle
+  test, Phase 2 Group A scope-catalog test):** recommend a one-time
+  V6.12 sweep of every `test/` citation in §5 + all Phase task
+  verification commands, rather than surfacing per-phase.
 
 ## Verification commands (real paths — plan's cited path is stale)
 
