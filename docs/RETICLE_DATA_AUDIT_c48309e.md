@@ -264,3 +264,77 @@ remaining published_spec rows all valid).
    (a) `loadout_red_dot_circle` keep-cite-vs-re-tag (one question);
    (b) D-9d tag-vs-notes nuance (published_spec + Trijicon prov
    retained while notes disclaim manufacturer derivation).
+
+---
+
+# PART IV — D-9 closeout + new §0.5 finding (2026-05-18)
+
+**`loadout_red_dot_circle` — RESOLVED, disposition (i) =
+`clarify_calibration_scope`** (new 5th class, operator-named):
+keep `subtension_origin: published_spec`; `calibration_provenance.
+reticle_name` re-cited → **"EOTech XPS3-2 (2-MOA dot)"**;
+`verified_at` → 2026-05-18; notes rewritten to calibration-scope
+language. Operator principle (V6.12 §30 sub-rule): the
+**`subtensions` dict is the calibration anchor**
+(`centerDotSizeUnits` 2.0 MOA = XPS3-2 published ✓); the
+**`elements` blob is LoadOut-original artwork** (32 MOA open ring ≠
+XPS3-2's 68 MOA ring is the §30 rule-6 "calibrated to, not a
+reproduction" posture working as designed, NOT a defect).
+`published_spec` is justified when the subtensions dict matches the
+cited spec within ±5%; element-level divergence is acceptable.
+Distribution unchanged: **23 original / 21 public_domain / 8
+published_spec** (52).
+
+**`loadout_sfp_lpvo_chevron` (D-9d) — §0.5 HALT (new finding,
+pending operator decision):** the operator's resolution test
+("subtensions `treeRowSpacingUnits`/`treeDepthUnits`/`treeRowCount`
+match Trijicon's published TA31F BAC table for 5.56 NATO @ 100 m
+within ±5%") is **not computable** for this row: `nativeUnit` is
+the abstract **`bdc`** unit. `treeRowSpacingUnits: 1.8` /
+`treeDepthUnits: 7.5` have **no schema-defined mapping** to
+Trijicon's meter-range / angular published BAC table — the
+quantities are incommensurable, so a "±5%" comparison is undefined
+without a `bdc`→angular (or `bdc`→meter@zero) bridge the schema
+does not define. Not guessed; not fabricated (§0.5 L4 / CLAUDE.md
+§0). Per operator forward-note #2 this is a §0.5-level event
+(finding doesn't fit the five disposition classes → halt + surface).
+
+Options for operator (D-9d):
+- **(1) Define a `bdc`→angular bridge** (a §B.5-class / schema
+  decision; then source Trijicon's published TA31F BAC 5.56/100 m
+  table and run the ±5% test → case A/B).
+- **(2) Structural-calibration rule for `bdc`-unit rows:** treat
+  the *layout* (chevron tip + 4 holdover marks = the canonical
+  TA31F BAC the operator already affirmed under D-9d (B)) as the
+  calibration anchor when `nativeUnit==bdc` (numeric subtensions
+  are LoadOut-internal). Keep `published_spec` + calibration-scope
+  notes. Distribution stays 23/21/8.
+- **(3) Re-tag `original`** (no demonstrable numeric calibration vs
+  an abstract unit) — conservative; drop Trijicon cite; distribution
+  → 24/21/7.
+
+**Broader pattern (V6.12):** `nativeUnit: "bdc"` `published_spec`
+rows cannot be ±5%-numerically verified against angular/meter
+manufacturer tables — same root cause already accepted for
+`loadout_sfp_bdc_300yd` (`accepted_with_rationale`, "abstract bdc
+by design"). The V6.12 §30 sub-rule should explicitly address how
+calibration is verified for `bdc`-unit reticles (structural/layout
+match vs. a defined unit bridge).
+
+**Verified-after:** `jq length` 52 · distribution **23/21/8** · IP
+sweep clean (0 trade names in id/model/family; `EOTech XPS3-2`
+lives only in internal `calibration_provenance`, §30 rule 6) ·
+5-test reticle gate **157/157** (incl. published_spec
+provenance-integrity invariant).
+
+**§0.5 audit hit-rate (D-9, per operator forward-note #3):** 6 of
+52 audited rows required calibration disposition ≈ **11.5%** —
+within the 5–20% "normal good-audit" zone (validates the audit's
+value; catalog not structurally broken). 1 row (`loadout_sfp_lpvo_
+chevron`) escalated to §0.5-pending on a unit-model issue, not a
+per-row data error.
+
+**Disposition taxonomy (stable across phases, per forward-note #2):**
+`correct` · `re-cite` · `re-tag_original` · `accept_with_rationale`
+· `clarify_calibration_scope`. New classes (if any) → §0.5 halt +
+V6.12 feed.
