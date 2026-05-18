@@ -17224,9 +17224,9 @@
     "subtension_origin": "published_spec",
     "calibration_provenance": {
       "manufacturer": "EOTech, Inc.",
-      "reticle_name": "1-MOA dot + 68-MOA ring (XPS3-2 reference)",
+      "reticle_name": "EOTech XPS3-2 (2-MOA dot)",
       "published_url": "https://www.eotechinc.com/holographic-weapon-sights/xps3",
-      "verified_at": "2026-05-11"
+      "verified_at": "2026-05-18"
     },
     "illumination_supported": true,
     "subtensions": {
@@ -17239,7 +17239,7 @@
       "treeRowWidthsUnits": [],
       "treeDepthUnits": null
     },
-    "notes": "2-MOA filled center dot inside a 32-MOA outer ring (open).",
+    "notes": "Calibrated to EOTech XPS3-2's published 2-MOA dot subtension (subtensions.centerDotSizeUnits = 2.0 = anchor). The 32 MOA open ring is LoadOut-original close-quarters context geometry, NOT a reproduction of XPS3-2's 68 MOA HWS ring. Per CLAUDE.md \u00a730 rule 6 LoadOut ships calibrated subtensions on original artwork; consult EOTech's specification sheet for exact reticle geometry.",
     "elements": [
       {
         "type": "dot",
