@@ -488,8 +488,8 @@ flutter:
     # / photo visual styles. Regenerable from the Python+PIL
     # script in commit history (seed 20260515).
     - assets/noise/
-    # Branded startup loading emblem. assets/branding/loadout_logo.png is
-    # the centered, transparent LoadOut target/crosshair mark rendered by
+    # Branded startup loading emblem. assets/branding/loadout_spinner_logo.png
+    # is the centered, transparent LoadOut target/crosshair mark rendered by
     # `StartupLoadingScreen` (lib/widgets/startup_loading_overlay.dart)
     # during the two brief cold-start async gates in lib/app.dart. New
     # top-level asset dir → its own line here AND a matching entry in
