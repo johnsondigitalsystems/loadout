@@ -566,6 +566,15 @@ class _DisclaimerGateState extends State<_DisclaimerGate> {
   bool _loading = true;
   bool _accepted = false;
   bool _launchReminderShown = false;
+  // Flips true when the user taps "I Understand" on the per-launch
+  // Reminder dialog. Until then the gate renders the branded
+  // [StartupLoadingScreen] UNDER the dialog — not the auth gate or a
+  // half-built HomeScreen — and the same spinner is then handed off to
+  // [_HomeBoot] so it runs continuously from "Reminder confirmed"
+  // straight through to "home UI ready". Without this, confirming the
+  // Reminder on a restart would drop the user onto a loading shell
+  // with no branded transition (the bug this fixes).
+  bool _reminderConfirmed = false;
 
   @override
   void initState() {
@@ -604,9 +613,14 @@ class _DisclaimerGateState extends State<_DisclaimerGate> {
   void _maybeShowLaunchReminder() {
     if (_launchReminderShown) return;
     _launchReminderShown = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      showLaunchDisclaimer(context);
+      // `context` is used before the first await — safe.
+      await showLaunchDisclaimer(context);
+      if (!mounted) return;
+      // Confirmed. Release the gate; the branded spinner stays up,
+      // handed off to [_HomeBoot], until the home UI is ready.
+      setState(() => _reminderConfirmed = true);
     });
   }
 
@@ -619,6 +633,13 @@ class _DisclaimerGateState extends State<_DisclaimerGate> {
       return DisclaimerScreen(onAccept: _onAccept);
     }
     _maybeShowLaunchReminder();
+    // Hold the branded loading screen UNDER the Reminder dialog and
+    // until the user confirms it. Only then build the auth gate; the
+    // spinner is handed off to [_HomeBoot] so there's no flash of a
+    // half-built screen between the dialog and a ready HomeScreen.
+    if (!_reminderConfirmed) {
+      return const StartupLoadingScreen();
+    }
     return const _AuthGate();
   }
 }
@@ -863,7 +884,101 @@ class _AuthGateState extends State<_AuthGate> {
         !biometric.isUnlocked) {
       return const BiometricLockScreen();
     }
-    return const HomeScreen();
+    // Auth + disclaimer + reminder all cleared. Bridge to a ready
+    // HomeScreen with the branded loading screen so the user never
+    // stares at a half-built shell while the stream-backed tabs warm
+    // up. [_HomeBoot] dismisses the spinner once HomeScreen has
+    // painted its first frame (UI ready), with a short floor so it
+    // reads as a deliberate brand beat rather than a flash.
+    return const _HomeBoot();
+  }
+}
+
+/// Branded boot bridge between auth/disclaimer/reminder clearance and a
+/// ready [HomeScreen]. Builds HomeScreen immediately (so its
+/// stream-backed tabs start warming up) but overlays the
+/// rotating-emblem [StartupLoadingScreen] on top until HomeScreen has
+/// painted its first frame AND a short minimum has elapsed — then
+/// crossfades the overlay away. A hard cap guarantees the overlay can
+/// never strand the user if a frame callback is somehow missed.
+///
+/// This is the single place that satisfies both startup-spinner
+/// triggers: after sign-in / "Continue as Guest" (the auth stream
+/// emits and `_AuthGate` rebuilds into this), and after the per-launch
+/// Reminder is confirmed (the spinner is handed off from
+/// `_DisclaimerGate` to here, so it runs continuously through the
+/// dialog dismissal).
+class _HomeBoot extends StatefulWidget {
+  const _HomeBoot();
+
+  @override
+  State<_HomeBoot> createState() => _HomeBootState();
+}
+
+class _HomeBootState extends State<_HomeBoot> {
+  /// Minimum on-screen time so the branded screen reads as a
+  /// deliberate brand beat and the local-SQLite stream tabs have a
+  /// moment to populate — not a sub-frame flash.
+  static const _minVisible = Duration(milliseconds: 700);
+
+  /// Safety cap: even if the first-frame callback never fires (it
+  /// always should), never strand the user on the spinner forever.
+  static const _maxVisible = Duration(seconds: 6);
+
+  bool _ready = false;
+  bool _firstFrameDone = false;
+  bool _minElapsed = false;
+  Timer? _minTimer;
+  Timer? _maxTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Fires after the frame in which HomeScreen (built below) has been
+    // laid out and painted — i.e. the app chrome is actually on screen.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _firstFrameDone = true;
+      _maybeReveal();
+    });
+    _minTimer = Timer(_minVisible, () {
+      _minElapsed = true;
+      _maybeReveal();
+    });
+    _maxTimer = Timer(_maxVisible, _reveal);
+  }
+
+  void _maybeReveal() {
+    if (_firstFrameDone && _minElapsed) _reveal();
+  }
+
+  void _reveal() {
+    if (!mounted || _ready) return;
+    setState(() => _ready = true);
+  }
+
+  @override
+  void dispose() {
+    _minTimer?.cancel();
+    _maxTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        const HomeScreen(),
+        // Branded overlay; crossfades out once the home UI is ready.
+        // StartupLoadingScreen's opaque dark Scaffold fully covers
+        // HomeScreen while it warms up underneath.
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: _ready
+              ? const SizedBox.shrink()
+              : const StartupLoadingScreen(),
+        ),
+      ],
+    );
   }
 }
 
