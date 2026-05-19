@@ -74,6 +74,7 @@ import 'app_preferences_screen.dart';
 import 'device_compatibility_screen.dart';
 import 'help_support_screen.dart';
 import 'privacy_data_screen.dart';
+import 'storage_settings_screen.dart';
 import 'watch_settings_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -158,6 +159,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         subtitle:
             'Crashlytics, export, delete, privacy policy / disclaimer.',
         destinationBuilder: (_) => const PrivacyDataScreen(),
+      ),
+      _SettingsTileSpec(
+        icon: Icons.sd_storage_outlined,
+        title: 'Storage',
+        subtitle:
+            'Manage cached photo assets (Scenic / Photographic tiers).',
+        destinationBuilder: (_) => const StorageSettingsScreen(),
       ),
       _SettingsTileSpec(
         icon: Icons.handshake_outlined,
