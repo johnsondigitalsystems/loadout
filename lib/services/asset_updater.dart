@@ -230,7 +230,10 @@ class AssetUpdater {
       final bytes = await ref.getData(config.maxFileBytes);
       if (bytes == null) return null;
       try {
-        config.contentValidator(bytes, entry);
+        // §0.5 D-d: contentValidator is FutureOr<void> — seed throws
+        // synchronously (await of the sync result is a no-op); photo
+        // hashes async via cryptography. Either rejection lands here.
+        await config.contentValidator(bytes, entry);
       } on AssetValidationException catch (e) {
         debugPrint('AssetUpdater: ${entry.filename} rejected — $e');
         return null;

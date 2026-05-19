@@ -39,10 +39,13 @@
 
 import 'dart:convert';
 
+import 'package:cryptography/cryptography.dart' show Sha256;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loadout/services/asset_updater_config.dart';
 import 'package:loadout/services/asset_updater_configs.dart';
+import 'package:loadout/services/photo_asset_directory.dart'
+    show PhotoAssetCategory;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -201,6 +204,134 @@ void main() {
       // The hook is what sets seed_needs_reseed_<key>; its absence
       // would silently regress the launch-critical re-seed path.
       expect(seedCatalogConfig.onAssetApplied, isNotNull);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // ADDED — Group D photo-asset configuration contract. Predicate-level
+  // (like the seed bit-for-bit group); the actual appSupport filesystem
+  // write is exercised by the mock-Firebase flow suite
+  // (asset_updater_photo_test.dart) with an injected temp dir, the same
+  // split the seed bit-for-bit test uses (asserts paths, not the real
+  // _seedRoot FS call).
+  // -------------------------------------------------------------------------
+  group('photoAssetConfig — Group D photo-asset contract', () {
+    test('allowlist is exactly the 6 PhotoAssetCategory dir names (D-a)',
+        () {
+      final fromEnum = <String>{
+        for (final c in PhotoAssetCategory.values) c.dirName,
+      };
+      // Derived single source of truth — allowlist can never drift
+      // from the on-disk directory layout.
+      expect(photoAssetConfig.allowlist, fromEnum);
+      expect(photoAssetConfig.allowlist, kPhotoAssetCategories);
+      expect(photoAssetConfig.allowlist, <String>{
+        'photo_backdrops',
+        'photo_sprites',
+        'photo_animals',
+        'photo_iron_sights',
+        'photo_effects',
+        'photo_3d_models',
+      });
+    });
+
+    test('SharedPrefs prefix + real Storage paths (D-e)', () {
+      expect(
+          photoAssetConfig.versionTrackerPrefix, 'photo_asset_version_');
+      expect(photoAssetVersionPrefix, 'photo_asset_version_');
+      expect(photoAssetConfig.manifestStoragePath,
+          'photo_assets/manifest.json');
+      expect(
+        photoAssetConfig.storagePathForFile('photo_backdrops/dawn.webp'),
+        'photo_assets/photo_backdrops/dawn.webp',
+      );
+    });
+
+    test('binary write strategy + 64 MB cap + no decoder (D-f)', () {
+      expect(photoAssetConfig.writeStrategy, WriteStrategy.binary);
+      expect(photoAssetConfig.maxFileBytes, 64 * 1024 * 1024);
+      expect(photoAssetConfig.contentDecoder, isNull);
+      // The §0.5 D-c PhotoAssetLoader cache-drop hook must exist.
+      expect(photoAssetConfig.onAssetApplied, isNotNull);
+    });
+
+    test('filename validator is the FULL guard + category + ext (D-b)',
+        () {
+      final f = photoAssetConfig.filenameValidator;
+      // Accept: every allowed extension; nesting deeper than seed's
+      // 2-level cap is allowed for photo subtrees.
+      expect(f('photo_backdrops/range_dawn.webp'), isTrue);
+      expect(f('photo_sprites/tree/oak_01.png'), isTrue);
+      expect(f('photo_animals/whitetail.ktx2'), isTrue);
+      expect(f('photo_3d_models/popper.glb'), isTrue);
+      expect(f('photo_effects/heat_shimmer.jpg'), isTrue);
+      expect(f('photo_iron_sights/post.jpeg'), isTrue);
+      expect(f('photo_backdrops/scene.gltf'), isTrue);
+      // Reject — the security boundary must NOT soften (C-b carried
+      // into the binary path).
+      expect(f('photo_backdrops/evil.txt'), isFalse, reason: 'non-asset');
+      expect(f('not_a_category/x.png'), isFalse, reason: 'bad category');
+      expect(f('range_dawn.webp'), isFalse, reason: 'no category prefix');
+      expect(f('photo_backdrops/../secrets.png'), isFalse,
+          reason: 'parent traversal');
+      expect(f('photo_backdrops/./x.png'), isFalse, reason: 'dot seg');
+      expect(f('photo_backdrops/.hidden.png'), isFalse, reason: 'hidden');
+      expect(f('/photo_backdrops/x.png'), isFalse, reason: 'absolute');
+      expect(f(r'photo_backdrops\x.png'), isFalse, reason: 'backslash');
+      expect(f('photo_backdrops/a b.png'), isFalse, reason: 'whitespace');
+      expect(f('photo_backdrops/x;rm.png'), isFalse, reason: 'metachar');
+      expect(f('photo_backdrops/'), isFalse, reason: 'empty basename');
+      expect(f(''), isFalse);
+    });
+
+    test('content validator: mandatory SHA-256, async (D-d)', () async {
+      final v = photoAssetConfig.contentValidator;
+      final bytes = Uint8List.fromList(utf8.encode('photo-payload'));
+      final digest = await Sha256().hash(bytes);
+      final hex = digest.bytes
+          .map((b) => b.toRadixString(16).padLeft(2, '0'))
+          .join();
+      // contentValidator is FutureOr<void> (D-d) — coerce to Future.
+      Future<void> run(Uint8List b, AssetEntry e) async => v(b, e);
+
+      // Correct digest → passes (no exception).
+      await expectLater(
+        run(
+          bytes,
+          AssetEntry(
+            key: 'photo_backdrops',
+            version: 2,
+            filename: 'photo_backdrops/x.webp',
+            expectedSha256: hex,
+          ),
+        ),
+        completes,
+      );
+      // Wrong digest → rejected, local copy kept.
+      await expectLater(
+        run(
+          bytes,
+          const AssetEntry(
+            key: 'photo_backdrops',
+            version: 2,
+            filename: 'photo_backdrops/x.webp',
+            expectedSha256: 'deadbeefdeadbeef',
+          ),
+        ),
+        throwsA(isA<AssetValidationException>()),
+      );
+      // Missing digest → rejected (mandatory for binary, CLAUDE §28).
+      await expectLater(
+        run(
+          bytes,
+          const AssetEntry(
+            key: 'photo_backdrops',
+            version: 2,
+            filename: 'photo_backdrops/x.webp',
+          ),
+        ),
+        throwsA(isA<AssetValidationException>()),
+      );
     });
   });
 }

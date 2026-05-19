@@ -58,6 +58,7 @@
 // ============================================================================
 //   * None. Pure value types + function-typed config fields.
 
+import 'dart:async' show FutureOr;
 import 'dart:io' show Directory;
 import 'dart:typed_data';
 
@@ -139,9 +140,18 @@ class AssetUpdaterConfig {
 
   /// Validates downloaded bytes for [entry]. Throws
   /// [AssetValidationException] on failure (the updater then keeps
-  /// the local copy). Seed = JSON top-level shape; photo (Group D) =
+  /// the local copy — never a partial overwrite). Seed = JSON
+  /// top-level shape (synchronous, throws sync). Photo (Group D) =
   /// SHA-256 vs the manifest digest.
-  final void Function(Uint8List bytes, AssetEntry entry)
+  ///
+  /// §0.5 D-d: the return type is `FutureOr<void>`, not bare `void`,
+  /// because the photo SHA-256 path hashes via `package:cryptography`
+  /// (`Sha256().hash(...)` is async — `crypto` is NOT a project
+  /// dependency; C-e). `AssetUpdater._downloadAndValidate` `await`s
+  /// it, so a sync validator (seed — throws synchronously, the firm
+  /// regression test stays verbatim) and an async one (photo) are
+  /// both supported with no behaviour change to the seed path.
+  final FutureOr<void> Function(Uint8List bytes, AssetEntry entry)
       contentValidator;
 
   /// Resolves the on-device directory for a manifest [key]'s
