@@ -187,6 +187,7 @@ import 'services/watch_settings_service.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_error_boundary.dart';
 import 'widgets/disclaimer_overlay.dart';
+import 'widgets/startup_loading_overlay.dart';
 
 /// Pref key for the legal disclaimer acceptance flag. Versioned so that
 /// updating the disclaimer text forces re-acceptance for everyone. Bumped
@@ -612,9 +613,7 @@ class _DisclaimerGateState extends State<_DisclaimerGate> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const StartupLoadingScreen();
     }
     if (!_accepted) {
       return DisclaimerScreen(onAccept: _onAccept);
@@ -850,9 +849,7 @@ class _AuthGateState extends State<_AuthGate> {
     // completes — visually janky and a minor security smell. A
     // CircularProgressIndicator covers the ~50ms gap.
     if (!biometric.isHydrated) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const StartupLoadingScreen();
     }
     // Biometric only gates HomeScreen for users with a real account.
     // Anonymous (Continue-as-Guest) users skip the gate even if the

@@ -82,6 +82,12 @@ void main() {
     // in pubspec.yaml (`- assets/noise/`); without it the runtime
     // `rootBundle.load` would throw on first polished paint.
     'assets/noise',
+    // Branded startup loading emblem (`assets/branding/loadout_logo.png`)
+    // shown by `StartupLoadingScreen` during the cold-start async gates in
+    // lib/app.dart. New top-level dir → its own `- assets/branding/` line
+    // in pubspec.yaml; this entry makes the bundle-reachability test cover
+    // it (CLAUDE.md §12a).
+    'assets/branding',
   ];
 
   // File extensions that are real bundleable assets in this project. Every
