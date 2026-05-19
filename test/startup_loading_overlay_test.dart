@@ -37,7 +37,7 @@ void main() {
 
     final image = tester.widget<Image>(find.byType(Image));
     final provider = image.image as AssetImage;
-    expect(provider.assetName, 'assets/branding/loadout_logo.png');
+    expect(provider.assetName, 'assets/branding/loadout_spinner_logo.png');
   });
 
   testWidgets('emblem is driven by a RotationTransition that actually turns',

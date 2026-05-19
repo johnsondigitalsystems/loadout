@@ -4,7 +4,7 @@
 // WHAT THIS FILE DOES
 // ============================================================================
 // Provides [StartupLoadingScreen], a full-screen branded loading view: the
-// LoadOut target/crosshair emblem (assets/branding/loadout_logo.png) slowly
+// LoadOut target/crosshair emblem (assets/branding/loadout_spinner_logo.png) slowly
 // rotating on the app's dark gunmetal background. It is a drop-in
 // replacement for the bare `Scaffold(body: Center(child:
 // CircularProgressIndicator()))` placeholders that briefly show during the
@@ -65,7 +65,7 @@
 // ============================================================================
 //   * Starts a repeating [AnimationController] ticker while mounted
 //     (disposed with the State). Decodes one bundled PNG asset
-//     (assets/branding/loadout_logo.png) on first build. No network, no
+//     (assets/branding/loadout_spinner_logo.png) on first build. No network, no
 //     disk writes, no database, no preferences.
 
 import 'package:flutter/material.dart';
@@ -127,7 +127,7 @@ class _StartupLoadingScreenState extends State<StartupLoadingScreen>
               key: const ValueKey('startupLogoRotation'),
               turns: _controller,
               child: Image.asset(
-                'assets/branding/loadout_logo.png',
+                'assets/branding/loadout_spinner_logo.png',
                 width: _logoSize,
                 height: _logoSize,
                 // Bundled square asset; no runtime scaling surprises.
