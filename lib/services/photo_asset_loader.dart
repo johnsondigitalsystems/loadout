@@ -296,7 +296,13 @@ class PhotoAssetLoader {
   /// conservative memory tier).
   static final PhotoAssetLoader instance = PhotoAssetLoader();
 
-  final CdnResolver? _cdnResolver;
+  // Non-final: VFP Phase 4 Group B wires the production resolver
+  // (`PhotoAssetDirectory.instance.cdnResolver`) onto the singleton
+  // at app start via [cdnResolver]=. Without this the CDN-preferred
+  // branch is unreachable in production (Group A is seam-only by
+  // design — no dart:io here). Constructor injection is retained for
+  // tests.
+  CdnResolver? _cdnResolver;
   final BundleLoader _bundleLoader;
   final Sha256Hex _sha256Hex;
   final _PhotoAssetCache _cache;
@@ -312,6 +318,13 @@ class PhotoAssetLoader {
   /// Forward seam for VFP Phase 6+ `ScenicFallbackMonitor` (§7.8).
   void registerSustainedPressureCallback(void Function()? cb) =>
       _manager.registerSustainedPressureCallback(cb);
+
+  /// Wire the production CDN resolver (VFP Phase 4 Group B —
+  /// `PhotoAssetDirectory.instance.cdnResolver`). Set once at app
+  /// start; null restores bundle-only behaviour. Kept separate from
+  /// the constructor so Group A stays filesystem-free and tests can
+  /// still inject a fake resolver via the constructor.
+  set cdnResolver(CdnResolver? resolver) => _cdnResolver = resolver;
 
   int get cacheLength => _cache.length;
   int get cacheMaxEntries => _cache.maxEntries;
@@ -336,9 +349,13 @@ class PhotoAssetLoader {
     final cacheKey = '$assetKey@v$assetVersion';
     return _cache.get(cacheKey, () async {
       // CDN preferred (downloaded) → bundle fallback (dev/first run).
+      // Capture the (now mutable / settable — Group B wires it)
+      // resolver into a local so Dart can null-promote it; a mutable
+      // field cannot be promoted across the await.
       Uint8List? bytes;
-      if (_cdnResolver != null) {
-        bytes = await _cdnResolver(relativePath);
+      final resolver = _cdnResolver;
+      if (resolver != null) {
+        bytes = await resolver(relativePath);
       }
       bytes ??= await _bundleLoader(assetKey);
 
